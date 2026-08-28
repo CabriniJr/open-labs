@@ -26,6 +26,12 @@ importers:
 
   packages/depth-core: {}
 
+  packages/otel-domain:
+    dependencies:
+      '@ovh/depth-core':
+        specifier: workspace:*
+        version: link:../depth-core
+
 packages:
 
   '@asamuzakjp/css-color@3.2.0':
