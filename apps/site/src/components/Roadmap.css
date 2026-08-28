@@ -1,0 +1,255 @@
+.roadmap__progress {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-1) var(--space-2);
+  align-items: baseline;
+  margin-block-end: var(--space-3);
+}
+
+.roadmap__progress-label {
+  font-size: var(--size-step--1);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.roadmap__progress-count {
+  font-size: var(--size-step--1);
+  justify-self: end;
+}
+
+.roadmap__progress-track {
+  grid-column: 1 / -1;
+  height: 3px;
+  background: var(--rule);
+  border-radius: var(--radius-1);
+}
+
+.roadmap__progress-fill {
+  height: 3px;
+  background: var(--accent);
+  border-radius: var(--radius-1);
+  transition: width 240ms ease-out;
+}
+
+.roadmap__map {
+  position: relative;
+  aspect-ratio: 1000 / 870;
+  background: var(--paper-raised);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-3);
+  padding: 0;
+}
+
+.roadmap__wires {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.roadmap__wires line {
+  stroke: var(--rule);
+  stroke-width: 1.5;
+}
+
+.roadmap__wires .roadmap__wire--annex {
+  stroke-width: 1.2;
+  stroke-dasharray: 3 3;
+}
+
+.roadmap__nodes {
+  position: absolute;
+  inset: 0;
+}
+
+.roadmap__phase,
+.roadmap__node,
+.roadmap__annex {
+  position: absolute;
+  transform: translateY(-50%);
+  margin: 0;
+}
+
+.roadmap__phase {
+  background: var(--ink);
+  color: var(--paper);
+  border-radius: var(--radius-1);
+  font-size: 0.62rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  text-align: center;
+  padding: 0.35rem 0;
+  white-space: nowrap;
+}
+
+.roadmap__node {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  background: var(--paper);
+  border: 1.5px solid var(--rule);
+  border-radius: var(--radius-2);
+  padding: 0.5rem 0.6rem;
+}
+
+.roadmap__node[data-status="available"] {
+  background: var(--paper-raised);
+  border-color: var(--ink);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.roadmap__node[data-status="done"] {
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.roadmap__node[data-status="coming"] {
+  border-style: dashed;
+  color: var(--ink-faint);
+}
+
+.roadmap__node-title {
+  flex-grow: 1;
+  font-size: 0.78rem;
+  line-height: 1.25;
+  color: inherit;
+  border: 0;
+}
+
+a.roadmap__node-title {
+  color: var(--ink);
+  text-decoration: none;
+}
+
+a.roadmap__node-title:hover {
+  color: var(--accent);
+}
+
+.roadmap__check {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  background: none;
+  border: 1.5px solid var(--rule);
+  border-radius: var(--radius-1);
+  cursor: pointer;
+}
+
+.roadmap__check svg {
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: transparent;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.roadmap__check[aria-pressed="true"] {
+  border-color: var(--accent);
+}
+
+.roadmap__check[aria-pressed="true"] svg {
+  stroke: var(--accent);
+}
+
+.roadmap__annex {
+  border: 1.2px dashed var(--rule);
+  border-radius: var(--radius-2);
+  color: var(--ink-faint);
+  font-size: 0.66rem;
+  text-align: center;
+  padding: 0.4rem 0;
+}
+
+.roadmap__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  list-style: none;
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  font-size: var(--size-step--1);
+  color: var(--ink-muted);
+}
+
+.roadmap__legend li::before {
+  content: "";
+  display: inline-block;
+  width: 20px;
+  height: 13px;
+  margin-inline-end: 0.5rem;
+  vertical-align: -1px;
+  border: 1.5px solid var(--rule);
+  border-radius: var(--radius-1);
+}
+
+.roadmap__legend li[data-status="done"]::before {
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.roadmap__legend li[data-status="available"]::before {
+  border-color: var(--ink);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.roadmap__legend li[data-status="coming"]::before {
+  border-style: dashed;
+}
+
+.roadmap__legend li[data-status="annex"]::before {
+  border-style: dashed;
+  border-width: 1.2px;
+}
+
+/*
+ * Abaixo de 60rem o mapa não cabe: vira uma lista empilhada na ordem do DOM,
+ * que é a ordem de leitura correta (fase, depois os labs daquela fase).
+ */
+@media (max-width: 60rem) {
+  .roadmap__map {
+    aspect-ratio: auto;
+    border: 0;
+    background: none;
+    border-radius: 0;
+  }
+
+  .roadmap__wires {
+    display: none;
+  }
+
+  .roadmap__nodes {
+    position: static;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+
+  .roadmap__phase,
+  .roadmap__node,
+  .roadmap__annex {
+    position: static;
+    transform: none;
+    width: auto !important;
+    left: auto !important;
+    top: auto !important;
+  }
+
+  .roadmap__phase {
+    margin-block-start: var(--space-2);
+  }
+
+  .roadmap__annex {
+    margin-inline-start: var(--space-3);
+  }
+
+  .roadmap__node-title {
+    font-size: var(--size-step-0);
+  }
+
+  .roadmap__check {
+    width: 26px;
+    height: 26px;
+  }
+}

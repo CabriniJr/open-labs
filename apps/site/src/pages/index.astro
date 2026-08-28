@@ -1,11 +1,166 @@
 ---
+import { HeroSim } from "../components/HeroSim.tsx";
+import { Roadmap } from "../components/Roadmap.tsx";
+import Base from "../layouts/Base.astro";
+import "../components/HeroSim.css";
+import "../components/Roadmap.css";
 ---
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <title>OTel Visual Handbook</title>
-  </head>
-  <body>
-    <h1>OTel Visual Handbook</h1>
-  </body>
-</html>
+
+<Base
+  title="OTel Visual Handbook"
+  description="Every OpenTelemetry concept as a model you can take apart — from the service graph down to the bytes on the wire."
+>
+  <header class="site-header">
+    <p class="site-header__mark mono">OTel Visual Handbook</p>
+  </header>
+
+  <main>
+    <section class="hero editorial">
+      <div>
+        <h1>See how the telemetry actually moves.</h1>
+        <p class="hero__lede prose">
+          Most OpenTelemetry material shows you a diagram and a config file. This
+          one gives you the running mechanism: change something, watch the trace
+          react, then open it up and read the exact bytes that produced what you
+          just saw.
+        </p>
+        <p class="prose">
+          Turn off context propagation below. The picture breaks — and so does
+          the payload underneath it, because they are the same data.
+        </p>
+      </div>
+      <aside class="hero__note mono">
+        <p>Live simulation. Not a video.</p>
+      </aside>
+    </section>
+
+    <section class="hero-stage">
+      <HeroSim client:visible />
+    </section>
+
+    <section class="editorial">
+      <div class="prose">
+        <h2>What a lab is</h2>
+        <p>
+          Every lab answers one concrete question, and it answers it four times —
+          at four depths. The outside view shows services and telemetry flowing.
+          Go one level down and you are inside a component. Another, and you are
+          on the wire, in HTTP/2 frames. Another, and you are reading the OTLP
+          payload field by field, with whatever just changed still highlighted.
+        </p>
+        <p>
+          Those are not four drawings. They are four views of one running state,
+          so what you read at the bottom is what produced the picture at the top.
+          When a lab makes a claim, there is a <code>docker compose</code> in the
+          repository that lets you check it against a real Collector.
+        </p>
+      </div>
+      <aside class="sidenote">
+        <p>
+          Sourced from the OpenTelemetry specification and official docs. The
+          teaching order follows <em>Learning OpenTelemetry</em>, because the
+          order in which the concepts hold each other up is right there.
+        </p>
+      </aside>
+    </section>
+
+    <section class="path">
+      <div class="path__intro">
+        <h2>The path</h2>
+        <p>
+          The phases are not a queue. Instrumentation and pipelines cross; a list
+          would hide that, so the map shows it. Click any node to open the lab,
+          and mark it off when you are done.
+        </p>
+      </div>
+      <Roadmap client:visible />
+    </section>
+  </main>
+
+  <footer class="site-footer editorial">
+    <p class="mono">
+      Open source ·
+      <a href="https://github.com/CabriniJr/otel-visual-handbook">GitHub</a>
+      · Built with Claude
+    </p>
+  </footer>
+</Base>
+
+<style>
+  .site-header {
+    padding: var(--space-2) var(--space-3);
+    border-block-end: 1px solid var(--rule);
+  }
+
+  .site-header__mark {
+    margin: 0;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-size: var(--size-step--1);
+  }
+
+  .hero {
+    padding-block: var(--space-5) var(--space-3);
+  }
+
+  h1 {
+    margin: 0 0 var(--space-2);
+    font-size: var(--size-step-3);
+    max-width: 15ch;
+  }
+
+  .hero__lede {
+    font-size: var(--size-step-1);
+  }
+
+  .hero__note {
+    align-self: end;
+    color: var(--ink-muted);
+    font-size: var(--size-step--1);
+  }
+
+  .hero-stage,
+  .path {
+    max-width: 92rem;
+    margin-inline: auto;
+    padding-inline: var(--space-3);
+  }
+
+  .hero-stage {
+    padding-block-end: var(--space-5);
+  }
+
+  .path {
+    padding-block: var(--space-4) var(--space-5);
+    border-block-start: 1px solid var(--rule);
+  }
+
+  .path__intro {
+    max-width: var(--measure);
+    margin-block-end: var(--space-3);
+  }
+
+  section.editorial {
+    padding-block: var(--space-4);
+  }
+
+  h2 {
+    font-size: var(--size-step-2);
+    margin-block: 0 var(--space-2);
+  }
+
+  .sidenote {
+    color: var(--ink-muted);
+    font-size: var(--size-step--1);
+    border-block-start: 2px solid var(--accent);
+    padding-block-start: var(--space-1);
+    align-self: start;
+  }
+
+  .site-footer {
+    padding-block: var(--space-3);
+    border-block-start: 1px solid var(--rule);
+    color: var(--ink-muted);
+    font-size: var(--size-step--1);
+  }
+</style>
