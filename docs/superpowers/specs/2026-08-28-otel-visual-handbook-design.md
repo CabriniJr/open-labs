@@ -20,6 +20,13 @@ camada por camada. Referência de acabamento: manual de engenharia impresso.
 **Público:** engenheiros de plataforma e devs que precisam operar OpenTelemetry
 de verdade, não só instalar o SDK. Inglês, alcance global.
 
+**Espinha dorsal de longo prazo.** O motor de profundidade não é específico de
+OpenTelemetry: é uma forma de ensinar qualquer teoria técnica mostrando-a
+funcionar camada por camada. OTel é a primeira aplicação dele, não a dona dele.
+Isso **não é escopo do MVP** — não haverá plugin system, API pública, pacote npm
+nem segunda aplicação agora. É uma única restrição de fronteiras, imposta no CI,
+que custa quase nada hoje e evita reescrita depois. Ver §8.
+
 ---
 
 ## 2. Princípios
@@ -44,6 +51,11 @@ implementação, a resposta sai daqui.
 4. **UX de leitura antes de UX de brinquedo.** Página carrega instantânea, prosa
    legível, simulação hidrata só ao entrar em viewport. Ninguém aprende
    esperando bundle.
+
+5. **O motor não conhece o domínio.** Nada em `depth-core` ou `depth-ui` pode
+   mencionar span, trace, OTLP ou Collector. Todo conhecimento de OpenTelemetry
+   vive no adaptador de domínio. Regra verificada automaticamente, não por
+   disciplina.
 
 ---
 
@@ -184,50 +196,63 @@ com CI no GitHub Actions.
 otel-visual-handbook/
 ├─ apps/site/              Astro: MDX do conteúdo, páginas, navegação
 │  └─ src/labs/<slug>/     o cenário declarativo de cada lab
-├─ packages/otel-model/    tipos fiéis à spec: OTLP, traceparent, protobuf
-├─ packages/sim-core/      motor: estado-verdade, clock determinístico, projeções
-├─ packages/sim-ui/        primitivas React: DepthShell, ServiceNode, SpanBar, Inspector
+├─ packages/depth-core/    motor agnóstico: estado-verdade, clock, projeções
+├─ packages/depth-ui/      primitivas visuais agnósticas: DepthShell, Timeline, Inspector
+├─ packages/otel-domain/   adaptador OTel: tipos e codecs fiéis à spec
 ├─ labs/<slug>/            o compose que roda de verdade
 └─ docs/                   specs, ADRs, guia de autoria
 ```
 
-### Fronteiras dos pacotes
+### Motor agnóstico e adaptador de domínio
 
-Cada pacote tem um propósito e uma interface; nenhum conhece os internos do outro.
+A divisão que preserva o reuso futuro sem custar escopo hoje:
 
-- **`otel-model`** — só tipos e codecs. Não sabe que existe simulação nem UI.
-  Espelha a spec: `Span`, `TraceContext`, `Resource`, `ExportTraceServiceRequest`,
-  serialização OTLP/JSON, parse e format de `traceparent`, encode protobuf.
+- **`depth-core`** — o motor, sem domínio. Mantém um estado-verdade opaco,
+  avança por ticks determinísticos com seed, expõe projeções por nível, calcula
+  o diff entre ticks (que alimenta a mecânica de mutação destacada) e mantém
+  histórico rebobinável. Não renderiza, não importa React, e **não sabe o que é
+  um span**.
   *Depende de: nada.*
 
-- **`sim-core`** — o motor. Mantém o estado-verdade (feito de tipos do
-  `otel-model`), avança por ticks determinísticos com seed, expõe projeções por
-  nível e um histórico rebobinável. Não renderiza nada, não importa React.
-  *Depende de: `otel-model`.*
+- **`depth-ui`** — primitivas visuais React sobre as projeções do `depth-core`.
+  `DepthShell` (o zoom contínuo), `Timeline`, `Inspector`, `ControlPanel`,
+  `Node`, `Wire`, `Bar`. É onde vive a coerência visual entre labs. Também
+  agnóstica: recebe rótulos e formas, não conceitos de telemetria.
+  *Depende de: `depth-core`, tokens do design system.*
 
-- **`sim-ui`** — primitivas visuais React sobre as projeções do `sim-core`.
-  `DepthShell` (o zoom contínuo), `ServiceNode`, `Wire`, `SpanBar`, `Inspector`,
-  `ControlPanel`, `Timeline`. É onde vive a coerência visual entre labs.
-  *Depende de: `sim-core`, tokens do design system.*
+- **`otel-domain`** — o adaptador, e o único lugar onde OpenTelemetry existe.
+  Tipos fiéis à spec (`Span`, `TraceContext`, `Resource`,
+  `ExportTraceServiceRequest`), serialização OTLP/JSON, parse e format de
+  `traceparent`, encode protobuf, e a definição de como esses dados se projetam
+  em cada um dos quatro níveis.
+  *Depende de: `depth-core` (só para implementar o contrato).*
 
 - **`apps/site`** — Astro, conteúdo, navegação, e um *cenário* por lab
   (topologia, controles expostos, falhas armadas, níveis declarados).
-  *Depende de: `sim-ui`.*
+  *Depende de: `depth-ui`, `otel-domain`.*
 
-Um lab novo é **conteúdo + cenário**. Se um lab exigir código novo em `sim-core`
-ou `sim-ui`, isso é sinal de uma primitiva faltando — e a primitiva é adicionada
-lá, não no lab.
+**A regra é imposta pelo CI**, não pela disciplina: uma checagem de dependências
+falha o build se `depth-core` ou `depth-ui` importarem `otel-domain`, e um lint
+falha se os termos do domínio aparecerem nesses pacotes. É o mecanismo inteiro —
+nenhuma abstração especulativa além disso. A segunda aplicação é que vai revelar
+qual API é a certa; projetá-la agora, com um único consumidor, seria adivinhação.
+
+Um lab novo é **conteúdo + cenário**. Se um lab exigir código novo em
+`depth-core` ou `depth-ui`, isso é sinal de primitiva faltando — e a primitiva é
+adicionada lá, não no lab.
 
 ### Estratégia de testes
 
-- **`otel-model`**: validado contra **fixtures OTLP reais capturadas dos
+- **`otel-domain`**: validado contra **fixtures OTLP reais capturadas dos
   `labs/`**. O compose que ensina também gera os dados que provam que a
   simulação não mente. Se a spec mudar, o teste quebra. Esta é a garantia
   mecânica do princípio 2.
-- **`sim-core`**: testes de determinismo — mesmo seed, mesmo estado no tick N.
+- **`depth-core`**: testes de determinismo — mesmo seed, mesmo estado no tick N.
   Cenários de falha verificados por asserção sobre o estado, não sobre pixels.
-- **`sim-ui` / site**: Playwright para smoke — a página carrega, a simulação
+- **`depth-ui` / site**: Playwright para smoke — a página carrega, a simulação
   hidrata, o zoom entre níveis funciona, o mobile empilha.
+- **Fronteira do framework**: checagem de dependências e lint de vocabulário no
+  CI, conforme §8.
 
 ### Tratamento de erro
 
@@ -253,8 +278,23 @@ O ritmo pretendido, dado que o autor está estudando o assunto em paralelo:
 
 1. Estuda um trecho do livro
 2. Abre issue com **a pergunta que o lab responde**
-3. Escreve o MDX + o cenário
-4. PR, revisão, publica
+3. Reúne as fontes oficiais (spec, docs, RFCs) que respondem a ela
+4. Com o Claude, destila fonte → **cenário** (topologia, níveis, falhas armadas)
+   e → rascunho do texto do lab
+5. Revisa contra as fontes, escreve o MDX final
+6. PR, revisão, publica
+
+### Claude no fluxo de autoria
+
+É aqui que "powered by Claude" é concreto: Claude lê a documentação oficial e
+ajuda a produzir o cenário e o texto; **o site publicado é estático**. Nenhuma
+chamada de modelo acontece no browser do leitor — sem backend, sem chave de API,
+sem custo por visitante, e sem conteúdo não-verificado servido num handbook cujo
+princípio é fidelidade à spec. O que o Claude produz passa por revisão humana
+contra a fonte antes de virar página.
+
+O pipeline "documentação oficial → modelo didático" é documentado em
+`docs/authoring.md` e é o que torna trinta labs viável em vez de aspiracional.
 
 O autor estudando enquanto constrói é a defesa contra o vício mais comum deste
 tipo de material: quem domina o assunto esquece onde ele confunde.
@@ -268,7 +308,7 @@ tipo de material: quem domina o assunto esquece onde ele confunde.
 - Monorepo, TypeScript, pnpm workspaces, CI, deploy contínuo
 - Canvas de design no Claude Design; tokens e componentes derivados dele
 - Landing page completa: proposta, as 5 fases (com *coming*), o que é um lab
-- **Mini-simulação real embutida no hero** — embrião do `sim-core`, não um GIF
+- **Mini-simulação real embutida no hero** — embrião do `depth-core`, não um GIF
 - Guia de autoria em `docs/`
 
 A landing não fica refém do motor completo, e o hero já prova o conceito para
@@ -287,13 +327,19 @@ justamente porque uma prova parcial não prova nada.
 ### Fora de escopo agora
 
 Tradução pt-BR, contas de usuário, progresso em nuvem, busca full-text,
-newsletter, comentários. Cada um é decisão nova quando houver demanda.
+newsletter, comentários, Claude ao vivo na página.
+
+**Explicitamente fora de escopo, apesar de §1:** extrair o framework para repo
+ou pacote npm, projetar API pública, plugin system, ou qualquer segunda
+aplicação de domínio. O foco é um MVP bem trabalhado. Do reuso futuro, a única
+coisa que existe hoje é a fronteira do §8 — e ela existe porque é barata agora e
+cara depois.
 
 ---
 
 ## 11. Riscos assumidos
 
-- **`sim-core` sobre estruturas fiéis à spec desde o dia 1.** Construir sobre
+- **`depth-core` + `otel-domain` fiéis à spec desde o dia 1.** Construir sobre
   estado de animação e "adicionar realismo depois" significaria reescrever tudo.
   Aceita-se ser mais lento no início.
 - **Quatro níveis por lab é caro.** Mitigado por cada lab declarar seus níveis e
@@ -301,3 +347,7 @@ newsletter, comentários. Cada um é decisão nova quando houver demanda.
   primitivas estão erradas e isso vira revisão de arquitetura.
 - **Escrever em inglês enquanto estuda em português** adiciona atrito. Aceito
   em troca de alcance.
+- **A fronteira agnóstica pode estar no lugar errado.** Com um único domínio,
+  não há como saber. Aceita-se: o custo de mover a fronteira depois é pequeno
+  justamente porque não há API pública a manter. O que não se aceita é dissolver
+  a fronteira.
