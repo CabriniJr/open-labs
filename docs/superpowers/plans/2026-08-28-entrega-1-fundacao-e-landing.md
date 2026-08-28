@@ -2407,9 +2407,18 @@ git commit -m "feat(site): ilha do hero rodando o motor de verdade"
 
 ### Task 14: A landing page
 
+A seção "The path" **não é uma lista** — é o mapa clicável (spec §3). Nós são
+labs, arestas são pré-requisitos, anexos do The Wire penduram por arestas
+tracejadas, e o progresso de cada nó vive em `localStorage`. Desenhado na
+linguagem editorial: cantos retos, traço de 1.5px, cor só onde significa algo.
+
+O mapa é componente de site, **não** usa `depth-ui`: nós são labs, não
+telemetria em movimento.
+
 **Files:**
 - Modify: `apps/site/src/pages/index.astro` (substituir o placeholder da Task 9)
-- Create: `apps/site/src/layouts/Base.astro`, `apps/site/src/data/phases.ts`
+- Create: `apps/site/src/layouts/Base.astro`, `apps/site/src/data/roadmap.ts`,
+  `apps/site/src/components/Roadmap.tsx`, `apps/site/src/components/Roadmap.css`
 
 - [ ] **Step 1: As cinco fases como dado**
 

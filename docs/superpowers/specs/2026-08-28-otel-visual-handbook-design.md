@@ -72,12 +72,33 @@ respondem e não pelo índice:
 | **4. Instrumentation** | 5–7 | App, bibliotecas, infraestrutura: de onde a telemetria nasce |
 | **5. Operating at Scale** | 8–9 | Pipelines, sampling, custo, rollout organizacional |
 
-O site publica **fase por fase, conforme o autor estuda**. A landing exibe as
-cinco desde o dia 1, com as futuras marcadas como *coming* — o mapa completo do
-conhecimento fica visível mesmo antes de existir, e ele é parte do valor.
+O site publica **fase por fase, conforme o autor estuda**. Um lab não depende do
+anterior estar perfeito: a ordem de publicação segue o estudo, não a completude.
 
-Um lab não depende do anterior estar perfeito. Ordem de publicação segue o
-estudo, não a completude.
+### O mapa é a navegação
+
+Referência: roadmap.sh. A navegação principal do handbook **não é uma lista de
+fases — é um mapa clicável**: nós são labs, arestas são pré-requisitos, e as
+ramificações mostram o que é paralelo. Isso importa porque as fases não são de
+fato lineares: instrumentação e pipelines se cruzam, e uma lista mente sobre
+essa relação enquanto um grafo a torna óbvia.
+
+O mapa completo aparece desde o dia 1, com os labs ainda não escritos visíveis e
+marcados. Saber o que vem é parte de saber onde se está.
+
+Três regras:
+
+- **Desenhado na linguagem do handbook**, não na do roadmap.sh: cantos retos,
+  traço de 1.5px, cor só onde significa algo. Adotamos a ideia, não o figurino —
+  o traço desenhado à mão brigaria com o L3, onde se lê bytes e frames.
+- **Progresso por nó**, guardado em `localStorage`: o leitor marca um lab como
+  feito e o mapa mostra por onde ele andou. Sem contas, sem servidor.
+- **O mapa não usa as primitivas de simulação.** Ele é navegação; os nós são
+  labs e as arestas são pré-requisitos, não telemetria em movimento. Reusar o
+  `FlowDiagram` forçaria duas semânticas na mesma peça. Vive em `apps/site`.
+
+Os anexos do acervo The Wire (§5) penduram no mapa por arestas tracejadas — não
+são etapas do caminho, são referências que vários labs puxam.
 
 ---
 
