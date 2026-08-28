@@ -32,4 +32,24 @@ describe("diffStates", () => {
   it("trata troca de tipo como alteração", () => {
     expect(diffStates({ a: 1 }, { a: "1" })).toEqual(["a"]);
   });
+
+  it("reporta Date com instantes diferentes como alterada", () => {
+    expect(
+      diffStates({ d: new Date(0) }, { d: new Date(1) }),
+    ).toEqual(["d"]);
+  });
+
+  it("reporta Map com conteúdo diferente como alterada", () => {
+    expect(
+      diffStates(
+        { m: new Map([["a", 1]]) },
+        { m: new Map([["a", 2]]) },
+      ),
+    ).toEqual(["m"]);
+  });
+
+  it("continua descendo normalmente em objeto simples", () => {
+    expect(diffStates({ a: { b: 1 } }, { a: { b: 1 } })).toEqual([]);
+    expect(diffStates({ a: { b: 1 } }, { a: { b: 2 } })).toEqual(["a.b"]);
+  });
 });
