@@ -1,0 +1,41 @@
+/*
+ * Cromo editorial — a camada neutra do design system.
+ * Não muda entre tecnologias: é o que dá voz própria ao handbook em vez de
+ * transformá-lo num site de marca. O tema de domínio (themes/*.css) pinta
+ * acento, sinal e logo, e nada mais.
+ */
+:root {
+  /* Tipografia */
+  --font-display: "IBM Plex Serif", Georgia, "Times New Roman", serif;
+  --font-body: "IBM Plex Sans", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", monospace;
+
+  --size-step--1: clamp(0.83rem, 0.8rem + 0.15vw, 0.9rem);
+  --size-step-0: clamp(1rem, 0.96rem + 0.2vw, 1.12rem);
+  --size-step-1: clamp(1.25rem, 1.15rem + 0.5vw, 1.5rem);
+  --size-step-2: clamp(1.6rem, 1.4rem + 1vw, 2.2rem);
+  --size-step-3: clamp(2.1rem, 1.7rem + 2vw, 3.9rem);
+
+  /* Tinta e papel — a página é sóbria de propósito */
+  --ink: #14110f;
+  --ink-muted: #5c554e;
+  --paper: #faf7f2;
+  --paper-raised: #ffffff;
+  --rule: #ddd5c9;
+
+  /* Ritmo */
+  --space-1: 0.5rem;
+  --space-2: 1rem;
+  --space-3: 1.75rem;
+  --space-4: 3rem;
+  --space-5: 5rem;
+  --measure: 68ch;
+}
+
+:root[data-theme="dark"] {
+  --ink: #ece7e0;
+  --ink-muted: #a09890;
+  --paper: #16130f;
+  --paper-raised: #1f1b16;
+  --rule: #3a342c;
+}

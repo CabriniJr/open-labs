@@ -1,0 +1,13 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html", "x": 0, "y": 0, "w": 1440, "h": 2180, "title": "Landing · desktop" },
+    { "file": "Mobile.dc.html", "x": 1560, "y": 0, "w": 390, "h": 1720, "title": "Landing · mobile" },
+    { "file": "Lab.dc.html", "x": 2070, "y": 0, "w": 1440, "h": 1900, "title": "Lab page · Anatomy of a Trace" },
+    { "file": "Scale.dc.html", "x": 0, "y": 2320, "w": 1100, "h": 1360, "title": "Design scale" }
+  ],
+  "annotations": [
+    { "id": "note-direction", "x": 0, "y": -170, "w": 620, "text": "Editorial técnico. A página é tinta e papel; a cor saturada vive só nos diagramas.\nAzul e âmbar são do próprio OpenTelemetry e entram como tema de domínio — trocáveis por tecnologia." },
+    { "id": "note-lab", "x": 2070, "y": -170, "w": 620, "text": "O lab está aberto no L1 (Mechanism) de propósito: é onde a composição vive.\nA pipeline montável fica no zoom, nunca na superfície." }
+  ],
+  "launch": { "view": "canvas" }
+}

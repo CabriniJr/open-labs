@@ -1,0 +1,206 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Serif:wght@500;600&display=swap">
+  <style>
+    body { margin: 0; background: #faf7f2; }
+    a { color: #425cc7; text-decoration: none; }
+    a:hover { color: #2f43a0; }
+    .serif { font-family: "IBM Plex Serif", Georgia, serif; }
+    .sans { font-family: "IBM Plex Sans", system-ui, sans-serif; }
+    .mono { font-family: "IBM Plex Mono", ui-monospace, monospace; }
+  </style>
+</helmet>
+
+<div class="sans" style="width: 1440px; background: #faf7f2; color: #14110f; font-size: 17px; line-height: 1.6;">
+
+  <div style="display: flex; justify-content: space-between; align-items: baseline; padding: 22px 120px; border-bottom: 1px solid #ddd5c9;">
+    <span class="mono" style="font-size: 12px; letter-spacing: 0.09em; text-transform: uppercase;">OTel Visual Handbook</span>
+    <div class="mono" style="display: flex; gap: 28px; font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: #5c554e;">
+      <span style="color: #14110f; border-bottom: 2px solid #425cc7; padding-bottom: 2px;">Learn</span>
+      <span>The Wire</span>
+      <span>GitHub</span>
+    </div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: 700px 300px; gap: 80px; padding: 96px 120px 40px;">
+    <div>
+      <h1 class="serif" style="margin: 0 0 22px; font-size: 62px; font-weight: 600; line-height: 1.06; letter-spacing: -0.022em; max-width: 15ch;">See how the telemetry actually moves.</h1>
+      <p style="margin: 0 0 18px; font-size: 21px; line-height: 1.55; max-width: 62ch;">Most OpenTelemetry material shows you a diagram and a config file. This one gives you the running mechanism: change something, watch the trace react, then open it up and read the exact bytes that produced what you just saw.</p>
+      <p style="margin: 0; color: #5c554e; max-width: 62ch;">Turn off context propagation below. The picture breaks — and so does the payload underneath it, because they are the same data.</p>
+    </div>
+    <div style="align-self: end; border-top: 2px solid #425cc7; padding-top: 10px;">
+      <p class="mono" style="margin: 0; font-size: 12px; line-height: 1.7; color: #5c554e;">Live simulation.<br>Not a video.</p>
+    </div>
+  </div>
+
+  <div style="padding: 0 120px 96px;">
+    <div style="background: #ffffff; border: 1px solid #ddd5c9;">
+
+      <div style="display: flex; justify-content: space-between; align-items: center; gap: 32px; padding: 16px 22px; border-bottom: 1px solid #ddd5c9;">
+        <div style="display: flex; align-items: center; gap: 9px;">
+          <div style="width: 15px; height: 15px; border: 1.5px solid #425cc7; background: #425cc7; display: flex; align-items: center; justify-content: center;">
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5.2 L4 7.2 L8 2.8" stroke="#ffffff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <span style="font-size: 14px;">Propagate <span class="mono" style="font-size: 13px;">traceparent</span></span>
+        </div>
+        <span class="mono" style="font-size: 12.5px; color: #5c554e;">00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01</span>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 148px minmax(0, 1fr) 340px; gap: 22px; padding: 22px; align-items: start;">
+
+        <div style="display: flex; flex-direction: column; border-left: 2px solid #ddd5c9;">
+          <div style="display: flex; gap: 10px; align-items: baseline; padding: 7px 12px; border-left: 2px solid #425cc7; margin-left: -2px;">
+            <span class="mono" style="font-size: 11px; color: #5c554e;">L0</span>
+            <span style="font-size: 14px;">Flow</span>
+          </div>
+          <div style="display: flex; gap: 10px; align-items: baseline; padding: 7px 12px; border-left: 2px solid transparent; margin-left: -2px; color: #5c554e;">
+            <span class="mono" style="font-size: 11px;">L1</span>
+            <span style="font-size: 14px;">Mechanism</span>
+          </div>
+          <div style="display: flex; gap: 10px; align-items: baseline; padding: 7px 12px; border-left: 2px solid transparent; margin-left: -2px; color: #5c554e;">
+            <span class="mono" style="font-size: 11px;">L2</span>
+            <span style="font-size: 14px;">Wire</span>
+          </div>
+          <div style="display: flex; gap: 10px; align-items: baseline; padding: 7px 12px; border-left: 2px solid transparent; margin-left: -2px; color: #5c554e;">
+            <span class="mono" style="font-size: 11px;">L3</span>
+            <span style="font-size: 14px;">Payload</span>
+          </div>
+        </div>
+
+        <div style="border: 1px solid #ddd5c9; padding: 18px 10px;">
+          <svg viewBox="0 0 400 150" style="width: 100%; height: auto;">
+            <line x1="55" y1="72" x2="200" y2="72" stroke="#ddd5c9" stroke-width="1.5"/>
+            <line x1="200" y1="72" x2="345" y2="72" stroke="#ddd5c9" stroke-width="1.5"/>
+            <circle cx="272" cy="72" r="5" fill="#425cc7"/>
+            <text x="272" y="59" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="7" fill="#5c554e">traceparent</text>
+
+            <rect x="17" y="54" width="76" height="36" fill="#faf7f2" stroke="#14110f" stroke-width="1.5"/>
+            <text x="55" y="76" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="11" fill="#14110f">client</text>
+
+            <rect x="162" y="54" width="76" height="36" fill="#faf7f2" stroke="#14110f" stroke-width="1.5"/>
+            <text x="200" y="76" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="11" fill="#14110f">api</text>
+
+            <rect x="307" y="54" width="76" height="36" fill="#faf7f2" stroke="#14110f" stroke-width="1.5"/>
+            <text x="345" y="72" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="11" fill="#14110f">checkout</text>
+            <text x="345" y="84" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="7.5" fill="#5c554e">same trace</text>
+
+            <rect x="17" y="108" width="150" height="7" fill="#425cc7"/>
+            <text x="17" y="128" font-family="IBM Plex Mono, monospace" font-size="7.5" fill="#5c554e">GET /checkout</text>
+            <rect x="90" y="120" width="95" height="7" fill="#425cc7" opacity="0.55"/>
+            <text x="90" y="140" font-family="IBM Plex Mono, monospace" font-size="7.5" fill="#5c554e">POST /charge</text>
+          </svg>
+        </div>
+
+        <div style="border: 1px solid #ddd5c9; padding: 14px 16px; background: #ffffff;">
+          <p class="mono" style="margin: 0 0 10px; font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: #5c554e;">OTLP payload</p>
+          <pre class="mono" style="margin: 0; font-size: 11.5px; line-height: 1.65; color: #14110f; white-space: pre;">{
+  "resourceSpans": [
+   {
+    "scopeSpans": [
+     {
+      "spans": [
+       {
+        "traceId": "4bf92f35…",
+        "spanId": "00f067aa…",
+        "name": "GET /checkout"
+       },
+       {
+        "traceId": "4bf92f35…",</pre>
+          <pre class="mono" style="margin: 0; padding: 1px 0; font-size: 11.5px; line-height: 1.65; background: #f5a80059; white-space: pre;">        "parentSpanId": "00f067aa…",</pre>
+          <pre class="mono" style="margin: 0; font-size: 11.5px; line-height: 1.65; color: #14110f; white-space: pre;">        "name": "POST /charge"
+       }]}]}]}</pre>
+        </div>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 14px; padding: 14px 22px; border-top: 1px solid #ddd5c9;">
+        <span class="mono" style="font-size: 12px; border: 1px solid #14110f; padding: 3px 11px;">Pause</span>
+        <span class="mono" style="font-size: 12px; border: 1px solid #ddd5c9; padding: 3px 11px; color: #5c554e;">Step back</span>
+        <div style="flex-grow: 1; position: relative; height: 14px;">
+          <div style="position: absolute; top: 6px; left: 0; right: 0; height: 2px; background: #ddd5c9;"></div>
+          <div style="position: absolute; top: 6px; left: 0; width: 56%; height: 2px; background: #425cc7;"></div>
+          <div style="position: absolute; top: 1px; left: 56%; width: 3px; height: 12px; background: #425cc7;"></div>
+        </div>
+        <span class="mono" style="font-size: 12px; color: #5c554e;">18/32</span>
+      </div>
+
+    </div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: 700px 300px; gap: 80px; padding: 56px 120px; border-top: 1px solid #ddd5c9;">
+    <div>
+      <h2 class="serif" style="margin: 0 0 18px; font-size: 34px; font-weight: 600; letter-spacing: -0.015em;">What a lab is</h2>
+      <p style="margin: 0 0 16px;">Every lab answers one concrete question, and it answers it four times — at four depths. The outside view shows services and telemetry flowing. Go one level down and you are inside a component. Another, and you are on the wire, in HTTP/2 frames. Another, and you are reading the OTLP payload field by field, with whatever just changed still highlighted.</p>
+      <p style="margin: 0;">Those are not four drawings. They are four views of one running state, so what you read at the bottom is what produced the picture at the top. When a lab makes a claim, there is a <span class="mono" style="font-size: 15px;">docker compose</span> in the repository that lets you check it against a real Collector.</p>
+    </div>
+    <div style="border-top: 2px solid #425cc7; padding-top: 10px;">
+      <p style="margin: 0; font-size: 14px; line-height: 1.65; color: #5c554e;">Sourced from the OpenTelemetry specification and official docs. The teaching order follows <em>Learning OpenTelemetry</em>, because the order in which the concepts hold each other up is right there.</p>
+    </div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: 700px 300px; gap: 80px; padding: 56px 120px;">
+    <div>
+      <h2 class="serif" style="margin: 0 0 26px; font-size: 34px; font-weight: 600; letter-spacing: -0.015em;">The path</h2>
+
+      <div style="display: flex; flex-direction: column;">
+
+        <div style="padding: 20px 0; border-top: 1px solid #ddd5c9; color: #5c554e;">
+          <p class="mono" style="margin: 0; font-size: 11.5px; letter-spacing: 0.07em; text-transform: uppercase;">Phase 1</p>
+          <h3 class="serif" style="margin: 3px 0 6px; font-size: 23px; font-weight: 600; color: #5c554e;">The Problem</h3>
+          <p style="margin: 0 0 10px; font-size: 16px; max-width: 55ch;">Why logs, metrics and traces sitting in three tools is not observability.</p>
+          <div class="mono" style="display: flex; flex-wrap: wrap; gap: 8px 22px; font-size: 12.5px;"><span>Three pillars, one blind spot</span><span>The cost of disconnected signals</span></div>
+          <p class="mono" style="margin: 10px 0 0; font-size: 11.5px; color: #425cc7;">In progress</p>
+        </div>
+
+        <div style="padding: 20px 0; border-top: 1px solid #ddd5c9;">
+          <p class="mono" style="margin: 0; font-size: 11.5px; letter-spacing: 0.07em; text-transform: uppercase; color: #5c554e;">Phase 2</p>
+          <h3 class="serif" style="margin: 3px 0 6px; font-size: 23px; font-weight: 600;">The Model</h3>
+          <p style="margin: 0 0 10px; font-size: 16px; max-width: 55ch;">What OpenTelemetry actually moves: signals, context, and the wire format.</p>
+          <div class="mono" style="display: flex; flex-wrap: wrap; gap: 8px 22px; font-size: 12.5px; color: #5c554e;"><span style="color: #14110f; border-bottom: 1px solid #425cc7;">Anatomy of a Trace</span><span>Hard context and baggage</span><span>Reading an OTLP payload</span></div>
+        </div>
+
+        <div style="padding: 20px 0; border-top: 1px solid #ddd5c9; color: #5c554e;">
+          <p class="mono" style="margin: 0; font-size: 11.5px; letter-spacing: 0.07em; text-transform: uppercase;">Phase 3</p>
+          <h3 class="serif" style="margin: 3px 0 6px; font-size: 23px; font-weight: 600; color: #5c554e;">The Architecture</h3>
+          <p style="margin: 0 0 10px; font-size: 16px; max-width: 55ch;">API, SDK, Collector — who does what, and where each one runs.</p>
+          <div class="mono" style="display: flex; flex-wrap: wrap; gap: 8px 22px; font-size: 12.5px;"><span>The Collector pipeline</span><span>Agent or gateway</span></div>
+          <p class="mono" style="margin: 10px 0 0; font-size: 11.5px; color: #425cc7;">In progress</p>
+        </div>
+
+        <div style="padding: 20px 0; border-top: 1px solid #ddd5c9; color: #5c554e;">
+          <p class="mono" style="margin: 0; font-size: 11.5px; letter-spacing: 0.07em; text-transform: uppercase;">Phase 4</p>
+          <h3 class="serif" style="margin: 3px 0 6px; font-size: 23px; font-weight: 600; color: #5c554e;">Instrumentation</h3>
+          <p style="margin: 0 0 10px; font-size: 16px; max-width: 55ch;">Where telemetry is born: your code, your libraries, your infrastructure.</p>
+          <div class="mono" style="display: flex; flex-wrap: wrap; gap: 8px 22px; font-size: 12.5px;"><span>Manual spans</span><span>Zero-code instrumentation</span><span>Host and Kubernetes signals</span></div>
+          <p class="mono" style="margin: 10px 0 0; font-size: 11.5px; color: #425cc7;">In progress</p>
+        </div>
+
+        <div style="padding: 20px 0; border-top: 1px solid #ddd5c9; border-bottom: 1px solid #ddd5c9; color: #5c554e;">
+          <p class="mono" style="margin: 0; font-size: 11.5px; letter-spacing: 0.07em; text-transform: uppercase;">Phase 5</p>
+          <h3 class="serif" style="margin: 3px 0 6px; font-size: 23px; font-weight: 600; color: #5c554e;">Operating at Scale</h3>
+          <p style="margin: 0 0 10px; font-size: 16px; max-width: 55ch;">Pipelines, sampling, cost, and getting an organization to adopt it.</p>
+          <div class="mono" style="display: flex; flex-wrap: wrap; gap: 8px 22px; font-size: 12.5px;"><span>Head vs tail sampling</span><span>Backpressure and drops</span><span>The rollout</span></div>
+          <p class="mono" style="margin: 10px 0 0; font-size: 11.5px; color: #425cc7;">In progress</p>
+        </div>
+
+      </div>
+    </div>
+    <div style="border-top: 2px solid #425cc7; padding-top: 10px;">
+      <p style="margin: 0; font-size: 14px; line-height: 1.65; color: #5c554e;">Phases ship as they are written. The whole map is visible from day one on purpose — knowing what is coming is part of knowing where you are.</p>
+    </div>
+  </div>
+
+  <div style="padding: 26px 120px 40px; border-top: 1px solid #ddd5c9;">
+    <p class="mono" style="margin: 0; font-size: 12px; color: #5c554e;">Open source · GitHub · Built with Claude</p>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

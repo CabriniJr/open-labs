@@ -1,0 +1,19 @@
+/*
+ * Tema de domínio: OpenTelemetry.
+ * Pinta acento e sinais — nunca fundo, nunca tipografia. Uma tecnologia de
+ * marca berrante não pode transformar a página num banner.
+ * Um handbook de outra tecnologia acrescenta um arquivo irmão e nada mais.
+ */
+:root[data-domain="otel"] {
+  --accent: #425cc7;
+
+  /* Cor saturada vive só nos diagramas */
+  --sig-flow: #425cc7;
+  --sig-drop: #b8442a;
+  --sig-ok: #3f7a52;
+  --sig-mutation: #f5a800;
+}
+
+:root[data-domain="otel"][data-theme="dark"] {
+  --accent: #8fa2ee;
+}
