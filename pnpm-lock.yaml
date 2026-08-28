@@ -24,6 +24,8 @@ importers:
         specifier: ^2.1.4
         version: 2.1.9(jsdom@25.0.1)
 
+  packages/depth-core: {}
+
 packages:
 
   '@asamuzakjp/css-color@3.2.0':
