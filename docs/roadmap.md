@@ -112,19 +112,22 @@ técnico sem link para a fonte.
 
 ---
 
-## F6 — Kafka: a prova de reuso
+## F6 — Kafka: o segundo alvo
 
-Não é "o segundo alvo". É **o teste da tese do projeto**.
+**Revisado em 28/08/2026.** Era "o teste da tese do projeto", medido pelo custo relativo do
+segundo pacote. Com o corte de escopo que fez cada `model` ser ilha
+(`why-simulate.md` §7), reuso deixou de ser requisito — logo, deixou de ser critério de
+saída. O Kafka volta a ser simplesmente o segundo alvo.
 
 Arquétipos da onda 2: `log`, `deliver`, `supervisor`.
 
-**Saída, e é uma medida, não uma sensação:** o pacote do Kafka custa uma fração
-significativa do primeiro. Se custar o mesmo, o reuso não existe e a tese está errada — e
-descobrir isso aqui é o melhor resultado possível, porque ainda dá para corrigir.
+**Saída:** o `model` do Kafka existe, com handbook próprio, e o `log` ensina atraso por
+leitor — o fenômeno mais estranho ao TracerProvider e o que justifica o Kafka ser o segundo.
 
-O que observar com desconfiança: **quantos arquétipos novos o Kafka exigiu além dos três
-previstos.** Um ou dois é normal. Cinco significa que o catálogo está sendo derivado caso a
-caso, e não generalizado.
+O que continua valendo observar, agora como informação e não como nota de aprovação:
+**quantos arquétipos novos o Kafka exigiu além dos três previstos.** Um ou dois é normal.
+Cinco significa que o catálogo está sendo derivado caso a caso — e aí o problema é do
+catálogo, não do reuso.
 
 ---
 
@@ -143,7 +146,7 @@ próprio.
 | Sinal | Bom | Ruim |
 |---|---|---|
 | Arquétipos novos por alvo | Cai a cada alvo | Constante ou crescendo |
-| Custo do segundo pacote | Fração do primeiro | Igual |
+| `modelet` por fenômeno | Menos `modelet` que fenômeno | Trinta `modelet` para oito fenômenos é reimplementação (`why-simulate.md` §3.1) |
 | Parâmetro sem procedência | Zero, garantido por CI | "Depois a gente ancora" |
 | Fenômeno que precisou de roteiro | Zero | Qualquer um |
 | Discordância entre modelo e lab real | Resolvida corrigindo o modelo **ou** declarando o que não é modelado | Resolvida deixando o modelo bonito |
@@ -173,6 +176,9 @@ dado errado é localizável e difável; comportamento errado escondido numa fun�
 ```
 F0 destravar → F1 núcleo → F2 arquétipos → F3 palco → F4 otel → F5 handbook → F6 kafka → F7 motor
 ```
+
+O playground (`why-simulate.md` §8) não é fase: ele nasce de graça ao fim de F3, porque é a
+mesma paleta e a mesma engine, sem exigência de procedência.
 
 Nenhuma fase começa antes de a anterior ter fechado o critério de saída. O sinal de alarme
 mais confiável do projeto é começar o Kafka antes de o OTel estar fechado.
