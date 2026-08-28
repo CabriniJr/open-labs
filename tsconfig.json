@@ -1,0 +1,8 @@
+{
+  "files": [],
+  "references": [
+    { "path": "packages/otel-domain" },
+    { "path": "packages/depth-core" },
+    { "path": "apps/site" }
+  ]
+}
