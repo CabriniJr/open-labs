@@ -34,9 +34,122 @@ Fila com lote disparado por tempo aparece no BatchSpanProcessor, no produtor do 
 remote write do Prometheus. **É um `modelet`, parametrizado três vezes** — não três
 composições parecidas.
 
+## 2. O que um `model` modela: conceito, não implementação
+
+Regra estabelecida em 28/08/2026:
+
+> Um `model` é sobre **o conceito e o comportamento** de um componente, não sobre a
+> especificidade de uma implementação. Existe *instrumentador*; não existe *instrumentador
+> de C++*.
+
+É trava de escopo, e das mais úteis do projeto, porque ataca três riscos já registrados de
+uma vez:
+
+| Risco | Como esta regra ataca |
+|---|---|
+| Apodrecimento quando o upstream muda (`VISION.md` §9.5) | Conceito muda muito mais devagar que campo de configuração |
+| `params` inflando até virar formulário (§7) | Parâmetro específico de linguagem simplesmente não é elegível |
+| Reuso de `modelet` não comprovado (`VISION.md` §9.2) | Modelar comportamento aumenta a chance de o mesmo `modelet` servir dois alvos |
+
+Também é o que faz o público-alvo bater: quem opera plataforma precisa entender *o que o
+span processor faz*. Se ele precisar do detalhe da implementação em Java, a fonte certa é o
+código, e nenhuma ferramenta visual vai competir com ele.
+
+### 2.1 A régua operacional: existe especificação separada da implementação?
+
+"Conceito" é palavra escorregadia, e sem critério ela vira desculpa. Proposta de critério
+verificável:
+
+| Situação | O `model` ancora em | Exemplos |
+|---|---|---|
+| Existe especificação independente | **A especificação** | OTel (spec do SDK e do OTLP), Compose Spec, protocolo do Kafka, MQTT |
+| Só existe implementação | **Uma implementação de referência, declarada** | Ferramenta sem spec própria |
+
+Isso resolve uma contradição aparente com o contrato de fidelidade. Procedência exige
+`source.native` — mas se o modelo é conceitual, qual é o nativo? Resposta: **o nome que a
+especificação define.** `OTEL_BSP_MAX_QUEUE_SIZE` é conceitual *e* tem procedência, porque a
+spec do OTel define a variável e o default. É o melhor dos dois.
+
+Quando não há spec, o `model` declara a implementação de referência. Fingir conceito onde só
+existe implementação seria mentir, e é pior que declarar.
+
+### 2.2 Quando o conceito é um, e quando são dois
+
+O ponto onde a regra pode ensinar errado. Às vezes o comportamento **é** a especificidade:
+o modelo de concorrência de um instrumentador em Python e em Go produz comportamento de fila
+diferente, e o operador vai encontrar essa diferença na vida real.
+
+Régua proposta:
+
+> Variantes que diferem em **parâmetro** são um `model`. Variantes que diferem em
+> **topologia** são dois — e nesse caso o conceito nunca foi um.
+
+Concorrência de um contra N cabe em parâmetro: um `model` só, com variante. Se uma variante
+exigir um componente que a outra não tem, são dois `model`, e juntá-los apagaria um fenômeno
+real.
+
+### 2.3 "Grande release" não pode ser o major do semver
+
+A intenção está certa — ancorar em release grande, não em cada patch — mas o major não serve
+como critério. O Collector está em `0.109`. O Kafka muda comportamento observável em minor.
+Semver descreve compatibilidade de API, não de comportamento.
+
+Definição operacional proposta, com dois campos:
+
+| Campo | O que declara |
+|---|---|
+| `valid_for` | A faixa de versões em que **os fenômenos modelados** valem |
+| `verified_at` | Data e versão exata contra a qual o modelo foi conferido |
+
+A faixa muda quando um fenômeno modelado muda — não quando a versão muda. Um `model` pode
+atravessar dez releases sem revisão, e precisar de revisão num patch que mexeu num default.
+
+Isso é a resposta honesta à §9.5 da visão. Não é "o material não apodrece": é **"o material
+declara quando foi verificado e contra o quê"**, e o leitor decide se confia. Um `model`
+verificado há dois anos não está errado — está sem verificação, e isso fica visível.
+
+### 2.4 Campos que a regra acrescenta
+
+```yaml
+model: span-processor
+concept: Processador de spans          # o conceito, não o produto
+anchor:
+  kind: spec                            # spec | implementation
+  spec: opentelemetry-specification
+  section: trace/sdk#span-processor
+valid_for: ">=1.0 <2.0"                 # faixa de fenômeno, não de API
+verified_at:
+  date: 2026-08-28
+  version: "1.37.0"
+out_of_scope:                           # explícito, e é conteúdo didático
+  - detalhes de threading por linguagem
+  - alocação de memória do SDK
+  - nomes de classe de qualquer implementação
+```
+
+`out_of_scope` não é rodapé defensivo. É o campo que impede a próxima pessoa de "completar"
+o modelo com o que foi deliberadamente deixado fora, e vira texto visível na interface — a
+caixa que admite não saber, em forma de dado.
+
+### 2.5 A tensão com o manifesto, que é real
+
+O `compose` traz implementação concreta e versionada: `otel/opentelemetry-collector:0.109.3`.
+O modelo é conceitual. Então o resolvedor mapeia **implementação concreta para conceito**, e
+há perda no caminho.
+
+Isso precisa ser dito na tela, não escondido:
+
+> Você rodou `0.109.3`. Este modelo cobre o conceito, verificado em `0.108`, válido de
+> `0.100` a `0.115`.
+
+Sem essa frase, quem opera plataforma vai assumir precisão de versão que o modelo não tem —
+e vai descobrir do pior jeito, num parâmetro que mudou de default. Com ela, o modelo continua
+útil e honesto ao mesmo tempo.
+
+---
 ---
 
-## 2. Anatomia de um `modelet`
+## 3. Anatomia de um `modelet`
 
 Exemplo real, e escolhido de propósito: o BatchSpanProcessor é o objeto mais didático do
 OTel e o que mais se repete em outras ferramentas.
@@ -111,7 +224,7 @@ not_modeled:
   - custo de CPU da serialização, que vive no transform seguinte
 ```
 
-### 2.1 O que o formato garante por construção
+### 3.1 O que o formato garante por construção
 
 | Regra | Como o formato garante |
 |---|---|
@@ -132,7 +245,7 @@ visão, porque geração assistida produziria lógica plausível impossível de 
 
 ---
 
-## 3. Anatomia de um `model`
+## 4. Anatomia de um `model`
 
 O `model` faz três coisas e nenhuma delas é comportamento: **instancia** modelets,
 **parametriza** com procedência, e **liga**.
@@ -142,6 +255,18 @@ O `model` faz três coisas e nenhuma delas é comportamento: **instancia** model
 model: otel-collector
 version: 1
 title: OpenTelemetry Collector
+concept: Coletor de telemetria com receptor, processamento e exportação
+anchor:
+  kind: spec
+  spec: opentelemetry-collector
+  section: configuration
+valid_for: ">=0.100 <0.116"
+verified_at:
+  date: 2026-08-28
+  version: "0.109.0"
+out_of_scope:
+  - implementação em Go e suas goroutines
+  - o sistema de extensões e o mecanismo de build do contrib
 upstream:
   project: opentelemetry-collector
   version: "0.109.0"
@@ -158,7 +283,7 @@ components:
           docs: "#otlp-receiver"
 
   processor:
-    modelet: batch-processor             # o mesmo da §2, reusado
+    modelet: batch-processor             # o mesmo da §3, reusado
     params:
       batch_max_items:
         value: 512
@@ -193,7 +318,7 @@ budget:                                  # VISION.md §7.2
     native: deploy.resources.limits.memory
 ```
 
-### 3.1 Procedência é campo obrigatório, não convenção
+### 4.1 Procedência é campo obrigatório, não convenção
 
 Todo parâmetro com `value` exige `source.native`. O CI recusa o pacote sem isso.
 
@@ -203,7 +328,7 @@ difável. Comportamento errado escondido numa função, não.
 
 ---
 
-## 4. O handbook é uma travessia declarada
+## 5. O handbook é uma travessia declarada
 
 O handbook não é documento paralelo. É **ordem de visita** sobre o `model` — e ela
 implementa o currículo bottom-up de `depth.md` §4.3 movendo a raiz.
@@ -238,7 +363,7 @@ antídoto contra roteiro: prometer fenômeno inexistente passa a ser erro de bui
 
 ---
 
-## 5. Onde o manifesto real entra
+## 6. Onde o manifesto real entra
 
 O `compose` não gera `modelet`. Ele **escolhe e parametriza** os que já existem
 (`VISION.md` §5).
@@ -260,7 +385,7 @@ memória, morreu, perdeu o que estava na fila" sai do manifesto que o leitor esc
 
 ---
 
-## 6. Riscos deste desenho
+## 7. Riscos deste desenho
 
 1. **Reuso de `modelet` é hipótese, não fato.** O documento afirma que fila-com-lote serve
    OTel, Kafka e Prometheus. Isso só se comprova no segundo `model`. O teste está no
@@ -270,14 +395,20 @@ memória, morreu, perdeu o que estava na fila" sai do manifesto que o leitor esc
    `model` que o usa. Precisa de resolução de versão e de teste de contrato na fronteira —
    que é, felizmente, o mesmo teste de refinamento de `depth.md` §3
 3. **Pressão constante para adicionar sintaxe.** Cada caso difícil vai sugerir um
-   condicional. A trava da §2.1 só sobrevive se a resposta padrão for "isso é um `kind`"
+   condicional. A trava da §3.1 só sobrevive se a resposta padrão for "isso é um `kind`"
 4. **`params` pode inflar até virar formulário de configuração.** Régua: parâmetro que não
    muda nenhum fenômeno visível não deveria existir, mesmo existindo na ferramenta real
 5. **Três camadas é uma a mais para aprender.** Se na prática todo `modelet` for usado por
    um único `model`, a camada é burocracia e deveria ser fundida. Vale medir em vez de
    assumir
+6. **"Conceito" pode virar desculpa para não pesquisar.** A regra da §2 é boa e tem um modo
+   de falhar: modelar raso e chamar de conceitual. O antídoto é a §2.1 — se existe
+   especificação, o `model` ancora nela, e ancorar exige ler. `model` sem `anchor.section`
+   apontando para trecho específico é sinal de conceito presumido, não pesquisado
+7. **`verified_at` torna o apodrecimento visível, não o impede.** Sem processo de
+   reverificação, o campo documenta a decadência com precisão e nada mais
 
-## 7. Decisões abertas
+## 8. Decisões abertas
 
 1. `<slug>.model.yaml` ou `.model` puro?
 2. `modelet` mora em arquivo próprio ou embutido no `model` que o usa? Proposta: arquivo
@@ -289,3 +420,9 @@ memória, morreu, perdeu o que estava na fila" sai do manifesto que o leitor esc
 4. Como o `handbook` referencia raiz sem acoplar ao caminho? `processor.queue` quebra se o
    componente for renomeado. Alternativa: apontar por `id` estável
 5. Onde a biblioteca de `modelet` vive: no pacote, no repositório, ou publicada?
+6. **Como variante se declara** (§2.2). Um `model` com variantes por parâmetro precisa de
+   sintaxe para isso, ou variante é só um `model` que reusa os mesmos `modelet`?
+7. **Quem reverifica, e com que gatilho** (§7.7). Reverificação manual por release não
+   escala; monitorar default de upstream automaticamente é caro. Talvez o gatilho certo seja
+   o próprio uso: o modelo pede reverificação quando alguém importa manifesto com versão
+   fora do `valid_for`
