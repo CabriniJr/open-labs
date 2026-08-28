@@ -20,3 +20,5 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm build
+      - run: pnpm --filter @ovh/site exec playwright install --with-deps chromium
+      - run: pnpm --filter @ovh/site test:e2e
