@@ -273,6 +273,65 @@ o que faz dele o segundo alvo certo.
 
 
 
+### 7.4 O invariante que torna o modelo legível
+
+Regra enunciada em 2026-08-28, e é a mais importante do desenho visual:
+
+> **Cano transporta. Se a informação mudou, ela passou por um bloco de processamento.**
+
+O valor dela é que responde sozinha a pergunta que o leitor faz o tempo todo — *onde
+isso mudou?* — sem precisar de legenda. Se transformação puder acontecer em qualquer
+lugar, inclusive no fio, o leitor perde o único ponto de referência confiável que tem.
+
+É a mesma gramática que faz Factorio ser legível: a cinta nunca altera o item, a máquina
+sempre altera. Ninguém precisa de tutorial para entender isso, e é por isso que funciona.
+
+#### Isto contradiz a spec do motor, e a spec é que deveria mudar
+
+A spec do motor composicional afirma o contrário em dois lugares:
+
+- Na tabela de arquétipos: `channel` — *"transporta; **pode transformar a carga**"*
+- No runtime: o tick *"move as mensagens pelos canais, **aplicando a transformação de kind
+  nas fronteiras**"*
+- E a §2.3 usa exatamente isso no exemplo central: o documento OTLP *"entra no canal e
+  vira `frame[]` gRPC"*
+
+Com a regra nova, esse exemplo fica ilegível: o leitor vê a carga mudar de forma no meio
+de um cano e não tem a quem atribuir a mudança.
+
+#### A saída não custa nada, e é mais fiel
+
+O canal já é **abrível** por decisão da spec. Então o transformador vive **dentro** dele:
+entrar no canal gRPC revela a camada que serializa e enquadra, e é ela — um bloco — que
+muda a carga.
+
+Isso é mais fiel ao que acontece de verdade: enquadrar em HTTP/2 é trabalho de uma camada
+de protocolo, não propriedade do fio. E não se perde nada na vista de cima, porque a regra
+de projeção de fronteira garante que, com o canal fechado, o leitor continue vendo
+documento entrando e quadros saindo — só que agora isso é **consequência** do interior, em
+vez de uma exceção embutida no motor.
+
+Efeito colateral bem-vindo: elimina um caso especial do runtime. Transformação passa a
+acontecer num lugar só — em bloco, como todo comportamento — em vez de dois.
+
+#### O que Factorio dá e o que não dá
+
+| Dá | Não dá |
+|---|---|
+| A gramática visual: cinta transporta, máquina transforma | Hierarquia. Factorio é plano; a profundidade dele é espacial, não aninhada |
+| Gargalo visível sem número: a cinta enche, a máquina fica ociosa | Fidelidade a um sistema real — é um jogo, as regras são inventadas |
+| **Backpressure como mecanismo central**, aprendido no corpo por milhões de jogadores | Explicação: você entende o que acontece, não por quê |
+
+O segundo ponto é o mais valioso e o mais difícil de conseguir de outro jeito: em Factorio
+o jogador desenvolve intuição de vazão e contrapressão **sem ler nada**. É exatamente o
+resultado que este projeto quer, e a prova de que dá para consegui-lo por desenho.
+
+Factorio é proprietário — referência conceitual, nunca código nem asset. O análogo aberto
+mais próximo é o **shapez.io**, jogo de base building inspirado nele, com código público
+(licença a confirmar no repositório oficial antes de qualquer uso).
+
+
+
 ## 8. Modelar ou embarcar: a pergunta que precede o catálogo
 
 Para parte dos alvos, o componente **real** roda no navegador. Nesses casos, modelar
@@ -391,6 +450,7 @@ melhor candidato curto — em simulação, *rig* é a montagem de teste, e o ter
 | Referência | O que tomar | Cuidado |
 |---|---|---|
 | **Wokwi** | Projeto é dado; compartilhável por URL; biblioteca de peças como ativo | Os elementos são MIT mas **só apresentação**; o motor de simulação é fechado. Aqui a escolha é o inverso |
+| **Factorio** | A gramática visual do §7.4 — cinta transporta, máquina transforma — e a prova de que backpressure se aprende sem ler texto | **Proprietário.** Referência conceitual, nunca código nem asset. Análogo aberto: `shapez.io`, código público, licença a confirmar |
 | **PhET** | O método: nenhum controle sem medidor que responda a ele na mesma tela | Código sob GPL-3 e simulações relicenciadas para CC BY-NC. Referência de método é livre; **importar código ou asset não é** |
 | **Cisco Packet Tracer** | A experiência de montar topologia e ver o pacote andar | **Proprietário.** Referência de sensação, nunca de código. O análogo aberto é o `containerlab`, que monta topologia declarada em YAML com containers de verdade |
 | **Logisim Evolution** | Prova de que abrir o bloco e ver o mecanismo ensina | GPL-3, domínio de circuitos |
