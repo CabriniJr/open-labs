@@ -25,7 +25,7 @@ describe("diffStates", () => {
     expect(diffStates({ a: 1, b: 2 }, { a: 1 })).toEqual(["b"]);
   });
 
-  it("reporta o array inteiro quando o tamanho muda no fim", () => {
+  it("reporta apenas o índice novo quando o tamanho muda no fim", () => {
     expect(diffStates({ xs: [1] }, { xs: [1, 2] })).toEqual(["xs.1"]);
   });
 

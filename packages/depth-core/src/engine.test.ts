@@ -51,11 +51,13 @@ describe("Engine", () => {
     expect(e.state).toEqual(at5);
   });
 
-  it("não muta o estado anterior ao avançar", () => {
+  it("ticks já computados não são recomputados", () => {
     const e = new Engine(counter, {});
-    const before = e.state;
-    e.advance();
-    expect(before.value).toBe(0);
+    e.advance(5);
+    const at5 = e.state;
+    e.advance(5);
+    e.seek(5);
+    expect(e.state).toBe(at5);
   });
 
   it("trocar inputs reinicia no tick 0 com o novo estado inicial", () => {
