@@ -38,6 +38,9 @@ importers:
       '@ovh/depth-core':
         specifier: workspace:*
         version: link:../../packages/depth-core
+      '@ovh/depth-ui':
+        specifier: workspace:*
+        version: link:../../packages/depth-ui
       '@ovh/otel-domain':
         specifier: workspace:*
         version: link:../../packages/otel-domain
