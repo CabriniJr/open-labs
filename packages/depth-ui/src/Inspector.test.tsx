@@ -14,6 +14,24 @@ describe("toInspectorLines", () => {
     ]);
   });
 
+  it("não escreve chave para elementos de array", () => {
+    const lines = toInspectorLines({ xs: [{ n: 1 }] });
+    expect(lines.map((l) => l.text)).toEqual([
+      "{",
+      '"xs": [',
+      "{",
+      '"n": 1',
+      "}",
+      "]",
+      "}",
+    ]);
+  });
+
+  it("mantém o índice no caminho mesmo sem rótulo, para o diff casar", () => {
+    const lines = toInspectorLines({ xs: [{ n: 1 }] }, ["xs.0.n"]);
+    expect(lines.find((l) => l.path === "xs.0.n")?.changed).toBe(true);
+  });
+
   it("marca como alterada a linha cujo caminho está no diff", () => {
     const lines = toInspectorLines({ a: { b: 1 } }, ["a.b"]);
     expect(lines.find((l) => l.path === "a.b")?.changed).toBe(true);

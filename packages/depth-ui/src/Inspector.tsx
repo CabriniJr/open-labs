@@ -18,12 +18,15 @@ export function toInspectorLines(
   changedPaths: readonly string[] = [],
   path = "",
   depth = 0,
+  insideArray = false,
 ): InspectorLine[] {
   const changed = new Set(changedPaths);
   const mark = (line: InspectorLine): InspectorLine =>
     changed.has(line.path) ? { ...line, changed: true } : line;
 
-  const label = path === "" ? "" : `"${path.split(".").at(-1)}": `;
+  // Elementos de array não têm chave: JSON real não escreve `"0": {`. O caminho
+  // ainda usa o índice — é ele que casa com o diff — mas ele não vira rótulo.
+  const label = path === "" || insideArray ? "" : `"${path.split(".").at(-1)}": `;
 
   if (isRecord(value) || Array.isArray(value)) {
     const [open, close] = Array.isArray(value) ? ["[", "]"] : ["{", "}"];
@@ -39,6 +42,7 @@ export function toInspectorLines(
           changedPaths,
           path === "" ? key : `${path}.${key}`,
           depth + 1,
+          Array.isArray(value),
         ),
       );
     }
