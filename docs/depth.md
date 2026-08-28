@@ -226,6 +226,34 @@ implícito.
 
 ## 6. Apresentação
 
+### 6.-1 Os quatro níveis já existem, e mapeiam nas roles do motor
+
+**Corrigido em 28/08/2026.** Este documento foi escrito assumindo profundidade recursiva
+homogênea. A spec do handbook (§4) já define **quatro níveis nomeados**, e a reconciliação é
+melhor que qualquer das duas versões isoladas.
+
+| Nível | O que mostra | O que se abre | `Role` em `model.ts` |
+|---|---|---|---|
+| **L0 · Flow** | Topologia, telemetria fluindo | — é a vista de cima | `node` |
+| **L1 · Mechanism** | Engrenagens dentro de um componente | Um bloco | `node` |
+| **L2 · Wire** | O protocolo carregando aquilo | **Um cano** | `channel` |
+| **L3 · Payload** | O dado, campo a campo | **Uma carga** | `message` |
+
+Os níveis **não são graus de contenção** — são os **tipos de coisa que se abre**. E o motor já
+tem exatamente essas três roles. A recursão acontece dentro de L1; L2 e L3 são mudanças de
+natureza, não de profundidade.
+
+Duas consequências que valem mais que a arrumação:
+
+**O conflito cano-transformação se resolve sozinho.** `VISION.md` §7.4 registrou a tensão entre
+"cano nunca transforma" e a spec dizendo que o `channel` pode transformar a carga. Com L2 sendo
+*o canal aberto*, o enquadramento HTTP/2 é um bloco **dentro** do cano — que é precisamente a
+resolução que havia sido proposta. A spec do handbook já apontava para lá.
+
+**O `weight` da mensagem ganha um lugar visual.** L3 abre uma carga; uma carga de peso 512 é um
+lote, e abri-la mostra os 512. Contenção de cardinalidade (§5) e nível L3 são a mesma peça.
+
+
 ### 6.0 O drill-down é orientado por fluxo, não por contenção
 
 Registrado em 28/08/2026, e é o ponto que organiza toda a apresentação.

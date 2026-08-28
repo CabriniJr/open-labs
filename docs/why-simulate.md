@@ -498,7 +498,53 @@ reutilização que justifica a decisão.
 
 ---
 
-## 14. A resposta curta
+## 15. O diferencial está em L2 e L3, não em "ver acontecer"
+
+**Registrado em 28/08/2026**, depois de ler a spec do handbook — que este documento deveria ter
+lido antes de argumentar.
+
+Correções a fazer no que foi dito acima:
+
+- O conselho de "esboçar o currículo primeiro" era desnecessário. **A ordem já existe e tem
+  fonte:** as cinco fases vêm dos capítulos de *Learning OpenTelemetry* (Parker & Young,
+  O'Reilly 2024), com a regra explícita de que o livro dá a ordem e as docs oficiais dão a
+  verdade. A navegação já está desenhada como mapa de pré-requisitos, no espírito do roadmap.sh
+- A objeção "o gargalo é conteúdo" cai em grande parte. O conteúdo tem ordem, fonte, fluxo de
+  autoria documentado, e um acervo de anexos para não repetir explicação
+- O princípio 2 da spec já é o que o campo `anchor` de `model-format.md` §2.4 implementa. A
+  ideia estava lá antes
+
+E o que sobra, depois das correções, é mais preciso do que "poder ver acontecer":
+
+> **O diferencial é ver o mesmo dado atravessar os quatro níveis — até o frame e o byte.**
+
+L0 e L1 são o que todo mundo faz: topologia e mecanismo. O k8s.info faz, o OTelBin faz à sua
+maneira, qualquer diagrama animado faz. **Ninguém desce ao frame HTTP/2 e ao campo do protobuf
+mantendo a identidade do dado.** É L2 e L3 que ficam vazios no levantamento inteiro.
+
+E é exatamente isso que exige o motor, o que fecha a discussão da §7.2 com um argumento melhor
+que o de escala: **a exigência não é ter quatro vistas — é serem a mesma coisa.** Um componente
+dedicado por nível pode desenhar um frame HTTP/2 bonito; ele não pode garantir que aquele frame
+carrega aquele span que o L0 mostrou entrando. Quatro visualizadores independentes produzem
+quatro verdades que divergem no primeiro ajuste de parâmetro.
+
+Consequência para o plano: L2 e L3 não são refinamento para depois. **São o produto**, e é por
+isso que a spec acertou ao dizer que o piloto nasce com os quatro níveis porque prova parcial
+não prova nada.
+
+### 15.1 E "ser base para outros handbooks" tem um teste concreto
+
+Não é o Kafka. O teste é **um handbook escrito por outra pessoa** — e o que habilita isso não é
+o motor, é `docs/authoring.md`. Se o guia de autoria for bom o suficiente para alguém de fora
+produzir um lab sem ler o código do motor, a base existe. Se não, o motor é reutilizável em
+teoria e por uma pessoa só.
+
+Isso reprioriza algo barato: o guia de autoria deixa de ser documentação de apoio e passa a ser
+**interface pública do produto**.
+
+---
+
+## 16. A resposta curta
 
 O simulador não substitui instalar o Collector, e não deve tentar. Ele substitui **o quadro
 branco**, o *"deixa eu te explicar como o batch processor funciona"* que todo time de

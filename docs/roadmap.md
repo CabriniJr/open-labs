@@ -53,38 +53,34 @@ revelar, é agora que sai barato.
 
 ---
 
-## F2 — O lab de prova, com o catálogo que já existe
+## F2 — Prova do motor: o que já está planejado, e basta
 
-**Reordenado em 28/08/2026** (`why-simulate.md` §13.3). Era a onda de seis arquétipos; passou
-a ser um lab completo, porque provar o motor com uma travessia inteira vale mais que ter seis
-arquétipos sem nada rodando.
+**Corrigido em 28/08/2026.** A versão anterior desta fase propunha um "lab de prova"
+mínimo — a fila enchendo. Era redundante: a spec do handbook
+(`docs/superpowers/specs/2026-08-28-otel-visual-handbook-design.md` §10) **já tem a prova em
+dois estágios**, e melhor desenhada.
 
-O achado que permite isso: o primeiro lab do currículo é *a fila enche e descarta*, e ele
-precisa de `source`, `channel`, `buffer` e `sink` — **os quatro já existem no código.** O que
-faltava era capacidade e política, entregue em F1.
+| Estágio | O que é | Papel |
+|---|---|---|
+| **Hero da Entrega 1** | Mini-simulação real embutida na landing, sobre `depth-core` e `otel-domain` de verdade | Primeiro teste do motor, sem depender do motor completo |
+| **Piloto da Entrega 2** | *Anatomy of a Trace* com os quatro níveis, mais o anexo W3C Trace Context | Prova da profundidade. Nasce com os quatro porque prova parcial não prova nada |
 
-| Item | Nota |
+Nada a acrescentar aqui. A correção que este documento precisava era **retirar** uma fase, não
+inventar outra.
+
+### F2.1 O que o piloto exige de verdade
+
+E uma estimativa deste plano precisa ser corrigida junto. A afirmação de que "o primeiro lab
+não exige nenhum arquétipo novo" valia para o lab da fila, **não** para o piloto:
+
+| Nível | O que exige |
 |---|---|
-| Um lab, fim a fim | Modelo, tick, medidor, perturbação, deep link, texto com âncora |
-| Zero arquétipo novo | Se aparecer necessidade de arquétipo aqui, é sinal de que F1 não fechou |
-| Predição antes da revelação | `why-simulate.md` §8. Barato, e é o que separa handbook de vídeo |
+| L0 · Flow | O que já existe |
+| L1 · Mechanism | Capacidade e política — F1 |
+| **L2 · Wire** | **Canal abrível.** O enquadramento HTTP/2 mora dentro do `channel` |
+| **L3 · Payload** | **Carga abrível.** O documento OTLP como objeto com interior |
 
-**Saída:** uma pessoa que não conhece o projeto abre o link, prediz o que vai acontecer,
-provoca o burst, vê a fila encher e descartar, volta dois passos, e consegue explicar por quê.
-
----
-
-## F2b — Onda 1 de arquétipos
-
-Só depois do lab de prova. Os seis da §3 de `kinds.md`: `transform`, `tee`, `merge`, `batch`,
-`clock`, `arbiter`. Cada um entrega comportamento, contrato visual, regime nomeado, medidores e
-perturbações — os cinco de uma vez, porque arquétipo pela metade não se paga.
-
-**Saída:** um arquivo de teste por arquétipo, sem pixels; e o cenário do BatchSpanProcessor
-expressado como `buffer` mais `batch` mais `clock`, em vez de um bloco que faz tudo.
-
-**A medida que interessa aqui:** quantos arquétipos o segundo lab reusa do primeiro. É o teste
-de reuso mais precoce que existe, e substitui o que caiu com o corte de escopo.
+L2 e L3 são o custo real do piloto, e são também o diferencial (`why-simulate.md` §15).
 
 ---
 
@@ -198,11 +194,12 @@ dado errado é localizável e difável; comportamento errado escondido numa fun�
 ## Ordem, em uma linha
 
 ```
-F0 destravar → F1 núcleo → F2 LAB DE PROVA → F2b arquétipos → F3 palco → F4 otel → F5 handbook → F6 kafka → F7 motor
+F0 destravar → F1 núcleo → F3 palco → F2 piloto (Entregas 1 e 2) → F2b arquétipos → F4 otel → F5 handbook → F6 kafka → F7 motor
 ```
 
-F2 e F3 se sobrepõem na prática: não há lab sem palco. A ordem significa que o palco é
-construído **para o lab**, e não como plataforma antes de haver o que mostrar.
+O piloto e o palco se sobrepõem: não há lab sem palco, e o palco só se justifica pelo lab. E a
+onda de arquétipos vem **depois** do piloto, porque o piloto revela quais são realmente
+necessários.
 
 O playground (`why-simulate.md` §10) não é fase: ele nasce de graça ao fim de F3, porque é a
 mesma paleta e a mesma engine, sem exigência de procedência.
