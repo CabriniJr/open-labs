@@ -4,6 +4,11 @@ import type { LevelId, Scenario, StepContext } from "./types.js";
 /**
  * Executa um cenário. Mantém o histórico completo desde o tick 0, o que torna
  * `seek` exato: rebobinar é reler o histórico, não recalcular por aproximação.
+ *
+ * O histórico é append-only e nunca é descartado (exceto por `setInputs`, que
+ * recomeça do tick 0). Por isso, quem dirige o motor num loop contínuo deve
+ * usar `seek` com um tick que dá a volta (`(t + 1) % (N + 1)`), e não
+ * `advance()` indefinidamente — do contrário o histórico cresce sem limite.
  */
 export class Engine<S> {
   readonly levels: readonly LevelId[];
@@ -42,9 +47,9 @@ export class Engine<S> {
     while (this.#history.length <= tick) {
       const nextTick = this.#history.length;
       const previous = this.#at(nextTick - 1);
-      // Recria o RNG a cada tick para que o valor sorteado dependa só da seed e
-      // do número do tick — nunca da ordem em que o leitor navegou pela linha
-      // do tempo.
+      // Recria o RNG a partir de seed + tick para que cada tick seja uma função
+      // pura de (seed, tick): computar ou recomputar um tick isolado nunca
+      // depende do caminho percorrido até ele.
       const random = createRandom(this.#scenario.seed + nextTick);
       this.#history.push(
         this.#scenario.step(previous, {
