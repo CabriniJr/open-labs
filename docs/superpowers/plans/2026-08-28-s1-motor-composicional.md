@@ -423,6 +423,313 @@ git commit -m "feat(depth-core): modelo composicional e indice da arvore"
 
 ---
 
+## Task 1b: Retrabalho da Task 1 (achados da revisão de qualidade)
+
+A revisão de qualidade aprovou a estrutura e apontou seis defeitos, cinco deles da classe
+"mente em silêncio e passa nos testes". Esta tarefa fecha todos.
+
+**Files:**
+- Modify: `packages/depth-core/src/model.ts`
+- Modify: `packages/depth-core/src/tree.ts`
+- Modify: `packages/depth-core/src/tree.test.ts`
+
+- [ ] **Step 1: `visibleChild` devolve resultado discriminado e valida os ids**
+
+O sentinela `"outside"` morava no mesmo espaço de nomes dos ids: uma árvore com um filho
+chamado `outside` era indistinguível de "está fora do foco". Pior, a função era a única do
+arquivo que não validava id — um id inexistente devolvia `"outside"` e o pacote sumia da tela
+sem erro. É exatamente o defeito que a §2.1 diz ser impossível por construção.
+
+Em `model.ts`, acrescentar:
+
+```ts
+/** Onde uma folha está em relação a um foco. Discriminado de propósito: um id
+ *  de objeto nunca pode ser confundido com "está fora daqui". */
+export type Locus =
+  | { readonly at: "child"; readonly id: string }
+  | { readonly at: "self" }
+  | { readonly at: "outside" };
+```
+
+Em `tree.ts`, substituir `visibleChild` por:
+
+```ts
+export function visibleChild(
+  tree: TreeIndex,
+  focusId: string,
+  leafId: string,
+): Locus {
+  spec(tree, focusId);
+  spec(tree, leafId);
+  if (leafId === focusId) return { at: "self" };
+  let cursor: string | undefined = leafId;
+  // `parent` vem sempre de indexTree, que rejeita id duplicado e por isso não
+  // produz ciclo. Um TreeIndex montado à mão é responsabilidade de quem monta.
+  while (cursor !== undefined) {
+    const up: string | undefined = tree.parent.get(cursor);
+    if (up === focusId) return { at: "child", id: cursor };
+    cursor = up;
+  }
+  return { at: "outside" };
+}
+```
+
+Importar `Locus` de `./model.js` com `import type`.
+
+- [ ] **Step 2: `isOpenable` conta filhos de fluxo, não filhos quaisquer**
+
+Um `composite` só com `static` dentro (agrupar Resource e SpanLimits é plausível) era abrível
+e explodia ao ser percorrido: `entryLeaf` lançava "não tem filho de fluxo". O docstring já
+descrevia a regra certa; o código é que não a implementava.
+
+```ts
+export function isOpenable(tree: TreeIndex, id: string): boolean {
+  const node = spec(tree, id);
+  if (node.leaf === true) return false;
+  if (node.dynamic === true) return true;
+  // filhos que só são consultados não constituem tráfego para ver
+  return flowChildren(tree, id).length > 0;
+}
+```
+
+- [ ] **Step 3: fronteira de um contêiner é declarada, não acidental**
+
+`entryLeaf`/`exitLeaf` derivavam a fronteira da ordem de declaração — inclusive em
+`composite`, que a §3 define como contêiner **sem ordem imposta**. Reordenar os filhos de um
+composto mudava para onde uma aresta entrega, e a ordem não devia significar nada ali.
+
+Em `model.ts`, acrescentar a `ObjectSpec`:
+
+```ts
+  /** Por onde uma aresta que chega neste contêiner entra. Padrão: o primeiro
+   *  filho de fluxo. Num `pipeline` a ordem é contrato e o padrão basta; num
+   *  `composite` ela é acidental, então declare. */
+  readonly entry?: string;
+  /** Por onde uma aresta que sai deste contêiner parte. Padrão: o último. */
+  readonly exit?: string;
+```
+
+Em `tree.ts`:
+
+```ts
+function terminal(tree: TreeIndex, id: string, pick: "first" | "last"): string {
+  const node = spec(tree, id);
+  if (node.leaf === true || node.dynamic === true) return id;
+  if ((node.children?.length ?? 0) === 0) return id;
+
+  const declared = pick === "first" ? node.entry : node.exit;
+  if (declared !== undefined) {
+    spec(tree, declared);
+    return terminal(tree, declared, pick);
+  }
+
+  const kids = flowChildren(tree, id);
+  const next = pick === "first" ? kids[0] : kids[kids.length - 1];
+  if (next === undefined) {
+    throw new Error(
+      `tree: "${id}" tem filhos, mas nenhum de fluxo — só objetos consultados`,
+    );
+  }
+  return terminal(tree, next, pick);
+}
+```
+
+Repare que `dynamic` agora encerra a descida: os filhos de um buffer são conteúdo de runtime,
+não destino de aresta.
+
+- [ ] **Step 4: canais ganham onde morar**
+
+`Wire.channel` apontava para um `ObjectSpec` que a árvore não indexava — `indexTree` só
+percorre `root.children`. Qualquer id de canal quebrava `entryLeaf` e sumia em `visibleChild`.
+Pendurar o canal em `root.children` seria pior: ele entraria em `flowChildren` e `exitLeaf`
+poderia terminar dentro de um cano.
+
+Em `model.ts`, acrescentar a `WorldSpec`:
+
+```ts
+  /** Canais são arestas, não filhos: têm subárvore própria e são indexados
+   *  junto, mas nunca aparecem em `flowChildren` de ninguém. */
+  readonly channels?: readonly ObjectSpec[];
+```
+
+Em `tree.ts`, `indexTree` passa a aceitar as raízes extras:
+
+```ts
+export function indexTree(
+  root: ObjectSpec,
+  channels: readonly ObjectSpec[] = [],
+): TreeIndex {
+  const byId = new Map<string, ObjectSpec>();
+  const parent = new Map<string, string>();
+
+  const walk = (node: ObjectSpec): void => {
+    if (byId.has(node.id)) {
+      throw new Error(`tree: id duplicado "${node.id}"`);
+    }
+    byId.set(node.id, node);
+    for (const child of node.children ?? []) {
+      parent.set(child.id, node.id);
+      walk(child);
+    }
+  };
+
+  walk(root);
+  for (const channel of channels) walk(channel);
+
+  return { byId, parent, rootId: root.id };
+}
+```
+
+- [ ] **Step 5: o invariante central vira erro, não convenção**
+
+"Objeto composto NUNCA tem comportamento" é o que impede a vista agregada de divergir do
+interior. Estava só num comentário: um `composite` com `behavior` typechecava e o motor
+descartaria o comportamento em silêncio.
+
+Dentro de `walk`, antes de descer nos filhos:
+
+```ts
+    if (node.behavior !== undefined && node.leaf !== true && node.dynamic !== true) {
+      const flow = (node.children ?? []).filter((c) => c.kind !== "static");
+      if (flow.length > 0) {
+        throw new Error(
+          `tree: "${node.id}" é composto e tem behavior — o que um composto faz ` +
+            `é o resultado de rodar os filhos. Marque leaf: true ou remova o behavior.`,
+        );
+      }
+    }
+```
+
+- [ ] **Step 6: o genérico de `ObjectSpec` deixa de ser inutilizável**
+
+`children: readonly ObjectSpec[]` é `ObjectSpec<unknown>[]`, e `Behavior<S>` é contravariante
+no estado sob `strictFunctionTypes`: uma folha com estado real não entra na árvore
+(`TS2375`). Toda folha viraria `ObjectSpec<unknown>` com cast dentro do comportamento — o
+oposto do que o genérico existe para fazer.
+
+Em `model.ts`:
+
+```ts
+/**
+ * Um objeto de estado qualquer, para uso em posições onde a variância do
+ * estado não importa (a lista de filhos). O `any` é deliberado: sem ele, uma
+ * folha com estado real não pode ser filha de nada.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type AnyObject = ObjectSpec<any>;
+```
+
+e trocar, dentro de `ObjectSpec`, `readonly children?: readonly ObjectSpec[];` por
+`readonly children?: readonly AnyObject[];`. Idem em `WorldSpec.root`, `WorldSpec.channels` e
+no parâmetro `channels` de `indexTree`.
+
+- [ ] **Step 7: cobrir as bordas onde os defeitos moravam**
+
+Acrescentar a `tree.test.ts`:
+
+```ts
+describe("bordas que a revisão expôs", () => {
+  it("recusa id duplicado", () => {
+    expect(() =>
+      indexTree({
+        id: "r",
+        kind: "composite",
+        label: "r",
+        children: [leaf("dup", "sink"), leaf("dup", "sink")],
+      }),
+    ).toThrow(/id duplicado/);
+  });
+
+  it("recusa comportamento em objeto composto", () => {
+    expect(() =>
+      indexTree({
+        id: "r",
+        kind: "composite",
+        label: "r",
+        behavior: (state) => ({ state, out: [] }),
+        children: [leaf("a", "sink")],
+      }),
+    ).toThrow(/é composto e tem behavior/);
+  });
+
+  it("visibleChild recusa id que não existe em vez de dizer 'outside'", () => {
+    const t = indexTree(root);
+    expect(() => visibleChild(t, "root", "fantasma")).toThrow(/objeto desconhecido/);
+    expect(() => visibleChild(t, "fantasma", "src")).toThrow(/objeto desconhecido/);
+  });
+
+  it("um filho chamado 'outside' não é confundido com estar fora do foco", () => {
+    const t = indexTree({
+      id: "r",
+      kind: "composite",
+      label: "r",
+      children: [leaf("outside", "sink"), leaf("other", "sink")],
+    });
+    expect(visibleChild(t, "r", "outside")).toEqual({ at: "child", id: "outside" });
+    expect(visibleChild(t, "outside", "other")).toEqual({ at: "outside" });
+  });
+
+  it("contêiner só de estáticos não é abrível", () => {
+    const t = indexTree({
+      id: "r",
+      kind: "composite",
+      label: "r",
+      children: [
+        { id: "grp", kind: "composite", label: "grp", children: [leaf("k1", "static"), leaf("k2", "static")] },
+      ],
+    });
+    expect(isOpenable(t, "grp")).toBe(false);
+  });
+
+  it("a fronteira declarada vence a ordem de declaração", () => {
+    const t = indexTree({
+      id: "r",
+      kind: "composite",
+      label: "r",
+      entry: "b",
+      exit: "a",
+      children: [leaf("a", "sink"), leaf("b", "sink")],
+    });
+    expect(entryLeaf(t, "r")).toBe("b");
+    expect(exitLeaf(t, "r")).toBe("a");
+  });
+
+  it("árvore de um nó só se resolve nela mesma", () => {
+    const t = indexTree(leaf("solo", "source"));
+    expect(entryLeaf(t, "solo")).toBe("solo");
+    expect(visibleChild(t, "solo", "solo")).toEqual({ at: "self" });
+  });
+
+  it("indexa canais, que não são filhos de ninguém", () => {
+    const t = indexTree(root, [
+      { id: "pipe", kind: "channel", label: "pipe", children: [leaf("wire", "sink")] },
+    ]);
+    expect(t.byId.get("pipe")?.kind).toBe("channel");
+    expect(t.parent.get("pipe")).toBeUndefined();
+    expect(flowChildren(t, "root")).not.toContain("pipe");
+  });
+});
+```
+
+Ajustar as asserções existentes de `visibleChild` para o retorno novo
+(`{ at: "child", id: "box" }`, `{ at: "self" }`, `{ at: "outside" }`), e trocar a asserção de
+`flowChildren` sobre o `composite` `box` por uma sobre o `pipeline` `chain`, onde a ordem é
+contrato e não detalhe de declaração.
+
+- [ ] **Step 8: rodar tudo**
+
+Run: `pnpm vitest run packages/depth-core/src/tree.test.ts && pnpm typecheck && pnpm boundaries`
+Expected: todos os testes passam; typecheck limpo; `Fronteira motor↔domínio intacta.`
+
+- [ ] **Step 9: Commit**
+
+```bash
+git add packages/depth-core/src
+git commit -m "fix(depth-core): fronteira declarada, invariante do composto e locus discriminado"
+```
+
+---
+
 ## Task 2: Fiação, com encadeamento implícito de pipeline
 
 **Files:**
@@ -1168,6 +1475,7 @@ Expected: FAIL — `Failed to resolve import "./meters.js"`
 - [ ] **Step 3: Implementar `meters.ts`**
 
 ```ts
+import { DROP } from "./model.js";
 import type { InFlight, PortId, WorldState } from "./model.js";
 import { visibleChild } from "./tree.js";
 import type { TreeIndex } from "./tree.js";
@@ -1212,18 +1520,27 @@ export function boundaryCrossings(
   for (const item of state.flight) {
     const from = visibleChild(tree, focusId, item.from);
     const to =
-      item.to === "@drop" ? "@drop" : visibleChild(tree, focusId, item.to);
+      item.to === DROP ? ({ at: "drop" } as const) : visibleChild(tree, focusId, item.to);
 
     // ambos fora do foco: a aresta inteira acontece longe daqui
-    if (from === "outside" && to === "outside") continue;
+    if (from.at === "outside" && to.at === "outside") continue;
     // dentro do mesmo filho visível: é tráfego interno de um bloco fechado
-    if (from !== null && from === to) continue;
+    if (from.at === "child" && to.at === "child" && from.id === to.id) continue;
 
-    out.push({
-      item,
-      fromVisible: from === null ? focusId : from,
-      toVisible: to === null ? focusId : to,
-    });
+    const name = (locus: typeof from | typeof to): string => {
+      switch (locus.at) {
+        case "child":
+          return locus.id;
+        case "self":
+          return focusId;
+        case "drop":
+          return DROP;
+        case "outside":
+          return "outside";
+      }
+    };
+
+    out.push({ item, fromVisible: name(from), toVisible: name(to) });
   }
 
   return out;
