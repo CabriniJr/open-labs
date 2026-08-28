@@ -277,6 +277,7 @@ aplicar.
 
 ---
 
+## 9. Corte de escopo: `model` é ilha com porto
 
 Decisão do Luigi: **cada `model` é coisa separada.** Sem intercâmbio, sem biblioteca
 compartilhada obrigatória, sem teste de compatibilidade entre eles.
@@ -498,7 +499,7 @@ reutilização que justifica a decisão.
 
 ---
 
-## 15. O diferencial está em L2 e L3, não em "ver acontecer"
+## 14. O diferencial está em L2 e L3, não em "ver acontecer"
 
 **Registrado em 28/08/2026**, depois de ler a spec do handbook — que este documento deveria ter
 lido antes de argumentar.
@@ -532,7 +533,7 @@ Consequência para o plano: L2 e L3 não são refinamento para depois. **São o 
 isso que a spec acertou ao dizer que o piloto nasce com os quatro níveis porque prova parcial
 não prova nada.
 
-### 15.1 E "ser base para outros handbooks" tem um teste concreto
+### 14.1 E "ser base para outros handbooks" tem um teste concreto
 
 Não é o Kafka. O teste é **um handbook escrito por outra pessoa** — e o que habilita isso não é
 o motor, é `docs/authoring.md`. Se o guia de autoria for bom o suficiente para alguém de fora
@@ -544,7 +545,7 @@ Isso reprioriza algo barato: o guia de autoria deixa de ser documentação de ap
 
 ---
 
-## 16. A resposta curta
+## 15. A resposta curta
 
 O simulador não substitui instalar o Collector, e não deve tentar. Ele substitui **o quadro
 branco**, o *"deixa eu te explicar como o batch processor funciona"* que todo time de

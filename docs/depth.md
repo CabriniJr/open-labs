@@ -226,7 +226,7 @@ implícito.
 
 ## 6. Apresentação
 
-### 6.-1 Os quatro níveis já existem, e mapeiam nas roles do motor
+### 6.1 Os quatro níveis já existem, e mapeiam nas roles do motor
 
 **Corrigido em 28/08/2026.** Este documento foi escrito assumindo profundidade recursiva
 homogênea. A spec do handbook (§4) já define **quatro níveis nomeados**, e a reconciliação é
@@ -254,7 +254,7 @@ resolução que havia sido proposta. A spec do handbook já apontava para lá.
 lote, e abri-la mostra os 512. Contenção de cardinalidade (§5) e nível L3 são a mesma peça.
 
 
-### 6.0 O drill-down é orientado por fluxo, não por contenção
+### 6.2 O drill-down é orientado por fluxo, não por contenção
 
 Registrado em 28/08/2026, e é o ponto que organiza toda a apresentação.
 
@@ -279,7 +279,7 @@ Consequências de desenho, todas derivadas:
   a direita, que é o que dagre já dá
 - **O foco é um caminho**, não um nó — a razão de ser breadcrumb e não escada
 
-### 6.1 O recurso que isso habilita: seguir a carga
+### 6.3 O recurso que isso habilita: seguir a carga
 
 > Selecione uma carga e mande a vista **acompanhá-la**. Quando ela cruza a fronteira de um
 > bloco, o foco desce sozinho. Quando ela sai, o foco sobe.
