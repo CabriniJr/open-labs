@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.astro/
+tsconfig.tsbuildinfo
+*.tsbuildinfo
+test-results/
+playwright-report/
+.DS_Store

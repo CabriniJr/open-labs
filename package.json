@@ -1,0 +1,20 @@
+{
+  "name": "otel-visual-handbook",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.24.0",
+  "scripts": {
+    "typecheck": "tsc -b --pretty false",
+    "test": "vitest run",
+    "boundaries": "node scripts/check-boundaries.mjs",
+    "build": "pnpm --filter @ovh/site build",
+    "dev": "pnpm --filter @ovh/site dev"
+  },
+  "devDependencies": {
+    "@testing-library/react": "^16.1.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "jsdom": "^25.0.1",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.4"
+  }
+}
