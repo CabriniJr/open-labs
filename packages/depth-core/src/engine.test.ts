@@ -70,4 +70,38 @@ describe("Engine", () => {
     const e = new Engine(counter, {});
     expect(e.levels).toEqual(["flow"]);
   });
+
+  it("previousState é undefined no tick 0", () => {
+    const e = new Engine(counter, {});
+    expect(e.previousState).toBeUndefined();
+  });
+
+  it("previousState no tick N é exatamente o estado do tick N-1", () => {
+    const e = new Engine(counter, {});
+    e.advance(3);
+    const at2 = structuredClone(e.state);
+    e.advance();
+    expect(e.tick).toBe(4);
+    expect(e.previousState).toEqual(at2);
+  });
+
+  it("previousState volta a ser undefined depois de setInputs", () => {
+    const e = new Engine(counter, {});
+    e.advance(3);
+    e.setInputs({ start: 5 });
+    expect(e.previousState).toBeUndefined();
+  });
+
+  it("navegar 0 → 7 → 3 → 10 deixa o motor no mesmo estado que advance(10) do zero", () => {
+    const e = new Engine(counter, {});
+    e.seek(7);
+    e.seek(3);
+    e.seek(10);
+
+    const ref = new Engine(counter, {});
+    ref.advance(10);
+
+    expect(e.tick).toBe(ref.tick);
+    expect(e.state).toEqual(ref.state);
+  });
 });
