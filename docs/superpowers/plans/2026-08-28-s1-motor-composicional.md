@@ -50,8 +50,12 @@ Preservados sem alteração: `random.ts`, `diff.ts`, `types.ts`, `engine.ts`.
  * O modelo composicional. Tudo é objeto: `node` ocupa um lugar, `message`
  * viaja, `channel` liga dois nós. Os três usam este mesmo formato.
  *
- * O motor não sabe o que é span, OTLP ou gRPC. `kind` de mensagem é uma
- * string escolhida pelo domínio.
+ * O motor não sabe o que é telemetria, protocolo de exportação ou formato de
+ * payload. `kind` de mensagem é uma string escolhida pelo domínio.
+ *
+ * (Cuidado ao comentar código aqui: `scripts/check-boundaries.mjs` é literal e
+ * não entende negação — citar um termo de domínio, mesmo para dizer que o
+ * motor não o conhece, quebra o CI. É a intenção.)
  */
 
 export type Kind =
