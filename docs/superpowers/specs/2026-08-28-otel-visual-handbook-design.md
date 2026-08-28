@@ -119,6 +119,29 @@ lab de rollout organizacional pode ter só L0.
   tempo é compartilhada por todos os níveis: para-se no instante exato, desce a
   L3, lê os bytes, sobe. Sem isso o L3 passa rápido demais para ser lido.
 
+### Controles: parâmetro e composição
+
+O leitor manipula o modelo de duas formas, e elas não pertencem ao mesmo nível.
+
+- **Parâmetro** — um valor: taxa de requisições entrando, tamanho do batch,
+  intervalo de export, taxa de sampling. Slider ou toggle. Barato de entender,
+  e por isso pode viver já no L0.
+- **Composição** — a topologia em si: arrastar um batch processor para dentro da
+  pipeline, remover um processor, reordenar. Isso é aprendizado sobre *estrutura*,
+  não sobre *valor*.
+
+**A regra:** composição vive no zoom, nunca na superfície. O L0 mostra a pipeline
+funcionando limpa, com no máximo um ou dois parâmetros. Montar e desmontar a
+pipeline acontece no L1 (Mechanism), onde o leitor já decidiu que quer ver as
+engrenagens. Uma tela inicial com blocos arrastáveis, portas e opções seria
+exatamente a complexidade que este handbook existe para dissolver.
+
+O motor já sustenta isso sem mudança: a topologia é apenas mais um valor em
+`inputs`, e trocar um input reinicia a simulação no tick 0 (§8). Arrastar um
+processor para a pipeline é trocar `inputs.pipeline` e ver o cenário inteiro
+rodar de novo sob a nova estrutura — que é, pedagogicamente, exatamente o que se
+quer: *com este processor, o que sai muda assim*.
+
 ### Responsividade
 
 Desktop: níveis adjacentes convivem lado a lado (L0 + inspector de L3).
