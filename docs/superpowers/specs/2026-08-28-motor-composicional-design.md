@@ -32,6 +32,12 @@ camada emerge disso.
 `Kind` e a mesma regra de abertura. Abrir um canal gRPC para ver HTTP/2, streams e
 frames é a mesma operação que abrir um BatchSpanProcessor para ver a fila.
 
+**`Channel` é a linha, nunca um bloco.** Bloco é processador: coisa que *age* sobre o
+dado. Linha é o que *carrega*. Um canal desenhado como caixa ensina errado — sugere
+que o dado é processado por ele em vez de transportado. A aresta é clicável,
+selecionável e abrível como qualquer objeto; ao entrar nela, as portas ENTRA/SAI da
+moldura são os dois blocos que ela liga.
+
 ```ts
 type Kind =
   | "composite" | "source" | "router" | "pipeline"
@@ -86,6 +92,12 @@ Consequência importante: *granular* e *profundo* são coisas diferentes. O Samp
 Válvula: o autor pode marcar `leaf: true` num objeto que tem tráfego interno mas cujo
 tráfego é ruído. Isso é explícito no cenário, nunca implícito.
 
+**Filhos dinâmicos.** Um terceiro caso, que o protótipo revelou: a fila do
+BatchSpanProcessor é abrível, mas os filhos dela **são o conteúdo**, não uma sub-árvore
+declarada — você entra e vê os spans que estão esperando, um por um, cada um
+selecionável. `dynamic: true` marca isso. Vale para qualquer `buffer` em qualquer
+handbook.
+
 ### 2.3 Mensagens trocam de kind nas fronteiras
 
 Uma mensagem muda de `Kind` ao atravessar um objeto que a transforma. Span em memória
@@ -108,8 +120,10 @@ e passa a ser algo que o leitor **encontra descendo**, quando o span vira bytes.
 ## 3. `Kind` é um arquétipo, não uma classe
 
 Não há hierarquia de tipos no conteúdo. Há **arquétipos** — o mesmo padrão data-driven
-de `Kind` já usado no Atlas. Cada `Kind` entrega **três** coisas, e é por isso que ele
-paga o próprio custo:
+de `Kind` já usado no Atlas. Cada `Kind` entrega **cinco** coisas, e é por isso que ele
+paga o próprio custo: comportamento, contrato visual, medidores grátis, **regime
+nomeado** e **perturbações** (§11 e §12). Escrever um arquétipo é caro uma vez e
+gratuito em todo handbook seguinte.
 
 | `Kind`      | Comportamento                          | Visual                          | Medidores grátis                |
 |-------------|----------------------------------------|---------------------------------|---------------------------------|
@@ -130,6 +144,13 @@ forte, e falsa para a maioria dos contêineres. `composite` não afirma nada al�
 "estes objetos vivem aqui dentro e trocam mensagens entre si". Quase todo
 provider/runtime/agent de qualquer domínio tem essa forma, então ele se paga pela
 regra de reuso desta seção.
+
+O contrato visual inclui a **animação diegética** do arquétipo: um `buffer` enche como
+água, com a superfície ondulando, e esvazia com um pulso quando entrega. Um bloco que
+apenas *contém* um buffer enche junto, mais discreto — a abstração mostra o
+comportamento do que ela guarda. Um `pipeline` tem divisórias de altura cheia e
+chevrons de direção; um `composite`, moldura tracejada por dentro. A diferença entre
+"contêiner com trilho" e "contêiner sem" se lê no desenho, sem legenda.
 
 **Trava de custo:** o contrato visual pertence ao **`Kind`, nunca ao objeto**. Sampler
 *é* um `router` — não ganha arte própria, ganha rótulo e política. Se um objeto parece
@@ -283,7 +304,9 @@ TracerProvider        composite  ABRE   — contêiner sem ordem imposta
       ├ gatilhos       static   FOLHA   — maxQueueSize / scheduledDelay são parâmetros
       └ SpanExporter   sink     FOLHA   — transforma blob → document OTLP
          │
-         canal OTLP    channel  ABRE    — dentro: gRPC, HTTP/2, streams, frames
+         ╌╌╌╌╌╌╌╌╌╌╌╌  ARESTA, NÃO BLOCO — o canal OTLP é a linha que liga o
+                       exporter ao backend. Clicável e abrível: dentro dela,
+                       gRPC, HTTP/2, multiplexação, controle de fluxo, frames.
 ```
 
 **Fidelidade é o produto.** Duas correções ao esboço inicial da conversa, ambas
@@ -320,7 +343,13 @@ O que precisa ser testado é o que garante que o modelo não mente:
    verificado por tipo e por teste, não por disciplina.
 6. **Fidelidade da árvore:** a estrutura do TracerProvider bate com um fixture
    declarado, cada nó com sua âncora na spec oficial.
-7. **Smoke Playwright:** abrir o provider → abrir o batch → selecionar um span →
+7. **Contrato de fidelidade:** todo parâmetro de todo cenário resolve para um ajuste
+   real documentado, com link. Falha o CI se algum não resolver.
+8. **Vocabulário do motor não vaza:** nenhuma string de `Kind`/arquétipo fora de bloco
+   marcado como modo autor.
+9. **Contenção:** nada é pintado fora da moldura do foco; aresta com os dois extremos
+   fora do foco não é desenhada.
+10. **Smoke Playwright:** abrir o provider → abrir o batch → selecionar um span →
    avançar ticks → confirmar que o kind da mensagem mudou.
 
 ---
@@ -336,11 +365,160 @@ Cada sessão fecha com `main` verde e o progresso registrado em `docs/PROGRESS.m
 | S3 | Palco e navegação | foco por caminho, breadcrumb, selecionar vs abrir, inspector, deep link |
 | S4 | Domínio TracerProvider | árvore fiel, transformações de mensagem, textos ancorados + teste 6 |
 | S5 | Migração e limpeza | herói da landing no modelo novo, modelo antigo deletado, guarda ampliada |
-| S6 | Acabamento | medidores pareados do sampler, canal gRPC abrível, smoke Playwright |
+| S6 | Acabamento | modelo estrito de desenho (moldura, faixas, portas), regime + log, perturbações, canal-aresta abrível, smoke |
+
+Entregas seguintes, fora desta: **E3 — cenários, encaixe tipado e manifesto** (§14–15);
+**E4 — Meter e Logger provider**, reaproveitando os `Kind`s.
 
 ---
 
-## 10. Fora de escopo
+## 10. O modelo estrito de desenho
+
+O desenho é gerado da árvore, e a contenção precisa ser **estrutural** — não uma
+checagem que alguém pode esquecer de escrever.
+
+**Moldura com recorte real.** O interior do objeto em foco é uma moldura, e todo o
+palco é desenhado dentro de um `clipPath` colado nela. O que sair da moldura não é
+"filtrado por uma regra": simplesmente não é pintado. Nenhum bug futuro consegue furar
+isso porque não há regra a esquecer.
+
+**Faixas reservadas.** Cada tipo de ligação tem território próprio dentro da moldura:
+fluxo na faixa central, descarte na faixa de baixo, objetos `static` na faixa do
+rodapé. Fio de fluxo nunca cruza fio de descarte porque eles não moram no mesmo lugar.
+Arrastar uma caixa é permitido (o leitor recompõe o palco) mas fica clampeado à
+moldura e à faixa.
+
+**Portas são o que define um objeto.** Todo objeto de fluxo desenha a porta de entrada
+na borda esquerda e a de saída na direita, no mesmo traço das portas da moldura. Um
+`router` tem uma terceira porta, na borda de baixo, por onde o descarte sai e desce
+reto para a faixa de descarte. E o caso que ensina sozinho: **`static` não tem porta
+nenhuma** — é por isso que ele não é atravessado, e agora isso se lê antes de se ler.
+
+**Aresta cujos dois extremos caem fora do foco não é desenhada.** Ela acontece longe
+dali; representá-la seria mentir sobre onde as coisas acontecem.
+
+---
+
+## 11. Regime e log de eventos
+
+Emprestado do simulador de congestionamento de TCP, que faz isso bem.
+
+**Regime nomeado.** Um objeto está sempre num estado com nome — a fila está
+"acumulando", "descarregando", "transbordando" ou "bloqueada". O regime pertence ao
+`Kind`, aparece como marcador no cabeçalho e no inspector, e é derivado, nunca
+autorado.
+
+**Log de eventos.** Uma faixa cronológica com carimbo de tick registra **mudanças de
+regime e eventos notáveis** — não todo tick. É o que transforma "vi acontecer" em
+"entendi por quê", e sai do mesmo tráfego de porta que alimenta os medidores, então
+continua honesto pela regra da §5.3.
+
+---
+
+## 12. Perturbações
+
+Terceira primitiva de entrada, ao lado de parâmetro e composição: **provocar a falha
+em vez de esperar por ela.** Uma perturbação é declarada pelo objeto (ou pelo `Kind`) e
+aparece como um botão que liga e desliga.
+
+Duas no TracerProvider, e a segunda é o argumento inteiro do modelo composicional:
+
+- **Rajada de tráfego** — a aplicação passa a produzir 4× mais spans.
+- **Janela do receptor fechada** — o controle de fluxo do HTTP/2 fecha, a exportação
+  para, a fila enche e começa a derrubar span. **A causa está três níveis abaixo e o
+  efeito é perda de dado no processo do leitor.** Nenhum diagrama mostra isso, e prosa
+  nenhuma convence tão rápido.
+
+---
+
+## 13. Modo autor: o vocabulário do motor nunca é conteúdo
+
+`composite`, `pipeline`, `kind`, "tráfego de porta", "arquétipo" são **ferramentas de
+autoria**. Se vazam para a página, o handbook está explicando a si mesmo em vez de
+explicar OpenTelemetry.
+
+O leitor vê o objeto dizer o que faz em português chão — "decide quem segue e quem
+cai", "guarda até valer a pena mandar", "consultado, nunca atravessado". Um interruptor
+de **modo autor** revela a camada do motor por cima, para quem está construindo.
+
+Regra: nenhuma string do vocabulário do motor pode aparecer fora de um bloco marcado
+como modo autor. Verificável no CI da mesma forma que a fronteira motor↔domínio.
+
+---
+
+## 14. Cenários e composição por encaixe
+
+**Cenário** é a mesma árvore com outras peças e outros parâmetros, apresentada como
+situação nomeada: "dev local" (SimpleSpanProcessor, `always_on`, exporter de console —
+e o leitor vê que não existe fila nenhuma), "produção alto volume", "coletor caído",
+"sem amostragem". Trocar de cenário remonta os blocos na frente do leitor, e é aí que
+ele entende que aquelas caixas são a configuração dele.
+
+**Composição é por encaixe tipado, nunca fiação livre.** As portas têm tipo: um `blob`
+não entra numa porta que espera `frame`. O leitor só consegue montar combinações que
+existem de verdade no SDK — trocar `Simple` por `Batch`, empilhar um segundo
+processor, pôr o exporter de console no lugar do OTLP. Ele monta **configuração**, não
+desenha diagrama. Fiação livre transformaria isto num editor de grafo — outro produto,
+e contradiz a decisão anterior de não pôr alta complexidade na entrada.
+
+O motor não muda: a árvore já é dado, e cenário é escolher qual dado carregar.
+
+---
+
+## 15. Manifesto e o contrato de fidelidade
+
+**O manifesto é configuração real.** Nunca um formato inventado por nós: as variáveis
+de ambiente do SDK (`OTEL_TRACES_SAMPLER`, `OTEL_BSP_SCHEDULE_DELAY`,
+`OTEL_BSP_MAX_QUEUE_SIZE`, `OTEL_BSP_MAX_EXPORT_BATCH_SIZE`) e a configuração
+declarativa do OpenTelemetry, com link para a spec. Configuração declarativa em OTel
+ainda está se assentando — um manifesto fictício ensinaria algo que não existe.
+
+**Faseamento.** Alvo é o manifesto como **fonte da verdade** (editar o documento
+remonta os blocos; mexer num bloco reescreve o documento). Entrega primeiro a mão
+única — a árvore é a fonte e o manifesto é exportação copiável — porque custa um
+décimo, não precisa de parser nem de tratamento de config inválida, e já entrega o
+essencial: *vejo minha configuração virar comportamento*. O caminho de volta vem
+quando houver gente colando config de verdade.
+
+### 15.1 O contrato de fidelidade
+
+O risco central desta frente é **desorientar**. Os defaults reais do
+BatchSpanProcessor são `maxQueueSize` 2048, `scheduledDelay` 5000 ms,
+`maxExportBatchSize` 512, `exportTimeout` 30000 ms. Com esses números **nada acontece
+na tela** — 512 spans para encher um lote, cinco segundos de espera. O valor didático
+tem razão de existir; esconder que ele é didático, não.
+
+Todo parâmetro carrega um contrato, que é dado e não prosa:
+
+```yaml
+scheduledDelay:
+  didatico: 10 ticks
+  real:     5000 ms
+  ajuste:   OTEL_BSP_SCHEDULE_DELAY
+  spec:     https://opentelemetry.io/docs/specs/otel/trace/sdk/#batching-processor
+  escala:   1 tick = 100 ms          # declarada, nunca implícita
+  nao_modelamos: [exportTimeout, retry/backoff, concorrência de export]
+```
+
+Três consequências, e as três atacam a desorientação:
+
+1. **Todo controle mostra o valor real ao lado.** Nunca aparece número sem procedência.
+2. **Botão "usar os defaults reais".** A lição é a própria frustração: a água para de
+   subir visivelmente, e o leitor entende no corpo por que exportação em lote é
+   invisível num serviço de baixo tráfego.
+3. **O que não é modelado fica declarado.** Silenciar é pior que simplificar.
+
+**A escala de tempo é declarada** (1 tick = 100 ms). A alternativa — tick abstrato,
+sem promessa — parece mais segura e é pior: o leitor *vai* inventar uma correspondência
+na cabeça dele, e aí a desorientação acontece igual, só que sem a gente poder corrigir.
+
+**Vira teste, não disciplina.** Todo parâmetro de um cenário precisa resolver para um
+ajuste real documentado, com link. O CI falha se algum não resolver — mesma linha do
+princípio 2 da spec original: a documentação oficial dá a verdade.
+
+---
+
+## 16. Fora de escopo
 
 - Meter Provider e Logger Provider (vêm depois, reaproveitando os `Kind`s).
 - Plugin system, API pública, pacote npm. A fronteira agnóstica continua sendo

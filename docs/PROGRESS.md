@@ -42,7 +42,21 @@ para cima. Sessões planejadas (detalhe na §9 da spec):
       ancorados na spec oficial. Teste 6.
 - [ ] **S5 — Migração e limpeza.** Herói da landing no modelo novo, modelo antigo
       deletado, guarda de fronteira ampliada.
-- [ ] **S6 — Acabamento.** Medidores pareados do sampler, canal gRPC abrível, smoke.
+- [ ] **S6 — Acabamento.** Modelo estrito de desenho (moldura com recorte, faixas,
+      portas), regime nomeado + log de eventos, perturbações, canal-como-aresta
+      abrível, smoke.
+
+Depois da Entrega 2:
+
+- **E3 — Cenários, encaixe tipado e manifesto** (spec §14–15). Manifesto é config real
+  (env vars do SDK / config declarativa), com contrato de fidelidade obrigatório.
+  Faseado: exportação de mão única primeiro, manifesto como fonte da verdade depois.
+- **E4 — Meter e Logger provider**, reaproveitando os `Kind`s.
+
+**Protótipo navegável** (validado com o Luigi em 2026-08-28):
+`claude.ai/code/artifact/fc302e68-488b-4e8e-9037-74a0a0352e17`. Fonte em scratchpad,
+descartável — é maquete de decisão, não código de produção. Serve como referência
+visual e de interação para S2, S3 e S6.
 
 ### O que a Entrega 2 quebra de propósito
 
@@ -63,3 +77,11 @@ Todas na spec, mas as que mais custam se forem esquecidas:
   `SpanProcessor`. Fidelidade da árvore é o produto.
 - **`composite` ≠ `pipeline`.** O TracerProvider é `composite` (contêiner sem ordem
   imposta); só a lista de SpanProcessors é `pipeline`, porque só ali a ordem importa.
+- **Canal é a LINHA, não um bloco.** Bloco é processador (age sobre o dado); linha é o
+  que carrega. Desenhar canal como caixa ensina errado.
+- **Vocabulário do motor nunca é conteúdo.** `kind`, `composite`, "tráfego de porta"
+  vivem atrás do modo autor. Se vazam, o handbook explica a si mesmo.
+- **Contenção é estrutural.** Moldura com `clipPath` real — não uma checagem que alguém
+  pode esquecer de escrever.
+- **Escala de tempo declarada** (1 tick = 100 ms) e valor real ao lado de todo controle.
+  Tick abstrato é pior: o leitor inventa a correspondência e a gente não pode corrigir.
