@@ -614,10 +614,9 @@ describe("stepWorld", () => {
   });
 
   it("a mensagem só chega depois de edgeTicks", () => {
-    expect((run(2).nodes["gate"] as Record<string, unknown> | undefined)).toBeDefined();
-    // no tick 3 a primeira mensagem já foi entregue ao gate e reemitida
-    const state = run(3);
-    expect(state.ledger["gate.keep"]).toBe(1);
+    // emitida no tick 1, com edgeTicks 2 ela só é entregue no tick 3
+    expect(run(2).ledger["gate.keep"]).toBeUndefined();
+    expect(run(3).ledger["gate.keep"]).toBe(1);
   });
 
   it("conta cada travessia de porta no livro-caixa", () => {
@@ -633,11 +632,11 @@ describe("stepWorld", () => {
     expect((state.nodes["sink"] as { got: number }).got).toBe(0);
   });
 
-  it("ids de mensagem são determinísticos: dois runs produzem os mesmos", () => {
+  it("ids de mensagem são determinísticos e únicos", () => {
     const a = run(5).flight.map((f) => f.message.id);
     const b = run(5).flight.map((f) => f.message.id);
     expect(a).toEqual(b);
-    expect(new Set(run(5).ledger ? a : a).size).toBe(a.length);
+    expect(new Set(a).size).toBe(a.length);
   });
 
   it("nunca muta o estado que recebeu", () => {
