@@ -283,6 +283,20 @@ dele, `Tracer.startSpan`), e **BatchSpanProcessor é um SpanProcessor**, não um
 (arquétipo, não taxonomia). Toda afirmação técnica leva link para a spec, conforme o
 princípio 2 da spec original.
 
+**Questão aberta — o `Kind` do próprio TracerProvider.** A tabela acima o marca como
+`pipeline`, mas isso não é fiel: o Sampler é **consultado** pelo Tracer no início do
+span, e a cadeia de SpanProcessors roda no **fim** dele. Não é um trilho único. Duas
+saídas, a decidir antes de S2:
+
+- **(a) `Kind` novo, `composite`:** contêiner sem fluxo próprio, que só hospeda filhos
+  e mostra o tráfego entre eles. Fiel, e provavelmente reaproveitável em outros
+  handbooks — quase todo "provider"/"runtime" tem essa forma.
+- **(b) `pipeline` com o Sampler como estágio de portão** no início. Menos fiel ao
+  ciclo de vida do span, mais simples de desenhar.
+
+Preferência atual: **(a)**. Se `composite` aparecer numa segunda sessão, ele pagou o
+próprio custo pela regra da §3.
+
 ---
 
 ## 8. Testes
