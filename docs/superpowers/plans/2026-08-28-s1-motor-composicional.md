@@ -18,7 +18,7 @@ O modelo antigo (`types.ts`, `engine.ts`, `LevelId`, `Scenario`) **fica intacto 
 
 | Caminho | Responsabilidade |
 |---|---|
-| `packages/depth-core/src/model.ts` | tipos: `Kind`, `Role`, `Message`, `Emission`, `Behavior`, `ObjectSpec`, `Wire`, `WorldSpec`, `WorldState` |
+| `packages/depth-core/src/model.ts` | tipos: `Kind`, `Family`, `Role`, `Message`, `Emission`, `Behavior`, `ObjectSpec`, `Wire`, `WorldSpec`, `WorldState` + `familyOf` |
 | `packages/depth-core/src/tree.ts` | índice da árvore: pai, filhos de fluxo, folha de entrada/saída, abrível, filho visível |
 | `packages/depth-core/src/tree.test.ts` | testes de estrutura |
 | `packages/depth-core/src/wiring.ts` | `resolveTarget(tree, wires, from, port)` com encadeamento implícito de pipeline |
@@ -43,7 +43,7 @@ Preservados sem alteração: `random.ts`, `diff.ts`, `types.ts`, `engine.ts`.
 - Create: `packages/depth-core/src/tree.ts`
 - Test: `packages/depth-core/src/tree.test.ts`
 
-- [ ] **Step 1: Escrever `model.ts`** (só tipos, sem runtime — não há teste próprio; o uso é testado nas tarefas seguintes)
+- [ ] **Step 1: Escrever `model.ts`** (tipos + a única função de runtime, `familyOf`, testada no Step 2)
 
 ```ts
 /**
@@ -61,9 +61,24 @@ export type Kind =
   | "pipeline"
   | "buffer"
   | "sink"
+  | "channel"
   | "static";
 
 export type Role = "node" | "message" | "channel";
+
+/**
+ * A família vem antes do arquétipo e carrega a linguagem de forma. O `kind` só
+ * faz a variação dentro dela — nunca uma forma inteiramente nova. É o que
+ * impede o handbook de virar coleção de ilustrações sob medida, e o que faz
+ * outro domínio herdar a linguagem inteira trocando só as variações.
+ */
+export type Family = "block" | "conduit" | "plate";
+
+export function familyOf(kind: Kind): Family {
+  if (kind === "channel") return "conduit";
+  if (kind === "static") return "plate";
+  return "block";
+}
 
 export type PortId = string;
 
@@ -126,6 +141,12 @@ export interface Wire {
   readonly from: string;
   readonly port: PortId;
   readonly to: string | Drop;
+  /**
+   * O id do objeto `channel` que ESTA aresta é. Um canal não é filho de
+   * ninguém na árvore: ele é a linha. Quando presente, a aresta é clicável e
+   * abrível, e a subárvore do canal descreve o interior dele.
+   */
+  readonly channel?: string;
 }
 
 export interface WorldSpec {
@@ -161,6 +182,7 @@ export interface WorldState {
 ```ts
 // packages/depth-core/src/tree.test.ts
 import { describe, expect, it } from "vitest";
+import { familyOf } from "./model.js";
 import type { ObjectSpec } from "./model.js";
 import {
   entryLeaf,
@@ -203,6 +225,16 @@ const root: ObjectSpec = {
     leaf("out", "sink"),
   ],
 };
+
+describe("familyOf", () => {
+  it("agrupa os arquétipos em famílias de forma", () => {
+    expect(familyOf("channel")).toBe("conduit");
+    expect(familyOf("static")).toBe("plate");
+    for (const kind of ["composite", "source", "router", "pipeline", "buffer", "sink"] as const) {
+      expect(familyOf(kind)).toBe("block");
+    }
+  });
+});
 
 describe("indexTree", () => {
   it("mapeia cada objeto ao pai dele", () => {
@@ -376,7 +408,7 @@ export function visibleChild(
 - [ ] **Step 5: Rodar o teste e confirmar que passa**
 
 Run: `pnpm vitest run packages/depth-core/src/tree.test.ts`
-Expected: PASS — 9 testes
+Expected: PASS — 10 testes
 
 - [ ] **Step 6: Commit**
 

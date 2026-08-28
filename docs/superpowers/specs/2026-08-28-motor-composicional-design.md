@@ -34,9 +34,12 @@ frames é a mesma operação que abrir um BatchSpanProcessor para ver a fila.
 
 **`Channel` é a linha, nunca um bloco.** Bloco é processador: coisa que *age* sobre o
 dado. Linha é o que *carrega*. Um canal desenhado como caixa ensina errado — sugere
-que o dado é processado por ele em vez de transportado. A aresta é clicável,
-selecionável e abrível como qualquer objeto; ao entrar nela, as portas ENTRA/SAI da
-moldura são os dois blocos que ela liga.
+que o dado é processado por ele em vez de transportado.
+
+O canal é um **cano com nome**: traço mais grosso que um fio comum, rótulo em cima
+dele, boca de origem e boca de destino desenhadas nos dois blocos que ele liga.
+Clicável e abrível como qualquer objeto; ao entrar nele, as portas ENTRA/SAI da
+moldura são exatamente esses dois blocos.
 
 ```ts
 type Kind =
@@ -71,6 +74,25 @@ composto **não** pode ter comportamento próprio: o que ele faz é o resultado 
 os filhos. Sem isso, o L0 e o interior viram duas verdades que divergem em silêncio
 no primeiro ajuste de parâmetro — o pior bug possível num handbook, porque passa nos
 testes.
+
+### 2.0 Famílias: `kind` diz o que faz, família diz que forma tem
+
+Antes do arquétipo individual vem a **família**, e é ela que carrega a linguagem de
+forma. Sem isso, cada `Kind` novo vira uma decisão visual do zero e o desenho perde
+coerência entre handbooks.
+
+| Família | Quem entra | Forma | Portas |
+|---|---|---|---|
+| **bloco** | `composite` `source` `router` `pipeline` `buffer` `sink` | retângulo com corpo | entrada à esquerda, saída à direita (e descarte embaixo, no `router`) |
+| **cano** | `channel` | traço grosso com nome em cima, bocas nas duas pontas | as próprias pontas são as portas |
+| **placa** | `static` | plaqueta tracejada, encostada no pai | **nenhuma** — é por isso que não é atravessada |
+| **carga** | os `kind` de mensagem (`blob`, `document`, `frame`…) | forma da própria mensagem | não tem: ela viaja |
+
+Dentro de uma família, o `Kind` só faz a **variação**: um `buffer` é um bloco que enche
+como água; um `pipeline` é um bloco com divisórias e chevrons. Nunca uma forma
+inteiramente nova. É essa regra que impede o handbook de virar coleção de ilustrações
+sob medida — e é ela que faz um handbook de outro domínio herdar a linguagem inteira
+de graça, trocando só as variações.
 
 ### 2.1 A vista agregada é de graça
 
@@ -125,8 +147,9 @@ paga o próprio custo: comportamento, contrato visual, medidores grátis, **regi
 nomeado** e **perturbações** (§11 e §12). Escrever um arquétipo é caro uma vez e
 gratuito em todo handbook seguinte.
 
-| `Kind`      | Comportamento                          | Visual                          | Medidores grátis                |
+| `Kind`      | Comportamento                          | Visual (variação dentro da família) | Medidores grátis            |
 |-------------|----------------------------------------|---------------------------------|---------------------------------|
+| `channel`   | transporta; pode transformar a carga   | cano com nome e bocas nas pontas | latência, o que passou          |
 | `composite` | nenhum próprio: só hospeda os filhos   | moldura que contém os filhos    | tráfego que cruza a fronteira   |
 | `source`   | emite no ritmo de um parâmetro         | origem, pulso de emissão        | taxa de emissão                 |
 | `router`   | política decide a porta de saída       | bifurcação, saída de descarte   | entraram / seguiram / caíram    |
