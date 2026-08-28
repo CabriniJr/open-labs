@@ -7,23 +7,27 @@
 <body>
 <x-dc>
 <helmet>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Serif:wght@500;600&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Outfit:wght@400;500;600;700&display=swap">
   <style>
-    body { margin: 0; background: #faf7f2; }
+    body { margin: 0; background: #f5f7fa; }
     a { color: #425cc7; text-decoration: none; }
     a:hover { color: #2f43a0; }
-    .serif { font-family: "IBM Plex Serif", Georgia, serif; }
-    .sans { font-family: "IBM Plex Sans", system-ui, sans-serif; }
-    .mono { font-family: "IBM Plex Mono", ui-monospace, monospace; }
+    .serif { font-family: "Outfit", system-ui, sans-serif; }
+    .sans { font-family: "Outfit", system-ui, sans-serif; }
+    .mono { font-family: "JetBrains Mono", ui-monospace, monospace; }
+
+    x-dc [style*="border: 1px solid"], x-dc [style*="border: 1.5px"], x-dc [style*="border: 1.2px"] { border-radius: 10px; }
+    x-dc svg rect { rx: 6; }
+    x-dc pre { border-radius: 0; }
   </style>
 </helmet>
 
-<div class="sans" style="width: 1440px; background: #faf7f2; color: #14110f; font-size: 17px; line-height: 1.6;">
+<div class="sans" style="width: 1440px; background: #f5f7fa; color: #111419; font-size: 17px; line-height: 1.6;">
 
-  <div style="display: flex; justify-content: space-between; align-items: baseline; padding: 22px 120px; border-bottom: 1px solid #ddd5c9;">
+  <div style="display: flex; justify-content: space-between; align-items: baseline; padding: 22px 120px; border-bottom: 1px solid #dde3ec;">
     <span class="mono" style="font-size: 12px; letter-spacing: 0.09em; text-transform: uppercase;">OTel Visual Handbook</span>
-    <div class="mono" style="display: flex; gap: 28px; font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: #5c554e;">
-      <span style="color: #14110f; border-bottom: 2px solid #425cc7; padding-bottom: 2px;">Learn</span>
+    <div class="mono" style="display: flex; gap: 28px; font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: #59616f;">
+      <span style="color: #111419; border-bottom: 2px solid #425cc7; padding-bottom: 2px;">Learn</span>
       <span>The Wire</span>
       <span>GitHub</span>
     </div>
@@ -31,76 +35,76 @@
 
   <div style="display: grid; grid-template-columns: 700px 300px; gap: 80px; padding: 96px 120px 40px;">
     <div>
-      <h1 class="serif" style="margin: 0 0 22px; font-size: 62px; font-weight: 600; line-height: 1.06; letter-spacing: -0.022em; max-width: 15ch;">See how the telemetry actually moves.</h1>
+      <h1 class="serif" style="margin: 0 0 22px; font-size: 62px; font-weight: 700; line-height: 1.03; letter-spacing: -0.034em; max-width: 15ch;">See how the telemetry actually moves.</h1>
       <p style="margin: 0 0 18px; font-size: 21px; line-height: 1.55; max-width: 62ch;">Most OpenTelemetry material shows you a diagram and a config file. This one gives you the running mechanism: change something, watch the trace react, then open it up and read the exact bytes that produced what you just saw.</p>
-      <p style="margin: 0; color: #5c554e; max-width: 62ch;">Turn off context propagation below. The picture breaks — and so does the payload underneath it, because they are the same data.</p>
+      <p style="margin: 0; color: #59616f; max-width: 62ch;">Turn off context propagation below. The picture breaks — and so does the payload underneath it, because they are the same data.</p>
     </div>
     <div style="align-self: end; border-top: 2px solid #425cc7; padding-top: 10px;">
-      <p class="mono" style="margin: 0; font-size: 12px; line-height: 1.7; color: #5c554e;">Live simulation.<br>Not a video.</p>
+      <p class="mono" style="margin: 0; font-size: 12px; line-height: 1.7; color: #59616f;">Live simulation.<br>Not a video.</p>
     </div>
   </div>
 
   <div style="padding: 0 120px 96px;">
-    <div style="background: #ffffff; border: 1px solid #ddd5c9;">
+    <div style="background: #ffffff; border: 1px solid #dde3ec;">
 
-      <div style="display: flex; justify-content: space-between; align-items: center; gap: 32px; padding: 16px 22px; border-bottom: 1px solid #ddd5c9;">
+      <div style="display: flex; justify-content: space-between; align-items: center; gap: 32px; padding: 16px 22px; border-bottom: 1px solid #dde3ec;">
         <div style="display: flex; align-items: center; gap: 9px;">
           <div style="width: 15px; height: 15px; border: 1.5px solid #425cc7; background: #425cc7; display: flex; align-items: center; justify-content: center;">
             <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5.2 L4 7.2 L8 2.8" stroke="#ffffff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </div>
           <span style="font-size: 14px;">Propagate <span class="mono" style="font-size: 13px;">traceparent</span></span>
         </div>
-        <span class="mono" style="font-size: 12.5px; color: #5c554e;">00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01</span>
+        <span class="mono" style="font-size: 12.5px; color: #59616f;">00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01</span>
       </div>
 
       <div style="display: grid; grid-template-columns: 148px minmax(0, 1fr) 340px; gap: 22px; padding: 22px; align-items: start;">
 
-        <div style="display: flex; flex-direction: column; border-left: 2px solid #ddd5c9;">
+        <div style="display: flex; flex-direction: column; border-left: 2px solid #dde3ec;">
           <div style="display: flex; gap: 10px; align-items: baseline; padding: 7px 12px; border-left: 2px solid #425cc7; margin-left: -2px;">
-            <span class="mono" style="font-size: 11px; color: #5c554e;">L0</span>
+            <span class="mono" style="font-size: 11px; color: #59616f;">L0</span>
             <span style="font-size: 14px;">Flow</span>
           </div>
-          <div style="display: flex; gap: 10px; align-items: baseline; padding: 7px 12px; border-left: 2px solid transparent; margin-left: -2px; color: #5c554e;">
+          <div style="display: flex; gap: 10px; align-items: baseline; padding: 7px 12px; border-left: 2px solid transparent; margin-left: -2px; color: #59616f;">
             <span class="mono" style="font-size: 11px;">L1</span>
             <span style="font-size: 14px;">Mechanism</span>
           </div>
-          <div style="display: flex; gap: 10px; align-items: baseline; padding: 7px 12px; border-left: 2px solid transparent; margin-left: -2px; color: #5c554e;">
+          <div style="display: flex; gap: 10px; align-items: baseline; padding: 7px 12px; border-left: 2px solid transparent; margin-left: -2px; color: #59616f;">
             <span class="mono" style="font-size: 11px;">L2</span>
             <span style="font-size: 14px;">Wire</span>
           </div>
-          <div style="display: flex; gap: 10px; align-items: baseline; padding: 7px 12px; border-left: 2px solid transparent; margin-left: -2px; color: #5c554e;">
+          <div style="display: flex; gap: 10px; align-items: baseline; padding: 7px 12px; border-left: 2px solid transparent; margin-left: -2px; color: #59616f;">
             <span class="mono" style="font-size: 11px;">L3</span>
             <span style="font-size: 14px;">Payload</span>
           </div>
         </div>
 
-        <div style="border: 1px solid #ddd5c9; padding: 18px 10px;">
+        <div style="border: 1px solid #dde3ec; padding: 18px 10px;">
           <svg viewBox="0 0 400 150" style="width: 100%; height: auto;">
-            <line x1="55" y1="72" x2="200" y2="72" stroke="#ddd5c9" stroke-width="1.5"/>
-            <line x1="200" y1="72" x2="345" y2="72" stroke="#ddd5c9" stroke-width="1.5"/>
+            <line x1="55" y1="72" x2="200" y2="72" stroke="#dde3ec" stroke-width="1.5"/>
+            <line x1="200" y1="72" x2="345" y2="72" stroke="#dde3ec" stroke-width="1.5"/>
             <circle cx="272" cy="72" r="5" fill="#425cc7"/>
-            <text x="272" y="59" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="7" fill="#5c554e">traceparent</text>
+            <text x="272" y="59" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="7" fill="#59616f">traceparent</text>
 
-            <rect x="17" y="54" width="76" height="36" fill="#faf7f2" stroke="#14110f" stroke-width="1.5"/>
-            <text x="55" y="76" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="11" fill="#14110f">client</text>
+            <rect x="17" y="54" width="76" height="36" fill="#f5f7fa" stroke="#111419" stroke-width="1.5"/>
+            <text x="55" y="76" text-anchor="middle" font-family="Outfit, sans-serif" font-size="11" fill="#111419">client</text>
 
-            <rect x="162" y="54" width="76" height="36" fill="#faf7f2" stroke="#14110f" stroke-width="1.5"/>
-            <text x="200" y="76" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="11" fill="#14110f">api</text>
+            <rect x="162" y="54" width="76" height="36" fill="#f5f7fa" stroke="#111419" stroke-width="1.5"/>
+            <text x="200" y="76" text-anchor="middle" font-family="Outfit, sans-serif" font-size="11" fill="#111419">api</text>
 
-            <rect x="307" y="54" width="76" height="36" fill="#faf7f2" stroke="#14110f" stroke-width="1.5"/>
-            <text x="345" y="72" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="11" fill="#14110f">checkout</text>
-            <text x="345" y="84" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="7.5" fill="#5c554e">same trace</text>
+            <rect x="307" y="54" width="76" height="36" fill="#f5f7fa" stroke="#111419" stroke-width="1.5"/>
+            <text x="345" y="72" text-anchor="middle" font-family="Outfit, sans-serif" font-size="11" fill="#111419">checkout</text>
+            <text x="345" y="84" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="7.5" fill="#59616f">same trace</text>
 
             <rect x="17" y="108" width="150" height="7" fill="#425cc7"/>
-            <text x="17" y="128" font-family="IBM Plex Mono, monospace" font-size="7.5" fill="#5c554e">GET /checkout</text>
+            <text x="17" y="128" font-family="JetBrains Mono, monospace" font-size="7.5" fill="#59616f">GET /checkout</text>
             <rect x="90" y="120" width="95" height="7" fill="#425cc7" opacity="0.55"/>
-            <text x="90" y="140" font-family="IBM Plex Mono, monospace" font-size="7.5" fill="#5c554e">POST /charge</text>
+            <text x="90" y="140" font-family="JetBrains Mono, monospace" font-size="7.5" fill="#59616f">POST /charge</text>
           </svg>
         </div>
 
-        <div style="border: 1px solid #ddd5c9; padding: 14px 16px; background: #ffffff;">
-          <p class="mono" style="margin: 0 0 10px; font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: #5c554e;">OTLP payload</p>
-          <pre class="mono" style="margin: 0; font-size: 11.5px; line-height: 1.65; color: #14110f; white-space: pre;">{
+        <div style="border: 1px solid #dde3ec; padding: 14px 16px; background: #ffffff;">
+          <p class="mono" style="margin: 0 0 10px; font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: #59616f;">OTLP payload</p>
+          <pre class="mono" style="margin: 0; font-size: 11.5px; line-height: 1.65; color: #111419; white-space: pre;">{
   "resourceSpans": [
    {
     "scopeSpans": [
@@ -113,91 +117,101 @@
        },
        {
         "traceId": "4bf92f35…",</pre>
-          <pre class="mono" style="margin: 0; padding: 1px 0; font-size: 11.5px; line-height: 1.65; background: #f5a80059; white-space: pre;">        "parentSpanId": "00f067aa…",</pre>
-          <pre class="mono" style="margin: 0; font-size: 11.5px; line-height: 1.65; color: #14110f; white-space: pre;">        "name": "POST /charge"
+          <pre class="mono" style="margin: 0; padding: 1px 0; font-size: 11.5px; line-height: 1.65; background: #f5a80066; white-space: pre;">        "parentSpanId": "00f067aa…",</pre>
+          <pre class="mono" style="margin: 0; font-size: 11.5px; line-height: 1.65; color: #111419; white-space: pre;">        "name": "POST /charge"
        }]}]}]}</pre>
         </div>
       </div>
 
-      <div style="display: flex; align-items: center; gap: 14px; padding: 14px 22px; border-top: 1px solid #ddd5c9;">
-        <span class="mono" style="font-size: 12px; border: 1px solid #14110f; padding: 3px 11px;">Pause</span>
-        <span class="mono" style="font-size: 12px; border: 1px solid #ddd5c9; padding: 3px 11px; color: #5c554e;">Step back</span>
+      <div style="display: flex; align-items: center; gap: 14px; padding: 14px 22px; border-top: 1px solid #dde3ec;">
+        <span class="mono" style="font-size: 12px; border: 1px solid #111419; padding: 3px 11px;">Pause</span>
+        <span class="mono" style="font-size: 12px; border: 1px solid #dde3ec; padding: 3px 11px; color: #59616f;">Step back</span>
         <div style="flex-grow: 1; position: relative; height: 14px;">
-          <div style="position: absolute; top: 6px; left: 0; right: 0; height: 2px; background: #ddd5c9;"></div>
+          <div style="position: absolute; top: 6px; left: 0; right: 0; height: 2px; background: #dde3ec;"></div>
           <div style="position: absolute; top: 6px; left: 0; width: 56%; height: 2px; background: #425cc7;"></div>
           <div style="position: absolute; top: 1px; left: 56%; width: 3px; height: 12px; background: #425cc7;"></div>
         </div>
-        <span class="mono" style="font-size: 12px; color: #5c554e;">18/32</span>
+        <span class="mono" style="font-size: 12px; color: #59616f;">18/32</span>
       </div>
 
     </div>
   </div>
 
-  <div style="display: grid; grid-template-columns: 700px 300px; gap: 80px; padding: 56px 120px; border-top: 1px solid #ddd5c9;">
+  <div style="display: grid; grid-template-columns: 700px 300px; gap: 80px; padding: 56px 120px; border-top: 1px solid #dde3ec;">
     <div>
-      <h2 class="serif" style="margin: 0 0 18px; font-size: 34px; font-weight: 600; letter-spacing: -0.015em;">What a lab is</h2>
+      <h2 class="serif" style="margin: 0 0 18px; font-size: 34px; font-weight: 700; letter-spacing: -0.026em;">What a lab is</h2>
       <p style="margin: 0 0 16px;">Every lab answers one concrete question, and it answers it four times — at four depths. The outside view shows services and telemetry flowing. Go one level down and you are inside a component. Another, and you are on the wire, in HTTP/2 frames. Another, and you are reading the OTLP payload field by field, with whatever just changed still highlighted.</p>
       <p style="margin: 0;">Those are not four drawings. They are four views of one running state, so what you read at the bottom is what produced the picture at the top. When a lab makes a claim, there is a <span class="mono" style="font-size: 15px;">docker compose</span> in the repository that lets you check it against a real Collector.</p>
     </div>
     <div style="border-top: 2px solid #425cc7; padding-top: 10px;">
-      <p style="margin: 0; font-size: 14px; line-height: 1.65; color: #5c554e;">Sourced from the OpenTelemetry specification and official docs. The teaching order follows <em>Learning OpenTelemetry</em>, because the order in which the concepts hold each other up is right there.</p>
+      <p style="margin: 0; font-size: 14px; line-height: 1.65; color: #59616f;">Sourced from the OpenTelemetry specification and official docs. The teaching order follows <em>Learning OpenTelemetry</em>, because the order in which the concepts hold each other up is right there.</p>
     </div>
   </div>
 
-  <div style="display: grid; grid-template-columns: 700px 300px; gap: 80px; padding: 56px 120px;">
-    <div>
-      <h2 class="serif" style="margin: 0 0 26px; font-size: 34px; font-weight: 600; letter-spacing: -0.015em;">The path</h2>
-
-      <div style="display: flex; flex-direction: column;">
-
-        <div style="padding: 20px 0; border-top: 1px solid #ddd5c9; color: #5c554e;">
-          <p class="mono" style="margin: 0; font-size: 11.5px; letter-spacing: 0.07em; text-transform: uppercase;">Phase 1</p>
-          <h3 class="serif" style="margin: 3px 0 6px; font-size: 23px; font-weight: 600; color: #5c554e;">The Problem</h3>
-          <p style="margin: 0 0 10px; font-size: 16px; max-width: 55ch;">Why logs, metrics and traces sitting in three tools is not observability.</p>
-          <div class="mono" style="display: flex; flex-wrap: wrap; gap: 8px 22px; font-size: 12.5px;"><span>Three pillars, one blind spot</span><span>The cost of disconnected signals</span></div>
-          <p class="mono" style="margin: 10px 0 0; font-size: 11.5px; color: #425cc7;">In progress</p>
+  <div style="padding: 56px 120px;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 60px; margin-bottom: 30px;">
+      <div>
+        <h2 class="serif" style="margin: 0 0 8px; font-size: 34px; font-weight: 700; letter-spacing: -0.026em;">The path</h2>
+        <p style="margin: 0; max-width: 58ch; color: #59616f;">The phases are not a queue. Instrumentation and pipelines cross; a list would hide that, so the map shows it. Click any node to open the lab.</p>
+      </div>
+      <div style="min-width: 260px;">
+        <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 7px;">
+          <span class="mono" style="font-size: 11.5px; letter-spacing: 0.07em; text-transform: uppercase; color: #59616f;">Your progress</span>
+          <span class="mono" style="font-size: 12.5px;">2 of 13</span>
         </div>
-
-        <div style="padding: 20px 0; border-top: 1px solid #ddd5c9;">
-          <p class="mono" style="margin: 0; font-size: 11.5px; letter-spacing: 0.07em; text-transform: uppercase; color: #5c554e;">Phase 2</p>
-          <h3 class="serif" style="margin: 3px 0 6px; font-size: 23px; font-weight: 600;">The Model</h3>
-          <p style="margin: 0 0 10px; font-size: 16px; max-width: 55ch;">What OpenTelemetry actually moves: signals, context, and the wire format.</p>
-          <div class="mono" style="display: flex; flex-wrap: wrap; gap: 8px 22px; font-size: 12.5px; color: #5c554e;"><span style="color: #14110f; border-bottom: 1px solid #425cc7;">Anatomy of a Trace</span><span>Hard context and baggage</span><span>Reading an OTLP payload</span></div>
-        </div>
-
-        <div style="padding: 20px 0; border-top: 1px solid #ddd5c9; color: #5c554e;">
-          <p class="mono" style="margin: 0; font-size: 11.5px; letter-spacing: 0.07em; text-transform: uppercase;">Phase 3</p>
-          <h3 class="serif" style="margin: 3px 0 6px; font-size: 23px; font-weight: 600; color: #5c554e;">The Architecture</h3>
-          <p style="margin: 0 0 10px; font-size: 16px; max-width: 55ch;">API, SDK, Collector — who does what, and where each one runs.</p>
-          <div class="mono" style="display: flex; flex-wrap: wrap; gap: 8px 22px; font-size: 12.5px;"><span>The Collector pipeline</span><span>Agent or gateway</span></div>
-          <p class="mono" style="margin: 10px 0 0; font-size: 11.5px; color: #425cc7;">In progress</p>
-        </div>
-
-        <div style="padding: 20px 0; border-top: 1px solid #ddd5c9; color: #5c554e;">
-          <p class="mono" style="margin: 0; font-size: 11.5px; letter-spacing: 0.07em; text-transform: uppercase;">Phase 4</p>
-          <h3 class="serif" style="margin: 3px 0 6px; font-size: 23px; font-weight: 600; color: #5c554e;">Instrumentation</h3>
-          <p style="margin: 0 0 10px; font-size: 16px; max-width: 55ch;">Where telemetry is born: your code, your libraries, your infrastructure.</p>
-          <div class="mono" style="display: flex; flex-wrap: wrap; gap: 8px 22px; font-size: 12.5px;"><span>Manual spans</span><span>Zero-code instrumentation</span><span>Host and Kubernetes signals</span></div>
-          <p class="mono" style="margin: 10px 0 0; font-size: 11.5px; color: #425cc7;">In progress</p>
-        </div>
-
-        <div style="padding: 20px 0; border-top: 1px solid #ddd5c9; border-bottom: 1px solid #ddd5c9; color: #5c554e;">
-          <p class="mono" style="margin: 0; font-size: 11.5px; letter-spacing: 0.07em; text-transform: uppercase;">Phase 5</p>
-          <h3 class="serif" style="margin: 3px 0 6px; font-size: 23px; font-weight: 600; color: #5c554e;">Operating at Scale</h3>
-          <p style="margin: 0 0 10px; font-size: 16px; max-width: 55ch;">Pipelines, sampling, cost, and getting an organization to adopt it.</p>
-          <div class="mono" style="display: flex; flex-wrap: wrap; gap: 8px 22px; font-size: 12.5px;"><span>Head vs tail sampling</span><span>Backpressure and drops</span><span>The rollout</span></div>
-          <p class="mono" style="margin: 10px 0 0; font-size: 11.5px; color: #425cc7;">In progress</p>
-        </div>
-
+        <div style="height: 3px; background: #dde3ec;"><div style="width: 15%; height: 3px; background: #425cc7;"></div></div>
       </div>
     </div>
-    <div style="border-top: 2px solid #425cc7; padding-top: 10px;">
-      <p style="margin: 0; font-size: 14px; line-height: 1.65; color: #5c554e;">Phases ship as they are written. The whole map is visible from day one on purpose — knowing what is coming is part of knowing where you are.</p>
+
+    <div style="background: #ffffff; border: 1px solid #dde3ec; padding: 30px 24px;">
+      <svg viewBox="0 0 1000 860" style="width: 100%; height: auto;">
+        <line x1="500" y1="31" x2="500" y2="814" stroke="#dde3ec" stroke-width="1.5"/>
+        <rect x="415" y="31" width="170" height="26" fill="#111419"/><text x="500" y="48" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="1.1" fill="#f5f7fa">PHASE 1 · THE PROBLEM</text>
+        <line x1="500" y1="110" x2="430" y2="110" stroke="#dde3ec" stroke-width="1.5"/><rect x="230" y="90" width="200" height="40" fill="#f5f7fa" stroke="#dde3ec" stroke-width="1.5"/><rect x="230" y="90" width="3" height="40" fill="#425cc7"/><path d="M243 110 l4 4 l8 -9" stroke="#425cc7" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/><text x="262" y="114" font-family="Outfit, sans-serif" font-size="12.5" fill="#59616f">Three pillars, one blind spot</text>
+        <line x1="500" y1="110" x2="570" y2="110" stroke="#dde3ec" stroke-width="1.5"/><rect x="570" y="90" width="200" height="40" fill="#f5f7fa" stroke="#dde3ec" stroke-width="1.5"/><rect x="570" y="90" width="3" height="40" fill="#425cc7"/><path d="M583 110 l4 4 l8 -9" stroke="#425cc7" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/><text x="602" y="114" font-family="Outfit, sans-serif" font-size="12.5" fill="#59616f">Disconnected signals</text>
+        <rect x="415" y="165" width="170" height="26" fill="#111419"/><text x="500" y="182" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="1.1" fill="#f5f7fa">PHASE 2 · THE MODEL</text>
+        <line x1="500" y1="244" x2="430" y2="244" stroke="#dde3ec" stroke-width="1.5"/><rect x="230" y="224" width="200" height="40" fill="#ffffff" stroke="#111419" stroke-width="1.5"/><rect x="230" y="224" width="3" height="40" fill="#425cc7"/><text x="246" y="248" font-family="Outfit, sans-serif" font-size="12.5" fill="#111419">Anatomy of a Trace</text>
+        <line x1="500" y1="244" x2="570" y2="244" stroke="#dde3ec" stroke-width="1.5"/><rect x="570" y="224" width="200" height="40" fill="#f5f7fa" stroke="#dde3ec" stroke-width="1.5" stroke-dasharray="5 4"/><text x="586" y="248" font-family="Outfit, sans-serif" font-size="12.5" fill="#8b94a5">Hard context and baggage</text>
+        <line x1="500" y1="300" x2="430" y2="300" stroke="#dde3ec" stroke-width="1.5"/><rect x="230" y="280" width="200" height="40" fill="#f5f7fa" stroke="#dde3ec" stroke-width="1.5" stroke-dasharray="5 4"/><text x="246" y="304" font-family="Outfit, sans-serif" font-size="12.5" fill="#8b94a5">Reading an OTLP payload</text>
+        <line x1="230" y1="244" x2="200" y2="244" stroke="#dde3ec" stroke-width="1.2" stroke-dasharray="3 3"/><rect x="40" y="227" width="160" height="34" fill="none" stroke="#dde3ec" stroke-width="1.2" stroke-dasharray="3 3"/><text x="120" y="248" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#8b94a5">W3C Trace Context</text>
+        <line x1="230" y1="300" x2="200" y2="300" stroke="#dde3ec" stroke-width="1.2" stroke-dasharray="3 3"/><rect x="40" y="283" width="160" height="34" fill="none" stroke="#dde3ec" stroke-width="1.2" stroke-dasharray="3 3"/><text x="120" y="304" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#8b94a5">OTLP</text>
+        <rect x="415" y="355" width="170" height="26" fill="#111419"/><text x="500" y="372" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="1.1" fill="#f5f7fa">PHASE 3 · THE ARCHITECTURE</text>
+        <line x1="500" y1="434" x2="430" y2="434" stroke="#dde3ec" stroke-width="1.5"/><rect x="230" y="414" width="200" height="40" fill="#f5f7fa" stroke="#dde3ec" stroke-width="1.5" stroke-dasharray="5 4"/><text x="246" y="438" font-family="Outfit, sans-serif" font-size="12.5" fill="#8b94a5">The Collector pipeline</text>
+        <line x1="500" y1="434" x2="570" y2="434" stroke="#dde3ec" stroke-width="1.5"/><rect x="570" y="414" width="200" height="40" fill="#f5f7fa" stroke="#dde3ec" stroke-width="1.5" stroke-dasharray="5 4"/><text x="586" y="438" font-family="Outfit, sans-serif" font-size="12.5" fill="#8b94a5">Agent or gateway</text>
+        <line x1="230" y1="434" x2="200" y2="434" stroke="#dde3ec" stroke-width="1.2" stroke-dasharray="3 3"/><rect x="40" y="417" width="160" height="34" fill="none" stroke="#dde3ec" stroke-width="1.2" stroke-dasharray="3 3"/><text x="120" y="438" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#8b94a5">gRPC over HTTP/2</text>
+        <rect x="415" y="489" width="170" height="26" fill="#111419"/><text x="500" y="506" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="1.1" fill="#f5f7fa">PHASE 4 · INSTRUMENTATION</text>
+        <line x1="500" y1="568" x2="430" y2="568" stroke="#dde3ec" stroke-width="1.5"/><rect x="230" y="548" width="200" height="40" fill="#f5f7fa" stroke="#dde3ec" stroke-width="1.5" stroke-dasharray="5 4"/><text x="246" y="572" font-family="Outfit, sans-serif" font-size="12.5" fill="#8b94a5">Manual spans</text>
+        <line x1="500" y1="568" x2="570" y2="568" stroke="#dde3ec" stroke-width="1.5"/><rect x="570" y="548" width="200" height="40" fill="#f5f7fa" stroke="#dde3ec" stroke-width="1.5" stroke-dasharray="5 4"/><text x="586" y="572" font-family="Outfit, sans-serif" font-size="12.5" fill="#8b94a5">Zero-code instrumentation</text>
+        <line x1="500" y1="624" x2="430" y2="624" stroke="#dde3ec" stroke-width="1.5"/><rect x="230" y="604" width="200" height="40" fill="#f5f7fa" stroke="#dde3ec" stroke-width="1.5" stroke-dasharray="5 4"/><text x="246" y="628" font-family="Outfit, sans-serif" font-size="12.5" fill="#8b94a5">Host and Kubernetes signals</text>
+        <rect x="415" y="679" width="170" height="26" fill="#111419"/><text x="500" y="696" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="1.1" fill="#f5f7fa">PHASE 5 · OPERATING AT SCALE</text>
+        <line x1="500" y1="758" x2="430" y2="758" stroke="#dde3ec" stroke-width="1.5"/><rect x="230" y="738" width="200" height="40" fill="#f5f7fa" stroke="#dde3ec" stroke-width="1.5" stroke-dasharray="5 4"/><text x="246" y="762" font-family="Outfit, sans-serif" font-size="12.5" fill="#8b94a5">Head vs tail sampling</text>
+        <line x1="500" y1="758" x2="570" y2="758" stroke="#dde3ec" stroke-width="1.5"/><rect x="570" y="738" width="200" height="40" fill="#f5f7fa" stroke="#dde3ec" stroke-width="1.5" stroke-dasharray="5 4"/><text x="586" y="762" font-family="Outfit, sans-serif" font-size="12.5" fill="#8b94a5">Backpressure and drops</text>
+        <line x1="500" y1="814" x2="430" y2="814" stroke="#dde3ec" stroke-width="1.5"/><rect x="230" y="794" width="200" height="40" fill="#f5f7fa" stroke="#dde3ec" stroke-width="1.5" stroke-dasharray="5 4"/><text x="246" y="818" font-family="Outfit, sans-serif" font-size="12.5" fill="#8b94a5">The rollout</text>
+      </svg>
+
+      <div style="display: flex; gap: 30px; align-items: center; margin-top: 24px; padding-top: 16px; border-top: 1px solid #dde3ec;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <svg width="22" height="16"><rect x="0.75" y="0.75" width="20.5" height="14.5" fill="#f5f7fa" stroke="#dde3ec" stroke-width="1.5"/><rect x="0.75" y="0.75" width="3" height="14.5" fill="#425cc7"/></svg>
+          <span class="mono" style="font-size: 11.5px; color: #59616f;">done</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <svg width="22" height="16"><rect x="0.75" y="0.75" width="20.5" height="14.5" fill="#ffffff" stroke="#111419" stroke-width="1.5"/><rect x="0.75" y="0.75" width="3" height="14.5" fill="#425cc7"/></svg>
+          <span class="mono" style="font-size: 11.5px; color: #111419;">where you are</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <svg width="22" height="16"><rect x="0.75" y="0.75" width="20.5" height="14.5" fill="#f5f7fa" stroke="#dde3ec" stroke-width="1.5" stroke-dasharray="5 4"/></svg>
+          <span class="mono" style="font-size: 11.5px; color: #59616f;">not written yet</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <svg width="22" height="16"><rect x="0.75" y="0.75" width="20.5" height="14.5" fill="none" stroke="#dde3ec" stroke-width="1.2" stroke-dasharray="3 3"/></svg>
+          <span class="mono" style="font-size: 11.5px; color: #59616f;">The Wire · reference, not a step</span>
+        </div>
+      </div>
     </div>
   </div>
 
-  <div style="padding: 26px 120px 40px; border-top: 1px solid #ddd5c9;">
-    <p class="mono" style="margin: 0; font-size: 12px; color: #5c554e;">Open source · GitHub · Built with Claude</p>
+  <div style="padding: 26px 120px 40px; border-top: 1px solid #dde3ec;">
+    <p class="mono" style="margin: 0; font-size: 12px; color: #59616f;">Open source · GitHub · Built with Claude</p>
   </div>
 
 </div>

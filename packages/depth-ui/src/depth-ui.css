@@ -46,6 +46,7 @@
 .dui-depth__stage {
   background: var(--paper-raised);
   border: 1px solid var(--rule);
+  border-radius: var(--radius-3);
   padding: var(--space-2);
 }
 
@@ -119,6 +120,7 @@
 
 .dui-inspector__line[data-changed="true"] {
   background-color: color-mix(in oklab, var(--sig-mutation) 35%, transparent);
+  border-radius: var(--radius-1);
 }
 
 .dui-timeline {
@@ -129,6 +131,7 @@
 }
 
 .dui-timeline button {
+  border-radius: var(--radius-1);
   font-family: var(--font-mono);
   font-size: var(--size-step--1);
   background: none;

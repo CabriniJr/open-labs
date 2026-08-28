@@ -7,41 +7,45 @@
 <body>
 <x-dc>
 <helmet>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Serif:wght@500;600&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Outfit:wght@400;500;600;700&display=swap">
   <style>
-    body { margin: 0; background: #faf7f2; }
+    body { margin: 0; background: #f5f7fa; }
     a { color: #425cc7; text-decoration: none; }
     a:hover { color: #2f43a0; }
-    .serif { font-family: "IBM Plex Serif", Georgia, serif; }
-    .sans { font-family: "IBM Plex Sans", system-ui, sans-serif; }
-    .mono { font-family: "IBM Plex Mono", ui-monospace, monospace; }
+    .serif { font-family: "Outfit", system-ui, sans-serif; }
+    .sans { font-family: "Outfit", system-ui, sans-serif; }
+    .mono { font-family: "JetBrains Mono", ui-monospace, monospace; }
+
+    x-dc [style*="border: 1px solid"], x-dc [style*="border: 1.5px"], x-dc [style*="border: 1.2px"] { border-radius: 10px; }
+    x-dc svg rect { rx: 6; }
+    x-dc pre { border-radius: 0; }
   </style>
 </helmet>
 
-<div class="sans" style="width: 1440px; background: #faf7f2; color: #14110f; font-size: 17px; line-height: 1.6;">
+<div class="sans" style="width: 1440px; background: #f5f7fa; color: #111419; font-size: 17px; line-height: 1.6;">
 
-  <div style="display: flex; justify-content: space-between; align-items: baseline; padding: 22px 120px; border-bottom: 1px solid #ddd5c9;">
+  <div style="display: flex; justify-content: space-between; align-items: baseline; padding: 22px 120px; border-bottom: 1px solid #dde3ec;">
     <span class="mono" style="font-size: 12px; letter-spacing: 0.09em; text-transform: uppercase;">OTel Visual Handbook</span>
-    <span class="mono" style="font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: #5c554e;">Phase 2 · The Model</span>
+    <span class="mono" style="font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: #59616f;">Phase 2 · The Model</span>
   </div>
 
   <div style="display: grid; grid-template-columns: 700px 300px; gap: 80px; padding: 64px 120px 32px;">
     <div>
-      <p class="mono" style="margin: 0 0 14px; font-size: 12px; letter-spacing: 0.07em; text-transform: uppercase; color: #5c554e;">The question</p>
-      <h1 class="serif" style="margin: 0 0 20px; font-size: 46px; font-weight: 600; line-height: 1.1; letter-spacing: -0.02em; max-width: 19ch;">What exactly travels between two services?</h1>
-      <p style="margin: 0; font-size: 19px; max-width: 60ch; color: #5c554e;">A trace is not sent anywhere. It is reassembled at the other end from a 55-character string riding in a header. Break that string and the trace does not become wrong — it becomes two.</p>
+      <p class="mono" style="margin: 0 0 14px; font-size: 12px; letter-spacing: 0.07em; text-transform: uppercase; color: #59616f;">The question</p>
+      <h1 class="serif" style="margin: 0 0 20px; font-size: 46px; font-weight: 700; line-height: 1.06; letter-spacing: -0.03em; max-width: 19ch;">What exactly travels between two services?</h1>
+      <p style="margin: 0; font-size: 19px; max-width: 60ch; color: #59616f;">A trace is not sent anywhere. It is reassembled at the other end from a 55-character string riding in a header. Break that string and the trace does not become wrong — it becomes two.</p>
     </div>
     <div style="align-self: end; border-top: 2px solid #425cc7; padding-top: 10px;">
-      <p class="mono" style="margin: 0; font-size: 12px; line-height: 1.7; color: #5c554e;">Lab 01<br>≈ 12 min<br>4 depths</p>
+      <p class="mono" style="margin: 0; font-size: 12px; line-height: 1.7; color: #59616f;">Lab 01<br>≈ 12 min<br>4 depths</p>
     </div>
   </div>
 
   <div style="padding: 20px 120px 40px;">
-    <p class="mono" style="margin: 0 0 14px; font-size: 12px; letter-spacing: 0.07em; text-transform: uppercase; color: #5c554e;">The model</p>
+    <p class="mono" style="margin: 0 0 14px; font-size: 12px; letter-spacing: 0.07em; text-transform: uppercase; color: #59616f;">The model</p>
 
-    <div style="background: #ffffff; border: 1px solid #ddd5c9;">
+    <div style="background: #ffffff; border: 1px solid #dde3ec;">
 
-      <div style="display: flex; align-items: center; gap: 28px; padding: 16px 22px; border-bottom: 1px solid #ddd5c9;">
+      <div style="display: flex; align-items: center; gap: 28px; padding: 16px 22px; border-bottom: 1px solid #dde3ec;">
         <div style="display: flex; align-items: center; gap: 9px;">
           <div style="width: 15px; height: 15px; border: 1.5px solid #425cc7; background: #425cc7; display: flex; align-items: center; justify-content: center;">
             <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5.2 L4 7.2 L8 2.8" stroke="#ffffff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -49,9 +53,9 @@
           <span style="font-size: 14px;">Propagate context</span>
         </div>
         <div style="display: flex; align-items: center; gap: 11px;">
-          <span style="font-size: 14px; color: #5c554e;">Requests / s</span>
+          <span style="font-size: 14px; color: #59616f;">Requests / s</span>
           <div style="position: relative; width: 150px; height: 14px;">
-            <div style="position: absolute; top: 6px; left: 0; right: 0; height: 2px; background: #ddd5c9;"></div>
+            <div style="position: absolute; top: 6px; left: 0; right: 0; height: 2px; background: #dde3ec;"></div>
             <div style="position: absolute; top: 6px; left: 0; width: 38%; height: 2px; background: #425cc7;"></div>
             <div style="position: absolute; top: 1px; left: 38%; width: 3px; height: 12px; background: #425cc7;"></div>
           </div>
@@ -61,58 +65,58 @@
 
       <div style="display: grid; grid-template-columns: 152px minmax(0, 1fr) 360px; gap: 22px; padding: 22px; align-items: start;">
 
-        <div style="display: flex; flex-direction: column; border-left: 2px solid #ddd5c9;">
-          <div style="display: flex; gap: 10px; align-items: baseline; padding: 7px 12px; border-left: 2px solid transparent; margin-left: -2px; color: #5c554e;">
+        <div style="display: flex; flex-direction: column; border-left: 2px solid #dde3ec;">
+          <div style="display: flex; gap: 10px; align-items: baseline; padding: 7px 12px; border-left: 2px solid transparent; margin-left: -2px; color: #59616f;">
             <span class="mono" style="font-size: 11px;">L0</span><span style="font-size: 14px;">Flow</span>
           </div>
           <div style="display: flex; gap: 10px; align-items: baseline; padding: 7px 12px; border-left: 2px solid #425cc7; margin-left: -2px;">
-            <span class="mono" style="font-size: 11px; color: #5c554e;">L1</span><span style="font-size: 14px;">Mechanism</span>
+            <span class="mono" style="font-size: 11px; color: #59616f;">L1</span><span style="font-size: 14px;">Mechanism</span>
           </div>
-          <div style="display: flex; gap: 10px; align-items: baseline; padding: 7px 12px; border-left: 2px solid transparent; margin-left: -2px; color: #5c554e;">
+          <div style="display: flex; gap: 10px; align-items: baseline; padding: 7px 12px; border-left: 2px solid transparent; margin-left: -2px; color: #59616f;">
             <span class="mono" style="font-size: 11px;">L2</span><span style="font-size: 14px;">Wire</span>
           </div>
-          <div style="display: flex; gap: 10px; align-items: baseline; padding: 7px 12px; border-left: 2px solid transparent; margin-left: -2px; color: #5c554e;">
+          <div style="display: flex; gap: 10px; align-items: baseline; padding: 7px 12px; border-left: 2px solid transparent; margin-left: -2px; color: #59616f;">
             <span class="mono" style="font-size: 11px;">L3</span><span style="font-size: 14px;">Payload</span>
           </div>
-          <p class="mono" style="margin: 16px 12px 0; font-size: 11px; line-height: 1.6; color: #5c554e;">Inside the SDK. Drag a processor in or out.</p>
+          <p class="mono" style="margin: 16px 12px 0; font-size: 11px; line-height: 1.6; color: #59616f;">Inside the SDK. Drag a processor in or out.</p>
         </div>
 
-        <div style="border: 1px solid #ddd5c9; padding: 20px 18px;">
-          <p class="mono" style="margin: 0 0 16px; font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: #5c554e;">Tracer provider · api</p>
+        <div style="border: 1px solid #dde3ec; padding: 20px 18px;">
+          <p class="mono" style="margin: 0 0 16px; font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: #59616f;">Tracer provider · api</p>
 
           <div style="display: flex; align-items: center; gap: 0;">
-            <div style="border: 1.5px solid #14110f; background: #faf7f2; padding: 11px 13px; min-width: 96px;">
+            <div style="border: 1.5px solid #111419; background: #f5f7fa; padding: 11px 13px; min-width: 96px;">
               <p class="mono" style="margin: 0; font-size: 11px;">Tracer</p>
-              <p class="mono" style="margin: 2px 0 0; font-size: 9.5px; color: #5c554e;">24 spans/s</p>
+              <p class="mono" style="margin: 2px 0 0; font-size: 9.5px; color: #59616f;">24 spans/s</p>
             </div>
-            <div style="flex-grow: 1; height: 1.5px; background: #ddd5c9; position: relative;">
+            <div style="flex-grow: 1; height: 1.5px; background: #dde3ec; position: relative;">
               <div style="position: absolute; top: -3px; left: 40%; width: 7px; height: 7px; background: #425cc7;"></div>
             </div>
-            <div style="border: 1.5px dashed #425cc7; background: #425cc708; padding: 11px 13px; min-width: 116px;">
+            <div style="border: 1.5px dashed #425cc7; background: #425cc70f; padding: 11px 13px; min-width: 116px;">
               <p class="mono" style="margin: 0; font-size: 11px; color: #425cc7;">BatchProcessor</p>
-              <p class="mono" style="margin: 2px 0 0; font-size: 9.5px; color: #5c554e;">queue 12/512</p>
+              <p class="mono" style="margin: 2px 0 0; font-size: 9.5px; color: #59616f;">queue 12/512</p>
             </div>
-            <div style="flex-grow: 1; height: 1.5px; background: #ddd5c9; position: relative;">
+            <div style="flex-grow: 1; height: 1.5px; background: #dde3ec; position: relative;">
               <div style="position: absolute; top: -3px; left: 55%; width: 7px; height: 7px; background: #425cc7;"></div>
             </div>
-            <div style="border: 1.5px solid #14110f; background: #faf7f2; padding: 11px 13px; min-width: 96px;">
+            <div style="border: 1.5px solid #111419; background: #f5f7fa; padding: 11px 13px; min-width: 96px;">
               <p class="mono" style="margin: 0; font-size: 11px;">Exporter</p>
-              <p class="mono" style="margin: 2px 0 0; font-size: 9.5px; color: #5c554e;">1 req / 5 s</p>
+              <p class="mono" style="margin: 2px 0 0; font-size: 9.5px; color: #59616f;">1 req / 5 s</p>
             </div>
           </div>
 
-          <div style="margin-top: 26px; padding-top: 18px; border-top: 1px dashed #ddd5c9;">
-            <p class="mono" style="margin: 0 0 11px; font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: #5c554e;">Drag into the pipeline</p>
+          <div style="margin-top: 26px; padding-top: 18px; border-top: 1px dashed #dde3ec;">
+            <p class="mono" style="margin: 0 0 11px; font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: #59616f;">Drag into the pipeline</p>
             <div style="display: flex; gap: 10px;">
-              <span class="mono" style="font-size: 11px; border: 1.5px dashed #ddd5c9; padding: 7px 11px; color: #5c554e;">SimpleProcessor</span>
-              <span class="mono" style="font-size: 11px; border: 1.5px dashed #ddd5c9; padding: 7px 11px; color: #5c554e;">AttributesProcessor</span>
-              <span class="mono" style="font-size: 11px; border: 1.5px dashed #ddd5c9; padding: 7px 11px; color: #5c554e;">Sampler</span>
+              <span class="mono" style="font-size: 11px; border: 1.5px dashed #dde3ec; padding: 7px 11px; color: #59616f;">SimpleProcessor</span>
+              <span class="mono" style="font-size: 11px; border: 1.5px dashed #dde3ec; padding: 7px 11px; color: #59616f;">AttributesProcessor</span>
+              <span class="mono" style="font-size: 11px; border: 1.5px dashed #dde3ec; padding: 7px 11px; color: #59616f;">Sampler</span>
             </div>
           </div>
         </div>
 
-        <div style="border: 1px solid #ddd5c9; padding: 14px 16px;">
-          <p class="mono" style="margin: 0 0 10px; font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: #5c554e;">Export batch · 5 spans</p>
+        <div style="border: 1px solid #dde3ec; padding: 14px 16px;">
+          <p class="mono" style="margin: 0 0 10px; font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: #59616f;">Export batch · 5 spans</p>
           <pre class="mono" style="margin: 0; font-size: 11.5px; line-height: 1.65; white-space: pre;">{
   "resourceSpans": [
    {
@@ -123,73 +127,73 @@
      ]},
     "scopeSpans": [
      {</pre>
-          <pre class="mono" style="margin: 0; padding: 1px 0; font-size: 11.5px; line-height: 1.65; background: #f5a80059; white-space: pre;">      "spans": [ …5 items… ]</pre>
+          <pre class="mono" style="margin: 0; padding: 1px 0; font-size: 11.5px; line-height: 1.65; background: #f5a80066; white-space: pre;">      "spans": [ …5 items… ]</pre>
           <pre class="mono" style="margin: 0; font-size: 11.5px; line-height: 1.65; white-space: pre;">     }]}]}</pre>
-          <p style="margin: 12px 0 0; font-size: 13px; line-height: 1.55; color: #5c554e;">Five spans left the tracer one at a time. One request leaves the process. That is what the batch processor is for.</p>
+          <p style="margin: 12px 0 0; font-size: 13px; line-height: 1.55; color: #59616f;">Five spans left the tracer one at a time. One request leaves the process. That is what the batch processor is for.</p>
         </div>
       </div>
 
-      <div style="display: flex; align-items: center; gap: 14px; padding: 14px 22px; border-top: 1px solid #ddd5c9;">
-        <span class="mono" style="font-size: 12px; border: 1px solid #14110f; padding: 3px 11px;">Pause</span>
-        <span class="mono" style="font-size: 12px; border: 1px solid #ddd5c9; padding: 3px 11px; color: #5c554e;">Step back</span>
+      <div style="display: flex; align-items: center; gap: 14px; padding: 14px 22px; border-top: 1px solid #dde3ec;">
+        <span class="mono" style="font-size: 12px; border: 1px solid #111419; padding: 3px 11px;">Pause</span>
+        <span class="mono" style="font-size: 12px; border: 1px solid #dde3ec; padding: 3px 11px; color: #59616f;">Step back</span>
         <div style="flex-grow: 1; position: relative; height: 14px;">
-          <div style="position: absolute; top: 6px; left: 0; right: 0; height: 2px; background: #ddd5c9;"></div>
+          <div style="position: absolute; top: 6px; left: 0; right: 0; height: 2px; background: #dde3ec;"></div>
           <div style="position: absolute; top: 6px; left: 0; width: 72%; height: 2px; background: #425cc7;"></div>
           <div style="position: absolute; top: 1px; left: 72%; width: 3px; height: 12px; background: #425cc7;"></div>
         </div>
-        <span class="mono" style="font-size: 12px; color: #5c554e;">46/64</span>
+        <span class="mono" style="font-size: 12px; color: #59616f;">46/64</span>
       </div>
 
     </div>
   </div>
 
-  <div style="display: grid; grid-template-columns: 700px 300px; gap: 80px; padding: 40px 120px; border-top: 1px solid #ddd5c9;">
+  <div style="display: grid; grid-template-columns: 700px 300px; gap: 80px; padding: 40px 120px; border-top: 1px solid #dde3ec;">
     <div>
-      <p class="mono" style="margin: 0 0 14px; font-size: 12px; letter-spacing: 0.07em; text-transform: uppercase; color: #5c554e;">Break it</p>
+      <p class="mono" style="margin: 0 0 14px; font-size: 12px; letter-spacing: 0.07em; text-transform: uppercase; color: #59616f;">Break it</p>
       <div style="display: flex; flex-direction: column; gap: 12px;">
         <div style="display: flex; align-items: baseline; gap: 16px; border-left: 2px solid #b8442a; padding: 6px 0 6px 14px;">
           <span class="mono" style="font-size: 13px; white-space: nowrap;">Drop the header</span>
-          <span style="font-size: 15px; color: #5c554e;">A proxy strips <span class="mono" style="font-size: 13.5px;">traceparent</span>. The second service opens a trace of its own.</span>
+          <span style="font-size: 15px; color: #59616f;">A proxy strips <span class="mono" style="font-size: 13.5px;">traceparent</span>. The second service opens a trace of its own.</span>
         </div>
         <div style="display: flex; align-items: baseline; gap: 16px; border-left: 2px solid #b8442a; padding: 6px 0 6px 14px;">
           <span class="mono" style="font-size: 13px; white-space: nowrap;">Flip the flags</span>
-          <span style="font-size: 15px; color: #5c554e;">Sampled bit off. The span still exists; nothing records it.</span>
+          <span style="font-size: 15px; color: #59616f;">Sampled bit off. The span still exists; nothing records it.</span>
         </div>
         <div style="display: flex; align-items: baseline; gap: 16px; border-left: 2px solid #b8442a; padding: 6px 0 6px 14px;">
           <span class="mono" style="font-size: 13px; white-space: nowrap;">Zero the span id</span>
-          <span style="font-size: 15px; color: #5c554e;">An all-zero id is invalid by spec. Watch the parser refuse it.</span>
+          <span style="font-size: 15px; color: #59616f;">An all-zero id is invalid by spec. Watch the parser refuse it.</span>
         </div>
       </div>
     </div>
     <div style="border-top: 2px solid #b8442a; padding-top: 10px;">
-      <p style="margin: 0; font-size: 14px; line-height: 1.65; color: #5c554e;">Each failure is armed, not described. You click it and the model breaks in front of you.</p>
+      <p style="margin: 0; font-size: 14px; line-height: 1.65; color: #59616f;">Each failure is armed, not described. You click it and the model breaks in front of you.</p>
     </div>
   </div>
 
   <div style="display: grid; grid-template-columns: 700px 300px; gap: 80px; padding: 40px 120px;">
     <div>
-      <p class="mono" style="margin: 0 0 14px; font-size: 12px; letter-spacing: 0.07em; text-transform: uppercase; color: #5c554e;">Why it works this way</p>
+      <p class="mono" style="margin: 0 0 14px; font-size: 12px; letter-spacing: 0.07em; text-transform: uppercase; color: #59616f;">Why it works this way</p>
       <p style="margin: 0 0 16px;">The W3C Trace Context specification defines exactly one required header. It carries a version, a 16-byte trace id, an 8-byte span id and one flag byte — and nothing else. There is no room in it for a service name, a timestamp or an attribute, which is the point: it is the smallest thing that can survive an arbitrary number of hops through software that has never heard of it.</p>
       <p style="margin: 0;">Everything else about the trace is reconstructed at the backend, by matching ids that were generated independently on machines that never spoke to each other.</p>
     </div>
     <div style="border-top: 2px solid #425cc7; padding-top: 10px;">
-      <p class="mono" style="margin: 0 0 6px; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: #5c554e;">Sources</p>
+      <p class="mono" style="margin: 0 0 6px; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: #59616f;">Sources</p>
       <p style="margin: 0; font-size: 14px; line-height: 1.7;"><a href="#">W3C Trace Context §3.2</a><br><a href="#">OTel spec · Context propagation</a></p>
     </div>
   </div>
 
   <div style="display: grid; grid-template-columns: 700px 300px; gap: 80px; padding: 40px 120px 64px;">
     <div>
-      <p class="mono" style="margin: 0 0 14px; font-size: 12px; letter-spacing: 0.07em; text-transform: uppercase; color: #5c554e;">Run it for real</p>
-      <div style="background: #14110f; padding: 18px 20px;">
-        <pre class="mono" style="margin: 0; font-size: 13px; line-height: 1.75; color: #ece7e0; white-space: pre;">cd labs/anatomy-of-a-trace
+      <p class="mono" style="margin: 0 0 14px; font-size: 12px; letter-spacing: 0.07em; text-transform: uppercase; color: #59616f;">Run it for real</p>
+      <div style="background: #111419; padding: 18px 20px;">
+        <pre class="mono" style="margin: 0; font-size: 13px; line-height: 1.75; color: #e8ecf2; white-space: pre;">cd labs/anatomy-of-a-trace
 docker compose up -d
 curl localhost:8080/checkout</pre>
       </div>
-      <p style="margin: 14px 0 0; color: #5c554e;">Two services and a Collector printing to stdout. Watch the second span carry the first one's id — then set <span class="mono" style="font-size: 15px;">STRIP_HEADER=1</span> and watch it stop.</p>
+      <p style="margin: 14px 0 0; color: #59616f;">Two services and a Collector printing to stdout. Watch the second span carry the first one's id — then set <span class="mono" style="font-size: 15px;">STRIP_HEADER=1</span> and watch it stop.</p>
     </div>
     <div style="border-top: 2px solid #425cc7; padding-top: 10px;">
-      <p style="margin: 0; font-size: 14px; line-height: 1.65; color: #5c554e;">The OTLP fixtures captured from this compose are what the simulation's tests assert against. If it drifts from the spec, the test breaks.</p>
+      <p style="margin: 0; font-size: 14px; line-height: 1.65; color: #59616f;">The OTLP fixtures captured from this compose are what the simulation's tests assert against. If it drifts from the spec, the test breaks.</p>
     </div>
   </div>
 

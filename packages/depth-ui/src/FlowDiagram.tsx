@@ -47,7 +47,7 @@ export function FlowDiagram({ view, onSelectNode, selectedNodeId }: FlowDiagramP
           data-selected={node.id === selectedNodeId ? "true" : undefined}
           onClick={onSelectNode ? () => onSelectNode(node.id) : undefined}
         >
-          <rect x={node.x - 38} y={node.y - 18} width={76} height={36} rx={0} />
+          <rect x={node.x - 38} y={node.y - 18} width={76} height={36} rx={6} />
           <text x={node.x} y={node.y + 1} textAnchor="middle">
             {node.label}
           </text>

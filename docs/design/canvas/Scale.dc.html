@@ -7,133 +7,137 @@
 <body>
 <x-dc>
 <helmet>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Serif:wght@500;600&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Outfit:wght@400;500;600;700&display=swap">
   <style>
-    body { margin: 0; background: #faf7f2; }
+    body { margin: 0; background: #f5f7fa; }
     a { color: #425cc7; } a:hover { color: #2f43a0; }
-    .serif { font-family: "IBM Plex Serif", Georgia, serif; }
-    .sans { font-family: "IBM Plex Sans", system-ui, sans-serif; }
-    .mono { font-family: "IBM Plex Mono", ui-monospace, monospace; }
-    .lbl { font-family: "IBM Plex Mono", monospace; font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: #5c554e; margin: 0 0 14px; }
+    .serif { font-family: "Outfit", system-ui, sans-serif; }
+    .sans { font-family: "Outfit", system-ui, sans-serif; }
+    .mono { font-family: "JetBrains Mono", ui-monospace, monospace; }
+    .lbl { font-family: "IBM Plex Mono", monospace; font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: #59616f; margin: 0 0 14px; }
+
+    x-dc [style*="border: 1px solid"], x-dc [style*="border: 1.5px"], x-dc [style*="border: 1.2px"] { border-radius: 10px; }
+    x-dc svg rect { rx: 6; }
+    x-dc pre { border-radius: 0; }
   </style>
 </helmet>
 
-<div class="sans" style="width: 1100px; background: #faf7f2; color: #14110f; padding: 56px 64px; font-size: 16px; line-height: 1.6;">
+<div class="sans" style="width: 1100px; background: #f5f7fa; color: #111419; padding: 56px 64px; font-size: 16px; line-height: 1.6;">
 
-  <h1 class="serif" style="margin: 0 0 8px; font-size: 40px; font-weight: 600; letter-spacing: -0.02em;">Design scale</h1>
-  <p style="margin: 0 0 48px; color: #5c554e; max-width: 62ch;">Two layers. The editorial chrome never changes between technologies; the domain theme paints accent, signal and logo — never background, never type.</p>
+  <h1 class="serif" style="margin: 0 0 8px; font-size: 40px; font-weight: 700; letter-spacing: -0.03em;">Design scale</h1>
+  <p style="margin: 0 0 48px; color: #59616f; max-width: 62ch;">Two layers. The neutral chrome never changes between technologies; the domain theme paints accent, signal and logo — never background, never type. Geometric type, 10px radius, cool paper.</p>
 
-  <div style="border-top: 1px solid #ddd5c9; padding-top: 28px; margin-bottom: 44px;">
-    <p class="lbl">Type · IBM Plex Serif / Sans / Mono</p>
+  <div style="border-top: 1px solid #dde3ec; padding-top: 28px; margin-bottom: 44px;">
+    <p class="lbl">Type · Outfit / JetBrains Mono</p>
     <div style="display: flex; flex-direction: column; gap: 18px;">
       <div style="display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 28px; align-items: baseline;">
-        <span class="mono" style="font-size: 11px; color: #5c554e;">step-3 · serif 600</span>
-        <span class="serif" style="font-size: 62px; font-weight: 600; line-height: 1.06; letter-spacing: -0.022em;">See how it moves</span>
+        <span class="mono" style="font-size: 11px; color: #59616f;">step-3 · 700</span>
+        <span class="serif" style="font-size: 62px; font-weight: 700; line-height: 1.03; letter-spacing: -0.034em;">See how it moves</span>
       </div>
       <div style="display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 28px; align-items: baseline;">
-        <span class="mono" style="font-size: 11px; color: #5c554e;">step-2 · serif 600</span>
-        <span class="serif" style="font-size: 34px; font-weight: 600; letter-spacing: -0.015em;">What a lab is</span>
+        <span class="mono" style="font-size: 11px; color: #59616f;">step-2 · 700</span>
+        <span class="serif" style="font-size: 34px; font-weight: 700; letter-spacing: -0.026em;">What a lab is</span>
       </div>
       <div style="display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 28px; align-items: baseline;">
-        <span class="mono" style="font-size: 11px; color: #5c554e;">step-1 · sans 400</span>
+        <span class="mono" style="font-size: 11px; color: #59616f;">step-1 · 400</span>
         <span style="font-size: 21px;">The lede paragraph, one size up from prose</span>
       </div>
       <div style="display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 28px; align-items: baseline;">
-        <span class="mono" style="font-size: 11px; color: #5c554e;">step-0 · sans 400</span>
+        <span class="mono" style="font-size: 11px; color: #59616f;">step-0 · 400</span>
         <span style="font-size: 17px;">Body prose, set to a 68-character measure so the eye returns to the right line without effort.</span>
       </div>
       <div style="display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 28px; align-items: baseline;">
-        <span class="mono" style="font-size: 11px; color: #5c554e;">step-−1 · mono</span>
+        <span class="mono" style="font-size: 11px; color: #59616f;">step-−1 · mono 400</span>
         <span class="mono" style="font-size: 13.5px;">00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01</span>
       </div>
       <div style="display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 28px; align-items: baseline;">
-        <span class="mono" style="font-size: 11px; color: #5c554e;">label · mono</span>
+        <span class="mono" style="font-size: 11px; color: #59616f;">label · mono</span>
         <span class="mono" style="font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase;">Phase 2 · The Model</span>
       </div>
     </div>
   </div>
 
-  <div style="display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 48px; border-top: 1px solid #ddd5c9; padding-top: 28px; margin-bottom: 44px;">
+  <div style="display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 48px; border-top: 1px solid #dde3ec; padding-top: 28px; margin-bottom: 44px;">
     <div>
-      <p class="lbl">Editorial chrome · neutral, never themed</p>
+      <p class="lbl">Chrome · neutral, never themed</p>
       <div style="display: flex; flex-direction: column; gap: 10px;">
-        <div style="display: flex; align-items: center; gap: 14px;"><div style="width: 56px; height: 34px; background: #faf7f2; border: 1px solid #ddd5c9;"></div><span class="mono" style="font-size: 12px;">--paper</span><span class="mono" style="font-size: 12px; color: #5c554e;">#faf7f2</span></div>
-        <div style="display: flex; align-items: center; gap: 14px;"><div style="width: 56px; height: 34px; background: #ffffff; border: 1px solid #ddd5c9;"></div><span class="mono" style="font-size: 12px;">--paper-raised</span><span class="mono" style="font-size: 12px; color: #5c554e;">#ffffff</span></div>
-        <div style="display: flex; align-items: center; gap: 14px;"><div style="width: 56px; height: 34px; background: #14110f;"></div><span class="mono" style="font-size: 12px;">--ink</span><span class="mono" style="font-size: 12px; color: #5c554e;">#14110f</span></div>
-        <div style="display: flex; align-items: center; gap: 14px;"><div style="width: 56px; height: 34px; background: #5c554e;"></div><span class="mono" style="font-size: 12px;">--ink-muted</span><span class="mono" style="font-size: 12px; color: #5c554e;">#5c554e</span></div>
-        <div style="display: flex; align-items: center; gap: 14px;"><div style="width: 56px; height: 34px; background: #ddd5c9;"></div><span class="mono" style="font-size: 12px;">--rule</span><span class="mono" style="font-size: 12px; color: #5c554e;">#ddd5c9</span></div>
+        <div style="display: flex; align-items: center; gap: 14px;"><div style="width: 56px; height: 34px; background: #f5f7fa; border: 1px solid #dde3ec;"></div><span class="mono" style="font-size: 12px;">--paper</span><span class="mono" style="font-size: 12px; color: #59616f;">#f5f7fa</span></div>
+        <div style="display: flex; align-items: center; gap: 14px;"><div style="width: 56px; height: 34px; background: #ffffff; border: 1px solid #dde3ec;"></div><span class="mono" style="font-size: 12px;">--paper-raised</span><span class="mono" style="font-size: 12px; color: #59616f;">#ffffff</span></div>
+        <div style="display: flex; align-items: center; gap: 14px;"><div style="width: 56px; height: 34px; background: #111419;"></div><span class="mono" style="font-size: 12px;">--ink</span><span class="mono" style="font-size: 12px; color: #59616f;">#111419</span></div>
+        <div style="display: flex; align-items: center; gap: 14px;"><div style="width: 56px; height: 34px; background: #59616f;"></div><span class="mono" style="font-size: 12px;">--ink-muted</span><span class="mono" style="font-size: 12px; color: #59616f;">#59616f</span></div>
+        <div style="display: flex; align-items: center; gap: 14px;"><div style="width: 56px; height: 34px; background: #dde3ec;"></div><span class="mono" style="font-size: 12px;">--rule</span><span class="mono" style="font-size: 12px; color: #59616f;">#dde3ec</span></div>
       </div>
     </div>
     <div>
       <p class="lbl">Domain theme · data-domain="otel"</p>
       <div style="display: flex; flex-direction: column; gap: 10px;">
-        <div style="display: flex; align-items: center; gap: 14px;"><div style="width: 56px; height: 34px; background: #425cc7;"></div><span class="mono" style="font-size: 12px;">--accent</span><span class="mono" style="font-size: 12px; color: #5c554e;">#425cc7</span></div>
-        <div style="display: flex; align-items: center; gap: 14px;"><div style="width: 56px; height: 34px; background: #425cc7;"></div><span class="mono" style="font-size: 12px;">--sig-flow</span><span class="mono" style="font-size: 12px; color: #5c554e;">telemetry in motion</span></div>
-        <div style="display: flex; align-items: center; gap: 14px;"><div style="width: 56px; height: 34px; background: #b8442a;"></div><span class="mono" style="font-size: 12px;">--sig-drop</span><span class="mono" style="font-size: 12px; color: #5c554e;">dropped, broken</span></div>
-        <div style="display: flex; align-items: center; gap: 14px;"><div style="width: 56px; height: 34px; background: #3f7a52;"></div><span class="mono" style="font-size: 12px;">--sig-ok</span><span class="mono" style="font-size: 12px; color: #5c554e;">accepted</span></div>
-        <div style="display: flex; align-items: center; gap: 14px;"><div style="width: 56px; height: 34px; background: #f5a800;"></div><span class="mono" style="font-size: 12px;">--sig-mutation</span><span class="mono" style="font-size: 12px; color: #5c554e;">just changed</span></div>
+        <div style="display: flex; align-items: center; gap: 14px;"><div style="width: 56px; height: 34px; background: #425cc7;"></div><span class="mono" style="font-size: 12px;">--accent</span><span class="mono" style="font-size: 12px; color: #59616f;">#425cc7</span></div>
+        <div style="display: flex; align-items: center; gap: 14px;"><div style="width: 56px; height: 34px; background: #425cc7;"></div><span class="mono" style="font-size: 12px;">--sig-flow</span><span class="mono" style="font-size: 12px; color: #59616f;">telemetry in motion</span></div>
+        <div style="display: flex; align-items: center; gap: 14px;"><div style="width: 56px; height: 34px; background: #b8442a;"></div><span class="mono" style="font-size: 12px;">--sig-drop</span><span class="mono" style="font-size: 12px; color: #59616f;">dropped, broken</span></div>
+        <div style="display: flex; align-items: center; gap: 14px;"><div style="width: 56px; height: 34px; background: #3f7a52;"></div><span class="mono" style="font-size: 12px;">--sig-ok</span><span class="mono" style="font-size: 12px; color: #59616f;">accepted</span></div>
+        <div style="display: flex; align-items: center; gap: 14px;"><div style="width: 56px; height: 34px; background: #f5a800;"></div><span class="mono" style="font-size: 12px;">--sig-mutation</span><span class="mono" style="font-size: 12px; color: #59616f;">just changed</span></div>
       </div>
-      <p style="margin: 16px 0 0; font-size: 13.5px; line-height: 1.6; color: #5c554e;">Both hues are OpenTelemetry's own. A Kafka handbook swaps this column and nothing else.</p>
+      <p style="margin: 16px 0 0; font-size: 13.5px; line-height: 1.6; color: #59616f;">Both hues are OpenTelemetry's own. A Kafka handbook swaps this column and nothing else.</p>
     </div>
   </div>
 
-  <div style="border-top: 1px solid #ddd5c9; padding-top: 28px; margin-bottom: 44px;">
+  <div style="border-top: 1px solid #dde3ec; padding-top: 28px; margin-bottom: 44px;">
     <p class="lbl">Diagram language · drawn, not imported</p>
-    <div style="background: #ffffff; border: 1px solid #ddd5c9; padding: 26px 24px;">
+    <div style="background: #ffffff; border: 1px solid #dde3ec; padding: 26px 24px;">
       <svg viewBox="0 0 960 190" style="width: 100%; height: auto;">
-        <rect x="10" y="30" width="86" height="38" fill="#faf7f2" stroke="#14110f" stroke-width="1.5"/>
-        <text x="53" y="53" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="11.5" fill="#14110f">service</text>
-        <text x="53" y="88" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="9" fill="#5c554e">idle</text>
+        <rect x="10" y="30" width="86" height="38" fill="#f5f7fa" stroke="#111419" stroke-width="1.5"/>
+        <text x="53" y="53" text-anchor="middle" font-family="Outfit, sans-serif" font-size="11.5" fill="#111419">service</text>
+        <text x="53" y="88" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#59616f">idle</text>
 
-        <rect x="130" y="30" width="86" height="38" fill="#faf7f2" stroke="#425cc7" stroke-width="2"/>
-        <text x="173" y="53" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="11.5" fill="#14110f">service</text>
-        <text x="173" y="88" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="9" fill="#5c554e">active</text>
+        <rect x="130" y="30" width="86" height="38" fill="#f5f7fa" stroke="#425cc7" stroke-width="2"/>
+        <text x="173" y="53" text-anchor="middle" font-family="Outfit, sans-serif" font-size="11.5" fill="#111419">service</text>
+        <text x="173" y="88" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#59616f">active</text>
 
-        <rect x="250" y="30" width="86" height="38" fill="#faf7f2" stroke="#b8442a" stroke-width="2"/>
-        <text x="293" y="53" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="11.5" fill="#14110f">service</text>
-        <text x="293" y="88" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="9" fill="#5c554e">error</text>
+        <rect x="250" y="30" width="86" height="38" fill="#f5f7fa" stroke="#b8442a" stroke-width="2"/>
+        <text x="293" y="53" text-anchor="middle" font-family="Outfit, sans-serif" font-size="11.5" fill="#111419">service</text>
+        <text x="293" y="88" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#59616f">error</text>
 
-        <rect x="370" y="30" width="112" height="38" fill="#425cc708" stroke="#425cc7" stroke-width="1.5" stroke-dasharray="5 3"/>
-        <text x="426" y="53" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#425cc7">Processor</text>
-        <text x="426" y="88" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="9" fill="#5c554e">composable</text>
+        <rect x="370" y="30" width="112" height="38" fill="#425cc70f" stroke="#425cc7" stroke-width="1.5" stroke-dasharray="5 3"/>
+        <text x="426" y="53" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#425cc7">Processor</text>
+        <text x="426" y="88" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#59616f">composable</text>
 
-        <line x1="520" y1="49" x2="640" y2="49" stroke="#ddd5c9" stroke-width="1.5"/>
+        <line x1="520" y1="49" x2="640" y2="49" stroke="#dde3ec" stroke-width="1.5"/>
         <circle cx="590" cy="49" r="5" fill="#425cc7"/>
-        <text x="580" y="88" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="9" fill="#5c554e">wire + payload</text>
+        <text x="580" y="88" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#59616f">wire + payload</text>
 
-        <line x1="680" y1="49" x2="800" y2="49" stroke="#ddd5c9" stroke-width="1.5" stroke-dasharray="4 4"/>
+        <line x1="680" y1="49" x2="800" y2="49" stroke="#dde3ec" stroke-width="1.5" stroke-dasharray="4 4"/>
         <circle cx="750" cy="49" r="5" fill="#b8442a"/>
-        <text x="740" y="88" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="9" fill="#5c554e">dropped</text>
+        <text x="740" y="88" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#59616f">dropped</text>
 
         <rect x="840" y="34" width="110" height="9" fill="#425cc7"/>
         <rect x="866" y="49" width="70" height="9" fill="#425cc7" opacity="0.55"/>
         <rect x="880" y="64" width="42" height="9" fill="#425cc7" opacity="0.3"/>
-        <text x="895" y="88" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="9" fill="#5c554e">span bars</text>
+        <text x="895" y="88" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#59616f">span bars</text>
 
-        <line x1="10" y1="118" x2="950" y2="118" stroke="#ddd5c9" stroke-width="1"/>
+        <line x1="10" y1="118" x2="950" y2="118" stroke="#dde3ec" stroke-width="1"/>
 
-        <text x="10" y="146" font-family="IBM Plex Mono, monospace" font-size="10" fill="#5c554e">Square corners. 1.5px strokes. No shadows, no fills beyond paper. Saturated color only where it carries meaning.</text>
-        <text x="10" y="168" font-family="IBM Plex Mono, monospace" font-size="10" fill="#5c554e">Dashed outline = the reader can move it. Solid = fixed topology.</text>
+        <text x="10" y="146" font-family="JetBrains Mono, monospace" font-size="10" fill="#59616f">6px corners. 1.5px strokes. No shadows, no fills beyond paper. Saturated color only where it carries meaning.</text>
+        <text x="10" y="168" font-family="JetBrains Mono, monospace" font-size="10" fill="#59616f">Dashed outline = the reader can move it. Solid = fixed topology.</text>
       </svg>
     </div>
   </div>
 
-  <div style="border-top: 1px solid #ddd5c9; padding-top: 28px;">
+  <div style="border-top: 1px solid #dde3ec; padding-top: 28px;">
     <p class="lbl">Dark · the same page, inverted ink and paper</p>
-    <div style="background: #16130f; padding: 28px 26px;">
+    <div style="background: #0f1116; padding: 28px 26px;">
       <div style="display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 44px;">
         <div>
-          <h2 class="serif" style="margin: 0 0 12px; font-size: 30px; font-weight: 600; color: #ece7e0; letter-spacing: -0.015em;">What a lab is</h2>
-          <p style="margin: 0 0 16px; font-size: 16px; color: #ece7e0;">Four views of one running state, so what you read at the bottom is what produced the picture at the top.</p>
-          <div style="background: #1f1b16; border: 1px solid #3a342c; padding: 14px 16px;">
-            <pre class="mono" style="margin: 0; font-size: 11.5px; line-height: 1.65; color: #ece7e0; white-space: pre;">"spans": [
+          <h2 class="serif" style="margin: 0 0 12px; font-size: 30px; font-weight: 600; color: #e8ecf2; letter-spacing: -0.015em;">What a lab is</h2>
+          <p style="margin: 0 0 16px; font-size: 16px; color: #e8ecf2;">Four views of one running state, so what you read at the bottom is what produced the picture at the top.</p>
+          <div style="background: #181b21; border: 1px solid #2a2f38; padding: 14px 16px;">
+            <pre class="mono" style="margin: 0; font-size: 11.5px; line-height: 1.65; color: #e8ecf2; white-space: pre;">"spans": [
   { "traceId": "4bf92f35…",</pre>
-            <pre class="mono" style="margin: 0; padding: 1px 0; font-size: 11.5px; line-height: 1.65; color: #ece7e0; background: #f5a80040; white-space: pre;">    "parentSpanId": "00f067aa…",</pre>
-            <pre class="mono" style="margin: 0; font-size: 11.5px; line-height: 1.65; color: #ece7e0; white-space: pre;">    "name": "POST /charge" }]</pre>
+            <pre class="mono" style="margin: 0; padding: 1px 0; font-size: 11.5px; line-height: 1.65; color: #e8ecf2; background: #f5a80040; white-space: pre;">    "parentSpanId": "00f067aa…",</pre>
+            <pre class="mono" style="margin: 0; font-size: 11.5px; line-height: 1.65; color: #e8ecf2; white-space: pre;">    "name": "POST /charge" }]</pre>
           </div>
         </div>
         <div style="border-top: 2px solid #8fa2ee; padding-top: 10px;">
-          <p style="margin: 0; font-size: 13.5px; line-height: 1.65; color: #a09890;">In dark the accent lifts to #8fa2ee for contrast. The signal hues hold — amber and vermilion read on both grounds.</p>
+          <p style="margin: 0; font-size: 13.5px; line-height: 1.65; color: #939bab;">In dark the accent lifts to #8fa2ee for contrast. The signal hues hold — amber and vermilion read on both grounds.</p>
         </div>
       </div>
     </div>

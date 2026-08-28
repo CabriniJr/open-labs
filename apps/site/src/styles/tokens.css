@@ -6,9 +6,9 @@
  */
 :root {
   /* Tipografia */
-  --font-display: "IBM Plex Serif", Georgia, "Times New Roman", serif;
-  --font-body: "IBM Plex Sans", system-ui, sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", monospace;
+  --font-display: "Outfit", system-ui, "Segoe UI", sans-serif;
+  --font-body: "Outfit", system-ui, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", monospace;
 
   --size-step--1: clamp(0.83rem, 0.8rem + 0.15vw, 0.9rem);
   --size-step-0: clamp(1rem, 0.96rem + 0.2vw, 1.12rem);
@@ -16,12 +16,18 @@
   --size-step-2: clamp(1.6rem, 1.4rem + 1vw, 2.2rem);
   --size-step-3: clamp(2.1rem, 1.7rem + 2vw, 3.9rem);
 
-  /* Tinta e papel — a página é sóbria de propósito */
-  --ink: #14110f;
-  --ink-muted: #5c554e;
-  --paper: #faf7f2;
+  /* Tinta e papel — neutro frio, de propósito: geométrica pede papel frio */
+  --ink: #111419;
+  --ink-muted: #59616f;
+  --ink-faint: #8b94a5;
+  --paper: #f5f7fa;
   --paper-raised: #ffffff;
-  --rule: #ddd5c9;
+  --rule: #dde3ec;
+
+  /* Raio — sistema, não exceção. Cresce com a superfície. */
+  --radius-1: 4px;
+  --radius-2: 6px;
+  --radius-3: 10px;
 
   /* Ritmo */
   --space-1: 0.5rem;
@@ -33,9 +39,10 @@
 }
 
 :root[data-theme="dark"] {
-  --ink: #ece7e0;
-  --ink-muted: #a09890;
-  --paper: #16130f;
-  --paper-raised: #1f1b16;
-  --rule: #3a342c;
+  --ink: #e8ecf2;
+  --ink-muted: #939bab;
+  --ink-faint: #6f7789;
+  --paper: #0f1116;
+  --paper-raised: #181b21;
+  --rule: #2a2f38;
 }
