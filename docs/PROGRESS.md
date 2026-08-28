@@ -34,7 +34,7 @@ para cima. Sessões planejadas (detalhe na §9 da spec):
 
 - [ ] **S1 — Motor composicional.** `types`, `tree`, `scheduler`, `engine` com eventos
       de parâmetro, `meters`. Testes 1–5 da §8.
-- [ ] **S2 — Arquétipos.** Os seis `Kind`s: comportamento em `depth-core`, contrato
+- [ ] **S2 — Arquétipos.** Os sete `Kind`s (incluindo `composite`): comportamento em `depth-core`, contrato
       visual em `depth-ui`.
 - [ ] **S3 — Palco e navegação.** Foco por caminho, breadcrumb, selecionar vs abrir,
       inspector, deep link.
@@ -61,3 +61,5 @@ Todas na spec, mas as que mais custam se forem esquecidas:
 - **Visual pertence ao `Kind`, nunca ao objeto.** Sem essa trava, nada termina.
 - **A chamada da API não é filha do TracerProvider**, e `BatchSpanProcessor` *é* um
   `SpanProcessor`. Fidelidade da árvore é o produto.
+- **`composite` ≠ `pipeline`.** O TracerProvider é `composite` (contêiner sem ordem
+  imposta); só a lista de SpanProcessors é `pipeline`, porque só ali a ordem importa.

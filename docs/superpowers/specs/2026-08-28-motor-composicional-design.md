@@ -33,7 +33,9 @@ camada emerge disso.
 frames é a mesma operação que abrir um BatchSpanProcessor para ver a fila.
 
 ```ts
-type Kind = "source" | "router" | "pipeline" | "buffer" | "sink" | "static";
+type Kind =
+  | "composite" | "source" | "router" | "pipeline"
+  | "buffer" | "sink" | "static";
 type Role = "node" | "message" | "channel";
 
 interface ObjectSpec<S = unknown> {
@@ -109,8 +111,9 @@ Não há hierarquia de tipos no conteúdo. Há **arquétipos** — o mesmo padr�
 de `Kind` já usado no Atlas. Cada `Kind` entrega **três** coisas, e é por isso que ele
 paga o próprio custo:
 
-| `Kind`     | Comportamento                          | Visual                          | Medidores grátis                |
-|------------|----------------------------------------|---------------------------------|---------------------------------|
+| `Kind`      | Comportamento                          | Visual                          | Medidores grátis                |
+|-------------|----------------------------------------|---------------------------------|---------------------------------|
+| `composite` | nenhum próprio: só hospeda os filhos   | moldura que contém os filhos    | tráfego que cruza a fronteira   |
 | `source`   | emite no ritmo de um parâmetro         | origem, pulso de emissão        | taxa de emissão                 |
 | `router`   | política decide a porta de saída       | bifurcação, saída de descarte   | entraram / seguiram / caíram    |
 | `pipeline` | encadeia filhos **na ordem declarada** | trilho com estágios             | vazão por estágio               |
@@ -120,6 +123,13 @@ paga o próprio custo:
 
 `static` é de primeira classe (Resource, SpanLimits). Sem ele, o autor é tentado a
 inventar fluxo onde não há.
+
+`composite` é o oposto útil de `pipeline`: contêiner **sem ordem imposta**. Um
+`pipeline` afirma que os filhos rodam em sequência e que a ordem importa — afirmação
+forte, e falsa para a maioria dos contêineres. `composite` não afirma nada além de
+"estes objetos vivem aqui dentro e trocam mensagens entre si". Quase todo
+provider/runtime/agent de qualquer domínio tem essa forma, então ele se paga pela
+regra de reuso desta seção.
 
 **Trava de custo:** o contrato visual pertence ao **`Kind`, nunca ao objeto**. Sampler
 *é* um `router` — não ganha arte própria, ganha rótulo e política. Se um objeto parece
@@ -260,9 +270,9 @@ prova quando o segundo provider custa um terço do primeiro — e isso só se de
 construindo o primeiro até o fim.
 
 ```
-Tracer (API)          source    FOLHA   — entrada do provider, NÃO é parte dele
+Tracer (API)          source     FOLHA  — entrada do provider, NÃO é parte dele
    │
-TracerProvider        pipeline  ABRE    — tem tráfego interno
+TracerProvider        composite  ABRE   — contêiner sem ordem imposta
 ├ Resource            static    FOLHA   — dado anexado, não troca mensagem
 ├ IdGenerator         static    FOLHA
 ├ SpanLimits          static    FOLHA
@@ -283,19 +293,13 @@ dele, `Tracer.startSpan`), e **BatchSpanProcessor é um SpanProcessor**, não um
 (arquétipo, não taxonomia). Toda afirmação técnica leva link para a spec, conforme o
 princípio 2 da spec original.
 
-**Questão aberta — o `Kind` do próprio TracerProvider.** A tabela acima o marca como
-`pipeline`, mas isso não é fiel: o Sampler é **consultado** pelo Tracer no início do
-span, e a cadeia de SpanProcessors roda no **fim** dele. Não é um trilho único. Duas
-saídas, a decidir antes de S2:
-
-- **(a) `Kind` novo, `composite`:** contêiner sem fluxo próprio, que só hospeda filhos
-  e mostra o tráfego entre eles. Fiel, e provavelmente reaproveitável em outros
-  handbooks — quase todo "provider"/"runtime" tem essa forma.
-- **(b) `pipeline` com o Sampler como estágio de portão** no início. Menos fiel ao
-  ciclo de vida do span, mais simples de desenhar.
-
-Preferência atual: **(a)**. Se `composite` aparecer numa segunda sessão, ele pagou o
-próprio custo pela regra da §3.
+**O TracerProvider é `composite`, não `pipeline`.** Marcá-lo como `pipeline` seria
+infiel: o Sampler é **consultado** pelo Tracer no início do span, e a cadeia de
+SpanProcessors roda no **fim** dele. Não é um trilho único, e forçar um trilho
+ensinaria o ciclo de vida do span errado. `composite` diz a verdade — estes objetos
+vivem dentro do provider — e deixa `pipeline` para onde a ordem realmente importa,
+que é a lista de SpanProcessors. Essa distinção passa a ser, ela própria, uma coisa
+que o leitor aprende olhando: contêiner com trilho versus contêiner sem.
 
 ---
 
@@ -328,7 +332,7 @@ Cada sessão fecha com `main` verde e o progresso registrado em `docs/PROGRESS.m
 | # | Sessão | Entrega |
 |---|---|---|
 | S1 | Motor composicional | `types`, `tree`, `scheduler`, `engine` com eventos de parâmetro, `meters` + testes 1–5 |
-| S2 | Arquétipos | os seis `Kind`s: comportamento em `depth-core`, visual em `depth-ui` |
+| S2 | Arquétipos | os sete `Kind`s: comportamento em `depth-core`, visual em `depth-ui` |
 | S3 | Palco e navegação | foco por caminho, breadcrumb, selecionar vs abrir, inspector, deep link |
 | S4 | Domínio TracerProvider | árvore fiel, transformações de mensagem, textos ancorados + teste 6 |
 | S5 | Migração e limpeza | herói da landing no modelo novo, modelo antigo deletado, guarda ampliada |
