@@ -8,6 +8,9 @@ import { heroScenario } from "../labs/hero/scenario.js";
 import type { HeroState } from "../labs/hero/scenario.js";
 
 const MAX_TICK = 32;
+/** Intervalo base por tick, em ms. Dividido pelo multiplicador de velocidade. */
+const BASE_INTERVAL_MS = 190;
+const SPEEDS = [0.5, 1, 2] as const;
 
 const LEVEL_LABELS: Record<LevelId, string> = {
   flow: "Flow",
@@ -53,6 +56,7 @@ export function HeroSim() {
   const [playing, setPlaying] = useState(true);
   const [level, setLevel] = useState<LevelId>("flow");
   const [tick, setTick] = useState(0);
+  const [speed, setSpeed] = useState<number>(1);
 
   const engine = useMemo(() => new Engine(heroScenario, { propagate }), [propagate]);
   const frame = useRef<number | undefined>(undefined);
@@ -68,7 +72,7 @@ export function HeroSim() {
 
     let last = performance.now();
     const loop = (now: number) => {
-      if (now - last >= 90) {
+      if (now - last >= BASE_INTERVAL_MS / speed) {
         last = now;
         setTick((t) => (t + 1) % (MAX_TICK + 1));
       }
@@ -78,7 +82,7 @@ export function HeroSim() {
     return () => {
       if (frame.current !== undefined) cancelAnimationFrame(frame.current);
     };
-  }, [playing, engine]);
+  }, [playing, engine, speed]);
 
   engine.seek(tick);
   const state = engine.state;
@@ -133,6 +137,9 @@ export function HeroSim() {
           setTick(t);
         }}
         onTogglePlay={() => setPlaying((p) => !p)}
+        speed={speed}
+        speeds={SPEEDS}
+        onChangeSpeed={setSpeed}
       />
     </div>
   );

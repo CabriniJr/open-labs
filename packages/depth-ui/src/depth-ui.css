@@ -44,6 +44,7 @@
 }
 
 .dui-depth__stage {
+  min-height: 21rem;
   background: var(--paper-raised);
   border: 1px solid var(--rule);
   border-radius: var(--radius-3);
@@ -105,9 +106,15 @@
   color: var(--ink-muted);
 }
 
+/*
+ * Altura fixa de propósito: o payload cresce e encolhe a cada tick, e sem isso
+ * a página inteira pula sob o leitor enquanto ele tenta ler.
+ */
 .dui-inspector__body {
   margin: 0;
-  overflow-x: auto;
+  height: 19rem;
+  overflow: auto;
+  overscroll-behavior: contain;
   font-family: var(--font-mono);
   font-size: var(--size-step--1);
   line-height: 1.55;
@@ -154,6 +161,16 @@
 .dui-timeline__tick {
   color: var(--ink-muted);
   font-size: var(--size-step--1);
+}
+
+.dui-timeline__speed {
+  display: flex;
+  gap: 2px;
+}
+
+.dui-timeline__speed-option[aria-pressed="true"] {
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 @media (prefers-reduced-motion: reduce) {
