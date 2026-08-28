@@ -53,14 +53,38 @@ revelar, é agora que sai barato.
 
 ---
 
-## F2 — Onda 1 de arquétipos
+## F2 — O lab de prova, com o catálogo que já existe
 
-Os seis da §3 de `kinds.md`: `transform`, `tee`, `merge`, `batch`, `clock`, `arbiter`.
-Cada um entrega comportamento, contrato visual, regime nomeado, medidores e perturbações —
-os cinco de uma vez, porque arquétipo pela metade não se paga.
+**Reordenado em 28/08/2026** (`why-simulate.md` §13.3). Era a onda de seis arquétipos; passou
+a ser um lab completo, porque provar o motor com uma travessia inteira vale mais que ter seis
+arquétipos sem nada rodando.
+
+O achado que permite isso: o primeiro lab do currículo é *a fila enche e descarta*, e ele
+precisa de `source`, `channel`, `buffer` e `sink` — **os quatro já existem no código.** O que
+faltava era capacidade e política, entregue em F1.
+
+| Item | Nota |
+|---|---|
+| Um lab, fim a fim | Modelo, tick, medidor, perturbação, deep link, texto com âncora |
+| Zero arquétipo novo | Se aparecer necessidade de arquétipo aqui, é sinal de que F1 não fechou |
+| Predição antes da revelação | `why-simulate.md` §8. Barato, e é o que separa handbook de vídeo |
+
+**Saída:** uma pessoa que não conhece o projeto abre o link, prediz o que vai acontecer,
+provoca o burst, vê a fila encher e descartar, volta dois passos, e consegue explicar por quê.
+
+---
+
+## F2b — Onda 1 de arquétipos
+
+Só depois do lab de prova. Os seis da §3 de `kinds.md`: `transform`, `tee`, `merge`, `batch`,
+`clock`, `arbiter`. Cada um entrega comportamento, contrato visual, regime nomeado, medidores e
+perturbações — os cinco de uma vez, porque arquétipo pela metade não se paga.
 
 **Saída:** um arquivo de teste por arquétipo, sem pixels; e o cenário do BatchSpanProcessor
 expressado como `buffer` mais `batch` mais `clock`, em vez de um bloco que faz tudo.
+
+**A medida que interessa aqui:** quantos arquétipos o segundo lab reusa do primeiro. É o teste
+de reuso mais precoce que existe, e substitui o que caiu com o corte de escopo.
 
 ---
 
@@ -116,7 +140,7 @@ técnico sem link para a fonte.
 
 **Revisado em 28/08/2026.** Era "o teste da tese do projeto", medido pelo custo relativo do
 segundo pacote. Com o corte de escopo que fez cada `model` ser ilha
-(`why-simulate.md` §7), reuso deixou de ser requisito — logo, deixou de ser critério de
+(`why-simulate.md` §9), reuso deixou de ser requisito — logo, deixou de ser critério de
 saída. O Kafka volta a ser simplesmente o segundo alvo.
 
 Arquétipos da onda 2: `log`, `deliver`, `supervisor`.
@@ -174,10 +198,13 @@ dado errado é localizável e difável; comportamento errado escondido numa fun�
 ## Ordem, em uma linha
 
 ```
-F0 destravar → F1 núcleo → F2 arquétipos → F3 palco → F4 otel → F5 handbook → F6 kafka → F7 motor
+F0 destravar → F1 núcleo → F2 LAB DE PROVA → F2b arquétipos → F3 palco → F4 otel → F5 handbook → F6 kafka → F7 motor
 ```
 
-O playground (`why-simulate.md` §8) não é fase: ele nasce de graça ao fim de F3, porque é a
+F2 e F3 se sobrepõem na prática: não há lab sem palco. A ordem significa que o palco é
+construído **para o lab**, e não como plataforma antes de haver o que mostrar.
+
+O playground (`why-simulate.md` §10) não é fase: ele nasce de graça ao fim de F3, porque é a
 mesma paleta e a mesma engine, sem exigência de procedência.
 
 Nenhuma fase começa antes de a anterior ter fechado o critério de saída. O sinal de alarme

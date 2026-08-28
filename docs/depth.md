@@ -226,6 +226,45 @@ implícito.
 
 ## 6. Apresentação
 
+### 6.0 O drill-down é orientado por fluxo, não por contenção
+
+Registrado em 28/08/2026, e é o ponto que organiza toda a apresentação.
+
+Há duas formas de descer numa hierarquia, e elas produzem produtos diferentes:
+
+| | Por contenção | **Por fluxo** |
+|---|---|---|
+| O que você faz | Abre o componente e vê os filhos | **Segue a carga** |
+| Metáfora | Explorador de arquivos | Acompanhar um item na esteira |
+| Ao entrar num bloco | Começa do zero, olhando um conteúdo | Continua no caminho, um nível abaixo |
+| O que orienta o layout | Ordem de declaração | **A direção do fluxo** |
+
+O motor já está preparado para a segunda: `tree.ts` tem `flowChildren`, `entryLeaf` e
+`exitLeaf` — ou seja, um composto sabe por onde o fluxo entra e sai dele. Isso é o que permite
+descer **no meio de uma cadeia** e continuar seguindo, em vez de se perder.
+
+Consequências de desenho, todas derivadas:
+
+- **Descer preserva continuidade.** A carga que estava na entrada do bloco aparece entrando no
+  `entryLeaf`. Não há salto, não há recomeço
+- **A ordem de leitura interna é o fluxo**, não a declaração. Favorece layout da esquerda para
+  a direita, que é o que dagre já dá
+- **O foco é um caminho**, não um nó — a razão de ser breadcrumb e não escada
+
+### 6.1 O recurso que isso habilita: seguir a carga
+
+> Selecione uma carga e mande a vista **acompanhá-la**. Quando ela cruza a fronteira de um
+> bloco, o foco desce sozinho. Quando ela sai, o foco sobe.
+
+É a câmera seguindo o item. Em Factorio você faz isso com os olhos, porque o mundo é plano;
+aqui o nível muda junto.
+
+Vale destacar porque é o argumento mais concreto a favor do motor (`why-simulate.md` §7.2):
+**isso é impossível com visualizadores independentes por conceito.** Exige que a mesma carga
+exista nos dois níveis ao mesmo tempo, derivada — e é exatamente o que a vista agregada como
+projeção de fronteira garante.
+
+
 O que o leitor experimenta ao descer, e as regras que sustentam isso.
 
 | Regra | Por quê |

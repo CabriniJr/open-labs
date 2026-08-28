@@ -417,7 +417,88 @@ Nenhuma dessas condições é verdadeira hoje, e as três primeiras foram verifi
 28/08/2026. A terceira deixou de ser critério com o corte de escopo da §9 — fica como
 observação.
 
-## 13. A resposta curta
+## 13. Decisão: segue com o motor, e a primitiva é fluxo
+
+Decidido pelo Luigi em 28/08/2026, depois do contraponto da §7.2: **segue com o motor**, com a
+justificativa de que os arquétipos são intercambiáveis e reutilizáveis em **qualquer coisa com
+fluxo**.
+
+Isso muda o cálculo de equilíbrio a favor da decisão, e vale explicitar por quê: se o domínio
+é "sistemas de fluxo" e não "ferramentas de observabilidade", o número de conceitos possíveis
+deixa de ser sessenta e passa a ser aberto. O vigésimo quinto conceito que faz o motor se pagar
+fica fácil de atingir.
+
+**A ressalva, e é a de sempre com generalidade:** "serve para qualquer coisa" é também o modo
+clássico de um motor não servir bem para nada. Cada arquétipo genérico é menos preciso que um
+componente dedicado. A trava contra isso já está no plano e precisa ser respeitada:
+**generalizar por evidência, não por antecipação** — arquétipo só entra pagando em dois alvos.
+
+### 13.1 Teste de generalidade, feito no papel
+
+Se a primitiva é fluxo, o catálogo de `kinds.md` deveria expressar sistemas de fluxo fora de
+TI. Testado contra seis, e o resultado é útil nas duas direções.
+
+| Sistema | Como o catálogo o expressa |
+|---|---|
+| **Linha de produção** | `source` extração · `channel` esteira · `transform` fundição · `merge` e `tee` · `buffer` caixa · `arbiter` energia |
+| **Rede de água** | `source` reservatório · `channel` tubo com capacidade · `buffer` caixa d'água · `router` válvula · `sink` consumo. **Pressão é backpressure literal** |
+| **Pipeline de CI/CD** | `source` commit · `pipeline` estágios · `tee` matriz de build · `buffer` fila de jobs · **`arbiter` pool de runners** · `sink` deploy |
+| **Processamento de pagamento** | `transform` autorização · `store` saldo · **`log` razão append-only** · `deliver` confirmação com reenvio · `router` antifraude |
+| **Trânsito urbano** | `channel` via com capacidade · `merge` confluência · `buffer` estacionamento · **`arbiter` semáforo** |
+| **Cadeia de suprimentos** | `store` estoque · `batch` carga · `deliver` com confirmação |
+
+Os seis são expressáveis, e três encaixes são bons o bastante para servirem de argumento:
+semáforo como árbitro, pool de runners como árbitro, e pressão hidráulica como backpressure.
+São o mesmo arquétipo em domínios sem relação — que é exatamente a afirmação do Luigi,
+sustentada.
+
+### 13.2 As duas lacunas que o teste expôs
+
+E aqui o teste paga o custo dele, porque encontrou o que faltava.
+
+**1. Realimentação.** Bomba controlada por nível de reservatório, termostato, controle
+proporcional. Sistemas de fluxo físico são cheios de malha fechada, e o motor não tem laço —
+`depth.md` registra que nada no escopo atual exige um, porque a plataforma saiu. Se o motor for
+anunciado como "qualquer coisa com fluxo", **alguém vai chegar com um termostato no primeiro
+mês.**
+
+**2. Conservação e receita.** Em fábrica e em rede de água a matéria se conserva: três minérios
+viram uma placa. O motor tem `weight`, mas não tem razão de conversão declarada nem
+verificação de conservação. Um `transform` hoje pode criar massa do nada sem que nada reclame.
+
+Decisão proposta para as duas: **registrar, não construir.** Nenhuma paga em alvo de
+observabilidade, e a régua de dois alvos vale para elas como para qualquer outra. Mas elas
+mudam uma coisa hoje, de graça: **o motor não deve ser anunciado como universal para fluxo
+enquanto não tiver realimentação.** "Fluxo de dados e de itens discretos, sem malha fechada" é
+verdadeiro e continua amplo.
+
+### 13.3 O que reduz o risco da aposta, e é acionável agora
+
+Três coisas, e a primeira é a que muda o plano.
+
+**Provar o motor com um lab, não com o catálogo.** A tentação é construir os dezenove
+arquétipos, o formato e o palco, e só então o primeiro lab. O caminho de menor risco é o
+inverso — e há um achado favorável: o primeiro lab do currículo de `depth.md` §4.3 é *a fila
+enche e descarta*, que precisa de `source`, `channel`, `buffer` e `sink`. **Todos os quatro já
+existem.** O que falta é capacidade e política, que é F1.
+
+Ou seja: **o primeiro lab não exige nenhum arquétipo novo.** Ele exige o núcleo. Isso permite
+provar o motor inteiro — modelo, tick, medidor, palco, perturbação, deep link — com o catálogo
+que já está no código.
+
+**A métrica de reuso volta, mais cedo e melhor.** O corte de escopo tirou o teste "o segundo
+`model` custa uma fração". Em troca, a justificativa da aposta dá um teste mais precoce:
+**quantos arquétipos o segundo lab reusa do primeiro.** Mensurável no lab dois, não no `model`
+dois.
+
+**A guarda de fronteira passa a ser ativo estratégico.** `node scripts/check-boundaries.mjs`
+era higiene; se o valor do projeto é um motor reutilizável, ela é o que protege o valor.
+Qualquer vazamento de vocabulário de observabilidade para dentro do motor custa a
+reutilização que justifica a decisão.
+
+---
+
+## 14. A resposta curta
 
 O simulador não substitui instalar o Collector, e não deve tentar. Ele substitui **o quadro
 branco**, o *"deixa eu te explicar como o batch processor funciona"* que todo time de
@@ -426,7 +507,13 @@ observabilidade repete a cada pessoa nova.
 Isso é um problema pequeno e real, e é o tipo de problema que uma pessoa consegue resolver
 bem. Gerar configuração de produção é um problema grande com quatro concorrentes, e não é.
 
-E a decisão que fica em aberto depois de tudo isto não é *se* vale fazer — é **se vale fazer
-com motor**. O k8s.info mostra que o gênero funciona sem um. O motor é a aposta de que o
-projeto vai ser grande o suficiente para que ele se pague (§7.2). Essa aposta é legítima e é
-o que torna o projeto interessante de construir; ela só não deve ser feita por acidente.
+A pergunta que restava não era *se* vale fazer — era **se vale fazer com motor**. O k8s.info
+mostra que o gênero funciona sem um, e o motor é a aposta de que o projeto vai ser grande o
+suficiente para se pagar. **A aposta foi feita, com justificativa** (§13): os arquétipos são
+reutilizáveis em qualquer sistema de fluxo, e o teste no papel sustenta isso em seis domínios
+sem relação entre si.
+
+O que a decisão exige em troca é disciplina em três pontos, e todos são verificáveis:
+generalizar por evidência e não por antecipação; provar o motor num lab antes de encher o
+catálogo (§13.3); e não anunciar como universal para fluxo enquanto não houver realimentação
+(§13.2).
