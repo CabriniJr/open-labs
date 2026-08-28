@@ -127,52 +127,6 @@ modelar. Ver a decisão em `VISION.md` §8.
 **Não usar:** **WebContainers** (StackBlitz) e **CheerpX** são proprietários, com
 restrição de uso comercial. Atraentes e fora da premissa de ser tudo open source.
 
-## 10. Site, conteúdo e medidores
-
-| Peça | Licença | Por que |
-|---|---|---|
-| **Astro** | MIT | Já em uso |
-| Starlight | MIT | Se a trilha crescer e precisar de estrutura de documentação |
-| MDX, remark, rehype | MIT | Conteúdo com componente interativo embutido |
-| Shiki | MIT | Realce de sintaxe para os manifestos exibidos |
-| **uPlot** | MIT | Gráfico de medidor: leve e rápido, adequado a série que atualiza por tick |
-| Observable Plot | ISC | Alternativa mais expressiva |
-| Simple Icons | CC0 | Logos das ferramentas modeladas — **conferir a política de marca de cada projeto**, licença de ícone não é permissão de marca |
-| Tabler Icons | MIT | Ícones de interface |
-
-## 11. Compartilhar e colaborar
-
-| Peça | Licença | Por que |
-|---|---|---|
-| **lz-string** ou **fflate** | MIT | Comprimir o estado na URL — semente, foco, tick, parâmetros |
-| Yjs | MIT | Colaboração em tempo real, se um dia |
-
-## 12. Onde não reaproveitar
-
-Três peças precisam ser do projeto, e é importante saber por quê:
-
-- **O motor de simulação.** Existem bibliotecas de simulação de eventos discretos, mas
-  nenhuma entrega o conjunto que é o diferencial: determinismo por `(seed, tick)`,
-  histórico com `seek` exato, parâmetro como evento no tempo, e as três regras de
-  honestidade — só folha tem comportamento, vista agregada é projeção de fronteira,
-  medidor só lê tráfego de porta. Adotar motor de terceiro custaria essas garantias
-- **O catálogo de arquétipos e o resolvedor de imagem para pacote.** É o conhecimento de
-  domínio destilado; nenhuma biblioteca tem isso
-- **O contrato de fidelidade.** Ligar cada parâmetro ao ajuste real documentado, com
-  falha de CI, é específico da tese deste projeto
-
-## 13. Referências de método, não de código
-
-| Projeto | Licença | Uso permitido aqui |
-|---|---|---|
-| **PhET** | Código GPL-3; simulações relicenciadas para **CC BY-NC** | O **método** é livre para adotar: nenhum controle sem medidor que responda a ele na mesma tela. **Importar código ou asset não é** — GPL-3 é incompatível com Apache-2.0 no mesmo binário, e NC exclui uso comercial |
-| **Cisco Packet Tracer** | **Proprietário** | Referência de sensação de uso. Nunca código nem asset |
-| **containerlab** | open source | O análogo aberto do Packet Tracer: topologia declarada em YAML virando lab em containers. Mesma premissa de entrada deste projeto, já provada em redes |
-| **Wokwi** | `wokwi-elements` MIT (só apresentação); motor **fechado**; docs CC BY 4.0 | Referência de produto. A divisão dele — desenho aberto, motor fechado — é o inverso da intenção deste projeto |
-| **Logisim Evolution** | GPL-3 | Prova de que abrir o bloco ensina. Referência conceitual |
-| **Ptolemy II** | permissiva, estilo BSD | O conceito de *director* por nível hierárquico. Vale estudar o vocabulário |
-| **LikeC4** | MIT | Vista como projeção do modelo, e a stack que ele já validou em produção |
-
 ## 9.5 L2 e L3: as ferramentas que faltavam neste levantamento
 
 **Acrescentado em 28/08/2026.** Este documento foi escrito antes de o diferencial ser
@@ -230,6 +184,52 @@ Nada novo, e é a razão de ele ser barato (`why-simulate.md` §10):
 | Validar rascunho | O mesmo Zod do pacote de modelo, com procedência **não** exigida |
 
 ---
+
+## 10. Site, conteúdo e medidores
+
+| Peça | Licença | Por que |
+|---|---|---|
+| **Astro** | MIT | Já em uso |
+| Starlight | MIT | Se a trilha crescer e precisar de estrutura de documentação |
+| MDX, remark, rehype | MIT | Conteúdo com componente interativo embutido |
+| Shiki | MIT | Realce de sintaxe para os manifestos exibidos |
+| **uPlot** | MIT | Gráfico de medidor: leve e rápido, adequado a série que atualiza por tick |
+| Observable Plot | ISC | Alternativa mais expressiva |
+| Simple Icons | CC0 | Logos das ferramentas modeladas — **conferir a política de marca de cada projeto**, licença de ícone não é permissão de marca |
+| Tabler Icons | MIT | Ícones de interface |
+
+## 11. Compartilhar e colaborar
+
+| Peça | Licença | Por que |
+|---|---|---|
+| **lz-string** ou **fflate** | MIT | Comprimir o estado na URL — semente, foco, tick, parâmetros |
+| Yjs | MIT | Colaboração em tempo real, se um dia |
+
+## 12. Onde não reaproveitar
+
+Três peças precisam ser do projeto, e é importante saber por quê:
+
+- **O motor de simulação.** Existem bibliotecas de simulação de eventos discretos, mas
+  nenhuma entrega o conjunto que é o diferencial: determinismo por `(seed, tick)`,
+  histórico com `seek` exato, parâmetro como evento no tempo, e as três regras de
+  honestidade — só folha tem comportamento, vista agregada é projeção de fronteira,
+  medidor só lê tráfego de porta. Adotar motor de terceiro custaria essas garantias
+- **O catálogo de arquétipos e o resolvedor de imagem para pacote.** É o conhecimento de
+  domínio destilado; nenhuma biblioteca tem isso
+- **O contrato de fidelidade.** Ligar cada parâmetro ao ajuste real documentado, com
+  falha de CI, é específico da tese deste projeto
+
+## 13. Referências de método, não de código
+
+| Projeto | Licença | Uso permitido aqui |
+|---|---|---|
+| **PhET** | Código GPL-3; simulações relicenciadas para **CC BY-NC** | O **método** é livre para adotar: nenhum controle sem medidor que responda a ele na mesma tela. **Importar código ou asset não é** — GPL-3 é incompatível com Apache-2.0 no mesmo binário, e NC exclui uso comercial |
+| **Cisco Packet Tracer** | **Proprietário** | Referência de sensação de uso. Nunca código nem asset |
+| **containerlab** | open source | O análogo aberto do Packet Tracer: topologia declarada em YAML virando lab em containers. Mesma premissa de entrada deste projeto, já provada em redes |
+| **Wokwi** | `wokwi-elements` MIT (só apresentação); motor **fechado**; docs CC BY 4.0 | Referência de produto. A divisão dele — desenho aberto, motor fechado — é o inverso da intenção deste projeto |
+| **Logisim Evolution** | GPL-3 | Prova de que abrir o bloco ensina. Referência conceitual |
+| **Ptolemy II** | permissiva, estilo BSD | O conceito de *director* por nível hierárquico. Vale estudar o vocabulário |
+| **LikeC4** | MIT | Vista como projeção do modelo, e a stack que ele já validou em produção |
 
 ## 14. Resumo da decisão proposta
 
