@@ -180,6 +180,26 @@ O que fazemos:
 Tokens e componentes nascem de um canvas no Claude Design, e o design system do
 site é derivado dele — não o contrário.
 
+### Tema por tecnologia
+
+O handbook deve poder vestir a identidade da tecnologia que está ensinando: tema
+e logo do OpenTelemetry aqui, do Kafka num handbook futuro. Isso é **futuro**,
+mas impõe uma camada agora, pela mesma lógica do §8 — barato hoje, reescrita
+depois.
+
+Os tokens vivem em duas camadas:
+
+- **Cromo editorial (neutro)** — tipografia, escala, ritmo, tinta e papel, réguas.
+  Não muda entre tecnologias. É o que dá ao handbook uma voz própria em vez de
+  virar um site de marca.
+- **Tema de domínio** — a cor de acento, as cores de sinal dos diagramas e o
+  logo. Trocável por `data-domain` no elemento raiz.
+
+Hoje existe **um** tema (`otel`), derivado da identidade do OpenTelemetry. A
+regra que protege a direção editorial: o tema de domínio pinta acento, sinal e
+logo — nunca o fundo, nunca a tipografia. Uma tecnologia de marca berrante não
+pode transformar a página num banner.
+
 ---
 
 ## 8. Arquitetura técnica
