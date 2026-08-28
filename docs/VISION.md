@@ -222,6 +222,57 @@ aviso de que é ordem de grandeza didática. A ferramenta deve recusar-se, de fo
 explícita, a servir de dimensionamento.
 
 
+### 7.3 O catálogo de `kind` cobre esses alvos? Ainda não
+
+Se o pacote é dado (§4), então **o catálogo de arquétipos é o gargalo do projeto**: nenhum
+alvo pode ser expressado além do que os `kind` já sabem fazer. Vale testar isso em papel
+antes de construir, porque é barato e o resultado muda a ordem de trabalho.
+
+Os oito arquétipos atuais — `composite`, `source`, `router`, `pipeline`, `buffer`, `sink`,
+`channel`, `static` — cobrem o TracerProvider por inteiro. **E é justamente aí que está o
+viés:** eles foram derivados dele. Um catálogo desenhado a partir do único caso existente
+sempre parece completo. O teste honesto é confrontá-lo com os alvos que ainda não foram
+construídos.
+
+| Fenômeno | Onde aparece | Coberto por | Lacuna |
+|---|---|---|---|
+| Emitir no ritmo de um parâmetro | Tracer, produtor, cliente | `source` | — |
+| Decidir a saída por política | Sampler, particionador, match de tópico | `router` | — |
+| Encadear estágios em ordem | Lista de processors | `pipeline` | — |
+| Acumular e drenar por gatilho | Fila do BatchSpanProcessor | `buffer` | — |
+| Consumir e transformar | Exportador, consumidor | `sink` | — |
+| Transportar e transformar a carga | Canal OTLP, conexão | `channel` | — |
+| Dado anexado, consultado e não atravessado | Resource, SpanLimits | `static` | — |
+| **Enviar a mesma mensagem para N destinos** | Dois exportadores no mesmo processor, assinantes MQTT, réplicas Kafka | `router` só escolhe **uma** porta | **`tee`** — fan-out |
+| **Entrega com confirmação e reenvio** | QoS 1 e 2 do MQTT, `acks` do Kafka, retry de exportação | nada | **entrega confiável** |
+| **Registro append-only com cursor por leitor** | Partição Kafka, WAL do Postgres | `buffer` esvazia ao drenar; log **retém** e cada leitor tem posição própria | **`log`** |
+| **Retenção com consulta e expiração** | TSDB do Prometheus, sessão persistente e mensagem retida do MQTT | `buffer` não é consultável nem expira por idade | **`store`** |
+| **Requisição e resposta correlacionadas** | Scrape do Prometheus, consulta, verificação de saúde | tudo hoje é push: a folha emite | **interação pull** |
+| **Conceder, atribuir, coordenar** | Orçamento de recurso (§7.2), grupo de consumo e rebalance, pool de conexão | nada | **árbitro** |
+
+Seis lacunas candidatas. Cada uma passa o teste de custo — paga em dois alvos ou mais — e
+duas delas **provavelmente aparecem já na v0**:
+
+- **`tee`** é necessário assim que um cenário tiver dois exportadores, que é configuração
+  banal de Collector
+- **entrega confiável** é o outro lado do backpressure: se a emissão pode falhar (§9.1),
+  alguém tem de decidir entre reenviar, acumular ou derrubar
+
+E duas se encaixam em decisões já em aberto:
+
+- **árbitro** é a mesma forma que o orçamento de recurso pede (§7.2). Conceder memória e
+  atribuir partição a um consumidor são o mesmo arquétipo com política diferente
+- **interação pull** é o contraste didático mais forte entre OTel e Prometheus — push
+  contra pull. Não tê-la significa não conseguir ensinar a diferença que mais confunde
+  quem opera as duas ferramentas
+
+Consequência para a ordem de trabalho: **fechar o OTel não prova que o catálogo está
+pronto**, porque o OTel é o caso de onde ele saiu. A prova vem de expressar um alvo com
+fenômeno estranho ao primeiro — e o `log` com cursor do Kafka é o mais estranho de todos,
+o que faz dele o segundo alvo certo.
+
+
+
 ## 8. Modelar ou embarcar: a pergunta que precede o catálogo
 
 Para parte dos alvos, o componente **real** roda no navegador. Nesses casos, modelar
