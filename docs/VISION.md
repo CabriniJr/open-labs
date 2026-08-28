@@ -42,22 +42,42 @@ A régua é **"a decisão aparece?"**, não "o número está certo?". Fidelidade
 
 ## 4. Pacote de modelo
 
-A unidade de extensão. O Luigi propôs chamar de `.modler`, com os objetos internos
-como `.modlet`. O conceito está certo; a nomenclatura é **decisão aberta** — ver §10.
+**Definição (2026-08-28): um pacote de modelo é uma configuração dos objetos da engine
+que replica uma aplicação.** Nomes propostos na conversa: `.modler` para o pacote e
+`.modlet` para cada instância de `kind` que representa e age como um componente da
+aplicação. O conceito está fechado; a grafia é decisão aberta — ver §9.6.
 
-Um pacote de modelo declara quatro coisas:
+Isso responde uma pergunta que estava em aberto e é a decisão mais importante desta
+seção: **o pacote é dado, não código.** Ele compõe e configura os arquétipos que já
+existem; não traz comportamento novo.
+
+Um pacote declara quatro coisas:
 
 | Parte | Conteúdo |
 |---|---|
 | **Reconhecimento** | Que imagens ele resolve (`confluentinc/cp-kafka`, `otel/opentelemetry-collector*`) |
-| **Estrutura** | A subárvore de objetos: quem contém quem, portas, canais |
+| **Estrutura** | A composição de objetos: quem contém quem, portas, canais, orçamento de recurso |
 | **Leitura de configuração** | Como extrair parâmetros do formato **nativo** da ferramenta — o mesmo YAML do Collector, as mesmas variáveis de ambiente. Nunca um formato inventado |
 | **Explicação** | Texto por objeto, com âncora na especificação oficial |
 
-O que um pacote **não** traz é comportamento novo. Comportamento vive nos arquétipos
-(`kind`) do motor, que são revisados e compartilhados. Ver a objeção em §9.3.
+### 4.1 Três consequências de o pacote ser dado
 
-### 4.1 Configuração nativa destrava a validação
+**A ordem de construção fica determinada.** Se um pacote só configura arquétipos
+existentes, então o catálogo de `kind` precisa ser suficiente **antes** de o catálogo de
+aplicações crescer. Um alvo que não caiba nos arquétipos atuais não é "um pacote
+difícil": é a descoberta de que falta um arquétipo — e arquétipo novo entra no núcleo,
+revisado, pagando em mais de um domínio.
+
+**A revisão passa a escalar.** Pacote de terceiro é dado validável por schema, não código
+a auditar. Sem isso, cada contribuição da comunidade seria uma revisão de comportamento
+arbitrário, que é onde a fidelidade vazaria.
+
+**O risco de autoria assistida cai muito.** Gerar composição validada por schema é
+qualitativamente diferente de gerar comportamento. Continua exigindo o portão de
+fidelidade da §9.3 — porque a composição pode estar plausível e errada — mas o erro passa
+a ser localizável e difável, em vez de escondido dentro de uma função.
+
+### 4.2 Configuração nativa destrava a validação
 
 Se o pacote lê o formato real, o mesmo arquivo roda no modelo **e** no componente de
 verdade dentro do `labs/<slug>/`. Comparar os dois qualitativamente transforma o
@@ -90,6 +110,7 @@ A v0 fecha quando:
 
 - [ ] A árvore do TracerProvider está fiel e completa, com âncora na spec por objeto
 - [ ] Backpressure emerge do modelo, sem roteiro (ver §9.1)
+- [ ] Memória e capacidade são finitas, e um tradeoff aparece na tela sem ser narrado
 - [ ] Um `compose` com Collector é importado nas três camadas da §5
 - [ ] O mesmo arquivo de configuração roda no modelo e no lab real, e os dois concordam
 - [ ] A página do handbook é gerada da travessia da árvore
@@ -115,21 +136,91 @@ Fluxo de dados por portas. É o que os arquétipos atuais descrevem bem.
 | Mosquitto / MQTT | QoS, sessão persistente, tópico curinga | Broker pequeno, ótimo para provar reuso |
 | PostgreSQL | WAL, réplica, atraso de replicação | Ver §8: talvez não seja modelo |
 
-### 7.2 Camada de plataforma
+### 7.2 Recursos em vez de plataforma
 
-**Aqui a hipótese do projeto é frágil.** Os arquétipos atuais foram desenhados para
-fluxo de mensagens; esta camada tem fenômenos de natureza diferente.
+**Decisão de 2026-08-28: Docker, Linux e Kubernetes saem do escopo.** No lugar deles, a
+plataforma entra como **orçamento finito de recurso** que os blocos disputam.
 
-| Alvo | Fenômeno central | Por que não encaixa direto |
+Essa troca é a melhor redução de escopo tomada até aqui, e o motivo é estrutural: ela
+elimina duas das três famílias semânticas do catálogo. Sai "estado e isolamento"
+(Docker, Linux) e sai "controle com realimentação" (o laço de reconciliação do
+Kubernetes, que não é ordem topológica de tick e exigiria regime de execução próprio).
+Sobra **uma** família — fluxo de dados sobre recurso compartilhado. A hipótese central do
+projeto deixa de ser frágil e passa a ser testável.
+
+E o ganho é duplo: **os fenômenos de plataforma que mais interessam continuam
+modeláveis**, sem modelar plataforma nenhuma. Memória estourando e o processo morrendo com
+a fila dentro é o que se aprende sobre limite de contêiner; capacidade saturando e a
+latência subindo é o que se aprende sobre throttling. Os dois emergem do recurso finito.
+
+#### Por que recurso é necessário, e não enfeite
+
+Hoje o modelo não tem custo. Aumentar `maxQueueSize` só melhora: menos descarte, nenhuma
+consequência. O leitor conclui, corretamente para o modelo e erradamente para a
+realidade, que basta aumentar. **Sem recurso finito não existe tradeoff — existe só
+"mais é melhor".**
+
+Com memória finita, a fila grande custa memória; com capacidade finita, o lote grande
+custa latência. É aí que a §5.4 da spec do motor — medidor pareado, o que se ganha ao
+lado do que se perde — deixa de ser regra especial do amostrador e passa a valer para
+tudo.
+
+#### Proposta: dois recursos, não quatro
+
+A conversa levantou CPU, memória, I/O e throughput. **Throughput não é recurso, é
+medida** — e a spec do motor já o define como medidor de vazão por estágio. Declará-lo
+como entrada criaria duas verdades para a mesma grandeza, que é exatamente a divergência
+silenciosa que o projeto combate. CPU e I/O, para efeito didático, produzem o mesmo
+fenômeno observável: trabalho que não cabe no tick.
+
+| Recurso | O que é | O que ensina |
 |---|---|---|
-| Docker | Ciclo de vida, rede, volume, namespace | O fenômeno é **estado e isolamento**, não fluxo de dados |
-| Linux | Escalonador, page cache, cgroup, syscall | Outro nível de abstração inteiro. Ver §8 |
-| Kubernetes | Laço de reconciliação: desejado contra observado | O fenômeno é **controle com realimentação**, não pipeline. Exige regime de execução próprio |
+| **Memória** | Quanto o bloco pode reter | Fila, tamanho de lote, retenção. Estourar mata o bloco e perde o que estava dentro |
+| **Capacidade de serviço** | Quanto trabalho o bloco processa por tick | Saturação, enfileiramento, latência crescente. Cobre CPU e I/O sem separá-los |
 
-O Kubernetes é o caso que mais ensina sobre o motor: um laço de reconciliação não é uma
-ordem topológica de tick. Ou o motor passa a aceitar **regime de execução declarado por
-composto**, ou esta camada fica fora para sempre. Isso é a mesma conclusão que o Ptolemy
-II alcançou com o conceito de *director* por nível hierárquico.
+**Latência não entra como parâmetro.** Ela é consequência de fila mais capacidade finita
+e tem de emergir, não ser configurada. É a grandeza que o público de plataforma mais usa
+para decidir, então deixá-la ser autorada seria o pior lugar para trapacear.
+
+#### Como isso entra no motor sem quebrar as regras
+
+Recurso é, por natureza, **estado compartilhado** — e isso ameaça duas regras da spec: só
+folha tem comportamento, e medidor só lê tráfego de porta. Se um pool global decide
+alocação, quem age não é folha nenhuma.
+
+Proposta que preserva as duas: **recurso como porta.** Um `kind` novo — árbitro de
+recurso, que é folha — recebe pedidos e devolve concessões. O bloco que precisa de
+memória ou de capacidade emite um pedido na porta de recurso e só progride quando a
+concessão chega. Consequências:
+
+- Quem age continua sendo folha
+- A contabilidade de recurso continua sendo tráfego de porta, então o medidor segue honesto
+- **Contenção de recurso vira backpressure de graça** — e backpressure é justamente o
+  mecanismo que falta hoje (§9.1). As duas lacunas se fecham com a mesma peça
+
+Vale desenhar as duas juntas. Resolvê-las em momentos separados provavelmente produziria
+dois mecanismos concorrentes para a mesma coisa.
+
+#### O valor de recurso vem do manifesto, não de invenção nossa
+
+O `compose` já declara limite de recurso — `deploy.resources.limits` com `cpus` e
+`memory`, e as formas mais antigas `mem_limit` e `cpus`. O orçamento de cada bloco sai
+daí, o que mantém a premissa da §4: **configuração nativa, nunca formato inventado**.
+Mexer no limite do manifesto e ver o comportamento mudar é a demonstração exata que o
+público pediu.
+
+#### A trava obrigatória
+
+Assim que existem memória e capacidade no modelo, a pergunta "aguenta quantos por
+segundo?" aparece sozinha — e responder isso é virar o simulador de capacidade que o §3
+declara não ser.
+
+Portanto: **unidades relativas e declaradas**, não `MB` e `vCPU`. Saturação de zero a
+cem, orçamento em unidades de trabalho, escala declarada como já se faz com o tick. Se
+algum dia um número com unidade real aparecer na tela, ele vem com procedência e com o
+aviso de que é ordem de grandeza didática. A ferramenta deve recusar-se, de forma
+explícita, a servir de dimensionamento.
+
 
 ## 8. Modelar ou embarcar: a pergunta que precede o catálogo
 
@@ -139,11 +230,13 @@ significa construir uma versão pior e menos fiel de algo que já existe pronto.
 | Alvo | Existe real no navegador? | Consequência |
 |---|---|---|
 | PostgreSQL | **PGlite** — Postgres compilado para WASM, Apache-2.0, ~3 MB | Embarcar o real para consulta e plano de execução. Réplica e WAL continuam modelo: o PGlite roda em modo de conexão única |
-| Linux | **v86** — emulador x86 em WASM que roda Linux de verdade | Emular é mais fiel e mais barato de manter do que modelar escalonador |
 | MQTT | Brokers MQTT em JavaScript rodam de fato | Embarcar o real; modelar só o que o broker não deixa observar |
 | Kafka | Não. É JVM | Modelar |
-| Kubernetes | Não como cluster | Modelar o laço de reconciliação |
 | OTel Collector | A investigar — é Go, e Go compila para WASM | Se for viável, é fidelidade máxima. Não assumir antes de testar |
+
+Linux e Kubernetes saíram desta tabela junto com a camada de plataforma (§7.2). Fica
+registrado que existiria caminho — o **v86** emula x86 em WASM e roda Linux de verdade —
+para quando e se a decisão de escopo for revista.
 
 **Critério:** se o real roda no navegador e o mecanismo interno é observável, embarque;
 se não roda, ou se o interesse didático está justamente no que ele esconde, modele.
@@ -164,15 +257,25 @@ propagando para trás. A perturbação mais forte da spec — janela do receptor
 exportação parando, fila enchendo, dado caindo — **é** backpressure em três níveis, e
 hoje teria de ser roteirizada. Roteiro é a única coisa que este projeto não pode aceitar.
 
-### 9.2 Um conjunto de arquétipos para todos os domínios é a hipótese mais frágil
+### 9.2 Um conjunto de arquétipos para todos os domínios: hipótese ainda em aberto, mas bem menos frágil
 
-O catálogo da §7 tem pelo menos três famílias semânticas: fluxo de dados, estado e
-isolamento, controle com realimentação. A tese do projeto — mapear tudo em `kind` —
-assume que um conjunto serve às três. **Isso não está provado.**
+Na primeira versão deste documento esta era a objeção mais séria: o catálogo tinha três
+famílias semânticas — fluxo de dados, estado e isolamento, controle com realimentação — e
+a tese do projeto assumia que um conjunto de arquétipos serviria às três.
 
-Como testar barato: depois do Kafka, tentar o alvo mais distante (Kubernetes ou Linux) e
-ver o que quebra. Testar só com pipelines parecidos confirmaria a hipótese por
-construção, o que não é confirmação nenhuma.
+**A decisão da §7.2 removeu duas dessas famílias.** Com Docker, Linux e Kubernetes fora, e
+plataforma reduzida a orçamento de recurso, sobra fluxo de dados sobre recurso
+compartilhado. A hipótese passa de "improvável e caríssima de testar" para "plausível e
+testável com o segundo alvo".
+
+O que **continua** em aberto: nenhum alvo além do OTel foi construído, então o reuso segue
+não demonstrado. Reuso não se prova com dois níveis vazios; prova-se quando o segundo
+pacote custa uma fração do primeiro. Kafka é o teste, e é bom teste justamente por ser
+exigente — partição, grupo de consumo, rebalance e lag não são um Collector com outro
+rótulo.
+
+O que **não** vale fazer: escolher como segundo alvo algo muito parecido com o primeiro.
+Isso confirmaria a hipótese por construção, o que não é confirmação nenhuma.
 
 ### 9.3 "A IA vai entrar em peso" é o maior risco, não o acelerador
 
@@ -194,14 +297,19 @@ disciplina**:
 
 Papel correto da IA: **gerar o candidato**. Quem aceita é o teste contra o real.
 
-### 9.4 Dispersão é o risco número um, e não é técnico
+### 9.4 Dispersão continua sendo o risco número um, e não é técnico
 
 Estado de hoje: fase inicial, sem licença declarada, entrega 2 na primeira de seis
-sessões, motor sem backpressure. Um catálogo de nove alvos e duas camadas, nesse
-contexto, é convite para nenhum fechar.
+sessões, motor sem backpressure nem recurso.
 
-Mitigação já adotada: catálogo é direção, avanço exige o anterior fechado, e nenhum
-`kind` novo entra sem pagar em dois domínios distintos.
+O corte da §7.2 ajudou de verdade — saíram três alvos e, com eles, duas famílias
+semânticas e a necessidade de um segundo regime de execução. Mas cinco alvos de pipeline
+ainda são muito para o estado atual, e a v0 depende de mudanças no núcleo que ainda não
+começaram.
+
+Mitigação adotada: catálogo é direção e não compromisso, avanço exige o anterior fechado,
+e nenhum `kind` novo entra sem pagar em dois alvos distintos. O sinal de alarme a
+observar é começar o segundo alvo antes de o primeiro fechar os seis itens da §6.
 
 ### 9.5 Material didático de plataforma apodrece
 
@@ -242,23 +350,34 @@ melhor candidato curto — em simulação, *rig* é a montagem de teste, e o ter
 executável em containers. É a mesma premissa de entrada deste projeto, já provada, em
 outro domínio.
 
-## 11. Decisões abertas
+## 11. Decisões
 
-Em ordem de urgência — as três primeiras travam o resto.
+### 11.1 Tomadas em 2026-08-28
+
+- **Plataforma sai do escopo**; entra orçamento de recurso (§7.2)
+- **Pacote de modelo é dado, não código** — configuração dos objetos da engine que
+  replica uma aplicação (§4)
+- **Escopo da v0 é um alvo só**: OpenTelemetry (§6)
+
+### 11.2 Abertas, em ordem de urgência
+
+As três primeiras travam o resto.
 
 1. **Licença.** Repositório público sem `LICENSE` é, por padrão, todos os direitos
    reservados. Proposta: Apache-2.0 no código (concessão de patente) e CC BY-SA no
    conteúdo. Bloqueia divulgação e contribuição externa
-2. **Backpressure no modelo** e **regime de execução por composto**. Mexem no núcleo;
-   depois custa reescrita
+2. **Recurso, backpressure e regime de execução por composto, desenhados juntos.**
+   Contenção de recurso *é* backpressure (§7.2); resolver em momentos separados
+   produziria dois mecanismos concorrentes para a mesma coisa. Mexe no núcleo, e depois
+   custa reescrita
 3. **Nomenclatura do pacote** (§9.6). Sufixo de arquivo é a coisa mais difícil de mudar
    depois que existe ecossistema
-4. **Pacote declarativo ou código?** Declarativo faz o ecossistema crescer e mantém a
-   revisão viável; código dá poder e transfere risco para quem revisa. Proposta:
-   declarativo por padrão, e `kind` novo entra no núcleo, revisado
+4. **Unidade de recurso.** Proposta: saturação relativa e unidade de trabalho, com escala
+   declarada — nunca `MB` e `vCPU`, para a ferramenta não ser usada como dimensionamento
+   (§7.2)
 5. **Modelar ou embarcar** (§8), por alvo
 6. **Branch default:** `entrega-1` envelhece mal. Decidir sobre `main`
-7. **Quando o motor sai para repo próprio.** Proposta: depois do segundo domínio
+7. **Quando o motor sai para repo próprio.** Proposta: depois do segundo alvo
 
 ## 12. O que este documento não é
 

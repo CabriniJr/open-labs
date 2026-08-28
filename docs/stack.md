@@ -118,7 +118,7 @@ modelar. Ver a decisão em `VISION.md` §8.
 | Peça | Licença | O que resolve |
 |---|---|---|
 | **PGlite** | Apache-2.0 | Postgres compilado para WASM, ~3 MB, roda no navegador. Verificado. Roda em conexão única: réplica e WAL continuam modelo |
-| **v86** | BSD-2-Clause | Emulador x86 em WASM; roda Linux de verdade no navegador |
+| **v86** | BSD-2-Clause | Emulador x86 em WASM; roda Linux de verdade no navegador. **Fora de escopo agora** — a camada de plataforma saiu (`VISION.md` §7.2). Registrado para quando a decisão for revista |
 | **Aedes** | MIT | Broker MQTT em JavaScript — roda de fato, não simulado |
 | sql.js, DuckDB-WASM | MIT | Bancos embarcáveis para labs de consulta |
 | **xterm.js** | MIT | Terminal no navegador, se algum lab tiver linha de comando |
