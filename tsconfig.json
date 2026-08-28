@@ -3,6 +3,7 @@
   "references": [
     { "path": "packages/otel-domain" },
     { "path": "packages/depth-core" },
+    { "path": "packages/depth-ui" },
     { "path": "apps/site" }
   ]
 }

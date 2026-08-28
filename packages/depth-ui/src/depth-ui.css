@@ -1,0 +1,160 @@
+.dui-depth {
+  display: grid;
+  grid-template-columns: 9rem minmax(0, 1fr) minmax(0, 22rem);
+  gap: var(--space-2);
+  align-items: start;
+}
+
+@media (max-width: 60rem) {
+  .dui-depth {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.dui-depth__rail {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-inline-start: 2px solid var(--rule);
+}
+
+.dui-depth__step {
+  display: flex;
+  gap: var(--space-1);
+  align-items: baseline;
+  padding: 0.35rem var(--space-1);
+  background: none;
+  border: 0;
+  border-inline-start: 2px solid transparent;
+  margin-inline-start: -2px;
+  color: var(--ink-muted);
+  font-family: var(--font-body);
+  text-align: start;
+  cursor: pointer;
+}
+
+.dui-depth__step[aria-current="step"] {
+  border-inline-start-color: var(--accent);
+  color: var(--ink);
+}
+
+.dui-depth__index {
+  font-size: var(--size-step--1);
+  color: var(--ink-muted);
+}
+
+.dui-depth__stage {
+  background: var(--paper-raised);
+  border: 1px solid var(--rule);
+  padding: var(--space-2);
+}
+
+.dui-flow {
+  width: 100%;
+  height: auto;
+}
+
+.dui-flow__wire {
+  stroke: var(--rule);
+  stroke-width: 1.5;
+}
+
+.dui-flow__packet {
+  fill: var(--sig-flow);
+}
+
+.dui-flow__packet[data-dropped="true"] {
+  fill: var(--sig-drop);
+}
+
+.dui-flow__node rect {
+  fill: var(--paper);
+  stroke: var(--ink);
+  stroke-width: 1.5;
+}
+
+.dui-flow__node[data-state="active"] rect {
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+
+.dui-flow__node[data-state="error"] rect {
+  stroke: var(--sig-drop);
+  stroke-width: 2;
+}
+
+.dui-flow__node text {
+  fill: var(--ink);
+  font-family: var(--font-body);
+  font-size: 11px;
+}
+
+.dui-flow__sublabel {
+  fill: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: 8px;
+}
+
+.dui-inspector__label {
+  margin: 0 0 var(--space-1);
+  font-family: var(--font-mono);
+  font-size: var(--size-step--1);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.dui-inspector__body {
+  margin: 0;
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: var(--size-step--1);
+  line-height: 1.55;
+}
+
+.dui-inspector__line {
+  display: block;
+  transition: background-color 600ms ease-out;
+}
+
+.dui-inspector__line[data-changed="true"] {
+  background-color: color-mix(in oklab, var(--sig-mutation) 35%, transparent);
+}
+
+.dui-timeline {
+  display: flex;
+  gap: var(--space-1);
+  align-items: center;
+  margin-block-start: var(--space-2);
+}
+
+.dui-timeline button {
+  font-family: var(--font-mono);
+  font-size: var(--size-step--1);
+  background: none;
+  border: 1px solid var(--rule);
+  color: var(--ink-muted);
+  padding: 0.2rem 0.7rem;
+  cursor: pointer;
+}
+
+.dui-timeline__play {
+  border-color: var(--ink) !important;
+  color: var(--ink) !important;
+}
+
+.dui-timeline__scrub {
+  flex: 1;
+  accent-color: var(--accent);
+}
+
+.dui-timeline__tick {
+  color: var(--ink-muted);
+  font-size: var(--size-step--1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dui-inspector__line {
+    transition: none;
+  }
+}
