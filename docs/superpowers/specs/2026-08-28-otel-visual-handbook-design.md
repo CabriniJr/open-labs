@@ -31,7 +31,7 @@ que custa quase nada hoje e evita reescrita depois. Ver §8.
 
 ## 2. Princípios
 
-Estes quatro decidem discussões futuras. Quando houver dúvida de escopo ou de
+Estes cinco decidem discussões futuras. Quando houver dúvida de escopo ou de
 implementação, a resposta sai daqui.
 
 1. **Nada é ilustração decorativa.** Toda simulação modela um mecanismo real e
@@ -187,8 +187,11 @@ site é derivado dele — não o contrário.
 ### Stack
 
 Astro com ilhas React. Conteúdo em MDX, zero JS por padrão, hidratação apenas
-da simulação da página. TypeScript estrito. pnpm workspaces. Deploy estático
-com CI no GitHub Actions.
+da simulação da página. TypeScript estrito. pnpm workspaces.
+
+Build e deploy por GitHub Actions para **GitHub Pages** — o repositório já vive
+no GitHub, não exige conta nem serviço adicional, e o site é inteiramente
+estático. Domínio próprio é troca de DNS, decisão independente e reversível.
 
 ### Layout do monorepo
 
@@ -284,6 +287,9 @@ O ritmo pretendido, dado que o autor está estudando o assunto em paralelo:
 5. Revisa contra as fontes, escreve o MDX final
 6. PR, revisão, publica
 
+O autor estudando enquanto constrói é a defesa contra o vício mais comum deste
+tipo de material: quem domina o assunto esquece onde ele confunde.
+
 ### Claude no fluxo de autoria
 
 É aqui que "powered by Claude" é concreto: Claude lê a documentação oficial e
@@ -296,9 +302,6 @@ contra a fonte antes de virar página.
 O pipeline "documentação oficial → modelo didático" é documentado em
 `docs/authoring.md` e é o que torna trinta labs viável em vez de aspiracional.
 
-O autor estudando enquanto constrói é a defesa contra o vício mais comum deste
-tipo de material: quem domina o assunto esquece onde ele confunde.
-
 ---
 
 ## 10. Escopo das entregas
@@ -308,7 +311,8 @@ tipo de material: quem domina o assunto esquece onde ele confunde.
 - Monorepo, TypeScript, pnpm workspaces, CI, deploy contínuo
 - Canvas de design no Claude Design; tokens e componentes derivados dele
 - Landing page completa: proposta, as 5 fases (com *coming*), o que é um lab
-- **Mini-simulação real embutida no hero** — embrião do `depth-core`, não um GIF
+- **Mini-simulação real embutida no hero** — roda sobre `depth-core` +
+  `otel-domain` de verdade, não é GIF nem vídeo. É o primeiro teste do motor
 - Guia de autoria em `docs/`
 
 A landing não fica refém do motor completo, e o hero já prova o conceito para
