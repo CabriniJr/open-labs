@@ -750,6 +750,137 @@ git commit -m "fix(depth-core): fronteira declarada, invariante do composto e lo
 
 ---
 
+## Task 1c: Cinco famílias e a segunda espécie de linha
+
+Vem da §17 da spec, que reconcilia este motor com o desenho das PRs aceitas (`d3900c0`).
+Duas mudanças estruturais, ambas baratas agora e caras depois: a família do controlador —
+peças que **não ficam no caminho do dado** — e a distinção entre linha de dado e linha de
+controle. Nenhum `kind` novo entra aqui; o catálogo cresce na S2.
+
+**Files:**
+- Modify: `packages/depth-core/src/model.ts`
+- Modify: `packages/depth-core/src/model.test.ts` (criar se não existir)
+
+- [ ] **Step 1: `Family` vira cinco, e a tabela força a exaustividade**
+
+Trocar em `model.ts`:
+
+```ts
+/**
+ * A que espécie de coisa um objeto pertence. A família carrega a linguagem de
+ * formas do desenho; o `kind` só faz a variação dentro dela.
+ *
+ * - `container` organiza e nunca tem comportamento próprio
+ * - `processor` age sobre o que o atravessa
+ * - `conduit` transporta e nunca altera a carga
+ * - `controller` observa, concede, dispara — e **não** está no caminho da carga
+ * - `plate` é dado anexado: consultado, nunca atravessado
+ */
+export type Family =
+  | "container"
+  | "processor"
+  | "conduit"
+  | "controller"
+  | "plate";
+
+/**
+ * Tabela em vez de cadeia de `if`: sendo um `Record<Kind, Family>`, acrescentar
+ * um `kind` sem lhe dar família deixa de compilar. O catálogo cresce em ondas,
+ * e crescer sem esquecer é o ponto.
+ */
+const FAMILY: Record<Kind, Family> = {
+  composite: "container",
+  pipeline: "container",
+  source: "processor",
+  router: "processor",
+  buffer: "processor",
+  sink: "processor",
+  channel: "conduit",
+  static: "plate",
+};
+
+export function familyOf(kind: Kind): Family {
+  return FAMILY[kind];
+}
+```
+
+Repare que `pipeline` e `composite` saem de `block` e viram `container`. Pô-los na mesma
+família de `source` diria que têm comportamento, e o invariante central é que não têm.
+Nenhum `kind` mapeia para `controller` ainda — os controladores (`clock`, `arbiter`,
+`supervisor`, `probe`) chegam na S2.
+
+- [ ] **Step 2: a aresta declara de que espécie é**
+
+Acrescentar a `model.ts`:
+
+```ts
+/**
+ * Duas espécies de linha, e o ganho é de legibilidade: a pergunta "por onde o
+ * dado passa?" se responde olhando só as linhas de dado.
+ */
+export type LineKind = "data" | "control";
+```
+
+e a `Wire`:
+
+```ts
+  /** Espécie da linha. Ausente significa `"data"` — a esmagadora maioria. Uma
+   *  linha de controle carrega sinal (pedido, concessão, gatilho, medida) e
+   *  **nunca** carga. */
+  readonly line?: LineKind;
+```
+
+- [ ] **Step 3: testes**
+
+Criar `packages/depth-core/src/model.test.ts`:
+
+```ts
+import { describe, expect, it } from "vitest";
+import { familyOf } from "./model.js";
+import type { Kind } from "./model.js";
+
+describe("familyOf", () => {
+  it("contêiner não é processador — organizar não é agir sobre a carga", () => {
+    expect(familyOf("composite")).toBe("container");
+    expect(familyOf("pipeline")).toBe("container");
+  });
+
+  it("separa cano, placa e processador", () => {
+    expect(familyOf("channel")).toBe("conduit");
+    expect(familyOf("static")).toBe("plate");
+    expect(familyOf("source")).toBe("processor");
+    expect(familyOf("router")).toBe("processor");
+    expect(familyOf("buffer")).toBe("processor");
+    expect(familyOf("sink")).toBe("processor");
+  });
+
+  it("todo kind tem família", () => {
+    const todos: readonly Kind[] = [
+      "composite", "pipeline", "source", "router",
+      "buffer", "sink", "channel", "static",
+    ];
+    for (const k of todos) expect(familyOf(k)).toBeDefined();
+  });
+});
+```
+
+- [ ] **Step 4: consertar o que quebrou**
+
+`familyOf` mudou de contrato: qualquer uso de `"block"` no repositório precisa virar
+`"container"` ou `"processor"`. Rode `pnpm typecheck` e siga os erros.
+
+Run: `pnpm test && pnpm typecheck && pnpm boundaries`
+Expected: tudo verde, incluindo `Fronteira motor↔domínio intacta.`
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add packages/depth-core/src
+git commit -m "feat(depth-core): cinco familias e a linha de controle"
+```
+
+---
+
 ## Task 2: Fiação, com encadeamento implícito de pipeline
 
 **Files:**
@@ -832,6 +963,14 @@ describe("resolveTarget", () => {
   it("devolve null quando não há destino", () => {
     expect(resolveTarget(tree, wires, "sink", "out")).toBeNull();
   });
+
+  it("não segue linha de controle — ela carrega sinal, não carga", () => {
+    const comControle: readonly Wire[] = [
+      ...wires,
+      { from: "sink", port: "out", to: "src", line: "control" },
+    ];
+    expect(resolveTarget(tree, comControle, "sink", "out")).toBeNull();
+  });
 });
 ```
 
@@ -855,6 +994,10 @@ import type { TreeIndex } from "./tree.js";
  * de um filho é a entrada do próximo — é isso que torna "a ordem importa" um
  * fato do modelo em vez de uma frase no texto. Esgotado o pipeline, a busca
  * sobe para o fio do pai.
+ *
+ * Linhas de controle são invisíveis daqui de propósito: elas carregam sinal, não
+ * carga, e misturar as duas faria a pergunta "por onde a carga passa?" deixar de
+ * ter resposta olhando o desenho.
  */
 export function resolveTarget(
   tree: TreeIndex,
@@ -863,6 +1006,7 @@ export function resolveTarget(
   port: PortId,
 ): string | Drop | null {
   for (const wire of wires) {
+    if ((wire.line ?? "data") !== "data") continue;
     if (wire.from === from && wire.port === port) {
       return wire.to === DROP ? DROP : entryLeaf(tree, wire.to);
     }
@@ -885,7 +1029,7 @@ export function resolveTarget(
 - [ ] **Step 4: Rodar o teste e confirmar que passa**
 
 Run: `pnpm vitest run packages/depth-core/src/wiring.test.ts`
-Expected: PASS — 6 testes
+Expected: PASS — 7 testes
 
 - [ ] **Step 5: Commit**
 
