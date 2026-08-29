@@ -226,6 +226,73 @@ implícito.
 
 ## 6. Apresentação
 
+### 6.1 Os quatro níveis já existem, e mapeiam nas roles do motor
+
+**Corrigido em 28/08/2026.** Este documento foi escrito assumindo profundidade recursiva
+homogênea. A spec do handbook (§4) já define **quatro níveis nomeados**, e a reconciliação é
+melhor que qualquer das duas versões isoladas.
+
+| Nível | O que mostra | O que se abre | `Role` em `model.ts` |
+|---|---|---|---|
+| **L0 · Flow** | Topologia, telemetria fluindo | — é a vista de cima | `node` |
+| **L1 · Mechanism** | Engrenagens dentro de um componente | Um bloco | `node` |
+| **L2 · Wire** | O protocolo carregando aquilo | **Um cano** | `channel` |
+| **L3 · Payload** | O dado, campo a campo | **Uma carga** | `message` |
+
+Os níveis **não são graus de contenção** — são os **tipos de coisa que se abre**. E o motor já
+tem exatamente essas três roles. A recursão acontece dentro de L1; L2 e L3 são mudanças de
+natureza, não de profundidade.
+
+Duas consequências que valem mais que a arrumação:
+
+**O conflito cano-transformação se resolve sozinho.** `VISION.md` §7.4 registrou a tensão entre
+"cano nunca transforma" e a spec dizendo que o `channel` pode transformar a carga. Com L2 sendo
+*o canal aberto*, o enquadramento HTTP/2 é um bloco **dentro** do cano — que é precisamente a
+resolução que havia sido proposta. A spec do handbook já apontava para lá.
+
+**O `weight` da mensagem ganha um lugar visual.** L3 abre uma carga; uma carga de peso 512 é um
+lote, e abri-la mostra os 512. Contenção de cardinalidade (§5) e nível L3 são a mesma peça.
+
+
+### 6.2 O drill-down é orientado por fluxo, não por contenção
+
+Registrado em 28/08/2026, e é o ponto que organiza toda a apresentação.
+
+Há duas formas de descer numa hierarquia, e elas produzem produtos diferentes:
+
+| | Por contenção | **Por fluxo** |
+|---|---|---|
+| O que você faz | Abre o componente e vê os filhos | **Segue a carga** |
+| Metáfora | Explorador de arquivos | Acompanhar um item na esteira |
+| Ao entrar num bloco | Começa do zero, olhando um conteúdo | Continua no caminho, um nível abaixo |
+| O que orienta o layout | Ordem de declaração | **A direção do fluxo** |
+
+O motor já está preparado para a segunda: `tree.ts` tem `flowChildren`, `entryLeaf` e
+`exitLeaf` — ou seja, um composto sabe por onde o fluxo entra e sai dele. Isso é o que permite
+descer **no meio de uma cadeia** e continuar seguindo, em vez de se perder.
+
+Consequências de desenho, todas derivadas:
+
+- **Descer preserva continuidade.** A carga que estava na entrada do bloco aparece entrando no
+  `entryLeaf`. Não há salto, não há recomeço
+- **A ordem de leitura interna é o fluxo**, não a declaração. Favorece layout da esquerda para
+  a direita, que é o que dagre já dá
+- **O foco é um caminho**, não um nó — a razão de ser breadcrumb e não escada
+
+### 6.3 O recurso que isso habilita: seguir a carga
+
+> Selecione uma carga e mande a vista **acompanhá-la**. Quando ela cruza a fronteira de um
+> bloco, o foco desce sozinho. Quando ela sai, o foco sobe.
+
+É a câmera seguindo o item. Em Factorio você faz isso com os olhos, porque o mundo é plano;
+aqui o nível muda junto.
+
+Vale destacar porque é o argumento mais concreto a favor do motor (`why-simulate.md` §7.2):
+**isso é impossível com visualizadores independentes por conceito.** Exige que a mesma carga
+exista nos dois níveis ao mesmo tempo, derivada — e é exatamente o que a vista agregada como
+projeção de fronteira garante.
+
+
 O que o leitor experimenta ao descer, e as regras que sustentam isso.
 
 | Regra | Por quê |
