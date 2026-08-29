@@ -1,6 +1,6 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
-import { World, shortcutDisagreement } from "@ovh/depth-core";
+import { World, indexTree, shortcutDisagreement } from "@ovh/depth-core";
 import { decide, somadorWorld } from "./gates.js";
 
 /**
@@ -144,5 +144,66 @@ describe("o somador feito de portas lógicas", () => {
     ] as const) {
       expect(somar(a, b, true)).toEqual(somar(a, b, false));
     }
+  });
+});
+
+describe("o somador de transistores: a fatia inteira, de ponta a ponta", () => {
+  const BITS_T = 2;
+
+  /** Roda o somador aberto até o silício e devolve a soma que saiu dele. */
+  function somar(a: number, b: number): { soma: number; vaium: boolean; subpassos: number } {
+    const mundo = new World(somadorWorld(BITS_T, false, 1, true));
+    mundo.setParam("a", a);
+    mundo.setParam("b", b);
+    mundo.advance(4);
+    const alto = (id: string): boolean =>
+      (mundo.state.nodes[id] as { alto?: boolean })?.alto === true;
+    return {
+      soma: Array.from({ length: BITS_T }, (_, i) => (alto(`soma${i}`) ? 1 << i : 0)).reduce(
+        (x, y) => x + y,
+        0,
+      ),
+      vaium: alto("vaium"),
+      subpassos: mundo.state.substeps,
+    };
+  }
+
+  it("soma qualquer par, com cada porta feita de transistores de verdade", () => {
+    // Não há nenhuma tabela-verdade rodando aqui: a resposta sai de MOSFETs
+    // conduzindo ou cortando, através de NANDs, através das portas do somador.
+    for (let a = 0; a < 1 << BITS_T; a += 1) {
+      for (let b = 0; b < 1 << BITS_T; b += 1) {
+        const total = a + b;
+        expect({ a, b, ...somar(a, b) }).toEqual({
+          a,
+          b,
+          soma: total & ((1 << BITS_T) - 1),
+          vaium: total >= 1 << BITS_T,
+          subpassos: expect.any(Number),
+        });
+      }
+    }
+  });
+
+  it("abrir a porta cobra caro, e é essa a lição do nível", () => {
+    // A mesma conta, nos dois níveis. O salto é o preço real de um XOR feito de
+    // quatro NANDs feitos de quatro transistores cada — e ele aparece na conta
+    // de subpassos sozinho, sem ninguém escrever o número.
+    const comPortas = new World(somadorWorld(BITS_T, false, 1, false));
+    comPortas.setParam("a", 3);
+    comPortas.setParam("b", 3);
+    comPortas.advance(4);
+
+    const comTransistores = somar(3, 3);
+    expect(comTransistores.subpassos).toBeGreaterThan(comPortas.state.substeps * 3);
+  });
+
+  it("os transistores existem na árvore, e são o fundo dela", () => {
+    const spec = somadorWorld(1, false, 1, true);
+    const arvore = indexTree(spec.root);
+    // sistema › somador › bit0 › xor1 › g1 › o PMOS lá no fundo
+    expect(arvore.byId.has("bit0-xor1-g1-p1")).toBe(true);
+    expect(arvore.byId.get("bit0-xor1-g1-p1")?.label).toBe("PMOS");
+    expect(arvore.byId.get("bit0-xor1-g1-vdd")?.label).toBe("Vdd");
   });
 });

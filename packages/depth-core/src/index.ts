@@ -32,10 +32,12 @@ export {
   portWeight,
 } from "./meters.js";
 export type { Crossing } from "./meters.js";
-export { DROP, familyOf } from "./model.js";
+export { borneNode, bornePort, DROP, familyOf } from "./model.js";
 export type {
   AnyObject,
   Behavior,
+  Borne,
+  BorneInterno,
   Drop,
   Emission,
   Family,

@@ -26,9 +26,9 @@ export function GatesLab() {
   const [rodando, setRodando] = useState(true);
   const [compasso, setCompasso] = useState(900);
 
-  const spec = useMemo(() => somadorWorld(BITS), []);
+  const spec = useMemo(() => somadorWorld(BITS, false, 1, true), []);
   const arvore = useMemo(() => indexTree(spec.root), [spec]);
-  const view = useMemo(() => viewSomador(BITS), []);
+  const view = useMemo(() => viewSomador(BITS, true), []);
   const mundoRef = useRef<World | null>(null);
   if (mundoRef.current === null) mundoRef.current = new World(spec);
 
@@ -83,7 +83,7 @@ export function GatesLab() {
           tickMs={compasso}
           views={[view]}
           readouts={readouts}
-          altos={portasAltas(estado)}
+          altos={portasAltas(estado, arvore)}
         />
         <p className="gates-lab__legenda">
           Uma porta acesa é uma porta cuja saída é 1 — e uma escura é uma porta

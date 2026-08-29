@@ -37,9 +37,17 @@ import "../../components/Explorer.css";
           reporting the same propagation delay. A ripple-carry adder is slow
           because of its shape, not because of the number you feed it.
         </p>
+        <p>
+          And the gates open too. Double-click one and you are inside CMOS: a
+          pull-up network of PMOS pulling toward 1, a pull-down network of NMOS
+          pulling toward 0, and the node where they meet. Nothing down there is
+          a lookup table — the answer comes out of transistors switching. An XOR
+          costs sixteen of them, which is most of why an adder is expensive.
+        </p>
       </div>
       <aside class="lab-head__note mono">
         <p>XOR, AND, OR. No adder anywhere.</p>
+        <p>Under them: NAND, NOR, and silicon.</p>
         <p>The depth you see is propagation delay.</p>
       </aside>
     </section>

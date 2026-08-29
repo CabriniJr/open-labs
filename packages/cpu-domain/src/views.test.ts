@@ -48,6 +48,12 @@ describe("a view do somador de portas", () => {
   it.each([2, 4, 8])("concorda com a árvore de %i bits", (bits) => {
     const arvore = indexTree(somadorWorld(bits).root);
     expect(viewDisagreement(arvore, viewSomador(bits))).toBeNull();
+
+    // E o mesmo somador aberto até o transistor: aí as portas têm interior, e
+    // a view precisa dizer isso — é o invariante de não esconder calado, agora
+    // no nível que o lab de fato roda.
+    const comSilicio = indexTree(somadorWorld(bits, false, 1, true).root);
+    expect(viewDisagreement(comSilicio, viewSomador(bits, true))).toBeNull();
   });
 
   it("nenhuma porta desenhada por cima de outra", () => {

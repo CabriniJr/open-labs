@@ -1,4 +1,4 @@
-import type { View } from "@ovh/depth-ui";
+import type { NodePlacement, View } from "@ovh/depth-ui";
 
 /**
  * As views do caminho de dados.
@@ -79,24 +79,37 @@ export const CPU_VIEWS: readonly View[] = [VIEW_SISTEMA, VIEW_PROCESSADOR];
  * contra a árvore. O que o laço evita é escrever vinte e tantas coordenadas à
  * mão e errar uma em silêncio.
  */
-export function viewSomador(bits: number): View {
+export function viewSomador(bits: number, comTransistores = false): View {
   const alturaBit = 190;
   const topo = 30;
-  const altura = topo + bits * alturaBit + 30;
+  const altura = topo + bits * alturaBit + 60;
 
   const places: View["places"] = [
     { id: "entradas", x: 30, y: topo + 10, w: 130, h: bits * alturaBit - 30 },
+    // O vem-de-trás do primeiro bit, amarrado em zero. Ele sempre existiu no
+    // circuito; só passou a ser desenhável quando virou uma linha de verdade.
+    { id: "cin0", x: 30, y: topo + bits * alturaBit - 10, w: 130, h: 46 },
     { id: "somador", x: 220, y: topo, w: 680, h: bits * alturaBit + 10 },
     ...Array.from({ length: bits }, (_, i) => {
       const y = topo + 20 + i * alturaBit;
       const p = (s: string): string => `bit${i}-${s}`;
+      // Com transistores a porta deixa de ser folha: a view diz isso em voz
+      // alta em vez de desenhar uma caixa lisa, e dois cliques entram nela.
+      const porta = (id: string, x: number, dy: number): NodePlacement => ({
+        id,
+        x,
+        y: y + dy,
+        w: 100,
+        h: 46,
+        ...(comTransistores ? { collapsed: true as const } : {}),
+      });
       return [
         { id: `bit${i}`, x: 240, y, w: 640, h: alturaBit - 40 },
-        { id: p("xor1"), x: 270, y: y + 22, w: 100, h: 46 },
-        { id: p("and1"), x: 270, y: y + 88, w: 100, h: 46 },
-        { id: p("xor2"), x: 430, y: y + 22, w: 100, h: 46 },
-        { id: p("and2"), x: 430, y: y + 88, w: 100, h: 46 },
-        { id: p("or1"), x: 600, y: y + 88, w: 100, h: 46 },
+        porta(p("xor1"), 270, 22),
+        porta(p("and1"), 270, 88),
+        porta(p("xor2"), 430, 22),
+        porta(p("and2"), 430, 88),
+        porta(p("or1"), 600, 88),
       ];
     }).flat(),
     ...Array.from({ length: bits }, (_, i) => ({

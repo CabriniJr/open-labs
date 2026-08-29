@@ -799,3 +799,61 @@ duas coisas existem e se provam, mas o somador ainda usa a porta folha), a view 
 transistor, e a unidade lógica aberta.
 
 Estado: 390 testes unitários, 74 e2e, typecheck, boundaries e build verdes.
+
+---
+
+## A fatia encosta: o somador roda em transistores
+
+**Data:** 2026-08-29. **Código:** `packages/cpu-domain/src/{transistors,gates,views}.ts`,
+`packages/depth-core/src/{model,wiring,validate}.ts`.
+
+As duas metades se tocaram. O lab das portas roda o somador de 4 bits com **cada porta
+feita de transistores**: 457 objetos, 433 fios, 43 subpassos. Dá para descer
+`circuito › bit0 › XOR › NAND › PMOS` e encontrar silício comutando — **oito níveis**.
+
+XOR, AND e OR não são portas do silício, então elas se compõem das que são:
+
+```
+AND = NOT(NAND(a,b))               6 transistores
+OR  = NOT(NOR(a,b))                6 transistores
+XOR = NAND(NAND(a,g), NAND(b,g))  16 transistores, g = NAND(a,b)
+```
+
+Que o XOR custe quase três vezes o AND é metade do motivo de um somador ser caro, e agora
+isso aparece sozinho na contagem de subpassos.
+
+**Lacuna do motor, a sexta desta fase: bornes não compunham.** `expandPorts` abria uma
+camada e parava, e `entryLeaf` atravessava o contêiner de dentro — um borne apontando para
+um filho que também tem bornes entregava no terminal errado, calado. Agora a expansão vai
+até o fundo, o borne pode nomear a porta do filho (`{ node, port }`), e `validateWorld`
+recusa o nome pelado quando o filho tem bornes. Sem isso a fiação do somador não tinha como
+dizer *qual* terminal do XOR ela alimenta.
+
+**Três defeitos que só apareceram porque a porta abriu de verdade:**
+
+1. **O somador nunca acionou o vai-um do primeiro bit.** Sob presença, "ninguém acionou" e
+   "zero" eram o mesmo estado, então amarrar em zero era o mesmo que esquecer. Deixaram de
+   ser: uma porta que recebe uma linha morta não sabe o que responder, e a rede de
+   transistores dela acusou. O fio sempre faltou, e o somador passava em todos os testes por
+   ninguém perguntar. Virou `nivelFixo("cin0", 0)`.
+2. **O atalho de cada porta respondia pelos transistores.** Eles existiam na árvore e nunca
+   rodavam — descer encontraria coisa parada, que é a mentira que o projeto persegue. O
+   teste da contagem de subpassos pegou: o "somador de transistores" custava exatamente o
+   mesmo que o de portas.
+3. **Um PMOS cortado no Vdd relatava nível alto**, e a tela o desenhava aceso justamente por
+   não estar conduzindo. Cortado não carrega nível nenhum.
+
+**O nó de saída aprendeu a separar três coisas** que antes se confundiam, e cada uma tem
+resposta diferente: rede ainda não acionada (o circuito aquecendo — não responde), **fio
+faltando** até o nó (erro, com a contagem de ramos), e rede mal montada (**flutuação** ou
+**curto**). Para isso o transistor relata todo tick, com `comandado` como campo: sumir do
+relato apagaria a diferença entre "não acordou" e "falta fio".
+
+Cinco mutantes mortos: expansão de bornes de uma volta só, nó ignorando falta de comando, nó
+ignorando a contagem de ramos, `cin0` removido, e as redes de NAND e NOR trocadas.
+
+**O que falta:** a unidade lógica aberta (hoje folha, declarado), e o bloco 7 (views da CPU
+e acabamento). A ULA da CPU segue com portas-folha de propósito — 32 bits em transistores
+são ~1600 deles, e a fatia desce por **um** caminho.
+
+Estado: 402 testes unitários, 76 e2e, typecheck, boundaries e build verdes.

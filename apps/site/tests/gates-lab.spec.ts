@@ -87,3 +87,33 @@ test("dois cliques entram no somador, e a trilha mostra onde você está", async
   await expect(page.locator('.dui-stage__objeto[aria-label^="bit1"]')).toBeVisible();
 });
 
+
+test("descer da porta lógica até o transistor, e achar silício vivo lá embaixo", async ({
+  page,
+}) => {
+  await page.goto("labs/gates/");
+  await expect(page.locator(".dui-stage")).toBeVisible({ timeout: 15_000 });
+
+  const trilha = page.locator(".explorer__trilha");
+  await page.locator('.dui-stage__objeto[aria-label^="bit0"]').first().dblclick();
+  await page.locator('.dui-stage__objeto[aria-label^="XOR"]').first().dblclick();
+  await expect(trilha).toContainText("XOR");
+
+  // Um XOR são quatro NAND. Não é rótulo: eles existem e estão desenhados.
+  await expect(page.locator(".dui-stage__objeto")).toHaveCount(4);
+
+  await page.locator('.dui-stage__objeto[aria-label^="NAND"]').first().dblclick();
+  // E um NAND são dois trilhos, quatro transistores e o nó onde as redes se
+  // encontram — o fundo da fatia.
+  await expect(page.locator('.dui-stage__objeto[aria-label^="PMOS"]')).toHaveCount(2);
+  await expect(page.locator('.dui-stage__objeto[aria-label^="NMOS"]')).toHaveCount(2);
+  await expect(page.locator('.dui-stage__objeto[aria-label^="Vdd"]')).toHaveCount(1);
+
+  // e está vivo: alguma coisa aqui embaixo está conduzindo neste tick
+  await expect(page.locator('.dui-stage__objeto[data-alto="true"]').first()).toBeVisible({
+    timeout: 10_000,
+  });
+
+  await trilha.getByRole("button", { name: "circuito" }).click();
+  await expect(page.locator('.dui-stage__objeto[aria-label^="bit0"]')).toBeVisible();
+});

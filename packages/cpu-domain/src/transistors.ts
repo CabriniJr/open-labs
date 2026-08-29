@@ -1,4 +1,4 @@
-import type { AnyObject, Message, ObjectSpec, Wire, WorldSpec } from "@ovh/depth-core";
+import type { AnyObject, BorneInterno, Message, ObjectSpec, Wire, WorldSpec } from "@ovh/depth-core";
 import { decide } from "./gates.js";
 import type { PortaLogica } from "./gates.js";
 
@@ -35,7 +35,8 @@ export type PortaCmos = "nand" | "nor" | "not";
 
 const CORRENTE = "corrente";
 
-const corrente = (m: Message): { conduz: boolean; bit: 0 | 1 } => ({
+const corrente = (m: Message): { comandado: boolean; conduz: boolean; bit: 0 | 1 } => ({
+  comandado: m.data.comandado !== false,
   conduz: m.data.conduz === true,
   bit: (m.data.bit === 1 ? 1 : 0) as 0 | 1,
 });
@@ -53,7 +54,15 @@ export function trilho(id: string, bit: 0 | 1): ObjectSpec {
     drives: true,
     behavior: (state, _inbox, ctx) =>
       ctx.phase === "settle"
-        ? { state, out: [{ port: "out", message: ctx.emit(CORRENTE, 1, { conduz: true, bit }) }] }
+        ? {
+            state,
+            out: [
+              {
+                port: "out",
+                message: ctx.emit(CORRENTE, 1, { comandado: true, conduz: true, bit }),
+              },
+            ],
+          }
         : { state, out: [] },
   };
 }
@@ -78,20 +87,23 @@ export function transistor(id: string, canal: Canal): ObjectSpec {
     behavior: (state, inbox, ctx) => {
       if (ctx.phase !== "settle" || inbox.length === 0) return { state, out: [] };
       const comando = inbox.find((m) => m.kind === "bit");
-      // Sem comando nenhum, o terminal de porta ainda não foi acionado — é o
-      // circuito antes de a primeira entrada chegar. Aí ele não é um transistor
-      // cortado, é um transistor que ainda não tem opinião, e dizer "cortado"
-      // faria o nó de saída acusar flutuação numa porta que está certa.
-      if (comando === undefined) return { state, out: [] };
-
       const fonte = inbox.find((m) => m.kind === CORRENTE);
-      const ligado = (canal === "nmos") === (comando.data.bit === 1);
+
+      // Sem comando, o terminal de porta ainda não foi acionado — é o circuito
+      // antes de a primeira entrada chegar nele. Ele **relata assim mesmo**,
+      // dizendo que não tem comando: some do relato e o nó lá embaixo não
+      // conseguiria separar "a rede ainda não acordou" de "falta um fio".
+      const comandado = comando !== undefined;
+      const ligado = comandado && (canal === "nmos") === (comando.data.bit === 1);
       const chega = fonte !== undefined && corrente(fonte).conduz;
       const conduz = ligado && chega;
-      const bit = fonte === undefined ? 0 : corrente(fonte).bit;
+      // Cortado, ele não carrega nível nenhum. Repetir o da fonte faria um PMOS
+      // cortado no Vdd relatar um — e a tela, que acende quem está em alto,
+      // desenharia como aceso um transistor que está justamente sem conduzir.
+      const bit = conduz && fonte !== undefined ? corrente(fonte).bit : 0;
       return {
         state,
-        out: [{ port: "dreno", message: ctx.emit(CORRENTE, 1, { conduz, bit }) }],
+        out: [{ port: "dreno", message: ctx.emit(CORRENTE, 1, { comandado, conduz, bit }) }],
       };
     },
   };
@@ -107,7 +119,7 @@ export function transistor(id: string, canal: Canal): ObjectSpec {
  * Nenhum dos dois acontece numa porta CMOS bem montada — é justamente por isso
  * que eles são erro de quem montou, e não estado que o modelo deva representar.
  */
-export function noDeSaida(id: string, saida: string): ObjectSpec {
+export function noDeSaida(id: string, saida: string, ramos: number): ObjectSpec {
   return {
     id,
     kind: "router",
@@ -115,10 +127,25 @@ export function noDeSaida(id: string, saida: string): ObjectSpec {
     leaf: true,
     behavior: (state, inbox, ctx) => {
       if (ctx.phase !== "settle" || inbox.length === 0) return { state, out: [] };
-      const ativos = inbox
-        .filter((m) => m.kind === CORRENTE)
-        .map(corrente)
-        .filter((c) => c.conduz);
+      const chegaram = inbox.filter((m) => m.kind === CORRENTE).map(corrente);
+
+      // Todo transistor que dá no nó relata todo tick, então o número de
+      // relatos é fato de construção. Faltando um, falta um FIO — e sem esta
+      // conferência a porta simplesmente ficaria muda, que é o modo silencioso
+      // de errar.
+      if (chegaram.length !== ramos) {
+        throw new Error(
+          `"${id}" recebeu ${chegaram.length} ramo(s) e a rede tem ${ramos}: falta fio ` +
+            `de um transistor até o nó. Cada dreno que dá na saída precisa de um fio ` +
+            `com timing "settle" até aqui`,
+        );
+      }
+
+      // A rede toda ainda não foi acionada — o circuito antes de a primeira
+      // entrada chegar. Não responder é diferente de responder zero.
+      if (chegaram.some((c) => !c.comandado)) return { state, out: [] };
+
+      const ativos = chegaram.filter((c) => c.conduz);
 
       // Só os transistores comandados relatam, então receber alguma coisa já
       // quer dizer que a porta está acionada neste tick — e aí a rede tem de
@@ -215,7 +242,12 @@ const REDES: Readonly<Record<PortaCmos, Rede>> = {
  * porque `shortcutDisagreement` prova, entrada por entrada, que ele concorda
  * com a rede de transistores lá dentro.
  */
-export function portaCmos(id: string, tipo: PortaCmos, saida = "out"): AnyObject {
+export function portaCmos(
+  id: string,
+  tipo: PortaCmos,
+  saida = "out",
+  comAtalho = true,
+): AnyObject {
   const rede = REDES[tipo];
   const p = (sufixo: string): string => `${id}-${sufixo}`;
   const entradas = tipo === "not" ? 1 : 2;
@@ -226,7 +258,7 @@ export function portaCmos(id: string, tipo: PortaCmos, saida = "out"): AnyObject
   const inlets: Record<string, readonly string[]> = { a: comandadosPor("a") };
   if (entradas === 2) inlets.b = comandadosPor("b");
 
-  return {
+  const base: AnyObject = {
     id,
     kind: "composite",
     label: tipo.toUpperCase(),
@@ -236,8 +268,13 @@ export function portaCmos(id: string, tipo: PortaCmos, saida = "out"): AnyObject
       trilho(p("vdd"), 1),
       trilho(p("gnd"), 0),
       ...rede.transistores.map((t) => transistor(p(t.sufixo), t.canal)),
-      noDeSaida(p("no"), saida),
+      noDeSaida(p("no"), saida, rede.noNo.length),
     ],
+  };
+  if (!comAtalho) return base;
+
+  return {
+    ...base,
     shortcut: (state, _inbox, ctx) => {
       if (ctx.phase !== "settle") return { state, out: [] };
       const vias = [...(ctx.inlets.a ?? []), ...(ctx.inlets.b ?? [])];
@@ -276,12 +313,165 @@ export function fiosDaPortaCmos(id: string, tipo: PortaCmos): readonly Wire[] {
 }
 
 /**
- * Um mundo com uma porta CMOS só, para provar a rede contra a tabela.
+ * As portas do somador, compostas a partir das que o silício tem.
+ *
+ * NAND, NOR e NOT são redes de transistores; XOR, AND e OR **não são** — elas
+ * se montam a partir daquelas, e é assim no silício também:
+ *
+ * ```
+ * AND  = NOT(NAND(a,b))              6 transistores
+ * OR   = NOT(NOR(a,b))               6 transistores
+ * XOR  = NAND(NAND(a,g), NAND(b,g))  16 transistores, com g = NAND(a,b)
+ * ```
+ *
+ * Que o XOR custe quase três vezes o AND não é curiosidade: é o motivo de um
+ * somador ser caro, e ele aparece sozinho na contagem de subpassos assim que a
+ * porta abre.
+ */
+const COMPOSTAS: Readonly<
+  Record<
+    "and" | "or" | "xor",
+    {
+      readonly partes: readonly { readonly sufixo: string; readonly tipo: PortaCmos }[];
+      /** Qual porta de qual parte cada entrada do bloco alimenta. */
+      readonly entradas: Readonly<Record<"a" | "b", readonly { sufixo: string; port: string }[]>>;
+      /** Os fios de dentro: de quem, para qual porta de quem. */
+      readonly dentro: readonly { de: string; para: string; port: string }[];
+      /** Quem fala pelo bloco. */
+      readonly saida: string;
+    }
+  >
+> = {
+  and: {
+    partes: [
+      { sufixo: "nand", tipo: "nand" },
+      { sufixo: "inv", tipo: "not" },
+    ],
+    entradas: { a: [{ sufixo: "nand", port: "a" }], b: [{ sufixo: "nand", port: "b" }] },
+    dentro: [{ de: "nand", para: "inv", port: "a" }],
+    saida: "inv",
+  },
+  or: {
+    partes: [
+      { sufixo: "nor", tipo: "nor" },
+      { sufixo: "inv", tipo: "not" },
+    ],
+    entradas: { a: [{ sufixo: "nor", port: "a" }], b: [{ sufixo: "nor", port: "b" }] },
+    dentro: [{ de: "nor", para: "inv", port: "a" }],
+    saida: "inv",
+  },
+  xor: {
+    partes: [
+      { sufixo: "g1", tipo: "nand" },
+      { sufixo: "g2", tipo: "nand" },
+      { sufixo: "g3", tipo: "nand" },
+      { sufixo: "g4", tipo: "nand" },
+    ],
+    entradas: {
+      a: [
+        { sufixo: "g1", port: "a" },
+        { sufixo: "g2", port: "a" },
+      ],
+      b: [
+        { sufixo: "g1", port: "b" },
+        { sufixo: "g3", port: "a" },
+      ],
+    },
+    dentro: [
+      { de: "g1", para: "g2", port: "b" },
+      { de: "g1", para: "g3", port: "b" },
+      { de: "g2", para: "g4", port: "a" },
+      { de: "g3", para: "g4", port: "b" },
+    ],
+    saida: "g4",
+  },
+};
+
+/**
+ * Uma porta lógica aberta até o transistor, com a tabela-verdade como atalho.
+ *
+ * NAND, NOR e NOT devolvem a rede direto; as outras três devolvem o bloco de
+ * portas CMOS que as compõe — e como cada uma daquelas também abre, daqui até o
+ * transistor há **dois** níveis, não um.
+ */
+export function portaAberta(
+  id: string,
+  tipo: PortaLogica,
+  saida = "out",
+  comAtalho = true,
+): AnyObject {
+  if (tipo === "nand" || tipo === "nor" || tipo === "not") {
+    return portaCmos(id, tipo, saida, comAtalho);
+  }
+
+  const receita = COMPOSTAS[tipo];
+  const p = (sufixo: string): string => `${id}-${sufixo}`;
+  const via = (lado: "a" | "b"): BorneInterno[] =>
+    receita.entradas[lado].map((e) => ({ node: p(e.sufixo), port: e.port }));
+
+  const base: AnyObject = {
+    id,
+    kind: "composite",
+    label: tipo.toUpperCase(),
+    inlets: { a: via("a"), b: via("b") },
+    outlets: { [saida]: [{ node: p(receita.saida), port: saida }] },
+    // As partes vêm SEMPRE abertas. Se elas guardassem o atalho delas, descer
+    // até aqui mostraria transistores parados enquanto a tabela-verdade
+    // respondia por eles — e o atalho de fora estaria sendo provado contra
+    // outro atalho, e não contra silício.
+    children: receita.partes.map((parte) =>
+      portaCmos(
+        p(parte.sufixo),
+        parte.tipo,
+        parte.sufixo === receita.saida ? saida : "out",
+        false,
+      ),
+    ),
+  };
+  if (!comAtalho) return base;
+
+  return {
+    ...base,
+    shortcut: (state, _inbox, ctx) => {
+      if (ctx.phase !== "settle") return { state, out: [] };
+      const vias = [...(ctx.inlets.a ?? []), ...(ctx.inlets.b ?? [])];
+      if (vias.length === 0) return { state, out: [] };
+      const altas = vias.reduce((soma, m) => soma + (m.data.bit === 1 ? 1 : 0), 0);
+      return {
+        state,
+        out: [{ port: saida, message: ctx.emit("bit", 1, { bit: decide(tipo, altas, 2) }) }],
+      };
+    },
+  };
+}
+
+/** Os fios de dentro de uma porta composta, e os das redes dela. */
+export function fiosDaPortaAberta(id: string, tipo: PortaLogica): readonly Wire[] {
+  if (tipo === "nand" || tipo === "nor" || tipo === "not") return fiosDaPortaCmos(id, tipo);
+
+  const receita = COMPOSTAS[tipo];
+  const p = (sufixo: string): string => `${id}-${sufixo}`;
+  return [
+    ...receita.partes.flatMap((parte) => fiosDaPortaCmos(p(parte.sufixo), parte.tipo)),
+    ...receita.dentro.map(
+      (fio): Wire => ({
+        from: p(fio.de),
+        port: "out",
+        to: p(fio.para),
+        toPort: fio.port,
+        timing: "settle",
+      }),
+    ),
+  ];
+}
+
+/**
+ * Um mundo com uma porta só, para provar a composição contra a tabela.
  *
  * As duas entradas são parâmetros, e a saída é um sorvedouro que guarda o bit —
  * é ele que a projeção de fronteira compara quando o atalho entra e sai.
  */
-export function portaCmosWorld(tipo: PortaCmos, comAtalho: boolean, seed = 1): WorldSpec {
+export function portaCmosWorld(tipo: PortaLogica, comAtalho: boolean, seed = 1): WorldSpec {
   const entradas = tipo === "not" ? 1 : 2;
   const vias = (entradas === 1 ? ["a"] : ["a", "b"]) as readonly ("a" | "b")[];
 
@@ -314,7 +504,7 @@ export function portaCmosWorld(tipo: PortaCmos, comAtalho: boolean, seed = 1): W
     },
   };
 
-  const alvo = portaCmos("porta", tipo);
+  const alvo = portaAberta("porta", tipo, "out", comAtalho);
   return {
     id: `cmos-${tipo}`,
     seed,
@@ -324,10 +514,10 @@ export function portaCmosWorld(tipo: PortaCmos, comAtalho: boolean, seed = 1): W
       id: "bancada",
       kind: "composite",
       label: "bancada",
-      children: [fonte, comAtalho ? alvo : semAtalho(alvo), saida],
+      children: [fonte, alvo, saida],
     },
     wires: [
-      ...fiosDaPortaCmos("porta", tipo),
+      ...fiosDaPortaAberta("porta", tipo),
       ...vias.map(
         (via): Wire => ({
           from: "entradas",
@@ -340,10 +530,4 @@ export function portaCmosWorld(tipo: PortaCmos, comAtalho: boolean, seed = 1): W
       { from: "porta", port: "out", to: "saida", timing: "settle" },
     ],
   };
-}
-
-/** A mesma porta sem o caminho rápido: só a rede de transistores responde. */
-function semAtalho(objeto: AnyObject): AnyObject {
-  const { shortcut: _fora, ...resto } = objeto as AnyObject & { shortcut?: unknown };
-  return resto as AnyObject;
 }

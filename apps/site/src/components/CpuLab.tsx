@@ -170,7 +170,7 @@ export function CpuLab() {
             inicial={view.focus}
             fills={fills}
             readouts={readouts}
-            altos={portasAltas(estado)}
+            altos={portasAltas(estado, arvore)}
           />
         ) : (
           <p className="cpu-lab__vazio">

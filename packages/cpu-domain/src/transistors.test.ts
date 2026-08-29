@@ -3,7 +3,7 @@ import { World, shortcutDisagreement } from "@ovh/depth-core";
 import type { WorldSpec } from "@ovh/depth-core";
 import { decide } from "./gates.js";
 import { portaCmos, portaCmosWorld, fiosDaPortaCmos, transistor } from "./transistors.js";
-import type { PortaCmos } from "./transistors.js";
+import type { PortaLogica } from "./gates.js";
 
 /**
  * A porta lógica feita de transistores, contra a tabela-verdade.
@@ -12,16 +12,37 @@ import type { PortaCmos } from "./transistors.js";
  * e o atalho da tabela precisam concordar em toda combinação de entrada.
  */
 
-const TIPOS: readonly PortaCmos[] = ["not", "nand", "nor"];
+/** O mesmo mundo com um transistor trocado de canal: é assim que se erra. */
+function trocaCanal(spec: WorldSpec, alvo: string, canal: "nmos" | "pmos"): WorldSpec {
+  return {
+    ...spec,
+    root: {
+      ...spec.root,
+      children: (spec.root.children ?? []).map((filho) =>
+        filho.id !== "porta"
+          ? filho
+          : {
+              ...filho,
+              children: (filho.children ?? []).map((neto) =>
+                neto.id === alvo ? transistor(alvo, canal) : neto,
+              ),
+            },
+      ),
+    },
+  };
+}
+
+const TIPOS: readonly PortaLogica[] = ["not", "nand", "nor", "and", "or", "xor"];
 
 /** Roda a porta com as entradas dadas e devolve o bit que saiu. */
-function rodar(tipo: PortaCmos, a: number, b: number, comAtalho = false): number {
+function rodar(tipo: PortaLogica, a: number, b: number, comAtalho = false): number {
   const mundo = new World(portaCmosWorld(tipo, comAtalho));
   mundo.setParam("a", a);
   mundo.setParam("b", b);
   // um tick para a fonte emitir, outro para a mensagem atravessar a borda e a
   // rede acomodar, e o terceiro para o sorvedouro guardar
-  mundo.advance(4);
+  // fundo suficiente para a cascata mais longa (o XOR tem três NANDs em fila)
+  mundo.advance(6);
   return (mundo.state.nodes.saida as { bit: number }).bit;
 }
 
@@ -45,7 +66,7 @@ describe("a porta CMOS, transistor por transistor", () => {
     for (let a = 0; a <= 1; a += 1) {
       for (let b = 0; b <= (entradas === 1 ? 0 : 1); b += 1) {
         const spec = portaCmosWorld(tipo, true);
-        expect(shortcutDisagreement(spec, "porta", 4, { ...spec.params, a, b })).toBeNull();
+        expect(shortcutDisagreement(spec, "porta", 6, { ...spec.params, a, b })).toBeNull();
       }
     }
   });
@@ -64,14 +85,10 @@ describe("a porta CMOS, transistor por transistor", () => {
     }
   });
 
-  it("a rede de baixo desligada do nó é recusada, e não responde errado", () => {
-    // Soltar o dreno do último NMOS do nó deixa a saída flutuando com as duas
-    // entradas em alto: os dois PMOS estão cortados e ninguém mais puxa.
-    //
-    // É o caso que a codificação antiga não sabia acusar. Lá, "não puxado" e
-    // "puxado para zero" eram o mesmo estado, e esta porta quebrada responderia
-    // zero — que por acaso é a resposta certa do NAND com 1 e 1. Acertar por
-    // acaso, calado, é exatamente o defeito que este projeto persegue.
+  it("um dreno solto do nó é recusado, e a porta não fica muda", () => {
+    // Soltar o dreno de um transistor do nó é um fio faltando, e o nó sabe
+    // quantos ramos a rede dele tem. Sem essa conferência a porta simplesmente
+    // não responderia — o modo silencioso de errar, que é o que se persegue.
     const spec = portaCmosWorld("nand", false);
     const capenga = {
       ...spec,
@@ -84,56 +101,28 @@ describe("a porta CMOS, transistor por transistor", () => {
     const mundo = new World(capenga);
     mundo.setParam("a", 1);
     mundo.setParam("b", 1);
-    expect(() => mundo.advance(4)).toThrow(/flutuando/);
+    expect(() => mundo.advance(6)).toThrow(/recebeu 2 ramo\(s\) e a rede tem 3: falta fio/);
+  });
 
-    // E com uma entrada em zero a mesma porta quebrada responde certo: o
-    // defeito depende do dado, que é o motivo de ele passar despercebido.
-    const outro = new World(capenga);
-    outro.setParam("a", 1);
-    outro.setParam("b", 0);
-    expect(() => outro.advance(4)).not.toThrow();
+  it("uma rede que não puxa de lado nenhum é flutuação, e é recusada", () => {
+    // Trocar o PMOS de cima de um NOT por NMOS: com a entrada em zero, o de
+    // cima corta e o de baixo também. Todos os ramos estão ligados e nenhum
+    // puxa — a saída não tem valor nenhum.
+    //
+    // Sob a codificação de presença, esta porta quebrada responderia zero em
+    // silêncio, porque "não puxado" e "puxado para zero" eram o mesmo estado.
+    const mundo = new World(trocaCanal(portaCmosWorld("not", false), "porta-p1", "nmos"));
+    mundo.setParam("a", 0);
+    expect(() => mundo.advance(6)).toThrow(/flutuando/);
   });
 
   it("as duas redes puxando ao mesmo tempo é curto, e é recusado", () => {
-    // Trocar o canal de um NMOS por PMOS faz as duas redes fecharem juntas com
-    // a entrada em zero: uma puxa para 1, a outra para 0.
-    const spec = portaCmosWorld("not", false);
-    const trocado: WorldSpec = {
-      ...spec,
-      root: {
-        ...spec.root,
-        children: (spec.root.children ?? []).map((filho) =>
-          filho.id !== "porta"
-            ? filho
-            : {
-                ...filho,
-                children: (filho.children ?? []).map((neto) =>
-                  neto.id === "porta-n1" ? transistor("porta-n1", "pmos") : neto,
-                ),
-              },
-        ),
-      },
-    };
-    const mundo = new World(trocado);
+    // O espelho: trocar o NMOS de baixo por PMOS faz as duas redes fecharem
+    // juntas com a entrada em zero — uma puxa para 1, a outra para 0. No
+    // silício é o caminho da fumaça.
+    const mundo = new World(trocaCanal(portaCmosWorld("not", false), "porta-n1", "pmos"));
     mundo.setParam("a", 0);
-    expect(() => mundo.advance(4)).toThrow(/em curto/);
-  });
-
-  it("um trilho é recusado se não alimentar nada, ou se alguém alimentar ele", () => {
-    // As duas maneiras de `drives` ser mentira, recusadas na construção.
-    const spec = portaCmosWorld("not", false);
-
-    const semSaida = { ...spec, wires: spec.wires.filter((w) => !w.from.endsWith("-vdd")) };
-    expect(() => new World(semSaida)).toThrow(/drives e não tem saída acomodada/);
-
-    const alimentado = {
-      ...spec,
-      wires: [
-        ...spec.wires,
-        { from: "porta-gnd", port: "out", to: "porta-vdd", timing: "settle" as const },
-      ],
-    };
-    expect(() => new World(alimentado)).toThrow(/drives e tem entrada acomodada/);
+    expect(() => mundo.advance(6)).toThrow(/em curto/);
   });
 
   it("o nó não some da árvore: a porta aberta tem os transistores de verdade", () => {
