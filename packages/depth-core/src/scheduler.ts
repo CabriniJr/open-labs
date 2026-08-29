@@ -1,13 +1,18 @@
 import { randomAt } from "./rng.js";
 import { DROP, familyOf } from "./model.js";
 import type {
+  Emission,
   InFlight,
   Message,
   ObjectSpec,
+  StepContext,
+  TickPhase,
+  WireTiming,
   WorldSpec,
   WorldState,
 } from "./model.js";
-import { resolveTarget } from "./wiring.js";
+import { settle } from "./settle.js";
+import { resolveSignalTargets, resolveTarget } from "./wiring.js";
 import type { TreeIndex } from "./tree.js";
 
 const DEFAULT_EDGE_TICKS = 4;
@@ -60,7 +65,18 @@ export function stepWorld(
   const tick = state.tick + 1;
   const edgeTicks = spec.edgeTicks ?? DEFAULT_EDGE_TICKS;
 
+  const nodes: Record<string, unknown> = { ...state.nodes };
+  const ledger: Record<string, number> = { ...state.ledger };
+  const launched: InFlight[] = [];
+
+  const bump = (key: string, by: number): void => {
+    ledger[key] = (ledger[key] ?? 0) + by;
+  };
+
+  // O que venceu no voo. Sinal e carga vão para caixas diferentes: sinal
+  // modifica o que o ator faz, e nunca é carga.
   const inbox = new Map<string, Message[]>();
+  const sinais = new Map<string, Map<string, Message[]>>();
   const stillFlying: InFlight[] = [];
   for (const item of state.flight) {
     if (tick - item.sent < edgeTicks) {
@@ -68,6 +84,15 @@ export function stepWorld(
       continue;
     }
     if (item.to === DROP) continue;
+    if (item.signalPort !== undefined) {
+      const porPorta = sinais.get(item.to) ?? new Map<string, Message[]>();
+      const lista = porPorta.get(item.signalPort) ?? [];
+      lista.push(item.message);
+      porPorta.set(item.signalPort, lista);
+      sinais.set(item.to, porPorta);
+      bump(`sigin:${item.to}.${item.signalPort}`, 1);
+      continue;
+    }
     const box = inbox.get(item.to) ?? [];
     box.push(item.message);
     inbox.set(item.to, box);
@@ -76,7 +101,7 @@ export function stepWorld(
   const atores = actors(tree);
   // Uma entrega para quem não age é bug do motor, não do autor: `validateWorld`
   // já recusou esse mundo na construção. Se chegar aqui, a caixa morreria com o
-  // Map local e a mensagem sumiria sem aparecer em lugar nenhum do livro-caixa.
+  // Map local e a mensagem sumiria sem aparecer no livro-caixa.
   const ehAtor = new Set(atores.map((n) => n.id));
   for (const destino of inbox.keys()) {
     if (!ehAtor.has(destino)) {
@@ -87,61 +112,124 @@ export function stepWorld(
     }
   }
 
-  const nodes: Record<string, unknown> = { ...state.nodes };
-  const ledger: Record<string, number> = { ...state.ledger };
-  const launched: InFlight[] = [];
+  // Qual regime cada porta tem. `validateWorld` já garantiu que uma porta não
+  // mistura os dois, então a primeira aresta que casa decide.
+  const tempoDaPorta = new Map<string, WireTiming>();
+  for (const wire of spec.wires) {
+    const chave = `${wire.from}\u0000${wire.port}`;
+    if (!tempoDaPorta.has(chave)) tempoDaPorta.set(chave, wire.timing ?? "clocked");
+  }
 
-  const bump = (key: string, by: number): void => {
-    ledger[key] = (ledger[key] ?? 0) + by;
+  const porId = new Map(atores.map((n) => [n.id, n]));
+  const seqPorNo = new Map<string, number>();
+
+  const contexto = (
+    node: ObjectSpec,
+    phase: TickPhase,
+    signals: Readonly<Record<string, readonly Message[]>>,
+  ): StepContext => ({
+    tick,
+    phase,
+    signals,
+    params,
+    random: (salt = "") => randomAt(spec.seed, tick, `${node.id}:${salt}`),
+    emit: (kind: string, weight = 1, data: Record<string, unknown> = {}): Message => {
+      const seq = seqPorNo.get(node.id) ?? 0;
+      seqPorNo.set(node.id, seq + 1);
+      // O id carrega a fase: sem isso, a mesma folha emitindo nas duas fases do
+      // mesmo tick geraria dois ids iguais, e o replay deixaria de ser exato.
+      const marca = phase === "settle" ? "s" : "c";
+      return { id: `${tick}:${node.id}:${marca}${seq}`, kind, weight, data };
+    },
+  });
+
+  /** Roda um ator numa fase, contando as saídas e cobrando o regime da porta. */
+  const rodar = (
+    id: string,
+    phase: TickPhase,
+    cargo: readonly Message[],
+    signals: Readonly<Record<string, readonly Message[]>>,
+  ): readonly Emission[] => {
+    const node = porId.get(id);
+    if (node === undefined || node.behavior === undefined) return [];
+
+    const resultado = node.behavior(nodes[id], cargo, contexto(node, phase, signals));
+    // Só o confronto escreve estado. Quem acomoda não guarda — é o que separa
+    // lógica combinacional de elemento de memória, e aqui é estrutural: o
+    // `state` devolvido na acomodação nem chega a ser lido.
+    if (phase === "commit") nodes[id] = resultado.state;
+
+    for (const emissao of resultado.out) {
+      const regime = tempoDaPorta.get(`${id}\u0000${emissao.port}`) ?? "clocked";
+      if (regime === "settle" && phase === "commit") {
+        throw new Error(
+          `scheduler: a porta "${emissao.port}" de "${id}" entrega na acomodação, e o ` +
+            `comportamento emitiu nela durante o confronto — a mensagem chegaria tarde ` +
+            `demais para o caminho combinacional deste tick. Emita nela quando ` +
+            `ctx.phase for "settle"`,
+        );
+      }
+      if (regime === "clocked" && phase === "settle") {
+        throw new Error(
+          `scheduler: a porta "${emissao.port}" de "${id}" entrega por relógio, e o ` +
+            `comportamento emitiu nela durante a acomodação. Emita nela quando ` +
+            `ctx.phase for "commit"`,
+        );
+      }
+      bump(`out:${id}.${emissao.port}`, 1);
+      bump(`out:${id}.${emissao.port}.weight`, emissao.message.weight);
+    }
+    return resultado.out;
   };
 
+  // FASE 1 — acomodação. Propaga dentro do tick e não escreve estado.
+  const acomodado = settle(spec, inbox, sinais, (id, cargo, sinaisDele) =>
+    rodar(id, "settle", cargo, sinaisDele),
+  );
+  for (const [chave, quanto] of acomodado.ledger) bump(chave, quanto);
+
+  // FASE 2 — confronto. Onde o estado muda e onde nascem as mensagens que
+  // custam tick.
   for (const node of atores) {
-    const box = inbox.get(node.id) ?? [];
-    if (box.length > 0) {
-      bump(`in:${node.id}`, box.length);
-      for (const message of box) bump(`in:${node.id}.weight`, message.weight);
+    const cronometrado = inbox.get(node.id) ?? [];
+    if (cronometrado.length > 0) {
+      bump(`in:${node.id}`, cronometrado.length);
+      for (const message of cronometrado) bump(`in:${node.id}.weight`, message.weight);
     }
 
-    let seq = 0;
-    const ctx = {
-      tick,
-      random: (salt = "") => randomAt(spec.seed, tick, `${node.id}:${salt}`),
-      params,
-      // As duas fases entram na Task 5; até lá todo tick é confronto, e é isso
-      // que o contexto diz, em vez de omitir o campo e deixar o ator adivinhar.
-      phase: "commit" as const,
-      signals: {},
-      emit: (
-        kind: string,
-        weight = 1,
-        data: Record<string, unknown> = {},
-      ): Message => {
-        // id derivado de (tick, nó, ordem): replay reproduz exatamente os mesmos
-        const id = `${tick}:${node.id}:${seq}`;
-        seq += 1;
-        return { id, kind, weight, data };
-      },
-    };
+    const entregue = acomodado.deliveries.get(node.id);
+    const cargo = [...cronometrado, ...(entregue?.cargo ?? [])];
 
-    const behavior = node.behavior;
-    if (behavior === undefined) continue;
-    const result = behavior(nodes[node.id], box, ctx);
-    nodes[node.id] = result.state;
+    const sinaisDaqui: Record<string, readonly Message[]> = { ...(entregue?.signals ?? {}) };
+    for (const [porta, msgs] of sinais.get(node.id) ?? []) {
+      sinaisDaqui[porta] = [...(sinaisDaqui[porta] ?? []), ...msgs];
+    }
 
-    for (const emission of result.out) {
-      bump(`out:${node.id}.${emission.port}`, 1);
-      bump(`out:${node.id}.${emission.port}.weight`, emission.message.weight);
-      const to = resolveTarget(tree, spec.wires, node.id, emission.port);
+    for (const emissao of rodar(node.id, "commit", cargo, sinaisDaqui)) {
+      const alvosDeSinal = resolveSignalTargets(spec.wires, node.id, emissao.port);
+      for (const alvo of alvosDeSinal) {
+        launched.push({
+          id: `${tick}:${node.id}:${emissao.port}:sig${launched.length}`,
+          message: emissao.message,
+          from: node.id,
+          to: alvo.to,
+          sent: tick,
+          signalPort: alvo.toPort,
+        });
+      }
+
+      const to = resolveTarget(tree, spec.wires, node.id, emissao.port);
       if (to === null) {
-        // Sem fio declarado e sem descarte: não é uma decisão do modelo, é um
-        // buraco na autoria. Fica contado numa chave própria para que o modo autor
-        // possa acusá-lo, em vez de virar o mesmo silêncio de um descarte.
-        bump(`out:${node.id}.${emission.port}.unwired`, 1);
+        // Sem fio de dado e sem descarte. Se havia sinal, não é buraco de
+        // autoria: a porta é de controle e já entregou acima.
+        if (alvosDeSinal.length === 0) {
+          bump(`out:${node.id}.${emissao.port}.unwired`, 1);
+        }
         continue;
       }
       launched.push({
-        id: `${tick}:${node.id}:${emission.port}:${launched.length}`,
-        message: emission.message,
+        id: `${tick}:${node.id}:${emissao.port}:${launched.length}`,
+        message: emissao.message,
         from: node.id,
         to,
         sent: tick,
@@ -149,5 +237,11 @@ export function stepWorld(
     }
   }
 
-  return { tick, nodes, flight: [...stillFlying, ...launched], ledger, substeps: 0 };
+  return {
+    tick,
+    nodes,
+    flight: [...stillFlying, ...launched],
+    ledger,
+    substeps: acomodado.substeps,
+  };
 }
