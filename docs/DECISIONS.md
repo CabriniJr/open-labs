@@ -9,7 +9,8 @@ Ordem de leitura para quem chega: **este** → `VISION.md` → `kinds.md` → `d
 `model-format.md` → `why-simulate.md` → `roadmap.md`. `theory.md` é opcional e fora da
 ordem: é o motor descrito nos formalismos de que ele é instância (grafo hierárquico,
 redes de Petri coloridas, cadeias de Markov) e, principalmente, a lista do que ele
-**não** modela. A spec do handbook
+**não** modela. O desenho da fase F6 está em
+`superpowers/specs/2026-08-29-cpu-model-design.md`. A spec do handbook
 (`superpowers/specs/2026-08-28-otel-visual-handbook-design.md`) tem precedência sobre todos
 em matéria de conteúdo e currículo.
 
