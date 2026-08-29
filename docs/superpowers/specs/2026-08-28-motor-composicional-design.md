@@ -549,3 +549,94 @@ princípio 2 da spec original: a documentação oficial dá a verdade.
 - Arte sob medida por objeto (ver a trava de custo em §3).
 - Composição arrastável pelo leitor (arrastar um processor para reordenar). Boa ideia,
   mas depende de todo o resto estar de pé.
+
+---
+
+## 17. Reconciliação com o desenho paralelo (PRs #1–#5, `docs/kiro`)
+
+**Data:** 2026-08-28. **Status:** decidido. As cinco PRs entraram na `main` em `d3900c0`
+(`DECISIONS.md`, `VISION.md`, `kinds.md`, `depth.md`, `model-format.md`, `why-simulate.md`,
+`roadmap.md`, `stack.md`) e trazem um desenho que contradiz esta spec em três pontos. Onde
+contradiz, **o desenho das PRs vence** — em todos os três ele torna verificável o que aqui
+era convenção. Esta seção registra o que muda e onde cada mudança pousa, para o código não
+ficar perseguindo dois desenhos.
+
+Precedência daqui para a frente: `docs/DECISIONS.md` → esta spec → o plano da sessão.
+
+### 17.1 A forma da carga muda só na saída de um `transform`
+
+Substitui a §2.3 desta spec, que espalhava a transformação pela fronteira de qualquer
+objeto. A regra nova é mais estreita e por isso mais forte:
+
+> Para toda aresta de dado, em todo tick: `kind(carga na origem) == kind(carga no destino)`,
+> exceto quando a origem é um `transform`.
+
+Isso deixa de ser convenção de desenho e vira property test. Com ele verde, o modelo **não
+consegue** mentir sobre onde a transformação acontece. Consequência: `sink` e `channel`
+perdem a transformação que a §2.3 lhes dava.
+
+**Onde pousa:** o `kind` `transform` e o property test entram na S2 (arquétipos), que é onde
+o catálogo é implementado. A S1 só precisa não construir nada que dependa da regra antiga.
+
+### 17.2 Quatro famílias, não três — entra o controlador
+
+A §2.0 tinha bloco, cano e placa. Faltava a família das peças que **não ficam no caminho do
+dado**: árbitro, relógio, supervisor, sonda. Tratá-las como bloco obrigaria a inventar um
+fluxo que não existe — exatamente o erro que a placa foi criada para evitar.
+
+E a §8 de `kinds.md` deixa aberta a pergunta "contêiner é família própria?". Fica resolvida
+aqui como **sim**: `pipeline` e `composite` não processam nada, organizam. Dar a eles a mesma
+família de `source` e `router` diria que eles têm comportamento, e o invariante central desta
+spec é que não têm.
+
+| Família | O que faz | Portas | No caminho do dado? | `kind`s hoje |
+|---|---|---|---|---|
+| **contêiner** | Organiza. Nunca tem comportamento | herda a fronteira dos filhos (`entry`/`exit`) | é o caminho | `composite`, `pipeline` |
+| **processador** | Age sobre o dado que o atravessa | entrada à esquerda, saída à direita, descarte embaixo | sim | `source`, `router`, `buffer`, `sink` |
+| **cano** | Transporta. Nunca altera a carga | as duas pontas | sim — é o caminho | `channel` |
+| **controlador** | Observa, concede, dispara, decide | portas de **controle**, em cima e embaixo | **não** | (nenhum ainda — chegam na S2) |
+| **placa** | Dado anexado, consultado, nunca atravessado | nenhuma | não | `static` |
+
+**Onde pousa:** `Family` e `familyOf` em `packages/depth-core/src/model.ts`, ainda na S1 —
+é estrutural e barato agora, caro de retrofitar.
+
+### 17.3 Duas espécies de linha: dado e controle
+
+Consequência direta da família nova, e o ganho é de legibilidade: a pergunta "por onde o dado
+passa?" passa a se responder olhando só as linhas grossas.
+
+| Linha | Carrega | Desenho |
+|---|---|---|
+| **dado** | a carga | traço grosso, nome em cima, bocas nas pontas |
+| **controle** | sinal: pedido, concessão, gatilho, medida | traço fino tracejado, cor distinta |
+
+Regras que o motor precisa impor, não sugerir: uma carga **nunca** trafega numa linha de
+controle; um objeto da família controlador **não** aceita aresta de dado; e um medidor
+continua lendo só tráfego de porta (§5.3), o que agora inclui portas de controle.
+
+**Onde pousa:** `Wire.line: "data" | "control"` na S1, Task 2 (fiação) — é a tarefa que
+define as arestas, e retrofitar depois custaria refazer a fiação inteira.
+
+### 17.4 O catálogo cresce em ondas, e não agora
+
+`kinds.md` projeta dezenove arquétipos em três ondas: hoje os oito; a onda 1 acrescenta
+`transform`, `tee`, `merge`, `batch`, `clock`, `arbiter`; a onda 2 (Kafka) `log`, `deliver`,
+`supervisor`; a onda 3 (Prometheus) `store`, `probe`. Mais três encolhimentos: `channel`
+perde a transformação e ganha capacidade com política de recusa, `sink` perde a
+transformação, `buffer` perde o agrupamento (que vira `batch`).
+
+A trava de entrada é a régua de `DECISIONS.md`: **arquétipo entra pagando em dois alvos.**
+
+**Onde pousa:** onda 1 na S2. A S1 não implementa nenhum arquétipo novo — ela constrói o
+mecanismo (árvore, fiação, escalonador, mundo, medidores) que os dezenove vão usar. O que a
+S1 deve garantir é que acrescentar um `kind` seja aditivo: nada pode assumir que a união de
+`Kind` é fechada nos oito de hoje.
+
+### 17.5 O que esta spec mantém, e as PRs não contradizem
+
+A árvore composicional, o invariante "só folha tem comportamento", a vista agregada como
+projeção de fronteira, o parâmetro como evento no tempo, o `seek` exato, o medidor que lê só
+porta, o modelo estrito de desenho, o modo autor e o contrato de fidelidade. As PRs
+acrescentam três coisas que esta spec não tinha e que ficam registradas como dívida:
+predição antes da revelação, o campo "mal-entendido que este lab desfaz" no `teaches`, e
+`docs/authoring.md` como interface pública do projeto.
