@@ -16,11 +16,17 @@ Espelho no GitHub Pages: **https://cabrinijr.github.io/otel-visual-handbook**
 
 ## Why
 
-Most OpenTelemetry material shows a diagram and a config file. This one shows the
-running mechanism at four depths — flow, component, wire, payload — where each
-depth is a projection of the same state. What you read at the bottom is what
-produced the picture at the top. Every lab has a `docker compose` beside it so
-you can check the model against a real Collector.
+Most material on a technical subject shows a diagram and a config file. Here the
+diagram **is** the running mechanism, and it is the same state seen from more than
+one depth: only the leaves have behaviour, and everything above is the result of
+running what is inside it. What you read at the bottom is what produced the picture
+at the top.
+
+That is why the engine knows nothing about the subject. `otel.model` goes from the
+service graph down to the OTLP payload, with a `docker compose` beside each lab so you
+can check the model against a real Collector. `cpu.model` goes from the block diagram
+down to the transistor, and takes assembly as its input. Same engine — and the second
+handbook is where we find out whether the first one leaked domain into it.
 
 ## Layout
 

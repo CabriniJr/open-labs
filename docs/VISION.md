@@ -10,6 +10,11 @@ junto com a visão, porque uma visão sem objeção anotada é uma visão que ni
 
 ## 1. O que é
 
+> **Nota de 2026-08-29.** O produto passou a se chamar **OpenLabs**, e o que este
+> documento chama de "a ferramenta" é o motor; cada assunto é um `.model` sobre ele —
+> `otel.model`, `cpu.model` — com a mesma anatomia de **roadmap · artigos · labs**.
+> O texto abaixo descreve o primeiro caso, e continua valendo para ele.
+
 Um **lab de plataforma na web**: você despacha um manifesto que já existe no seu
 repositório — um `docker compose` e os arquivos de configuração que ele monta — e a
 ferramenta monta um modelo interativo. Blocos abríveis, simulação rodando, decisão de

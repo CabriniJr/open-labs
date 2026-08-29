@@ -1,6 +1,6 @@
 # Decisões e ideias consolidadas
 
-**Data:** 2026-08-28
+**Data:** 2026-08-28, com o enquadramento revisto em 2026-08-29
 **Papel deste documento:** ponto de entrada. As ideias que sobreviveram, as que foram
 recusadas, e as réguas que decidem discussão futura. Os outros documentos aprofundam; este
 resolve.
@@ -9,10 +9,44 @@ Ordem de leitura para quem chega: **este** → `VISION.md` → `kinds.md` → `d
 `model-format.md` → `why-simulate.md` → `roadmap.md`. `theory.md` é opcional e fora da
 ordem: é o motor descrito nos formalismos de que ele é instância (grafo hierárquico,
 redes de Petri coloridas, cadeias de Markov) e, principalmente, a lista do que ele
-**não** modela. O desenho da fase F6 está em
-`superpowers/specs/2026-08-29-cpu-model-design.md`. A spec do handbook
-(`superpowers/specs/2026-08-28-otel-visual-handbook-design.md`) tem precedência sobre todos
-em matéria de conteúdo e currículo.
+**não** modela. Cada handbook tem a sua spec, e ela tem precedência sobre todos estes em matéria de
+conteúdo e currículo — nunca sobre o motor: `otel.model` em
+`superpowers/specs/2026-08-28-otel-visual-handbook-design.md`, `cpu.model` em
+`superpowers/specs/2026-08-29-cpu-model-design.md`.
+
+---
+
+## O enquadramento: OpenLabs
+
+*Revisto em 2026-08-29. Vem antes das seções numeradas porque muda o que elas
+significam, e não o que elas decidem — nenhuma decisão abaixo foi revogada.*
+
+O nome deixou de descrever o projeto no dia em que a CPU entrou no roteiro antes do
+OTel. Um repositório chamado *OTel Visual Handbook* cujo próximo entregável é um
+datapath RV32I mente no título — e a mentira não é cosmética: sugere que o motor é de
+telemetria, quando o motor é justamente **o que não sabe o que é um span**.
+
+- **OpenLabs** é a casa: um motor composicional, e vários handbooks rodando nele
+- **Cada handbook é um `.model`** — `otel.model` (F4), `cpu.model` (F6). O que muda de
+  um para outro é o domínio, nunca o motor. É a mesma fronteira que o CI já guarda
+- **Todo handbook tem a mesma anatomia**, e é ela que dá a página: **roadmap** (a ordem
+  em que os conceitos se sustentam) · **artigos** (o texto que explica) · **labs** (o
+  modelo que roda). Um handbook sem as três não está pronto, e a página diz isso em vez
+  de esconder
+- **O reuso deixa de ser hipótese e vira o teste.** A §3 mandava recusar generalidade
+  sem dois casos; agora há dois casos, e o segundo é de outro mundo — bit e sinal, não
+  span e pipeline. O que o `cpu.model` pedir ao motor e o `otel.model` não usar é
+  suspeito de ser domínio vazado
+
+**O que não muda:** o repositório segue `otel-visual-handbook` e os pacotes seguem no
+escopo `@ovh/`. Renomear quebra links, CI e o deploy publicado por um ganho só de
+fachada; o nome que o leitor vê já está certo. A renomeação técnica sai de graça quando
+o motor for para repositório próprio — a decisão aberta nº 7 da §7.
+
+**Onde isto poderia mentir em silêncio:** o catálogo
+(`apps/site/src/data/handbooks.ts`) é a promessa da capa, e um artigo ou lab apontando
+para uma fase inexistente sumiria da página sem aviso. Por isso a página **lança** em
+vez de pular, e o teste do catálogo recusa fase inexistente, fase vazia e id repetido.
 
 ---
 
@@ -175,7 +209,8 @@ que exige o motor.
 
 Nomenclatura · a ferramenta ensina e não opera · `model` é ilha com porto · reuso não é
 requisito · playground é editor de grafo com regras · segue com o motor · a gramática ·
-os quatro níveis como tipos de coisa.
+os quatro níveis como tipos de coisa · **o projeto é OpenLabs, e cada handbook é um
+`.model` com roadmap, artigos e labs** (o enquadramento, no topo).
 
 ### Abertas, e nesta ordem de urgência
 
@@ -200,35 +235,3 @@ os quatro níveis como tipos de coisa.
    o caso real
 3. **`docs/authoring.md` como interface pública.** O teste de "ser base para outros handbooks"
    é um handbook escrito por outra pessoa, e o que habilita isso é o guia, não o motor
-
----
-
-## 9. O projeto vira OpenLabs, e o handbook vira um `.model` dentro dele
-
-**Data:** 2026-08-29. **Fechada.**
-
-O nome deixou de descrever o projeto no dia em que a CPU entrou no roteiro antes do
-OTel. Um repositório chamado *OTel Visual Handbook* cujo próximo entregável é um
-datapath RV32I está mentindo no título — e a mentira não é cosmética: ela sugere que o
-motor é de telemetria, quando o motor é justamente o que não sabe o que é um span.
-
-Fica assim:
-
-- **OpenLabs** é a casa. Um motor composicional, e vários handbooks rodando nele
-- **Cada handbook é um `.model`**: `otel.model`, `cpu.model`. O que muda de um para o
-  outro é o domínio — nunca o motor
-- **Todo handbook tem a mesma anatomia**, e é ela que dá a página: **roadmap** (a
-  ordem em que os conceitos se sustentam) · **artigos** (o texto que explica) ·
-  **labs** (o modelo que roda). Um handbook sem as três não está pronto, e a página
-  diz isso em vez de esconder
-
-O que **não** muda agora: o repositório segue `otel-visual-handbook` e os pacotes
-seguem no escopo `@ovh/`. Renomear repositório e escopo quebra links, CI e o deploy
-publicado por um ganho só de fachada; o nome do produto é o que o leitor vê, e é ele
-que já está certo. A renomeação técnica fica para quando o motor sair para repositório
-próprio (decisão aberta nº 7 da §7), que é quando ela sai de graça.
-
-**Como isto pode falhar:** o catálogo (`apps/site/src/data/handbooks.ts`) é a promessa
-da capa, e um item apontando para uma fase inexistente sumiria da página sem aviso —
-a mentira silenciosa de sempre. Por isso a página **lança** em vez de pular, e o teste
-do catálogo recusa fase vazia, fase inexistente e id repetido.

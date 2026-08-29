@@ -339,7 +339,7 @@ junto com `depth-core` e `depth-ui`.
 
 ## Sessão — OpenLabs: o projeto passa a ser a casa dos handbooks
 
-**Data:** 2026-08-29. **Decisão:** `docs/DECISIONS.md` §9.
+**Data:** 2026-08-29. **Decisão:** `docs/DECISIONS.md`, seção "O enquadramento: OpenLabs".
 
 O projeto vira **OpenLabs**; o handbook de OTel e o da CPU viram dois `.model` sobre o
 mesmo motor. No site: catálogo em `apps/site/src/data/handbooks.ts`, cartão

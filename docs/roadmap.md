@@ -8,6 +8,12 @@ válidas no que não conflita.
 Ordenado por **o que destrava o quê**, não por facilidade nem por empolgação. Cada fase
 tem critério de saída verificável; fase sem critério é intenção.
 
+**Onde as fases desembocam (2026-08-29).** O que o leitor vê não é uma fase, é um
+**handbook**: um `.model` sobre o motor, com **roadmap · artigos · labs**. A F4 entrega
+`otel.model`; a F6, `cpu.model`; a F6b, o ATmega dentro do segundo. O catálogo que a
+capa promete vive em `apps/site/src/data/handbooks.ts` — quem acrescenta um handbook
+acrescenta uma entrada lá, e o teste do catálogo cobra as três trilhas.
+
 ---
 
 ## F0 — Destravar
