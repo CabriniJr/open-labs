@@ -2,9 +2,12 @@
 interface Props {
   /** Qual item marcar como atual. */
   current?: "home" | "docs" | undefined;
+  /** A busca só existe onde há o que buscar: nas páginas de documentação. */
+  search?: boolean | undefined;
 }
 
-const { current } = Astro.props;
+const { current, search } = Astro.props;
+import DocSearch from "./DocSearch.astro";
 import { url } from "../lib/urls";
 ---
 
@@ -14,6 +17,7 @@ import { url } from "../lib/urls";
     <span class="site-nav__mark" aria-hidden="true"></span>
     OTel Visual Handbook
   </a>
+  {search && <DocSearch />}
   <nav aria-label="Principal">
     <a href={url("docs")} aria-current={current === "docs" ? "page" : undefined}>Documentação</a>
     <a href="https://github.com/CabriniJr/otel-visual-handbook" rel="noopener">GitHub</a>

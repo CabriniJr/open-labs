@@ -25,22 +25,22 @@ const editar = `https://github.com/CabriniJr/otel-visual-handbook/edit/main/docs
 ---
 
 <Base title={`${chapter.title} — OTel Visual Handbook`} description={tema?.blurb ?? chapter.title}>
-  <SiteNav current="docs" />
+  <SiteNav current="docs" search />
   <div class="doc">
-    <aside class="doc__aside">
+    <aside class="doc__aside" data-pagefind-ignore>
       <DocSidebar current={chapter.id} />
     </aside>
 
     <main class="doc__main" id="content">
-      <nav class="doc__crumbs" aria-label="Trilha">
+      <nav class="doc__crumbs" aria-label="Trilha" data-pagefind-ignore>
         <a href={docsHome()}>Documentação</a>
         {tema && <span aria-hidden="true">&#47;</span>}
         {tema && <span>{tema.title}</span>}
       </nav>
 
-      <h1>{chapter.title}</h1>
+      <h1 data-pagefind-meta="title">{chapter.title}</h1>
 
-      <p class="doc__meta">
+      <p class="doc__meta" data-pagefind-ignore>
         {
           chapter.status !== "stable" && (
             <span class={`status status--${chapter.status}`}>{STATUS_LABEL[chapter.status]}</span>
@@ -53,11 +53,15 @@ const editar = `https://github.com/CabriniJr/otel-visual-handbook/edit/main/docs
         <a href={editar} rel="noopener">Editar no GitHub</a>
       </p>
 
-      <article class="doc__prose" data-pagefind-body>
+      <article
+        class="doc__prose"
+        data-pagefind-body
+        data-pagefind-meta={`status:${STATUS_LABEL[chapter.status]}`}
+      >
         <slot />
       </article>
 
-      <nav class="doc__around" aria-label="Capítulos vizinhos">
+      <nav class="doc__around" aria-label="Capítulos vizinhos" data-pagefind-ignore>
         {
           prev ? (
             <a class="doc__around-link" href={docUrl(prev.id)} rel="prev">
@@ -79,7 +83,7 @@ const editar = `https://github.com/CabriniJr/otel-visual-handbook/edit/main/docs
       </nav>
     </main>
 
-    <aside class="doc__toc">
+    <aside class="doc__toc" data-pagefind-ignore>
       <DocToc headings={headings} />
     </aside>
   </div>

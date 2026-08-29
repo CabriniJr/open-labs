@@ -1,4 +1,5 @@
 import react from "@astrojs/react";
+import pagefind from "astro-pagefind";
 import { defineConfig } from "astro/config";
 
 // O GitHub Pages serve em /<repo>/; a Vercel serve na raiz. Quem chama o build
@@ -9,6 +10,6 @@ const site = process.env.PUBLIC_SITE_URL ?? "https://otel-visual-handbook.vercel
 export default defineConfig({
   site,
   base,
-  integrations: [react()],
+  integrations: [react(), pagefind()],
   build: { inlineStylesheets: "auto" },
 });

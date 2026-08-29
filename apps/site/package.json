@@ -23,6 +23,7 @@
     "@playwright/test": "^1.49.0",
     "@types/node": "^26.4.0",
     "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0"
+    "@types/react-dom": "^19.0.0",
+    "astro-pagefind": "^2.0.1"
   }
 }

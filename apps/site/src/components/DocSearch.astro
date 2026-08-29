@@ -1,0 +1,114 @@
+---
+import { url } from "../lib/urls";
+
+// ATENÇÃO: a busca NÃO funciona em `astro dev`. O índice do Pagefind é gerado
+// depois do build, sobre o HTML de saída — para testar, rode `pnpm build` e
+// `pnpm --filter @ovh/site preview`. Sem este aviso a próxima pessoa passa uma
+// hora achando que quebrou alguma coisa.
+const indice = url("pagefind") + "pagefind.js";
+---
+
+<!-- `hidden` sai no script: sem JavaScript o campo não funciona, e um campo
+     morto na tela é pior que campo nenhum. -->
+<div class="doc-search" data-search data-index={indice} data-pagefind-ignore hidden>
+  <label class="doc-search__label" for="doc-search-input">Buscar na documentação</label>
+  <input
+    id="doc-search-input"
+    type="search"
+    class="doc-search__input"
+    placeholder="Buscar…  (tecle /)"
+    autocomplete="off"
+    aria-describedby="doc-search-hint"
+  />
+  <p id="doc-search-hint" class="doc-search__hint">
+    <kbd>/</kbd> foca o campo, <kbd>Esc</kbd> limpa.
+  </p>
+  <div class="doc-search__results" data-results role="region" aria-live="polite"></div>
+</div>
+
+<script>
+  const caixa = document.querySelector<HTMLElement>("[data-search]");
+  const campo = document.querySelector<HTMLInputElement>("#doc-search-input");
+  const saida = document.querySelector<HTMLElement>("[data-results]");
+
+  if (caixa !== null && campo !== null && saida !== null) {
+    caixa.hidden = false;
+
+    // Carregado sob demanda, na primeira digitação: o índice é grande e a
+    // maioria de quem abre uma página de documentação não busca nada.
+    let pagefind: { search: (t: string) => Promise<{ results: PagefindResult[] }> } | null = null;
+    interface PagefindResult {
+      data: () => Promise<{
+        url: string;
+        excerpt: string;
+        meta: Record<string, string | undefined>;
+      }>;
+    }
+
+    async function motor() {
+      if (pagefind === null) {
+        pagefind = await import(/* @vite-ignore */ caixa!.dataset.index!);
+      }
+      return pagefind!;
+    }
+
+    let ultima = 0;
+    async function buscar(termo: string) {
+      const meu = ++ultima;
+      if (termo.trim().length < 2) {
+        saida!.innerHTML = "";
+        return;
+      }
+
+      const { results } = await (await motor()).search(termo);
+      // Digitação rápida devolve respostas fora de ordem; só a última vale.
+      if (meu !== ultima) return;
+
+      if (results.length === 0) {
+        saida!.innerHTML =
+          '<p class="doc-search__empty">Nada com esse termo. A documentação está incompleta — ' +
+          "tente uma palavra mais geral, ou abra a lista de temas ao lado.</p>";
+        return;
+      }
+
+      const dados = await Promise.all(results.slice(0, 8).map((r) => r.data()));
+      if (meu !== ultima) return;
+
+      saida!.innerHTML = dados
+        .map((d) => {
+          const estado = d.meta.status;
+          const etiqueta =
+            estado !== undefined && estado !== "estável"
+              ? `<span class="status status--proposal">${estado}</span>`
+              : "";
+          return `<a class="doc-search__hit" href="${d.url}">
+            <strong>${d.meta.title ?? d.url}${etiqueta}</strong>
+            <span>${d.excerpt}</span>
+          </a>`;
+        })
+        .join("");
+    }
+
+    campo.addEventListener("input", () => void buscar(campo.value));
+
+    campo.addEventListener("keydown", (evento) => {
+      if (evento.key === "Escape") {
+        campo.value = "";
+        saida.innerHTML = "";
+        campo.blur();
+      }
+    });
+
+    document.addEventListener("keydown", (evento) => {
+      const alvo = evento.target;
+      const digitando =
+        alvo instanceof HTMLInputElement ||
+        alvo instanceof HTMLTextAreaElement ||
+        (alvo instanceof HTMLElement && alvo.isContentEditable);
+      if (evento.key === "/" && !digitando) {
+        evento.preventDefault();
+        campo.focus();
+      }
+    });
+  }
+</script>
