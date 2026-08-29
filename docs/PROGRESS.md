@@ -444,3 +444,58 @@ do ciclo.
 Expandir réplicas automaticamente a partir de um modelet continua fora: quem instancia os N
 é quem escreve o modelo, e o motor cobra que eles existam.
 
+---
+
+## Blocos 4 e 5 da CPU — o caminho de dados executa programas de verdade
+
+**Data:** 2026-08-29. **Pacote novo:** `packages/cpu-domain` (`@ovh/cpu-domain`) — o único
+lugar do repositório que pode saber o que é um registrador.
+
+O que existe e roda:
+
+- **`isa.ts`** — a tabela do subconjunto RV32I, e o **único** lugar que sabe como uma
+  instrução vira 32 bits. Montador e caminho de dados leem dela; duas tabelas fariam um erro
+  de codificação aparecer como erro de execução, no lugar errado. Palavra fora do
+  subconjunto decodifica para `null`, nunca para "a mais parecida"
+- **`assembler.ts`** — assembly com rótulos e comentários, erro com **linha e coluna** em
+  português. Acusa rótulo inexistente, rótulo repetido, deslocamento fora de 0–31, forma
+  errada de acesso à memória e instrução fora do subconjunto
+- **`reference.ts`** — intérprete direto, sem motor nenhum, para discordar do modelo
+- **`datapath.ts`** — o caminho de dados como composição no motor: relógio, PC, memória de
+  instruções, decodificador, unidade de controle, banco, mux de operando, ULA, memória
+  principal, mux de escrita e unidade de desvio
+
+**Uma instrução por tick, e as duas fases do tick são o relógio.** Busca, decodificação,
+leitura, ULA e memória fecham na **acomodação**; PC, banco e memória escrevem no
+**confronto**. O que atravessa a borda de relógio viaja em aresta `clocked`, e **a mensagem
+em voo é o valor esperando o flanco** — é por isso que o laço `pc → … → pc` não é laço
+combinacional. Trocar essa aresta para acomodada faz o motor recusar o mundo na construção,
+e há teste sobre isso.
+
+O bloco 2 apareceu inteiro sem ser forçado: a saída da ULA alimenta **dois** destinos pelo
+leque nativo, e as cinco linhas de controle são contadas em `sigin:`, fora da conta de carga.
+
+**O diferencial roda instrução a instrução** e compara `x0`–`x31`, o `pc` e a memória tocada:
+aritmética com estouro, lógica e deslocamentos com e sem sinal, desvio tomado e não tomado,
+`lw`/`sw` com deslocamento, `jal`/`jalr`, `jalr` com alvo ímpar, `x0` como destino, e um laço
+que termina. Verificado por mutação — tirar a guarda de `x0` mata 2 testes, trocar `sub` por
+`add` mata 1, e tirar o zeramento do bit 0 do `jalr` **não matava nenhum** até o programa de
+alvo ímpar entrar.
+
+Estado: 327 testes, typecheck, boundaries e build verdes.
+
+**Pendências declaradas, que não são detalhe:**
+
+1. **O emulador de terceiro ainda não entrou.** O intérprete de referência é meu, e
+   compartilha `isa.ts` com o modelo: isto prova **execução**, não codificação, e um
+   mal-entendido meu sobre o que uma instrução faz apareceria igual dos dois lados. A spec
+   §7 pede um emulador independente com licença permissiva verificada — continua pendente,
+   e está escrito dentro de `reference.ts` para ninguém confundir com feito
+2. **A unidade de controle é `kind: "router"`** porque o catálogo não tem `kind` da família
+   `controller` — `clock` e `arbiter` são onda 1. A família está certa no papel
+3. **Código automodificável diverge**: a memória de instruções é lida da imagem inicial e a
+   principal é outro objeto. Está em `§9 o que não é modelado`
+4. **Falta a fatia vertical** (bloco 6: somador aberto → somador completo → portas →
+   transistores) e as **views** (bloco 3). O que existe hoje roda e é conferível; ainda não
+   é bonito
+

@@ -73,6 +73,12 @@ importers:
         specifier: ^2.0.1
         version: 2.0.1(astro@5.18.2(@types/node@26.4.0)(rollup@4.63.0)(typescript@5.9.3)(yaml@2.9.0))
 
+  packages/cpu-domain:
+    dependencies:
+      '@ovh/depth-core':
+        specifier: workspace:*
+        version: link:../depth-core
+
   packages/depth-core:
     dependencies:
       pure-rand:
