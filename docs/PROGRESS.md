@@ -145,6 +145,11 @@ Todas na spec, mas as que mais custam se forem esquecidas:
   vivem atrás do modo autor. Se vazam, o handbook explica a si mesmo.
 - **Contenção é estrutural.** Moldura com `clipPath` real — não uma checagem que alguém
   pode esquecer de escrever.
+- **O histórico do `World` é ilimitado, e isso é dívida declarada.** Guardar todo
+  estado desde o tick 0 é o que torna o `seek` exato; um limite qualquer transformaria
+  "exato" em "exato dentro de uma janela", em silêncio. A saída certa quando doer é
+  checkpoint mais re-simulação até o alvo — preserva a exatidão e limita a memória.
+  Não invente um teto antes disso.
 - **Controlador não fica no caminho do dado.** Árbitro, relógio e supervisor
   influenciam quem está no caminho, mas não recebem a carga. Tratá-los como processador
   obrigaria a inventar um fluxo que não existe — o mesmo erro que a placa evita.
