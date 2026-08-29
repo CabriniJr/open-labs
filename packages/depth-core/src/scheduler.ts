@@ -27,7 +27,16 @@ function actors(tree: TreeIndex): ObjectSpec[] {
   return out;
 }
 
-export function initialWorld(spec: WorldSpec, tree: TreeIndex): WorldState {
+/**
+ * O estado do tick 0. Só a árvore importa aqui: o estado inicial é a soma dos
+ * `init` de quem age, e nada em `WorldSpec` participa disso — receber o spec
+ * sem usá-lo só sugeriria uma dependência que não existe.
+ *
+ * `init` só é chamado em quem tem `behavior`, e é por isso que `validateWorld`
+ * recusa `init` sem `behavior`: seria um estado construído que ninguém leria,
+ * silêncio de novo em vez de erro.
+ */
+export function initialWorld(tree: TreeIndex): WorldState {
   const nodes: Record<string, unknown> = {};
   for (const node of actors(tree)) {
     nodes[node.id] = node.init === undefined ? {} : node.init();

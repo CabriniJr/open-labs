@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { findViolations } from "./check-boundaries.mjs";
+import { findViolations, verdict } from "./check-boundaries.mjs";
 
 describe("findViolations", () => {
   it("aceita um arquivo agnóstico", () => {
@@ -54,5 +54,28 @@ describe("guarda ampliada: protocolo também é domínio", () => {
       "const kind = 'pipeline'; // router, buffer, composite",
     );
     expect(found).toEqual([]);
+  });
+});
+
+describe("verdict: um verde precisa ter lido alguma coisa", () => {
+  it("falha quando nenhum arquivo foi varrido, dizendo onde rodar", () => {
+    const { code, report } = verdict(0, []);
+    expect(code).toBe(1);
+    expect(report).toMatch(/nenhum arquivo casou/);
+    expect(report).toMatch(/diretório errado/);
+  });
+
+  it("imprime quantos arquivos foram varridos no sucesso", () => {
+    const { code, report } = verdict(23, []);
+    expect(code).toBe(0);
+    expect(report).toBe("Fronteira motor↔domínio intacta (23 arquivos).");
+  });
+
+  it("a violação vence a contagem", () => {
+    const { code, report } = verdict(23, [
+      { filePath: "packages/depth-core/src/x.ts", reason: 'usa vocabulário de domínio "otlp"' },
+    ]);
+    expect(code).toBe(1);
+    expect(report).toMatch(/depth-core\/src\/x\.ts/);
   });
 });

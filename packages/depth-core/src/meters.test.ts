@@ -2,6 +2,7 @@
 import { describe, expect, it } from "vitest";
 import { boundaryCrossings, inCount, inWeight, portCount, portWeight } from "./meters.js";
 import { spec } from "./meters.test-fixture.js";
+import { DROP } from "./model.js";
 import { World } from "./world.js";
 
 describe("portCount e portWeight", () => {
@@ -66,6 +67,24 @@ describe("boundaryCrossings", () => {
     const inBox = boundaryCrossings(w.tree, w.state, "box");
     const internal = w.state.flight.some((f) => f.from === "a" && f.to === "b");
     expect(inBox.some((c) => c.item.from === "a" && c.item.to === "b")).toBe(internal);
+  });
+
+  it("o descarte tem rótulo próprio, distinto de 'foi para fora do foco'", () => {
+    // É o invariante do `.unwired` aplicado ao medidor: some porque alguém
+    // mandou sumir é uma coisa; some porque saiu do que está sendo olhado é
+    // outra. Se os dois virassem "outside", o leitor não teria como distinguir
+    // um descarte deliberado de uma mensagem que só foi embora daqui.
+    const w = new World(spec);
+    w.advance(12);
+    const rumoAoDescarte = w.state.flight.filter((f) => f.to === DROP);
+    expect(rumoAoDescarte.length).toBeGreaterThan(0);
+
+    const noFoco = boundaryCrossings(w.tree, w.state, "root");
+    for (const item of rumoAoDescarte) {
+      const crossing = noFoco.find((c) => c.item.id === item.id);
+      expect(crossing?.toVisible).toBe(DROP);
+      expect(crossing?.toVisible).not.toBe("outside");
+    }
   });
 
   it("é um subconjunto do que está realmente em trânsito: a vista não inventa", () => {

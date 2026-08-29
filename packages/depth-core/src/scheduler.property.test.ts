@@ -3,7 +3,9 @@ import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 import { boundaryCrossings } from "./meters.js";
 import { spec as fronteiraSpec } from "./meters.test-fixture.js";
+import { DROP } from "./model.js";
 import { indexTree } from "./tree.js";
+import type { TreeIndex } from "./tree.js";
 import { initialWorld, stepWorld } from "./scheduler.js";
 import { spec } from "./scheduler.test-fixture.js";
 
@@ -14,9 +16,36 @@ const params = fc.record({
 });
 
 function rodar(ticks: number, p: Record<string, number>) {
-  let estado = initialWorld(spec, tree);
+  let estado = initialWorld(tree);
   for (let i = 0; i < ticks; i += 1) estado = stepWorld(spec, tree, estado, p);
   return estado;
+}
+
+const fronteira = indexTree(fronteiraSpec.root);
+
+function rodarFronteira(ticks: number) {
+  let estado = initialWorld(fronteira);
+  for (let i = 0; i < ticks; i += 1) {
+    estado = stepWorld(fronteiraSpec, fronteira, estado, fronteiraSpec.params);
+  }
+  return estado;
+}
+
+/**
+ * O rótulo que um lado de uma mensagem deve receber num foco, derivado do zero
+ * a partir de `tree.parent`. É a segunda opinião: se ele viesse de meters.ts,
+ * o teste e o código concordariam mesmo estando os dois errados.
+ */
+function rotulo(indice: TreeIndex, foco: string, ponta: string): string {
+  if (ponta === DROP) return DROP;
+  if (ponta === foco) return foco;
+  let cursor: string | undefined = ponta;
+  while (cursor !== undefined) {
+    const acima: string | undefined = indice.parent.get(cursor);
+    if (acima === foco) return cursor;
+    cursor = acima;
+  }
+  return "outside";
 }
 
 describe("propriedades do tick", () => {
@@ -100,23 +129,65 @@ describe("propriedades do tick", () => {
     // usa a fixture de meters.test.ts, que tem um pipeline aninhado ("box"),
     // e percorre TODO foco possível — não só a raiz — para que um bug que só
     // aparece um nível abaixo não fique escondido.
-    const fronteiraTree = indexTree(fronteiraSpec.root);
-    const focos = [...fronteiraTree.byId.keys()];
+    const focos = [...fronteira.byId.keys()];
 
     fc.assert(
       fc.property(fc.integer({ min: 0, max: 30 }), (ticks) => {
-        let estado = initialWorld(fronteiraSpec, fronteiraTree);
-        for (let i = 0; i < ticks; i += 1) {
-          estado = stepWorld(fronteiraSpec, fronteiraTree, estado, fronteiraSpec.params);
-        }
+        const estado = rodarFronteira(ticks);
         const emTransito = new Set(estado.flight.map((f) => f.id));
 
         for (const foco of focos) {
-          for (const crossing of boundaryCrossings(fronteiraTree, estado, foco)) {
+          for (const crossing of boundaryCrossings(fronteira, estado, foco)) {
             expect(emTransito.has(crossing.item.id)).toBe(true);
           }
         }
       }),
     );
+  });
+
+  it("a vista agregada também não omite: é exatamente o trânsito que muda de rótulo", () => {
+    // Não inventar é metade da tese; a outra metade é não esconder. Sem esta
+    // igualdade, um medidor que jogasse fora toda travessia com um lado "fora
+    // daqui" — o que entra e o que sai de um bloco aninhado, ou seja, o L0
+    // inteiro — passaria na suíte sem ninguém notar.
+    //
+    // O rótulo é RECALCULADO aqui, e não importado de meters.ts: um teste que
+    // chama a mesma função do código erra junto com ela e não prova nada.
+    const focos = [...fronteira.byId.keys()];
+
+    fc.assert(
+      fc.property(fc.integer({ min: 0, max: 30 }), (ticks) => {
+        const estado = rodarFronteira(ticks);
+
+        for (const foco of focos) {
+          const esperado = estado.flight
+            .map((f) => ({
+              id: f.id,
+              fromVisible: rotulo(fronteira, foco, f.from),
+              toVisible: rotulo(fronteira, foco, f.to),
+            }))
+            .filter((c) => c.fromVisible !== c.toVisible);
+
+          const obtido = boundaryCrossings(fronteira, estado, foco).map((c) => ({
+            id: c.item.id,
+            fromVisible: c.fromVisible,
+            toVisible: c.toVisible,
+          }));
+
+          expect(obtido).toEqual(esperado);
+        }
+      }),
+    );
+  });
+
+  it("a igualdade acima não é vazia: há travessia em algum foco", () => {
+    // Uma igualdade entre dois conjuntos vazios passa sempre. Este teste é o
+    // que garante que a propriedade de cima está de fato olhando alguma coisa.
+    const focos = [...fronteira.byId.keys()];
+    const total = focos.reduce(
+      (soma, foco) => soma + boundaryCrossings(fronteira, rodarFronteira(12), foco).length,
+      0,
+    );
+    expect(total).toBeGreaterThan(0);
   });
 });

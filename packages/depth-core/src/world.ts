@@ -32,7 +32,7 @@ export class World {
     // Antes de qualquer tick: um mundo mal fiado precisa falhar aqui, alto, e
     // não rodar em silêncio perdendo mensagens pelo caminho.
     validateWorld(spec, this.#tree);
-    this.#history = [initialWorld(spec, this.#tree)];
+    this.#history = [initialWorld(this.#tree)];
   }
 
   get tree(): TreeIndex {
@@ -51,7 +51,11 @@ export class World {
     return this.#tick === 0 ? undefined : this.#at(this.#tick - 1);
   }
 
-  /** Parâmetros vigentes num tick: os eventos dobrados até ali. */
+  /**
+   * Parâmetros vigentes num tick: os eventos dobrados até ali. Vale a promessa
+   * forte — este é exatamente o conjunto com que `history[tick]` foi calculado,
+   * então recomputar o tick a partir do anterior devolve o mesmo estado.
+   */
   paramsAt(tick: number): Readonly<Record<string, number>> {
     const params: Record<string, number> = { ...this.#spec.params };
     for (const event of this.#events) {
@@ -75,9 +79,15 @@ export class World {
   }
 
   /**
-   * Grava a mudança no tick atual. O histórico à frente (se houver) é
-   * descartado porque foi calculado com o valor antigo; o passado continua
-   * válido, então `seek` para trás segue exato.
+   * O valor novo vale **a partir do próximo tick**. O tick atual já foi
+   * calculado com o valor antigo, e gravar o evento nele faria `paramsAt`
+   * afirmar um valor com o qual `history` não foi computado — mentira que hoje
+   * ninguém checa, porque nada recomputa o passado, e que viraria um passado
+   * diferente do que o leitor viu assim que alguém podar o histórico e
+   * recalcular a partir de um checkpoint.
+   *
+   * O histórico à frente (se houver) é descartado porque foi calculado com o
+   * valor antigo; o passado continua válido, então `seek` para trás segue exato.
    */
   setParam(name: string, value: number): void {
     // Rebobinar e mexer num parâmetro abandona o futuro que existia: os estados
@@ -85,8 +95,9 @@ export class World {
     // marcados lá também pertencem àquela linha do tempo. Descartar só os
     // estados e guardar os eventos faria o mundo recalcular o passado com uma
     // decisão que o leitor nunca tomou nesta linha.
-    this.#events = this.#events.filter((e) => e.tick <= this.#tick);
-    this.#events.push({ tick: this.#tick, name, value });
+    const vigencia = this.#tick + 1;
+    this.#events = this.#events.filter((e) => e.tick <= vigencia);
+    this.#events.push({ tick: vigencia, name, value });
     this.#history = this.#history.slice(0, this.#tick + 1);
   }
 

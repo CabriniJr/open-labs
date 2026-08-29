@@ -65,24 +65,53 @@ export function findViolations(filePath, source) {
   return violations;
 }
 
+/**
+ * O veredito, separado de `main` para poder ser testado.
+ *
+ * Zero arquivo varrido é FALHA, não sucesso: os padrões são relativos à raiz do
+ * repositório, então rodar de outro diretório casava com nada e a guarda dava
+ * verde tendo lido zero arquivo — justamente na peça que existe para dar
+ * significado ao verde de todas as outras.
+ */
+export function verdict(scanned, violations) {
+  if (violations.length > 0) {
+    const linhas = violations.map((v) => `  ${v.filePath}: ${v.reason}`).join("\n");
+    return {
+      code: 1,
+      report:
+        `Fronteira motor↔domínio violada (spec §8):\n\n${linhas}\n\n` +
+        "O motor não pode conhecer OpenTelemetry. Mova isso para packages/otel-domain.",
+    };
+  }
+
+  if (scanned === 0) {
+    return {
+      code: 1,
+      report:
+        "Guarda de fronteira: nenhum arquivo casou com os padrões de varredura.\n" +
+        "Um verde sem arquivo lido não prova nada. Os padrões partem da raiz do " +
+        "repositório — provavelmente o comando rodou do diretório errado. Rode " +
+        "`pnpm boundaries` na raiz.",
+    };
+  }
+
+  return { code: 0, report: `Fronteira motor↔domínio intacta (${scanned} arquivos).` };
+}
+
 async function main() {
   const all = [];
+  let scanned = 0;
   for (const prefix of AGNOSTIC) {
     for await (const file of glob(`${prefix}src/**/*.{ts,tsx}`)) {
+      scanned += 1;
       all.push(...findViolations(file, readFileSync(file, "utf8")));
     }
   }
 
-  if (all.length > 0) {
-    console.error("Fronteira motor↔domínio violada (spec §8):\n");
-    for (const v of all) console.error(`  ${v.filePath}: ${v.reason}`);
-    console.error(
-      "\nO motor não pode conhecer OpenTelemetry. Mova isso para packages/otel-domain.",
-    );
-    process.exit(1);
-  }
-
-  console.log("Fronteira motor↔domínio intacta.");
+  const { code, report } = verdict(scanned, all);
+  if (code === 0) console.log(report);
+  else console.error(report);
+  process.exit(code);
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

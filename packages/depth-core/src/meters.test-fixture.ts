@@ -44,7 +44,10 @@ export const spec: WorldSpec = {
   wires: [
     { from: "src", port: "out", to: "box" },
     { from: "box", port: "out", to: "end" },
-    { from: "end", port: "sunk", to: DROP },
+    // "end" é relay e emite em "out": o fio do descarte precisa sair da porta
+    // que ele de fato usa, senão nenhuma mensagem chega ao descarte e a vista
+    // agregada nunca é exercitada nesse caminho.
+    { from: "end", port: "out", to: DROP },
   ],
   params: {},
 };

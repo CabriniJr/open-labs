@@ -7,7 +7,7 @@ import { spec } from "./scheduler.test-fixture.js";
 
 const tree = indexTree(spec.root);
 const run = (ticks: number, params = spec.params) => {
-  let state = initialWorld(spec, tree);
+  let state = initialWorld(tree);
   for (let i = 0; i < ticks; i += 1) state = stepWorld(spec, tree, state, params);
   return state;
 };
@@ -47,7 +47,7 @@ describe("stepWorld", () => {
   });
 
   it("nunca muta o estado que recebeu", () => {
-    const before = initialWorld(spec, tree);
+    const before = initialWorld(tree);
     const snapshot = JSON.stringify(before);
     stepWorld(spec, tree, before, spec.params);
     expect(JSON.stringify(before)).toBe(snapshot);
@@ -88,7 +88,7 @@ describe("stepWorld", () => {
       wires: [{ from: "src", port: "out", to: "gate" }],
     };
     const t = indexTree(solto.root);
-    let estado = initialWorld(solto, t);
+    let estado = initialWorld(t);
     for (let i = 0; i < 6; i += 1) estado = stepWorld(solto, t, estado, solto.params);
 
     expect(estado.ledger["out:gate.keep"]).toBeGreaterThan(0);

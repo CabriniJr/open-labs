@@ -31,7 +31,7 @@ describe("validateWorld", () => {
     expect(() => validar(base)).not.toThrow();
   });
 
-  it("recusa folha de fluxo sem behavior, citando o id que sumiria mensagens", () => {
+  it("recusa fio que chega em quem não age, citando o id que sumiria a mensagem", () => {
     const spec: WorldSpec = {
       ...base,
       root: {
@@ -40,8 +40,57 @@ describe("validateWorld", () => {
         label: "root",
         children: [leaf("a"), { id: "buraco", kind: "sink", label: "buraco", leaf: true }],
       },
+      wires: [{ from: "a", port: "out", to: "buraco" }],
     };
-    expect(() => validar(spec)).toThrow(/"buraco" é folha de fluxo e não tem behavior/);
+    expect(() => validar(spec)).toThrow(/chega em "buraco", que não age/);
+  });
+
+  it("nomeia a folha de entrada quando o fio chega num contêiner que não age lá dentro", () => {
+    const spec: WorldSpec = {
+      ...base,
+      root: {
+        id: "root",
+        kind: "composite",
+        label: "root",
+        children: [
+          leaf("a"),
+          {
+            id: "caixa",
+            kind: "pipeline",
+            label: "caixa",
+            children: [{ id: "buraco", kind: "sink", label: "buraco", leaf: true }],
+          },
+        ],
+      },
+      wires: [{ from: "a", port: "out", to: "caixa" }],
+    };
+    expect(() => validar(spec)).toThrow(/folha de entrada "buraco" não age/);
+  });
+
+  // A regra vive no fio, e não no nó, exatamente por causa deste caso: um
+  // agrupamento decorativo não recebe mensagem de ninguém, logo não some com
+  // nada. Escrita no nó ("toda folha de fluxo precisa de behavior"), ela
+  // recusaria uma legenda.
+  it("aceita agrupamento decorativo: contêiner de placas para onde nenhum fio aponta", () => {
+    const spec: WorldSpec = {
+      ...base,
+      root: {
+        id: "root",
+        kind: "composite",
+        label: "root",
+        children: [
+          leaf("a"),
+          leaf("b"),
+          {
+            id: "legenda",
+            kind: "composite",
+            label: "legenda",
+            children: [{ id: "nota", kind: "static", label: "nota" }],
+          },
+        ],
+      },
+    };
+    expect(() => validar(spec)).not.toThrow();
   });
 
   it("recusa fio que parte de id inexistente", () => {
@@ -99,7 +148,10 @@ describe("validateWorld", () => {
         label: "root",
         children: [leaf("a"), { id: "buraco", kind: "sink", label: "buraco", leaf: true }],
       },
-      wires: [{ from: "fantasma", port: "out", to: "outro-fantasma" }],
+      wires: [
+        { from: "fantasma", port: "out", to: "outro-fantasma" },
+        { from: "a", port: "out", to: "buraco" },
+      ],
     };
     let mensagem = "";
     try {
@@ -110,7 +162,7 @@ describe("validateWorld", () => {
     expect(mensagem).toMatch(/edgeTicks/);
     expect(mensagem).toMatch(/fio parte de "fantasma"/);
     expect(mensagem).toMatch(/fio chega em "outro-fantasma"/);
-    expect(mensagem).toMatch(/"buraco" é folha de fluxo/);
+    expect(mensagem).toMatch(/chega em "buraco", que não age/);
   });
 });
 

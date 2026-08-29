@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ObjectSpec, WorldSpec } from "./model.js";
+import { stepWorld } from "./scheduler.js";
 import { World } from "./world.js";
 
 /** Acumula `step` por tick. Simples de prever de cabeça. */
@@ -93,6 +94,48 @@ describe("World", () => {
     w.advance(5);              // tick 6
     // o evento do tick 3 pertencia à linha abandonada: não pode ressuscitar
     expect(total(w)).toBe(1 + 2 * 5);
+  });
+
+  it("paramsAt(T) é o conjunto com que history[T] foi de fato calculado", () => {
+    // A armadilha que este teste tranca: gravar o evento no tick atual faz
+    // paramsAt afirmar um valor que o estado daquele tick nunca viu. Hoje nada
+    // recomputa o passado, então ninguém percebe — mas qualquer poda do
+    // histórico com checkpoint mais recomputação devolveria um passado
+    // diferente do que o leitor viu na tela.
+    const w = new World(spec);
+    w.advance(4);
+    w.setParam("step", 10);
+    w.advance(4);
+
+    const tree = w.tree;
+    for (let t = 1; t <= 8; t += 1) {
+      w.seek(t - 1);
+      const anterior = w.state;
+      const recomputado = stepWorld(spec, tree, anterior, w.paramsAt(t));
+      w.seek(t);
+      expect(recomputado).toEqual(w.state);
+    }
+  });
+
+  it("um mundo novo, com o mesmo log de eventos, produz histórico idêntico", () => {
+    // O mesmo log aplicado com outra granularidade de avanço: se o tick de
+    // vigência de um evento fosse ambíguo, as duas linhas do tempo divergiriam.
+    const a = new World(spec);
+    a.advance(4);
+    a.setParam("step", 10);
+    a.advance(4);
+
+    const b = new World(spec);
+    for (let t = 1; t <= 4; t += 1) b.advance(1);
+    b.setParam("step", 10);
+    for (let t = 5; t <= 8; t += 1) b.advance(1);
+
+    for (let t = 0; t <= 8; t += 1) {
+      a.seek(t);
+      b.seek(t);
+      expect(b.state).toEqual(a.state);
+      expect(b.paramsAt(t)).toEqual(a.paramsAt(t));
+    }
   });
 
   it("o aleatório é função de (seed, tick), não do caminho percorrido", () => {
