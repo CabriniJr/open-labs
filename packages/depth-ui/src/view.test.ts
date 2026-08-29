@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { indexTree } from "@ovh/depth-core";
 import type { AnyObject } from "@ovh/depth-core";
-import { viewDisagreement } from "./view.js";
+import { interiorDisagreement, viewDisagreement } from "./view.js";
+import { autoView } from "./auto-view.js";
 import type { NodePlacement, View } from "./view.js";
 
 const folha = (id: string): AnyObject => ({
@@ -120,5 +121,44 @@ describe("view: nem inventa, nem esconde", () => {
       places: [lugar("dentro1"), lugar("dentro2", { y: 60 }), lugar("a", { x: 200 })],
     };
     expect(viewDisagreement(arvore, outra)).toMatch(/está fora de "caixa"/);
+  });
+});
+
+describe("o interior desenhado dentro de uma caixa", () => {
+  /**
+   * Desenhar um interior dentro de uma caixa é uma **afirmação estrutural**:
+   * dizer que aquilo mora ali. Sem esta regra, o zoom contínuo seria o desenho
+   * inventando hierarquia — a coisa exata contra a qual todo o resto existe.
+   */
+  const dentroDaCaixa = autoView(arvore, "caixa", []);
+  const fechada = lugar("caixa", { collapsed: true });
+
+  it("aceita o interior de quem ele é", () => {
+    expect(interiorDisagreement(arvore, fechada, dentroDaCaixa)).toBeNull();
+  });
+
+  it("recusa o interior de outro objeto", () => {
+    expect(interiorDisagreement(arvore, lugar("a", { collapsed: true }), dentroDaCaixa)).toMatch(
+      /mostra por dentro a view de "caixa"/,
+    );
+  });
+
+  it("recusa interior numa caixa desenhada aberta", () => {
+    expect(interiorDisagreement(arvore, lugar("caixa"), dentroDaCaixa)).toMatch(/duas vezes/);
+  });
+
+  it("recusa interior em folha: seria um dentro que a árvore não tem", () => {
+    const mentira = { ...dentroDaCaixa, focus: "a" };
+    expect(interiorDisagreement(arvore, lugar("a", { collapsed: true }), mentira)).toMatch(
+      /não tem filhos/,
+    );
+  });
+
+  it("continua cobrando que o interior concorde com a árvore", () => {
+    const capenga = {
+      ...dentroDaCaixa,
+      places: dentroDaCaixa.places.filter((p) => p.id !== "dentro2"),
+    };
+    expect(interiorDisagreement(arvore, fechada, capenga)).not.toBeNull();
   });
 });

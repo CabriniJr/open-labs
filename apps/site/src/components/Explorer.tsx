@@ -56,6 +56,29 @@ export function Explorer({
   );
   const trilha = pathTo(tree, foco);
 
+  /**
+   * O interior de uma caixa, para o zoom contínuo.
+   *
+   * É derivado, e é essa a garantia: o interior de `x` é a view **focada em
+   * `x`**, e não uma escolha que alguém faz caixa a caixa. Escrever esse
+   * casamento à mão seria dar a um componente de desenho o poder de afirmar
+   * quem mora dentro de quem.
+   *
+   * Guardado em cache porque `autoView` monta um layout, e montar o mesmo a
+   * cada quadro de zoom seria pagar caro por nada.
+   */
+  const interiores = useMemo(() => {
+    const cache = new Map<string, View | undefined>();
+    return (id: string): View | undefined => {
+      if (cache.has(id)) return cache.get(id);
+      const achada = isOpenable(tree, id)
+        ? (views.find((v) => v.focus === id) ?? autoView(tree, id, wires))
+        : undefined;
+      cache.set(id, achada);
+      return achada;
+    };
+  }, [views, tree, wires]);
+
   const abrir = (id: string): void => {
     if (id !== foco && isOpenable(tree, id)) setFoco(id);
   };
@@ -98,6 +121,7 @@ export function Explorer({
           selected={selecionado}
           onSelect={setSelecionado}
           onOpen={abrir}
+          interiores={interiores}
         />
         {comFicha ? <Ficha tree={tree} wires={wires} state={state} id={selecionado} /> : null}
       </div>

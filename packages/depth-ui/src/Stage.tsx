@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { familyOf } from "@ovh/depth-core";
 import type { Family, TreeIndex, Wire, WorldState } from "@ovh/depth-core";
 import type { NodePlacement, View } from "./view.js";
 import { resumoDoKind } from "./kinds.js";
+import { PROFUNDIDADE_MAXIMA, ZOOM_MAXIMO, encaixar, quantoAparece } from "./lod.js";
 
 /**
  * O palco: uma view desenhada, com o estado do mundo por cima.
@@ -47,6 +48,31 @@ export interface StageProps {
   readonly selected?: string | undefined;
   readonly onSelect?: (id: string) => void;
   readonly onOpen?: (id: string) => void;
+  /**
+   * O interior de uma caixa fechada, quando existe view para ele.
+   *
+   * É o que liga o zoom contínuo: aproximar uma caixa até ela ficar grande na
+   * tela revela o que tem dentro, **dentro dela**, em vez de trocar a tela.
+   * Quem responde é o domínio, porque é ele que tem as views.
+   *
+   * Só vale para caixa `collapsed`: uma caixa aberta já desenha os filhos nesta
+   * mesma view, e desenhar o interior por cima contaria a mesma coisa duas
+   * vezes. `collapsed` é exatamente "os filhos existem e não estão desenhados".
+   */
+  readonly interiores?: ((id: string) => View | undefined) | undefined;
+}
+
+interface CamadaProps extends StageProps {
+  /**
+   * A largura do quadro visível, **nas unidades desta camada**.
+   *
+   * É daqui que sai o nível de detalhe, e é de propósito que não seja pixel: a
+   * pergunta que decide se um interior aparece é "esta caixa ocupa quanto do
+   * quadro?", que não depende do tamanho do monitor nem do nível em que a
+   * camada está.
+   */
+  readonly unidadesPorQuadro: number;
+  readonly profundidade: number;
 }
 
 interface Ponto {
@@ -196,7 +222,7 @@ function Engrenagem({ x, y, r }: { x: number; y: number; r: number }) {
   );
 }
 
-export function Stage({
+function Camada({
   tree,
   wires,
   view,
@@ -210,7 +236,10 @@ export function Stage({
   selected,
   onSelect,
   onOpen,
-}: StageProps) {
+  interiores,
+  unidadesPorQuadro,
+  profundidade,
+}: CamadaProps) {
   const reduzido = usaMovimentoReduzido();
   const mudou = delta(state, previous);
   const lugares = new Map(view.places.map((p) => [p.id, p]));
@@ -403,27 +432,7 @@ export function Stage({
     .filter((x): x is NonNullable<typeof x> => x !== null);
 
   return (
-    <svg
-      className="dui-stage"
-      viewBox={`0 0 ${view.width} ${view.height}`}
-      role="img"
-      aria-label={view.title}
-      style={{ ["--dui-tick" as string]: `${tickMs}ms` }}
-    >
-      <defs>
-        <marker
-          id="dui-seta"
-          viewBox="0 0 8 8"
-          refX="7"
-          refY="4"
-          markerWidth="6"
-          markerHeight="6"
-          orient="auto-start-reverse"
-        >
-          <path d="M0 0 L8 4 L0 8 z" />
-        </marker>
-      </defs>
-
+    <>
       <g className="dui-stage__fios">
         {arestas.map((aresta) => (
           <g
@@ -540,6 +549,25 @@ export function Stage({
           // e escrevê-la à mão seria um rótulo sem nada por trás.
           const replicas = node?.replicas;
           const atraso = atrasoDe(place.id);
+
+          /*
+            O nível de detalhe. Uma caixa fechada revela o interior dela quando
+            ocupa parte suficiente do quadro — e a transição é uma rampa, não um
+            corte, porque é no meio dela que o leitor vê que um é o dentro do
+            outro. Longe do limiar o interior nem existe no desenho: o custo é
+            proporcional ao que está grande o bastante para ser lido.
+          */
+          const interior =
+            place.collapsed === true && profundidade < PROFUNDIDADE_MAXIMA
+              ? interiores?.(place.id)
+              : undefined;
+          const aparece =
+            interior === undefined ? 0 : quantoAparece(place.w / unidadesPorQuadro);
+          // Escala uniforme, pelo lado que aperta: esticar o interior para
+          // preencher a caixa distorceria o esquemático, e num esquemático a
+          // proporção é informação — uma rede em paralelo esticada deixa de
+          // parecer paralela.
+          const dentro = interior === undefined ? undefined : encaixar(place, interior);
           return (
             <g
               key={place.id}
@@ -609,6 +637,65 @@ export function Stage({
                 />
               ) : null}
 
+              {interior !== undefined && aparece > 0 ? (
+                <>
+                  {/* Recorte de verdade na caixa do pai: nada é pintado fora
+                      porque não há regra a esquecer. */}
+                  <clipPath id={`dui-dentro-${identificador(place.id)}`}>
+                    <rect
+                      x={place.x}
+                      y={place.y}
+                      width={place.w}
+                      height={place.h}
+                      rx={fam === "container" ? 14 : 8}
+                    />
+                  </clipPath>
+                  {/*
+                    O recorte vai num grupo SEM transformação, e a
+                    transformação num grupo por dentro.
+                    `clip-path` é resolvido no espaço do próprio elemento que o
+                    referencia — transformação dele inclusive. Postos juntos, o
+                    retângulo de recorte era escalado junto com o interior e
+                    caía fora da caixa: o interior existia no DOM, com opacidade
+                    1 e tamanho certo, e a tela mostrava uma caixa vazia.
+                  */}
+                  <g clipPath={`url(#dui-dentro-${identificador(place.id)})`}>
+                  <g
+                    className="dui-stage__interior"
+                    opacity={aparece}
+                    transform={`translate(${place.x + (dentro?.dx ?? 0)} ${
+                      place.y + (dentro?.dy ?? 0)
+                    }) scale(${dentro?.escala ?? 1})`}
+                  >
+                    <Camada
+                      tree={tree}
+                      wires={wires}
+                      view={interior}
+                      state={state}
+                      previous={previous}
+                      edgeTicks={edgeTicks}
+                      tickMs={tickMs}
+                      fills={fills}
+                      readouts={readouts}
+                      altos={altos}
+                      selected={selected}
+                      interiores={interiores}
+                      unidadesPorQuadro={unidadesPorQuadro / (dentro?.escala ?? 1)}
+                      profundidade={profundidade + 1}
+                    />
+                  </g>
+                  </g>
+                </>
+              ) : null}
+
+              {/*
+                O rosto da caixa cede lugar ao interior, e cede **antes** de o
+                interior chegar inteiro: um rótulo "more inside" por cima do
+                inside já visível diz ao leitor o contrário do que ele está
+                vendo. Some na metade da rampa; o interior termina de subir com
+                o campo livre.
+              */}
+              <g className="dui-stage__rosto" opacity={Math.max(0, 1 - aparece * 2)}>
               {fam === "container" ? (
                 <text className="dui-stage__titulo" x={place.x + 12} y={place.y + 18}>
                   {rotulo}
@@ -654,10 +741,160 @@ export function Stage({
                   more inside
                 </text>
               ) : null}
+              </g>
             </g>
           );
         })}
       </g>
+    </>
+  );
+}
+
+/**
+ * O palco, com câmera.
+ *
+ * A descida deixou de ser uma troca de tela e passou a ser uma aproximação: a
+ * roda aproxima onde o cursor está, arrastar move o quadro, e quando uma caixa
+ * fica grande o bastante o interior dela aparece **dentro dela**, por
+ * transparência. Não há corte, e por isso o leitor não perde de vista de que
+ * aquele interior é o interior.
+ *
+ * O que a câmera muda é só o enquadramento. O modelo roda igual esteja ele
+ * enquadrado ou não — se dependesse do foco, duas pessoas com o mesmo link
+ * veriam execuções diferentes, que é a otimização recusada em `depth.md` §5.1.
+ */
+export function Stage(props: StageProps) {
+  const { view, tickMs = 700 } = props;
+  const svgRef = useRef<SVGSVGElement | null>(null);
+  const [camera, setCamera] = useState({
+    escala: 1,
+    x: view.width / 2,
+    y: view.height / 2,
+  });
+
+  // Trocar de view é trocar de assunto: manter o enquadramento anterior
+  // deixaria o leitor num canto vazio do desenho novo.
+  useEffect(() => {
+    setCamera({ escala: 1, x: view.width / 2, y: view.height / 2 });
+  }, [view.id, view.width, view.height]);
+
+  /**
+   * A roda, num ouvinte nativo e **não passivo**.
+   *
+   * Em React, `onWheel` no JSX vira ouvinte passivo na raiz: `preventDefault`
+   * não faz nada, e o gesto de aproximar rola a página junto. O sintoma é
+   * bonito de errado — o desenho não se mexe e a página desce — e manda
+   * procurar no lugar errado.
+   */
+  useEffect(() => {
+    const alvo = svgRef.current;
+    if (alvo === null) return;
+    const rodou = (e: WheelEvent) => {
+      e.preventDefault();
+      const caixa = alvo.getBoundingClientRect();
+      setCamera((atual) => {
+        const lq = view.width / atual.escala;
+        const aq = view.height / atual.escala;
+        const escala = Math.max(
+          1,
+          Math.min(ZOOM_MAXIMO, atual.escala * Math.exp(-e.deltaY / 900)),
+        );
+        const limitar = (esc: number, x: number, y: number) => {
+          const l = view.width / esc;
+          const a = view.height / esc;
+          return {
+            escala: esc,
+            x: Math.min(view.width - l / 2, Math.max(l / 2, x)),
+            y: Math.min(view.height - a / 2, Math.max(a / 2, y)),
+          };
+        };
+        if (caixa.width === 0 || caixa.height === 0) return limitar(escala, atual.x, atual.y);
+        // Aproximar onde o cursor está: o ponto sob ele tem que ficar parado,
+        // senão o leitor aponta para uma coisa e recebe outra no meio da tela.
+        const alvoX = atual.x - lq / 2 + ((e.clientX - caixa.left) / caixa.width) * lq;
+        const alvoY = atual.y - aq / 2 + ((e.clientY - caixa.top) / caixa.height) * aq;
+        const k = atual.escala / escala;
+        return limitar(escala, alvoX + (atual.x - alvoX) * k, alvoY + (atual.y - alvoY) * k);
+      });
+    };
+    alvo.addEventListener("wheel", rodou, { passive: false });
+    return () => alvo.removeEventListener("wheel", rodou);
+  }, [view.width, view.height]);
+
+  const larguraDoQuadro = view.width / camera.escala;
+  const alturaDoQuadro = view.height / camera.escala;
+
+  /** O quadro nunca sai do desenho: fora dele não há nada para ver. */
+  const enquadrar = (escala: number, x: number, y: number) => {
+    const limite = Math.max(1, Math.min(ZOOM_MAXIMO, escala));
+    const lq = view.width / limite;
+    const aq = view.height / limite;
+    return {
+      escala: limite,
+      x: Math.min(view.width - lq / 2, Math.max(lq / 2, x)),
+      y: Math.min(view.height - aq / 2, Math.max(aq / 2, y)),
+    };
+  };
+
+  /** Onde o cursor está, nas coordenadas da view. */
+  const noDesenho = (clientX: number, clientY: number) => {
+    const caixa = svgRef.current?.getBoundingClientRect();
+    if (caixa === undefined || caixa.width === 0 || caixa.height === 0) return undefined;
+    return {
+      x: camera.x - larguraDoQuadro / 2 + ((clientX - caixa.left) / caixa.width) * larguraDoQuadro,
+      y: camera.y - alturaDoQuadro / 2 + ((clientY - caixa.top) / caixa.height) * alturaDoQuadro,
+    };
+  };
+
+  return (
+    <svg
+      ref={svgRef}
+      className="dui-stage"
+      data-zoom={camera.escala > 1 ? "true" : undefined}
+      viewBox={`${camera.x - larguraDoQuadro / 2} ${camera.y - alturaDoQuadro / 2} ${larguraDoQuadro} ${alturaDoQuadro}`}
+      role="img"
+      aria-label={view.title}
+      style={{ ["--dui-tick" as string]: `${tickMs}ms` }}
+      onPointerDown={(e) => {
+        if (e.button !== 0 || camera.escala <= 1) return;
+        const alvo = e.currentTarget;
+        alvo.setPointerCapture(e.pointerId);
+        const partiu = { x: e.clientX, y: e.clientY, camera };
+        const arrastar = (ev: PointerEvent) => {
+          const caixa = alvo.getBoundingClientRect();
+          if (caixa.width === 0) return;
+          const dx = ((ev.clientX - partiu.x) / caixa.width) * (view.width / partiu.camera.escala);
+          const dy = ((ev.clientY - partiu.y) / caixa.height) * (view.height / partiu.camera.escala);
+          setCamera(enquadrar(partiu.camera.escala, partiu.camera.x - dx, partiu.camera.y - dy));
+        };
+        const soltar = () => {
+          alvo.removeEventListener("pointermove", arrastar);
+          alvo.removeEventListener("pointerup", soltar);
+        };
+        alvo.addEventListener("pointermove", arrastar);
+        alvo.addEventListener("pointerup", soltar);
+      }}
+      onDoubleClick={(e) => {
+        // O duplo clique continua abrindo — quem quiser trocar de vista ainda
+        // troca —, mas no vazio ele volta a câmera para o desenho inteiro.
+        if (e.target === e.currentTarget) setCamera(enquadrar(1, view.width / 2, view.height / 2));
+      }}
+    >
+      <defs>
+        <marker
+          id="dui-seta"
+          viewBox="0 0 8 8"
+          refX="7"
+          refY="4"
+          markerWidth="6"
+          markerHeight="6"
+          orient="auto-start-reverse"
+        >
+          <path d="M0 0 L8 4 L0 8 z" />
+        </marker>
+      </defs>
+
+      <Camada {...props} unidadesPorQuadro={larguraDoQuadro} profundidade={0} />
     </svg>
   );
 }

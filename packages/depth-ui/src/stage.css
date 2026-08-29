@@ -331,3 +331,50 @@
     animation: none !important;
   }
 }
+
+/*
+ * O zoom contínuo.
+ *
+ * O interior de uma caixa é desenhado dentro dela, e some por transparência
+ * quando ela fica pequena no quadro. A transição é curta de propósito: longa,
+ * ela vira efeito; curta, ela é a continuidade que evita o corte.
+ */
+.dui-stage {
+  touch-action: none;
+}
+
+.dui-stage[data-zoom="true"] {
+  cursor: grab;
+}
+
+.dui-stage[data-zoom="true"]:active {
+  cursor: grabbing;
+}
+
+.dui-stage__interior,
+.dui-stage__rosto {
+  transition: opacity 160ms ease;
+}
+
+/*
+ * Traço de espessura constante, em toda a árvore.
+ *
+ * Sem isto o zoom engorda a borda junto com a caixa: a 20× uma linha de 1px
+ * vira uma faixa de 20, o desenho some debaixo do próprio contorno, e o
+ * interior aparece atrás de uma moldura maior que ele. Traço não é escala — é
+ * notação, e notação tem tamanho fixo.
+ */
+.dui-stage__caixa,
+.dui-stage__trilho,
+.dui-stage__pulso,
+.dui-stage__pilha,
+.dui-stage__nivel {
+  vector-effect: non-scaling-stroke;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dui-stage__interior,
+  .dui-stage__rosto {
+    transition: none;
+  }
+}

@@ -12,6 +12,7 @@ export type { TimelineProps } from "./Timeline.js";
 export type { FlowEdgeView, FlowNodeView, FlowView } from "./types.js";
 export { Stage } from "./Stage.js";
 export type { StageProps } from "./Stage.js";
-export { familiesOf, viewDisagreement } from "./view.js";
+export { familiesOf, interiorDisagreement, viewDisagreement } from "./view.js";
+export { encaixar, quantoAparece } from "./lod.js";
 export type { NodePlacement, View } from "./view.js";
 export { autoView, pathTo } from "./auto-view.js";

@@ -109,3 +109,33 @@ export function familiesOf(tree: TreeIndex, view: View): Readonly<Record<string,
   }
   return out;
 }
+
+/**
+ * A primeira discordância entre uma caixa e o interior desenhado dentro dela,
+ * ou `null`.
+ *
+ * O zoom contínuo desenha o interior de um objeto **dentro da caixa dele**, e
+ * isso é uma afirmação estrutural: dizer que o que está ali dentro mora ali. Um
+ * desenho que pusesse na caixa `x` a view focada em `y` estaria inventando uma
+ * hierarquia — e seria justamente um desenho bonito afirmando o que o modelo
+ * não disse.
+ *
+ * Vale junto com `viewDisagreement`, não no lugar dele: o interior continua
+ * tendo que concordar com a árvore.
+ */
+export function interiorDisagreement(
+  tree: TreeIndex,
+  place: NodePlacement,
+  interior: View,
+): string | null {
+  if (interior.focus !== place.id) {
+    return `a caixa "${place.id}" mostra por dentro a view de "${interior.focus}" — desenhar um interior é dizer que ele mora ali`;
+  }
+  if (place.collapsed !== true) {
+    return `"${place.id}" está desenhada aberta e ainda recebe um interior: os filhos apareceriam duas vezes`;
+  }
+  if ((tree.byId.get(place.id)?.children ?? []).length === 0) {
+    return `"${place.id}" não tem filhos e recebe um interior: seria um dentro que a árvore não tem`;
+  }
+  return viewDisagreement(tree, interior);
+}

@@ -1,0 +1,53 @@
+/**
+ * Nível de detalhe: quanto do interior de uma caixa está visível.
+ *
+ * A pergunta que decide não é "em que nível o leitor está", é **"esta caixa
+ * ocupa quanto do quadro?"**. Duas consequências, e as duas são o ponto:
+ *
+ * - dois blocos do mesmo desenho podem estar em estados de detalhe diferentes
+ *   ao mesmo tempo, porque um está perto e o outro está longe;
+ * - a conta não depende do tamanho do monitor, e por isso é testável.
+ *
+ * A rampa entre os dois limiares é o que faz a descida ser contínua em vez de
+ * um corte: é no meio dela que os dois níveis coexistem, e é aí que o leitor
+ * vê que um é o dentro do outro.
+ */
+
+/** Onde o interior começa a aparecer, como fração da largura do quadro. */
+export const LIMIAR_ENTRA = 0.24;
+
+/** Onde ele já está inteiro. */
+export const LIMIAR_CHEIO = 0.5;
+
+/** Até onde a câmera aproxima. Além disto o desenho é um pixel esticado. */
+export const ZOOM_MAXIMO = 40;
+
+/** Fundo do aninhamento: mais que isto por quadro é sopa, não é leitura. */
+export const PROFUNDIDADE_MAXIMA = 3;
+
+export function quantoAparece(fracaoDoQuadro: number): number {
+  // NaN é "não deu para medir" — a caixa ainda não foi desenhada, e o honesto
+  // é não mostrar interior. Infinito é o caso oposto e cai na regra normal.
+  if (Number.isNaN(fracaoDoQuadro) || fracaoDoQuadro <= LIMIAR_ENTRA) return 0;
+  if (fracaoDoQuadro >= LIMIAR_CHEIO) return 1;
+  return (fracaoDoQuadro - LIMIAR_ENTRA) / (LIMIAR_CHEIO - LIMIAR_ENTRA);
+}
+
+/**
+ * A escala que encaixa uma view dentro de uma caixa, e a folga que sobra.
+ *
+ * Uniforme, pelo lado que aperta. Esticar o interior para preencher a caixa
+ * distorceria o esquemático — e num esquemático a proporção **é** informação:
+ * uma rede em paralelo desenhada esticada deixa de parecer paralela.
+ */
+export function encaixar(
+  caixa: { readonly w: number; readonly h: number },
+  moldura: { readonly width: number; readonly height: number },
+): { readonly escala: number; readonly dx: number; readonly dy: number } {
+  const escala = Math.min(caixa.w / moldura.width, caixa.h / moldura.height);
+  return {
+    escala,
+    dx: (caixa.w - moldura.width * escala) / 2,
+    dy: (caixa.h - moldura.height * escala) / 2,
+  };
+}

@@ -322,3 +322,27 @@ como asserção estranha, longe da causa. Ele também passou a falar por **IP** 
 `localhost`: o Chrome resolve `localhost` para IPv6 primeiro, e qualquer processo em
 `[::1]` naquela porta sequestra a corrida inteira. Foi o que aconteceu aqui, com um
 servidor de dev esquecido — e por um bom tempo eu culpei o lugar errado.
+
+## O dev roda como serviço do usuário
+
+`~/.config/systemd/user/openlabs-dev.service`, ligado com
+`systemctl --user enable --now openlabs-dev`. Log em
+`~/.local/state/openlabs-dev.log`.
+
+Não é conforto: é o que tira do caminho a classe de problema que mais custou tempo aqui.
+O servidor de dev subia à mão, às vezes em outra porta, às vezes duas vezes, e um esbirro
+esquecido segurando a 4321 já sequestrou uma corrida de e2e inteira — que passou a ver as
+páginas de outro aplicativo. Com o serviço, a subida é sempre a mesma, a porta é sempre a
+mesma, e `KillMode=control-group` garante que parar significa parar.
+
+O `PATH` é declarado no arquivo porque o serviço não lê o perfil do shell: sem ele o
+`ExecStart` não acha o `pnpm` (que vive em `~/.local/node/bin`) e a unidade fica em
+`activating` para sempre, sem dizer por quê.
+
+O e2e continua na porta dele (4399, `pnpm build && pnpm preview`), então as duas coisas
+convivem — verificado com a suíte inteira rodando com o serviço de pé.
+
+| | Onde | Quem publica |
+|---|---|---|
+| **dev** | `localhost:4321`, serviço do usuário | você, o tempo todo |
+| **prod** | Vercel | a `main`, quando a release sobe |
