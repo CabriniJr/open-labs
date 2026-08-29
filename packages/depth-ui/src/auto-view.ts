@@ -32,6 +32,10 @@ function camadas(
   /** A qual filho do foco este objeto pertence (ele mesmo, ou um ancestral). */
   const irmao = (id: string): string | undefined => {
     if (doFoco.has(id)) return id;
+    // O descarte é destino legítimo e **não** é objeto: perguntar onde ele está
+    // na árvore rebenta. O mesmo vale para qualquer ponta que não esteja
+    // indexada — a view não é lugar de descobrir fio quebrado.
+    if (!tree.byId.has(id)) return undefined;
     const onde = visibleChild(tree, focus, id);
     return onde.at === "child" ? onde.id : undefined;
   };

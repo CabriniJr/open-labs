@@ -78,3 +78,32 @@ test("o lab não rola na horizontal", async ({ page }) => {
   );
   expect(overflow).toBeLessThanOrEqual(1);
 });
+
+test("descer da CPU até a porta lógica, e achar o somador vivo lá embaixo", async ({ page }) => {
+  await page.goto("labs/cpu/");
+  await expect(page.locator(".dui-stage")).toBeVisible({ timeout: 15_000 });
+
+  const trilha = page.locator(".explorer__trilha");
+  await page.locator('.dui-stage__objeto[aria-label^="ULA"]').first().dblclick();
+  await expect(trilha).toContainText("ULA");
+
+  await page.locator('.dui-stage__objeto[aria-label^="somador"]').first().dblclick();
+  // o somador de 32 bits tem 32 somadores completos, e eles existem de verdade
+  await expect(page.locator(".dui-stage__objeto")).toHaveCount(32);
+
+  await page.locator('.dui-stage__objeto[aria-label^="bit7"]').first().dblclick();
+  await expect(page.locator(".dui-stage__objeto")).toHaveCount(5);
+  await expect(trilha).toContainText("bit7");
+
+  // e volta pela trilha, sem recarregar nada
+  await trilha.getByRole("button", { name: "sistema" }).click();
+  await expect(page.locator('.dui-stage__objeto[aria-label^="ULA"]')).toBeVisible();
+});
+
+test("a profundidade do tick conta a cascata do vai-um de 32 bits", async ({ page }) => {
+  await page.goto("labs/cpu/");
+  await expect(page.locator(".dui-stage")).toBeVisible({ timeout: 15_000 });
+  // com o somador aberto, um ciclo custa dezenas de subpassos de propagação
+  await expect(page.locator(".cpu-lab__tick").nth(1)).toContainText("subpassos");
+});
+

@@ -93,10 +93,17 @@ export function validateWorld(spec: WorldSpec, tree: TreeIndex): void {
       );
     }
 
-    // Sinal não atravessa contêiner: quem recebe é nomeado, e precisa agir.
-    if (line === "control" && wire.to !== DROP) {
+    // Sinal não atravessa contêiner sem dizer por onde: ou o destino age, ou
+    // ele declara o borne por onde o sinal entra e quem, lá dentro, obedece.
+    if (line === "control" && wire.to !== DROP && wire.toPort !== undefined) {
       const destino = tree.byId.get(wire.to);
-      if (destino !== undefined && destino.behavior === undefined) {
+      const bornes = destino?.inlets?.[wire.toPort];
+      if (
+        destino !== undefined &&
+        destino.behavior === undefined &&
+        destino.shortcut === undefined &&
+        bornes === undefined
+      ) {
         erros.push(
           `o sinal de "${wire.from}.${wire.port}" chega em "${wire.to}", que não age — ` +
             `sinal tem destinatário nomeado e não atravessa contêiner. Aponte-o ` +

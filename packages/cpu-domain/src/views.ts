@@ -32,7 +32,9 @@ export const VIEW_SISTEMA: View = {
 
     { id: "logica", x: 410, y: 175, w: 680, h: 235 },
     { id: "mux-operando", x: 440, y: 215, w: 120, h: 50 },
-    { id: "ula", x: 610, y: 205, w: 140, h: 80 },
+    // A ULA tem interior agora, e a view diz isso em voz alta em vez de
+    // desenhar uma caixa lisa: dois cliques entram nela.
+    { id: "ula", x: 610, y: 205, w: 140, h: 80, collapsed: true },
     { id: "desvio", x: 800, y: 215, w: 130, h: 50 },
     { id: "mux-escrita", x: 800, y: 325, w: 130, h: 50 },
 
@@ -56,7 +58,7 @@ export const VIEW_PROCESSADOR: View = {
     { id: "banco", x: 40, y: 220, w: 200, h: 140 },
     { id: "logica", x: 300, y: 40, w: 660, h: 400 },
     { id: "mux-operando", x: 340, y: 120, w: 160, h: 80 },
-    { id: "ula", x: 550, y: 100, w: 180, h: 120 },
+    { id: "ula", x: 550, y: 100, w: 180, h: 120, collapsed: true },
     { id: "desvio", x: 780, y: 120, w: 150, h: 80 },
     { id: "mux-escrita", x: 550, y: 300, w: 180, h: 80 },
   ],

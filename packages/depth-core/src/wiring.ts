@@ -101,7 +101,8 @@ export function resolveSignalTargets(
  *
  * Um fio para `bloco` na entrada `a` vira os fios concretos até quem, lá
  * dentro, recebe por `a` — ou um fio para o próprio bloco, quando ele tem
- * atalho e portanto é ele que age. Rodar essa conversão **uma vez, na entrada
+ * atalho e portanto é ele que age. Vale para carga e para sinal: uma linha de
+ * controle que chega num bloco fechado precisa achar, lá dentro, quem obedece. Rodar essa conversão **uma vez, na entrada
  * do tick**, é o que faz o resto do motor (ordem topológica, acomodação,
  * livro-caixa) continuar vendo só fios entre coisas que agem.
  *
@@ -133,15 +134,13 @@ function expandSaidas(tree: TreeIndex, wires: readonly Wire[]): readonly Wire[] 
 }
 
 function expandEntradas(tree: TreeIndex, wires: readonly Wire[]): readonly Wire[] {
-  const precisa = wires.some(
-    (w) => (w.line ?? "data") === "data" && w.toPort !== undefined,
-  );
+  const precisa = wires.some((w) => w.toPort !== undefined);
   if (!precisa) return wires;
 
   const saida: Wire[] = [];
   for (const wire of wires) {
     const porta = wire.toPort;
-    if ((wire.line ?? "data") !== "data" || porta === undefined || wire.to === DROP) {
+    if (porta === undefined || wire.to === DROP) {
       saida.push(wire);
       continue;
     }
@@ -152,7 +151,13 @@ function expandEntradas(tree: TreeIndex, wires: readonly Wire[]): readonly Wire[
       saida.push(wire);
       continue;
     }
-    const dentro = destino?.inlets?.[porta] ?? [];
+    const dentro = destino?.inlets?.[porta];
+    // Sem borne declarado, o destino é quem age: o fio fica como está. É o caso
+    // de toda linha de controle que chega direto numa folha.
+    if (dentro === undefined) {
+      saida.push(wire);
+      continue;
+    }
     for (const filho of dentro) {
       saida.push({ ...wire, to: entryLeaf(tree, filho) });
     }

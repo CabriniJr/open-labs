@@ -627,3 +627,50 @@ nem inventa, nem esconde calado.
 
 Estado: 363 testes unitários, 68 e2e, typecheck, boundaries e build verdes.
 
+---
+
+## A ULA aberta: a fatia vertical encosta no caminho de dados
+
+**Data:** 2026-08-29. **Código:** `packages/cpu-domain/src/alu.ts`.
+
+A ULA deixou de ser folha. Por dentro dela:
+
+```
+ULA
+  dispersor            o número vira 32 linhas
+  somador de 32 bits   ×32 somadores completos, cada um com 5 portas
+  pesos                ×32 — uma linha vale o que a posição dela vale
+  coletor              as 32 linhas viram número
+  unidade lógica       o que não é soma (ainda folha, e está declarado)
+  mux de operação      escolhe, e fala pela ULA inteira
+```
+
+**Do sistema até a porta lógica são seis níveis**, e dá para descer todos clicando:
+`sistema › CPU › processador › lógica combinacional › ULA › somador de 32 bits › bit7` →
+XOR, AND, XOR, AND, OR. Tudo vivo, tudo rodando o programa que está no editor.
+
+**O que isso custou de verdade, e é a coisa mais bonita daqui:** um ciclo da CPU passou de
+8 para **75 subpassos**. Não é medida inventada — é a cascata do vai-um de 32 bits, que é
+exatamente o motivo de somadores reais não serem em cascata. O modelo agora **cobra** o que
+antes só afirmava.
+
+**Duas peças que existem por causa de uma verdade que o desenho esconde:** um barramento de
+32 vias **é** 32 linhas. O `dispersor` e o `coletor` são o `/32` do fio dito em voz alta —
+não são adaptador de conveniência.
+
+**O diferencial continua passando instrução a instrução** com o somador feito de portas. E
+`shortcutDisagreement` prova, dentro da CPU inteira, que o caminho rápido da ULA concorda
+com as duzentas peças de dentro dela: o que se compara é o que o mundo **fora** da ULA
+enxerga — registradores, pc e memória. O lab roda **aberto**, porque descer até a porta e
+encontrar coisa parada seria o mesmo tipo de mentira que o projeto persegue.
+
+Um defeito achado no caminho: a view montada sozinha rebentava com fio para o descarte —
+`@drop` é destino e **não** é objeto, e perguntar onde ele está na árvore lança. Foi assim
+que a primeira descida até a ULA morreu.
+
+Estado: 370 testes unitários, 72 e2e, typecheck, boundaries e build verdes.
+
+**O que falta da fatia:** o transistor abaixo da porta lógica, e a unidade lógica aberta
+(hoje folha, declarado no arquivo). A fatia desce por **um** caminho, e esse caminho é a
+soma — que é a operação que a máquina mais faz.
+

@@ -1,4 +1,5 @@
 import type { AnyObject, Message, ObjectSpec, WorldSpec } from "@ovh/depth-core";
+import { ula as ulaComposta } from "./alu.js";
 import { decode } from "./isa.js";
 import type { Instruction, Mnemonic } from "./isa.js";
 
@@ -277,58 +278,6 @@ const muxOperando: ObjectSpec<Record<string, never>> = {
   },
 };
 
-function operar(op: Mnemonic, a: number, b: number): number {
-  switch (op) {
-    case "sub": return (a - b) | 0;
-    case "and": case "andi": return a & b;
-    case "or": case "ori": return a | b;
-    case "xor": case "xori": return a ^ b;
-    case "sll": case "slli": return a << (b & 31);
-    case "srl": case "srli": return a >>> (b & 31);
-    case "sra": case "srai": return a >> (b & 31);
-    case "slt": case "slti": return a < b ? 1 : 0;
-    case "lui": return b << 12;
-    case "auipc": return 0;
-    default: return (a + b) | 0;
-  }
-}
-
-const ula: ObjectSpec<Record<string, never>> = {
-  id: "ula",
-  kind: "router",
-  label: "ULA",
-  leaf: true,
-  behavior: (state, inbox, ctx) => {
-    if (ctx.phase !== "settle") return { state, out: [] };
-    const operandos = achar(inbox, "operandos");
-    const sel = sinal(ctx.signals, "op");
-    if (operandos === undefined || sel === undefined) return { state, out: [] };
-    const op = sel.data.op as Mnemonic;
-    const pcAtual = dado(operandos, "pc");
-    const imm = dado(operandos, "imm");
-    const resultado =
-      op === "auipc"
-        ? (pcAtual + (imm << 12)) | 0
-        : operar(op, dado(operandos, "a"), dado(operandos, "b"));
-    return {
-      state,
-      out: [
-        {
-          port: "out",
-          message: ctx.emit("resultado", 1, {
-            pc: pcAtual,
-            resultado,
-            aReg: dado(operandos, "aReg"),
-            bReg: dado(operandos, "bReg"),
-            rd: dado(operandos, "rd"),
-            imm,
-          }),
-        },
-      ],
-    };
-  },
-};
-
 /**
  * A memória principal, endereçada. Fica **fora** da CPU, como no diagrama de
  * referência, e é ator: quem quer um valor pede.
@@ -456,7 +405,15 @@ const unidadeDeDesvio: ObjectSpec<Record<string, never>> = {
 };
 
 /** A árvore. Contêineres organizam e nunca têm comportamento. */
-export function cpuWorld(image: readonly number[], seed = 1): WorldSpec {
+export function cpuWorld(
+  image: readonly number[],
+  opcoes: { readonly atalhoNaUla?: boolean; readonly seed?: number } = {},
+): WorldSpec {
+  const seed = opcoes.seed ?? 1;
+  // A ULA vem aberta: descer até a porta lógica precisa mostrar coisa viva. O
+  // caminho rápido existe e é provado equivalente — ele serve a quem precisa de
+  // velocidade, não a quem está estudando.
+  const { objeto: ula, wires: fiosDaUla } = ulaComposta(opcoes.atalhoNaUla === true);
   const logica: AnyObject = {
     id: "logica",
     kind: "composite",
@@ -489,6 +446,7 @@ export function cpuWorld(image: readonly number[], seed = 1): WorldSpec {
     root,
     params: {},
     wires: [
+      ...fiosDaUla,
       // o pulso é o que faz o ciclo começar
       { from: "relogio", port: "tick", to: "pc", timing: "clocked" },
 
@@ -500,7 +458,7 @@ export function cpuWorld(image: readonly number[], seed = 1): WorldSpec {
       { from: "imem", port: "out", to: "controle", timing: "settle", width: 32 },
       { from: "decodificador", port: "out", to: "banco", timing: "settle" },
       { from: "banco", port: "out", to: "mux-operando", timing: "settle", width: 32 },
-      { from: "mux-operando", port: "out", to: "ula", timing: "settle", width: 32 },
+      { from: "mux-operando", port: "out", to: "ula", toPort: "in", timing: "settle", width: 32 },
       { from: "ula", port: "out", to: "memoria", timing: "settle", width: 32 },
       { from: "ula", port: "out", to: "desvio", timing: "settle", width: 32 },
       { from: "memoria", port: "out", to: "mux-escrita", timing: "settle", width: 32 },

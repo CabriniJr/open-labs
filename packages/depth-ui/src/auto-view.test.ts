@@ -64,4 +64,11 @@ describe("view montada sozinha", () => {
     expect(pathTo(arvore, "dentro1")).toEqual(["raiz", "caixa", "dentro1"]);
     expect(pathTo(arvore, "raiz")).toEqual(["raiz"]);
   });
+
+  it("fio para o descarte não quebra a montagem", () => {
+    // `@drop` é destino e não é objeto: perguntar onde ele está na árvore
+    // rebenta, e foi assim que a primeira descida até a ULA morreu.
+    const comDescarte: readonly Wire[] = [...wires, { from: "b", port: "fora", to: "@drop" }];
+    expect(viewDisagreement(arvore, autoView(arvore, "raiz", comDescarte))).toBeNull();
+  });
 });
