@@ -31,3 +31,28 @@ describe("findViolations", () => {
     expect(findViolations("apps/site/src/labs/hero/scenario.ts", source)).toEqual([]);
   });
 });
+
+describe("guarda ampliada: protocolo também é domínio", () => {
+  it("acusa gRPC no motor", () => {
+    const found = findViolations("packages/depth-core/src/x.ts", "// fala grpc aqui");
+    expect(found).toHaveLength(1);
+  });
+
+  it("acusa spanprocessor no motor", () => {
+    const found = findViolations("packages/depth-core/src/x.ts", "const spanprocessor = 1;");
+    expect(found).toHaveLength(1);
+  });
+
+  it("acusa sampler no motor", () => {
+    const found = findViolations("packages/depth-ui/src/x.tsx", "// o sampler decide");
+    expect(found).toHaveLength(1);
+  });
+
+  it("não acusa vocabulário do motor", () => {
+    const found = findViolations(
+      "packages/depth-core/src/x.ts",
+      "const kind = 'pipeline'; // router, buffer, composite",
+    );
+    expect(found).toEqual([]);
+  });
+});

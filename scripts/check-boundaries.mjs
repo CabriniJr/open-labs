@@ -9,8 +9,10 @@ const AGNOSTIC = ["packages/depth-core/", "packages/depth-ui/"];
 const DOMAIN_PACKAGES = ["@ovh/otel-domain"];
 
 /**
- * Termos inequívocos de OpenTelemetry. `span` e `trace` sozinhos ficam de fora
- * de propósito: `<span>` é HTML legítimo e "trace" aparece em "traceability".
+ * Termos inequívocos de domínio. `span` e `trace` sozinhos ficam de fora de
+ * propósito: `<span>` é HTML legítimo e "trace" aparece em "traceability".
+ *
+ * Protocolo também é domínio: o motor não pode saber que gRPC existe.
  */
 const DOMAIN_WORDS = [
   "otlp",
@@ -23,6 +25,16 @@ const DOMAIN_WORDS = [
   "spanid",
   "traceid",
   "collector",
+  "tracerprovider",
+  "spanprocessor",
+  "batchspanprocessor",
+  "spanexporter",
+  "sampler",
+  "grpc",
+  "http2",
+  "protobuf",
+  "hpack",
+  "w3c",
 ];
 
 export function findViolations(filePath, source) {
