@@ -3,7 +3,8 @@
 Every OpenTelemetry concept as a model you can take apart — from the service
 graph down to the bytes on the wire.
 
-**https://cabrinijr.github.io/otel-visual-handbook**
+**https://otel-visual-handbook.vercel.app** — o site canônico, servido na raiz.
+Espelho no GitHub Pages: **https://cabrinijr.github.io/otel-visual-handbook**
 
 ## Why
 
@@ -31,12 +32,26 @@ not by discipline — the engine is meant to outlive this one subject.
 
 ```bash
 pnpm install
-pnpm dev          # http://localhost:4321/otel-visual-handbook
+pnpm dev          # http://localhost:4321
 pnpm test         # unit tests
 pnpm boundaries   # engine/domain boundary check
 pnpm typecheck
 pnpm build
 ```
+
+## Deploy
+
+O caminho-base não é constante: quem chama o build declara onde o site vai servir.
+
+| Destino | Comando | Onde serve |
+|---|---|---|
+| Vercel (canônico) | `pnpm build` | raiz do domínio |
+| GitHub Pages (espelho) | `PUBLIC_BASE_PATH=/otel-visual-handbook/ PUBLIC_SITE_URL=https://cabrinijr.github.io pnpm build` | `/otel-visual-handbook/` |
+
+A Vercel usa o `vercel.json` da raiz (`framework: null`, porque o autodetect erra o
+diretório num monorepo pnpm). O Pages sai de `.github/workflows/deploy.yml`, que passa as
+duas variáveis acima. Toda URL interna do site precisa passar por `import.meta.env.BASE_URL`
+— caminho absoluto cravado funciona local e quebra no espelho.
 
 Writing a lab: see [`docs/authoring.md`](docs/authoring.md).
 
