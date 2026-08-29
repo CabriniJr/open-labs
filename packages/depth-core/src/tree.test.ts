@@ -203,6 +203,122 @@ describe("bordas que a revisão expôs", () => {
     expect(visibleChild(t, "solo", "solo")).toEqual({ at: "self" });
   });
 
+  it("recusa fronteira que aponta para fora do contêiner", () => {
+    expect(() =>
+      indexTree({
+        id: "r",
+        kind: "composite",
+        label: "r",
+        children: [
+          { id: "box", kind: "composite", label: "box", entry: "fora", children: [leaf("dentro", "sink")] },
+          leaf("fora", "sink"),
+        ],
+      }),
+    ).toThrow(/não é filho de fluxo dele/);
+  });
+
+  it("recusa fronteira que aponta para um estático", () => {
+    expect(() =>
+      indexTree({
+        id: "r",
+        kind: "composite",
+        label: "r",
+        entry: "note",
+        children: [leaf("note", "static"), leaf("a", "sink")],
+      }),
+    ).toThrow(/não é filho de fluxo dele/);
+  });
+
+  it("recusa fronteira que aponta para o próprio contêiner", () => {
+    expect(() =>
+      indexTree({
+        id: "r",
+        kind: "composite",
+        label: "r",
+        entry: "r",
+        children: [leaf("a", "sink")],
+      }),
+    ).toThrow(/não é filho de fluxo dele/);
+  });
+
+  it("entryLeaf e exitLeaf param no contêiner só de estáticos, como isOpenable", () => {
+    const t = indexTree({
+      id: "r",
+      kind: "composite",
+      label: "r",
+      children: [
+        {
+          id: "grp",
+          kind: "composite",
+          label: "grp",
+          children: [leaf("k1", "static"), leaf("k2", "static")],
+        },
+      ],
+    });
+    expect(entryLeaf(t, "grp")).toBe("grp");
+    expect(exitLeaf(t, "grp")).toBe("grp");
+  });
+
+  it("a válvula leaf permite comportamento próprio mesmo com filhos de fluxo", () => {
+    expect(() =>
+      indexTree({
+        id: "r",
+        kind: "composite",
+        label: "r",
+        children: [
+          {
+            id: "shut",
+            kind: "pipeline",
+            label: "shut",
+            leaf: true,
+            behavior: (s) => ({ state: s, out: [] }),
+            children: [leaf("x", "sink")],
+          },
+        ],
+      }),
+    ).not.toThrow();
+  });
+
+  it("a válvula dynamic permite comportamento próprio mesmo com filhos de fluxo", () => {
+    expect(() =>
+      indexTree({
+        id: "r",
+        kind: "composite",
+        label: "r",
+        children: [
+          {
+            id: "q",
+            kind: "buffer",
+            label: "q",
+            dynamic: true,
+            behavior: (s) => ({ state: s, out: [] }),
+            children: [leaf("item", "sink")],
+          },
+        ],
+      }),
+    ).not.toThrow();
+  });
+
+  it("a descida para em objeto dinâmico: os filhos dele são conteúdo, não destino", () => {
+    const t = indexTree({
+      id: "r",
+      kind: "composite",
+      label: "r",
+      children: [
+        {
+          id: "q",
+          kind: "buffer",
+          label: "q",
+          dynamic: true,
+          behavior: (s) => ({ state: s, out: [] }),
+          children: [leaf("item", "sink")],
+        },
+      ],
+    });
+    expect(entryLeaf(t, "q")).toBe("q");
+    expect(exitLeaf(t, "q")).toBe("q");
+  });
+
   it("indexa canais, que não são filhos de ninguém", () => {
     const t = indexTree(root, [
       { id: "pipe", kind: "channel", label: "pipe", children: [leaf("wire", "sink")] },

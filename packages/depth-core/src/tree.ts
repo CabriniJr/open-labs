@@ -1,7 +1,7 @@
-import type { AnyObject, Locus, ObjectSpec } from "./model.js";
+import type { AnyObject, Locus } from "./model.js";
 
 export interface TreeIndex {
-  readonly byId: ReadonlyMap<string, ObjectSpec>;
+  readonly byId: ReadonlyMap<string, AnyObject>;
   readonly parent: ReadonlyMap<string, string>;
   readonly rootId: string;
 }
@@ -10,7 +10,7 @@ export function indexTree(
   root: AnyObject,
   channels: readonly AnyObject[] = [],
 ): TreeIndex {
-  const byId = new Map<string, ObjectSpec>();
+  const byId = new Map<string, AnyObject>();
   const parent = new Map<string, string>();
 
   const walk = (node: AnyObject): void => {
@@ -27,6 +27,24 @@ export function indexTree(
         );
       }
     }
+    // A fronteira declarada é validada aqui, e não em quem percorre: assim
+    // nenhum TreeIndex chega a existir com uma fronteira que aponta para fora.
+    const flowIds = (node.children ?? [])
+      .filter((c) => c.kind !== "static")
+      .map((c) => c.id);
+    for (const [campo, declarado] of [
+      ["entry", node.entry],
+      ["exit", node.exit],
+    ] as const) {
+      if (declarado === undefined) continue;
+      if (!flowIds.includes(declarado)) {
+        throw new Error(
+          `tree: "${node.id}" declara ${campo}: "${declarado}", que não é filho de ` +
+            `fluxo dele — a fronteira de um contêiner mora dentro dele. ` +
+            `Filhos de fluxo: ${flowIds.length > 0 ? flowIds.join(", ") : "nenhum"}.`,
+        );
+      }
+    }
     for (const child of node.children ?? []) {
       parent.set(child.id, node.id);
       walk(child);
@@ -39,7 +57,7 @@ export function indexTree(
   return { byId, parent, rootId: root.id };
 }
 
-function spec(tree: TreeIndex, id: string): ObjectSpec {
+function spec(tree: TreeIndex, id: string): AnyObject {
   const node = tree.byId.get(id);
   if (node === undefined) throw new Error(`tree: objeto desconhecido "${id}"`);
   return node;
@@ -66,23 +84,20 @@ export function flowChildren(tree: TreeIndex, id: string): string[] {
 
 function terminal(tree: TreeIndex, id: string, pick: "first" | "last"): string {
   const node = spec(tree, id);
-  if (node.leaf === true || node.dynamic === true) return id;
-  if ((node.children?.length ?? 0) === 0) return id;
+  // um objeto que não abre É a folha: leaf, dynamic (conteúdo de runtime) ou
+  // contêiner sem tráfego para ver. O mesmo predicado dos dois lados garante
+  // que quem desenha e quem percorre nunca discordem sobre o mesmo nó.
+  if (node.leaf === true || node.dynamic === true || !isOpenable(tree, id)) return id;
 
   const declared = pick === "first" ? node.entry : node.exit;
-  if (declared !== undefined) {
-    spec(tree, declared);
-    return terminal(tree, declared, pick);
-  }
+  // indexTree já garantiu que `declared` é filho de fluxo deste nó
+  if (declared !== undefined) return terminal(tree, declared, pick);
 
   const kids = flowChildren(tree, id);
   const next = pick === "first" ? kids[0] : kids[kids.length - 1];
-  if (next === undefined) {
-    throw new Error(
-      `tree: "${id}" tem filhos, mas nenhum de fluxo — só objetos consultados`,
-    );
-  }
-  return terminal(tree, next, pick);
+  // abrível implica ao menos um filho de fluxo; o ramo `undefined` é
+  // inalcançável, existe só porque o índice não prova isso ao compilador
+  return next === undefined ? id : terminal(tree, next, pick);
 }
 
 export function entryLeaf(tree: TreeIndex, id: string): string {

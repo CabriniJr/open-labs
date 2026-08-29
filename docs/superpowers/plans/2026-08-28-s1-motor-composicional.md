@@ -728,6 +728,26 @@ git add packages/depth-core/src
 git commit -m "fix(depth-core): fronteira declarada, invariante do composto e locus discriminado"
 ```
 
+- [ ] **Step 10: quatro correções da revisão do commit `3c9c192`**
+
+1. **`entry`/`exit` passam a ser validados em `indexTree`, não em quem percorre.** O Step 3
+   só checava que o id existia na árvore inteira: uma fronteira podia apontar para um irmão
+   (a aresta entregava fora do contêiner), para um `static` (o estático virava fronteira de
+   fluxo, furando o Step 2) ou para si mesma (estouro de pilha). Validar na indexação torna a
+   violação impossível: nenhum `TreeIndex` chega a existir com a fronteira mentindo. Com isso,
+   o `spec(tree, declared)` dentro de `terminal` virou redundante e saiu.
+2. **`isOpenable` e `terminal` param no mesmo predicado.** O Step 2 tornou um contêiner só de
+   estáticos válido e não-abrível, mas `entryLeaf` sobre ele ainda lançava. Agora `terminal`
+   devolve o próprio id quando `!isOpenable(...)`, e o `throw` de "tem filhos, mas nenhum de
+   fluxo" — inalcançável — saiu. As duas funções não podem mais divergir sobre o mesmo nó.
+3. **As duas válvulas do invariante do Step 5 ganharam teste.** Nenhuma fixture combinava
+   `behavior` com filhos de fluxo e `leaf`/`dynamic`, então mutar o guard não quebrava nada.
+   Três testes novos: `leaf: true` com filho de fluxo e comportamento próprio, o equivalente
+   para `dynamic: true`, e a parada de descida em `dynamic` (que também não tinha teste).
+4. **`TreeIndex.byId` virou `ReadonlyMap<string, AnyObject>`.** Ficou de fora do Step 6, e o
+   `any` fazia a ponte calada em `byId.set` enquanto quem lesse `spec(tree, id).behavior`
+   recebia `Behavior<unknown>`. `spec` devolve `AnyObject`.
+
 ---
 
 ## Task 2: Fiação, com encadeamento implícito de pipeline
