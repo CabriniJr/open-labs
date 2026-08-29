@@ -156,6 +156,17 @@ catálogo, não do reuso.
 Um caminho de dados de CPU, com **assembly como entrada** e drill-down até a porta
 lógica. Detalhamento completo em `theory.md` §7.
 
+**Tem público, e isso muda o peso da fase.** O Luigi declarou em 29/08/2026 que este
+alvo é material para as **aulas do pai dele**: um modelo com entrada especial, que se
+programa em assembly, para ensinar arquitetura de computadores. Deixa de ser só a prova
+de que o motor é genérico e passa a ser uma entrega com destinatário — e um leitor real,
+que não é o Luigi, é a coisa mais escassa que um projeto assim tem.
+
+**Questão de ordem em aberto:** a fase está listada depois do Kafka porque a prova de
+genericidade vale mais com dois alvos fechados. Tendo público, ela pode passar na frente
+— e o Kafka, que não tem, esperar. **A decisão é do Luigi**; o que não pode é a CPU
+entrar antes de o OTel fechar, porque aí o projeto perde o alvo que lhe dá nome.
+
 Por que aqui e não antes: um terceiro alvo só prova alguma coisa se os dois primeiros
 já fecharam. Por que **antes** de F7: extrair o motor tendo visto só domínios de
 mensageria (OTel, Kafka) é extrair um motor de mensageria com outro nome. A CPU é o

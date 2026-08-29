@@ -297,6 +297,12 @@ do primeiro, é instanciado sem tocar em `depth-core`.
 O segundo domínio escolhido é o **caminho de dados de uma CPU**, com drill-down até o
 nível de porta lógica e com **assembly como entrada**.
 
+Ele não é só prova: **tem destinatário.** É material para as aulas de arquitetura de
+computadores do pai do Luigi — um modelo que se programa, não um diagrama que se olha.
+Isso muda o padrão de qualidade da fase: um instrumento didático usado por outra pessoa
+não pode ter a parte que "quase funciona", que é justamente a tentação de uma prova de
+conceito.
+
 ### 7.1 A descida
 
 Cada nível abre no de baixo, e todos são projeções (§1.1) do mesmo run:
