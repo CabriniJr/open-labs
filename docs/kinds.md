@@ -105,23 +105,27 @@ Muda a forma da carga. **O único arquétipo autorizado a fazer isso.**
 | Desenho | retângulo com a carga entrando de uma forma e saindo de outra. **A única forma em que a carga muda de aparência atravessando** |
 | Paga em | OTel (span para OTLP, e OTLP para quadros), Kafka (serializador e compressão), Prometheus (protobuf e snappy do remote write), MQTT (payload) |
 
-### `tee`
+### ~~`tee`~~ — removido em 2026-08-29
 
-Fan-out: a mesma carga para N saídas.
+**Fan-out virou nativo da porta**, e `tee` seria um segundo mecanismo para o mesmo
+fenômeno. A entrada fica aqui riscada em vez de apagada: quem reler o catálogo precisa
+achar a discussão, não um buraco.
 
-| Contrato | |
-|---|---|
-| Portas | uma entrada, N saídas nomeadas |
-| Comportamento | replica a carga em todas as saídas. Política de falha parcial: exige todas, ou basta uma |
-| Regimes | replicando, degradada (uma saída recusando), bloqueada |
-| Medidores | por saída: entregue, recusado |
-| Perturbações | uma saída indisponível |
-| Desenho | bifurcação simétrica; a carga aparece idêntica nos dois ramos |
-| Paga em | OTel (dois exportadores no mesmo processor — configuração banal), MQTT (assinantes de um tópico), Kafka (réplicas) |
+O que ele propunha — "a mesma carga para N saídas" — é hoje o que `n` fios saindo de uma
+porta fazem: `n` cópias, cada uma um item em trânsito próprio, `out:` contando **uma**
+emissão e cada destino contando o seu `in:`. A régua da §3 (um arquétipo entra pagando em
+dois alvos) o reprova agora: ele não paga em nenhum, porque a junção já existe sem ele. E
+num esquemático, desenhar um bloco em cada junção de fio destruiria o desenho.
 
-Nota: `router` **não** resolve isso. Router escolhe uma porta; tee usa todas. Confundir os
-dois ensinaria que enviar para dois destinos é uma escolha, quando é uma duplicação — e o
-custo de recurso é completamente diferente.
+O que valia na nota original continua valendo, e por isso fica: **`router` não resolve
+fan-out.** Router escolhe uma porta; o leque usa todas. Confundir os dois ensinaria que
+enviar para dois destinos é uma escolha, quando é uma duplicação — e o custo de recurso é
+completamente diferente.
+
+O que se perdeu junto e é dívida declarada: a **política de falha parcial** ("exige todas,
+ou basta uma") e o medidor por saída. Hoje o leque entrega a todos, sempre. Quando
+backpressure chegar (F1), é ali que essa política tem que aparecer — no regime da aresta,
+não num bloco.
 
 ### `merge`
 
@@ -317,9 +321,9 @@ custo.
 | Onda | Arquétipos | Total acumulado |
 |---|---|---|
 | Hoje | `channel` `source` `sink` `router` `buffer` `pipeline` `composite` `static` | 8 |
-| Onda 1 (v0) | `transform` `tee` `merge` `batch` `clock` `arbiter` | 14 |
-| Onda 2 (Kafka) | `log` `deliver` `supervisor` | 17 |
-| Onda 3 (Prometheus) | `store` `probe` | 19 |
+| Onda 1 (v0) | `transform` `merge` `batch` `clock` `arbiter` | 13 |
+| Onda 2 (Kafka) | `log` `deliver` `supervisor` | 16 |
+| Onda 3 (Prometheus) | `store` `probe` | 18 |
 
 Mais três mudanças em arquétipo existente, todas consequência do que está acima:
 
@@ -347,19 +351,19 @@ descobrir no segundo alvo do que no quinto.
 
 ## 9. Onda 4 — o que este catálogo ainda não cobre
 
-**Status:** proposta, 2026-08-28. Escrita depois de conferir os 19 contra os alvos declarados
+**Status:** proposta, 2026-08-28. Escrita depois de conferir os arquétipos previstos contra os alvos declarados
 e contra a §6 da `DECISIONS.md` ("ver o mesmo dado atravessar os quatro níveis, até o frame e
 o byte"). Cada entrada paga em dois alvos, pela mesma trava da §3.
 
-O padrão do que falta: **os 19 cobrem bem 1→1 e N→1, e quase não cobrem identidade que se
-divide e se remonta.** `tee` replica (as cópias são independentes), `batch` agrupa (o lote é
+O padrão do que falta: **os previstos cobrem bem 1→1 e N→1, e quase não cobrem identidade que se
+divide e se remonta.** o leque replica (as cópias são independentes), `batch` agrupa (o lote é
 uma carga nova), `merge` funde (a identidade de origem se perde). Nenhum dos três descreve
 uma carga que **vira pedaços e volta a ser ela mesma** — que é literalmente o L2. Sem isso, o
 diferencial do projeto não tem arquétipo.
 
 ### 9.1 O par que falta: `fragment` e `reassemble`
 
-Não é `tee` (cópias independentes), não é `batch` (agrupa em carga nova), não é `transform`
+Não é leque de porta (cópias independentes), não é `batch` (agrupa em carga nova), não é `transform`
 (1→1). É **1→N pedaços que continuam sendo a mesma carga**, e depois N→1 de volta.
 
 | `fragment` | |
@@ -478,10 +482,10 @@ ensinar por que Kafka ordena dentro da partição e não entre partições.
 | Onda | Arquétipos | Acumulado |
 |---|---|---|
 | Hoje | os 8 | 8 |
-| Onda 1 (v0) | `transform` `tee` `merge` `batch` `clock` `arbiter` | 14 |
-| Onda 2 (Kafka) | `log` `deliver` `supervisor` | 17 |
-| Onda 3 (Prometheus) | `store` `probe` | 19 |
-| **Onda 4 (L2/L3 e métrica)** | `fragment` `reassemble` `mux` `demux` `enrich` `aggregate` `correlate` `partition` | **27** |
+| Onda 1 (v0) | `transform` `merge` `batch` `clock` `arbiter` | 13 |
+| Onda 2 (Kafka) | `log` `deliver` `supervisor` | 16 |
+| Onda 3 (Prometheus) | `store` `probe` | 18 |
+| **Onda 4 (L2/L3 e métrica)** | `fragment` `reassemble` `mux` `demux` `enrich` `aggregate` `correlate` `partition` | **26** |
 
 ### 9.8 O que muda nas ondas anteriores
 

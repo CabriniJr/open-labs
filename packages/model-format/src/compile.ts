@@ -49,7 +49,6 @@ const RECUSADOS: Readonly<Record<string, string>> = {
 /** Onde cada `kind` do catálogo chega. `docs/kinds.md` §3–5 e §9. */
 const ONDAS: Readonly<Record<string, string>> = {
   transform: "onda 1",
-  tee: "onda 1",
   merge: "onda 1",
   batch: "onda 1",
   clock: "onda 1",
@@ -270,24 +269,6 @@ export function compileModelet(m: Modelet, opts: CompileOptions = {}): CompileRe
         ? { from: de.from, port: de.port, to: para, line: fio.line, toPort: fio.to.port }
         : { from: de.from, port: de.port, to: para, line: fio.line },
     );
-  }
-
-  // Duas linhas de dado saindo da mesma porta: `resolveTarget` devolve a
-  // primeira que casa, então a segunda seria desenhada e nunca percorrida — o
-  // desenho mostraria uma bifurcação que o motor não faz. Replicar é `tee`.
-  const jaSai = new Set<string>();
-  for (const fio of fios) {
-    if (fio.line === "control") continue;
-    const chave = `${fio.from}.${fio.port}`;
-    if (jaSai.has(chave)) {
-      erros.push(
-        `mais de um fio de dado sai de "${chave}": o motor segue só o primeiro, ` +
-          `e o segundo seria desenho sem percurso. Replicar carga é o kind "tee", ` +
-          `que chega na onda 1 (docs/kinds.md §3)`,
-      );
-      continue;
-    }
-    jaSai.add(chave);
   }
 
   if (erros.length > 0) return { ok: false, errors: erros };

@@ -4,7 +4,12 @@ import { entryLeaf, flowChildren } from "./tree.js";
 import type { TreeIndex } from "./tree.js";
 
 /**
- * Para onde vai o que sai de `(from, port)`.
+ * Para onde vai o que sai de `(from, port)` — **todos** os destinos.
+ *
+ * Leque é nativo: `n` fios saindo da mesma porta entregam `n` cópias, cada uma
+ * um item em trânsito com id próprio. `out:` conta uma emissão e cada destino
+ * conta o seu `in:`; as duas contagens divergirem é o esperado, e é informação
+ * — é quanto a saída se espalhou.
  *
  * Um fio declarado vence. Sem fio, o arquétipo decide: num `pipeline`, a saída
  * de um filho é a entrada do próximo — é isso que torna "a ordem importa" um
@@ -20,30 +25,46 @@ import type { TreeIndex } from "./tree.js";
  * — no pior caso na raiz, onde `parent` é `undefined` e devolve `null` antes
  * de tentar subir mais, sem estourar a pilha.
  */
+export function resolveTargets(
+  tree: TreeIndex,
+  wires: readonly Wire[],
+  from: string,
+  port: PortId,
+): readonly (string | Drop)[] {
+  const declarados: (string | Drop)[] = [];
+  for (const wire of wires) {
+    if ((wire.line ?? "data") !== "data") continue;
+    if (wire.from !== from || wire.port !== port) continue;
+    declarados.push(wire.to === DROP ? DROP : entryLeaf(tree, wire.to));
+  }
+  // Fio declarado vence: havendo qualquer um, o arquétipo não opina.
+  if (declarados.length > 0) return declarados;
+
+  const parent = tree.parent.get(from);
+  if (parent === undefined) return [];
+
+  if (tree.byId.get(parent)?.kind === "pipeline") {
+    const kids = flowChildren(tree, parent);
+    const here = kids.indexOf(from);
+    const next = here >= 0 ? kids[here + 1] : undefined;
+    if (next !== undefined) return [entryLeaf(tree, next)];
+  }
+
+  return resolveTargets(tree, wires, parent, "out");
+}
+
+/**
+ * O primeiro destino, para quem só precisa saber se há caminho. Definido em
+ * cima de `resolveTargets` de propósito: dois percursos independentes para a
+ * mesma pergunta divergiriam no dia em que um deles mudasse.
+ */
 export function resolveTarget(
   tree: TreeIndex,
   wires: readonly Wire[],
   from: string,
   port: PortId,
 ): string | Drop | null {
-  for (const wire of wires) {
-    if ((wire.line ?? "data") !== "data") continue;
-    if (wire.from === from && wire.port === port) {
-      return wire.to === DROP ? DROP : entryLeaf(tree, wire.to);
-    }
-  }
-
-  const parent = tree.parent.get(from);
-  if (parent === undefined) return null;
-
-  if (tree.byId.get(parent)?.kind === "pipeline") {
-    const kids = flowChildren(tree, parent);
-    const here = kids.indexOf(from);
-    const next = here >= 0 ? kids[here + 1] : undefined;
-    if (next !== undefined) return entryLeaf(tree, next);
-  }
-
-  return resolveTarget(tree, wires, parent, "out");
+  return resolveTargets(tree, wires, from, port)[0] ?? null;
 }
 
 /** Para onde vai um sinal que sai de `(from, port)`, e em que porta ele chega. */

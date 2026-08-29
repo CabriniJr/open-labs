@@ -151,14 +151,16 @@ teaches:
     expect(erros(hoje.replace("to: queue.in }", "to: queue.in, line: control }"))).toMatch(/onda 1/);
   });
 
-  it("recusa duas linhas de dado saindo da mesma porta — replicar é tee, da onda 1", () => {
+  it("aceita duas linhas de dado saindo da mesma porta: o leque é nativo no motor", () => {
+    // O `tee` existia para replicar carga, e saiu do catálogo quando a junção
+    // virou nativa — ele seria um segundo mecanismo para o mesmo fenômeno.
     const fanout = hoje.replace(
       "  - { from: queue.drop, to: dropped }",
       "  - { from: queue.drop, to: dropped }\n  - { from: queue.out,  to: dropped }",
     );
-    const msg = erros(fanout);
-    expect(msg).toMatch(/queue\.out/);
-    expect(msg).toMatch(/onda 1/);
+    const r = compileSource(fanout);
+    if (!r.ok) throw new Error(r.errors.join(" | "));
+    expect(r.world.wires.filter((w) => w.from === "queue" && w.port === "out")).toHaveLength(2);
   });
 
   it("recusa kind de onda futura dizendo em que onda ele chega", () => {

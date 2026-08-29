@@ -12,7 +12,7 @@ import type {
   WorldState,
 } from "./model.js";
 import { settle } from "./settle.js";
-import { resolveSignalTargets, resolveTarget } from "./wiring.js";
+import { resolveSignalTargets, resolveTargets } from "./wiring.js";
 import type { TreeIndex } from "./tree.js";
 
 const DEFAULT_EDGE_TICKS = 4;
@@ -218,8 +218,11 @@ export function stepWorld(
         });
       }
 
-      const to = resolveTarget(tree, spec.wires, node.id, emissao.port);
-      if (to === null) {
+      // Leque é nativo: cada fio que sai desta porta leva uma cópia, com item
+      // em trânsito próprio. `out:` já contou UMA emissão acima; quem conta o
+      // espalhamento é o `in:` de cada destino.
+      const destinos = resolveTargets(tree, spec.wires, node.id, emissao.port);
+      if (destinos.length === 0) {
         // Sem fio de dado e sem descarte. Se havia sinal, não é buraco de
         // autoria: a porta é de controle e já entregou acima.
         if (alvosDeSinal.length === 0) {
@@ -227,13 +230,15 @@ export function stepWorld(
         }
         continue;
       }
-      launched.push({
-        id: `${tick}:${node.id}:${emissao.port}:${launched.length}`,
-        message: emissao.message,
-        from: node.id,
-        to,
-        sent: tick,
-      });
+      for (const to of destinos) {
+        launched.push({
+          id: `${tick}:${node.id}:${emissao.port}:${launched.length}`,
+          message: emissao.message,
+          from: node.id,
+          to,
+          sent: tick,
+        });
+      }
     }
   }
 

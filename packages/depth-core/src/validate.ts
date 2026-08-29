@@ -115,28 +115,6 @@ export function validateWorld(spec: WorldSpec, tree: TreeIndex): void {
     );
   }
 
-  // Duas linhas de dado saindo da mesma porta: `resolveTarget` devolve a
-  // primeira que casa e ignora as outras em silêncio. O autor desenhou um
-  // caminho que não existe, e nada — nem o livro-caixa, nem `.unwired`, que só
-  // conta porta sem fio nenhum — acusaria. Replicar uma saída é o que o `tee`
-  // faz (onda 1); enquanto ele não chega, a forma é recusada em vez de
-  // silenciosamente reduzida à primeira.
-  const portasDeDado = new Map<string, number>();
-  for (const wire of spec.wires) {
-    if ((wire.line ?? "data") !== "data") continue;
-    const chave = `${wire.from}\u0000${wire.port}`;
-    portasDeDado.set(chave, (portasDeDado.get(chave) ?? 0) + 1);
-  }
-  for (const [chave, quantos] of portasDeDado) {
-    if (quantos < 2) continue;
-    const [from, port] = chave.split("\u0000");
-    erros.push(
-      `a porta "${port}" de "${from}" tem ${quantos} fios de dado saindo, e só o ` +
-        `primeiro seria percorrido — os outros seriam desenho sem caminho. ` +
-        `Para replicar a saída use um tee; para escolher entre destinos, um router`,
-    );
-  }
-
   // Uma porta é de um regime só. Sem isso, o ator não teria como saber, ao
   // emitir, se está acomodando ou confrontando — e a fase é justamente o que
   // decide se o que ele devolve como estado vale ou é descartado.

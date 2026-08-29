@@ -138,10 +138,12 @@ describe("validateWorld", () => {
     );
   });
 
-  it("recusa duas linhas de dado saindo da mesma porta: só a primeira seria percorrida", () => {
-    // `resolveTarget` devolve a primeira e ignora o resto sem reclamar. O fio
-    // extra não some em `.unwired`, que conta porta sem fio nenhum — ele
-    // simplesmente não existe no percurso, e o desenho mente.
+  it("aceita duas linhas de dado saindo da mesma porta: leque é nativo", () => {
+    // Até `f281ece` isto era recusado, porque o motor percorria só o primeiro
+    // fio e o segundo virava desenho sem caminho. Agora ele percorre todos, e
+    // recusar seria proibir uma saída que alimenta dois destinos — que é a
+    // forma mais comum de esquemático que existe. Quem prova a entrega dupla é
+    // `fanout.test.ts`; aqui só cai a recusa.
     const spec: WorldSpec = {
       ...base,
       root: {
@@ -155,7 +157,7 @@ describe("validateWorld", () => {
         { from: "a", port: "out", to: "c" },
       ],
     };
-    expect(() => validar(spec)).toThrow(/2 fios de dado saindo/);
+    expect(() => validar(spec)).not.toThrow();
   });
 
   it("a mesma porta pode ter uma linha de dado e uma de controle", () => {
