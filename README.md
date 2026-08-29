@@ -33,9 +33,10 @@ handbook is where we find out whether the first one leaked domain into it.
 | Path | What lives there |
 |---|---|
 | `apps/site` | The Astro site: content, pages, one scenario per lab |
-| `packages/depth-core` | The deterministic engine. Knows nothing about OpenTelemetry |
+| `packages/depth-core` | The deterministic engine. Knows no domain at all — two guard lists prove it |
 | `packages/depth-ui` | Visual primitives. Also domain-neutral |
 | `packages/otel-domain` | The only place OpenTelemetry exists: OTLP types, `traceparent` |
+| `packages/cpu-domain` | The only place a register exists: the RV32I subset, the assembler, the datapath |
 | `labs/<slug>` | The compose that runs for real |
 | `docs/` | Specs, ADRs, the design canvas, and the authoring guide |
 
