@@ -38,10 +38,13 @@ test("porta acesa é porta com saída alta, e com zero não acende nada", async 
 
   await page.getByLabel("Primeira parcela").fill("0");
   await page.getByLabel("Segunda parcela").fill("0");
-  // sem nível alto em lugar nenhum, nenhuma linha muda de estado
+  // Com 0 + 0 as portas rodam e dizem zero — e é justamente por isso que o
+  // teste vale: o que apaga a tela é o VALOR que saiu delas, e não o circuito
+  // ter ficado parado. Lendo a contagem de emissões, acenderia tudo.
   await expect(page.locator('.dui-stage__objeto[data-alto="true"]')).toHaveCount(0, {
     timeout: 10_000,
   });
+  await expect(page.locator(".gates-lab__resultado").nth(1)).toContainText("subpassos");
 });
 
 test("a profundidade cresce quando o vai-um sobe", async ({ page }) => {

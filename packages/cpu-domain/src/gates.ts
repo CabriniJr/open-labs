@@ -1,45 +1,63 @@
-import type { AnyObject, Emission, ObjectSpec, Wire, WorldSpec } from "@ovh/depth-core";
+import type { AnyObject, Emission, ObjectSpec, Wire, WorldSpec, WorldState } from "@ovh/depth-core";
 
 /**
- * A fatia vertical: somador → somador completo → portas lógicas.
+ * A fatia vertical: somador → somador completo → portas lógicas → transistores.
  *
- * A codificação é a que a própria natureza do motor sugere, e é o que faz uma
- * porta lógica caber nele sem nenhuma primitiva nova:
+ * **A mensagem carrega o bit.** Uma linha que existe está sempre dizendo alguma
+ * coisa — `bit: 0` ou `bit: 1` —, e o que a acomodação leva não é a notícia de
+ * que algo aconteceu, é o valor que a linha tem neste tick.
  *
- * > **A presença da mensagem é o bit em alto. Não chegar nada é zero.**
+ * Não foi sempre assim. Antes, a codificação era **presença**: chegar uma
+ * mensagem era o nível alto, e não chegar nada era zero. Era mais bonita — a
+ * porta acesa era literalmente a emissão dela no livro-caixa — e tinha um preço
+ * declarado: `not` não cabia, porque com entrada zero a porta nunca rodaria.
  *
- * Uma porta que recebe só zeros não roda — e não rodar é exatamente o que uma
- * porta faz quando a saída dela é zero: nada acontece na linha. Por isso a
- * porta acesa na tela não é um efeito: é a saída dela, lida do livro-caixa.
+ * O preço venceu quando a fatia chegou no transistor. Uma porta CMOS é uma rede
+ * de pull-up (PMOS, puxa para o 1) e uma rede de pull-down (NMOS, puxa para o
+ * 0). Sob presença, "puxado para o 0" e "não puxado" são o mesmo estado, e a
+ * rede de pull-down fica **invisível** — metade de cada porta, e justamente a
+ * metade que faz CMOS ser CMOS. Desenhar meia porta e chamar de transistor
+ * seria ensinar errado em silêncio, que é o defeito que este projeto persegue.
  *
- * A consequência honesta dessa escolha: **`not` não é expressável assim**, e
- * por isso não existe aqui. Com entrada zero ela nunca rodaria, e precisaria
- * emitir um. Um somador completo se faz com XOR, AND e OR, então a fatia
- * fecha; no dia em que precisar de `not`, a codificação é que muda — e vai
- * estar escrito por quê.
+ * O que se ganhou junto: `not` existe, e com ele NAND e NOR, que são as portas
+ * que o silício de fato tem. O que se perdeu: a porta acesa não é mais "ela
+ * emitiu" — é o **valor** que ela emitiu, lido de `WorldState.settled`. Continua
+ * saindo do modelo e não do desenho; só deixou de caber numa contagem.
+ *
+ * Abaixo da porta a presença volta, com outro significado e sem ambiguidade:
+ * um transistor que **conduz** emite o que chegou na fonte dele, e um que corta
+ * não emite nada. Ali presença é caminho fechado, não nível alto.
  */
 
-export type PortaLogica = "xor" | "and" | "or";
+export type PortaLogica = "xor" | "and" | "or" | "nand" | "nor" | "not";
 
-/** Quantas entradas altas fazem esta porta emitir. */
-function decide(porta: PortaLogica, altas: number): boolean {
-  if (porta === "xor") return altas % 2 === 1;
-  if (porta === "and") return altas === 2;
-  return altas >= 1;
+/** A tabela-verdade, em função de quantas entradas estão em alto. */
+export function decide(porta: PortaLogica, altas: number, entradas: number): 0 | 1 {
+  switch (porta) {
+    case "xor": return altas % 2 === 1 ? 1 : 0;
+    case "and": return altas === entradas ? 1 : 0;
+    case "nand": return altas === entradas ? 0 : 1;
+    case "or": return altas >= 1 ? 1 : 0;
+    case "nor": return altas >= 1 ? 0 : 1;
+    // `not` só existe porque a mensagem carrega o bit: sob presença ela nunca
+    // rodaria com a entrada em zero, e é dela que vem toda a inversão.
+    case "not": return altas === 0 ? 1 : 0;
+  }
 }
 
 /**
- * Uma porta lógica: acomoda, não guarda nada, e emite só quando a saída é 1.
+ * Uma porta lógica: acomoda, não guarda nada, e emite o valor da saída dela.
  *
- * `entradas` diz de quantas vias ela é feita — a porta precisa saber, porque
- * "chegou uma mensagem" só significa "uma entrada em alto" se ela souber
- * quantas existem no total.
+ * `entradas` diz de quantas vias ela é feita. Ela ainda precisa saber: uma
+ * linha em zero agora chega, mas o AND precisa distinguir "duas entradas, uma
+ * em alto" de "uma entrada só, em alto".
  */
 export function porta(
   id: string,
   tipo: PortaLogica,
   saida = "out",
   label = tipo.toUpperCase(),
+  entradas = tipo === "not" ? 1 : 2,
 ): ObjectSpec {
   return {
     id,
@@ -49,8 +67,8 @@ export function porta(
     behavior: (state, inbox, ctx) => {
       if (ctx.phase !== "settle" || inbox.length === 0) return { state, out: [] };
       const altas = inbox.reduce((soma, m) => soma + (m.data.bit === 1 ? 1 : 0), 0);
-      if (!decide(tipo, altas)) return { state, out: [] };
-      return { state, out: [{ port: saida, message: ctx.emit("bit", 1, { bit: 1 }) }] };
+      const bit = decide(tipo, altas, entradas);
+      return { state, out: [{ port: saida, message: ctx.emit("bit", 1, { bit }) }] };
     },
   };
 }
@@ -105,13 +123,18 @@ export function somadorCompleto(id: string, comAtalho: boolean): AnyObject {
      */
     shortcut: (state, _inbox, ctx) => {
       if (ctx.phase !== "settle") return { state, out: [] };
-      const altas =
-        (ctx.inlets.a ?? []).length + (ctx.inlets.b ?? []).length + (ctx.inlets.cin ?? []).length;
-      if (altas === 0) return { state, out: [] };
-      const out: Emission[] = [];
-      if (altas % 2 === 1) out.push({ port: "soma", message: ctx.emit("bit", 1, { bit: 1 }) });
-      if (altas >= 2) out.push({ port: "vaium", message: ctx.emit("bit", 1, { bit: 1 }) });
-      return { state, out };
+      const vias = [...(ctx.inlets.a ?? []), ...(ctx.inlets.b ?? []), ...(ctx.inlets.cin ?? [])];
+      if (vias.length === 0) return { state, out: [] };
+      // Contar mensagens não serve mais: a linha em zero também chega. O que se
+      // conta é quantas delas estão dizendo um.
+      const altas = vias.reduce((soma, m) => soma + (m.data.bit === 1 ? 1 : 0), 0);
+      return {
+        state,
+        out: [
+          { port: "soma", message: ctx.emit("bit", 1, { bit: altas % 2 === 1 ? 1 : 0 }) },
+          { port: "vaium", message: ctx.emit("bit", 1, { bit: altas >= 2 ? 1 : 0 }) },
+        ],
+      };
     },
   };
 }
@@ -177,7 +200,7 @@ export function somadorWorld(bits: number, comAtalho = false, seed = 1): WorldSp
     }
   }
 
-  /** Recebe um bit e acende. Vazio é zero: não chegar nada já é a resposta. */
+  /** Recebe um bit e acende se ele for um. Agora o zero também chega. */
   const saida = (id: string, label: string): ObjectSpec => ({
     id,
     kind: "sink",
@@ -186,7 +209,7 @@ export function somadorWorld(bits: number, comAtalho = false, seed = 1): WorldSp
     init: () => ({ alto: false }),
     behavior: (state, inbox, ctx) =>
       ctx.phase === "commit"
-        ? { state: { alto: inbox.length > 0 }, out: [] }
+        ? { state: { alto: inbox.some((m) => m.data.bit === 1) }, out: [] }
         : { state, out: [] },
   });
 
@@ -201,10 +224,10 @@ export function somadorWorld(bits: number, comAtalho = false, seed = 1): WorldSp
       for (const via of ["a", "b"] as const) {
         const valor = ctx.params[via] ?? 0;
         for (let i = 0; i < bits; i += 1) {
-          // Presença é um; ausência é zero. O bit baixo simplesmente não sai.
-          if (((valor >> i) & 1) === 1) {
-            out.push({ port: `${via}${i}`, message: ctx.emit("bit", 1, { bit: 1 }) });
-          }
+          // Toda linha sai, dizendo o que vale. O bit baixo é uma linha em zero,
+          // e não uma linha que não existe.
+          const bit = ((valor >> i) & 1) as 0 | 1;
+          out.push({ port: `${via}${i}`, message: ctx.emit("bit", 1, { bit }) });
         }
       }
       return { state, out };
@@ -235,4 +258,22 @@ export function somadorWorld(bits: number, comAtalho = false, seed = 1): WorldSp
     },
     wires,
   };
+}
+
+/**
+ * Quem está com a saída em alto neste tick, para o desenho acender.
+ *
+ * Isto vive no domínio porque só o domínio sabe que `data.bit` quer dizer
+ * alguma coisa. O motor guarda o que saiu de cada porta e não olha dentro; a
+ * tela recebe o conjunto pronto e também não olha. É a mesma divisão de sempre,
+ * e é o que sobrou quando "emitiu" deixou de significar "está em alto".
+ */
+export function portasAltas(state: WorldState): ReadonlySet<string> {
+  const altos = new Set<string>();
+  for (const [chave, mensagens] of Object.entries(state.settled)) {
+    if (!mensagens.some((m) => m.data.bit === 1)) continue;
+    // A chave é "id.porta"; quem acende é o objeto.
+    altos.add(chave.slice(0, chave.lastIndexOf(".")));
+  }
+  return altos;
 }

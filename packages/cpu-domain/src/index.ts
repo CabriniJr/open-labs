@@ -7,5 +7,5 @@ export type { CpuState } from "./reference.js";
 export { cpuWorld, ENDERECO_ENTRADA, ENDERECO_SAIDA } from "./datapath.js";
 export type { EstadoBanco, EstadoMemoria, EstadoPc, EstadoSaida } from "./datapath.js";
 export { CPU_VIEWS, VIEW_PROCESSADOR, VIEW_SISTEMA, viewSomador } from "./views.js";
-export { porta, somadorCompleto, somadorWorld } from "./gates.js";
+export { decide, porta, portasAltas, somadorCompleto, somadorWorld } from "./gates.js";
 export type { PortaLogica } from "./gates.js";

@@ -1,7 +1,7 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 import { World, shortcutDisagreement } from "@ovh/depth-core";
-import { somadorWorld } from "./gates.js";
+import { decide, somadorWorld } from "./gates.js";
 
 /**
  * O somador de portas contra a conta.
@@ -60,15 +60,50 @@ describe("o somador feito de portas lógicas", () => {
     expect(fundo.state.substeps).toBeGreaterThan(raso.state.substeps);
   });
 
-  it("uma porta só emite quando a saída dela é alta: ausência é zero", () => {
-    // 0 + 0 não faz nada acontecer no circuito, e é isso mesmo: sem nível alto
-    // em lugar nenhum, nenhuma linha muda de estado.
+  it("a linha em zero também é uma linha: 0 + 0 percorre o circuito inteiro", () => {
+    // Sob a codificação antiga, 0 + 0 não fazia nada acontecer — nenhuma porta
+    // rodava, e o circuito parecia morto. Agora toda linha diz o que vale, a
+    // porta roda dizendo zero, e é isso que um somador de verdade faz: o atraso
+    // dele é da estrutura, e não do número que passa.
+    const zeros = new World(somadorWorld(BITS));
+    zeros.setParam("a", 0);
+    zeros.setParam("b", 0);
+    zeros.advance(4);
+
+    expect(zeros.state.settled["bit0-xor1.out"]?.[0]?.data.bit).toBe(0);
+    expect(zeros.state.substeps).toBeGreaterThan(0);
+
+    // E é o MESMO atraso de um caso que acende o circuito todo: se a cascata do
+    // vai-um custasse menos com zeros, o modelo estaria medindo o dado e não o
+    // caminho.
+    const cheio = new World(somadorWorld(BITS));
+    cheio.setParam("a", 15);
+    cheio.setParam("b", 15);
+    cheio.advance(4);
+    expect(zeros.state.substeps).toBe(cheio.state.substeps);
+  });
+
+  it("a saída de uma porta é o valor dela, e não o fato de ela ter emitido", () => {
+    // 1 + 0: o primeiro XOR dá um, e o primeiro AND dá zero. As duas rodaram e
+    // as duas emitiram — o que as separa é o que elas disseram. Contar emissão
+    // não distingue mais as duas, e é por isso que a tela lê o valor.
     const mundo = new World(somadorWorld(BITS));
-    mundo.setParam("a", 0);
+    mundo.setParam("a", 1);
     mundo.setParam("b", 0);
     mundo.advance(4);
-    expect(mundo.state.ledger["out:bit0-xor1.out"]).toBeUndefined();
-    expect(mundo.state.substeps).toBe(0);
+    expect(mundo.state.settled["bit0-xor1.out"]?.[0]?.data.bit).toBe(1);
+    expect(mundo.state.settled["bit0-and1.out"]?.[0]?.data.bit).toBe(0);
+  });
+
+  it("`not` existe agora, e é ela que a codificação antiga não expressava", () => {
+    // Com entrada em zero uma porta antes nem rodava; hoje ela roda e inverte.
+    expect(decide("not", 0, 1)).toBe(1);
+    expect(decide("not", 1, 1)).toBe(0);
+    // E com ela vêm as portas que o silício de fato tem.
+    expect(decide("nand", 2, 2)).toBe(0);
+    expect(decide("nand", 1, 2)).toBe(1);
+    expect(decide("nor", 0, 2)).toBe(1);
+    expect(decide("nor", 1, 2)).toBe(0);
   });
 
   it("réplica é verdade, não rótulo: os N somadores existem", () => {

@@ -7,6 +7,7 @@ import {
   assemble,
   cpuWorld,
   decode,
+  portasAltas,
   VIEW_PROCESSADOR,
   VIEW_SISTEMA,
 } from "@ovh/cpu-domain";
@@ -169,6 +170,7 @@ export function CpuLab() {
             inicial={view.focus}
             fills={fills}
             readouts={readouts}
+            altos={portasAltas(estado)}
           />
         ) : (
           <p className="cpu-lab__vazio">

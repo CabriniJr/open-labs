@@ -28,7 +28,7 @@ const achar = (inbox: readonly Message[], kind: string): Message | undefined =>
 /** Operações que a soma resolve. As outras vão para a unidade lógica. */
 const SOMA = new Set<Mnemonic>(["add", "addi", "lw", "sw", "jalr"]);
 
-/** O número vira 32 linhas. Presença é um; ausência é zero. */
+/** O número vira 32 linhas. Toda linha sai, dizendo o bit que ela vale. */
 const dispersor: ObjectSpec = {
   id: "dispersor",
   kind: "router",
@@ -45,8 +45,8 @@ const dispersor: ObjectSpec = {
       { port: "resto", message: ctx.emit("operandos", 1, { ...operandos.data }) },
     ];
     for (let i = 0; i < LARGURA; i += 1) {
-      if (((a >>> i) & 1) === 1) out.push({ port: `a${i}`, message: ctx.emit("bit", 1, { bit: 1 }) });
-      if (((b >>> i) & 1) === 1) out.push({ port: `b${i}`, message: ctx.emit("bit", 1, { bit: 1 }) });
+      out.push({ port: `a${i}`, message: ctx.emit("bit", 1, { bit: (a >>> i) & 1 }) });
+      out.push({ port: `b${i}`, message: ctx.emit("bit", 1, { bit: (b >>> i) & 1 }) });
     }
     return { state, out };
   },
@@ -59,10 +59,16 @@ function peso(i: number): ObjectSpec {
     kind: "router",
     label: `2^${i}`,
     leaf: true,
-    behavior: (state, inbox, ctx) =>
-      ctx.phase === "settle" && inbox.length > 0
-        ? { state, out: [{ port: "out", message: ctx.emit("parcela", 1, { n: 2 ** i }) }] }
-        : { state, out: [] },
+    behavior: (state, inbox, ctx) => {
+      if (ctx.phase !== "settle" || inbox.length === 0) return { state, out: [] };
+      // A linha chega mesmo em zero, então o peso pergunta o valor dela em vez
+      // de tomar a chegada como resposta.
+      const alto = inbox.some((m) => m.data.bit === 1);
+      return {
+        state,
+        out: [{ port: "out", message: ctx.emit("parcela", 1, { n: alto ? 2 ** i : 0 }) }],
+      };
+    },
   };
 }
 

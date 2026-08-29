@@ -25,6 +25,8 @@ export interface ExplorerProps {
   readonly inicial?: string | undefined;
   readonly fills?: Readonly<Record<string, number>> | undefined;
   readonly readouts?: Readonly<Record<string, string>> | undefined;
+  /** Quem está com a saída em alto. Só o domínio sabe ler o valor que saiu. */
+  readonly altos?: ReadonlySet<string> | undefined;
 }
 
 export function Explorer({
@@ -38,6 +40,7 @@ export function Explorer({
   inicial,
   fills,
   readouts,
+  altos,
 }: ExplorerProps) {
   const primeiro = inicial ?? views[0]?.focus ?? tree.rootId;
   const [foco, setFoco] = useState(primeiro);
@@ -86,6 +89,7 @@ export function Explorer({
         {...(tickMs === undefined ? {} : { tickMs })}
         fills={fills}
         readouts={readouts}
+        altos={altos}
         selected={selecionado}
         onSelect={setSelecionado}
         onOpen={abrir}

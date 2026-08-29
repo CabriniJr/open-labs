@@ -30,6 +30,19 @@ export interface StageProps {
   readonly fills?: Readonly<Record<string, number>> | undefined;
   /** O valor que cada objeto mostra agora. Quem sabe é o modelo. */
   readonly readouts?: Readonly<Record<string, string>> | undefined;
+  /**
+   * Quem está com a saída em alto. Quem sabe é o **domínio**, não o desenho.
+   *
+   * Já foi derivável daqui: numa codificação em que a presença da mensagem era
+   * o nível alto, "acendeu" e "emitiu" eram a mesma coisa, e bastava ler o
+   * livro-caixa. Quando a mensagem passou a carregar o bit, toda porta passou a
+   * emitir todo tick — e continuar lendo a contagem acenderia o circuito
+   * inteiro, sempre. Seria o desenho afirmando algo que o modelo não disse.
+   *
+   * O motor não sabe o que é um bit, então quem responde é quem sabe: o domínio
+   * lê `WorldState.settled` e entrega o conjunto pronto.
+   */
+  readonly altos?: ReadonlySet<string> | undefined;
   readonly selected?: string | undefined;
   readonly onSelect?: (id: string) => void;
   readonly onOpen?: (id: string) => void;
@@ -192,6 +205,7 @@ export function Stage({
   tickMs = 700,
   fills,
   readouts,
+  altos,
   selected,
   onSelect,
   onOpen,
@@ -243,14 +257,13 @@ export function Stage({
     );
 
   /**
-   * Emitiu: a saída dele foi alta neste tick.
+   * A saída dele está em alto neste tick.
    *
-   * Num modelo onde a presença da mensagem **é** o valor alto — que é como se
-   * modela porta lógica —, isto é literalmente a porta acesa. Não é enfeite: é
-   * a saída dela, lida do livro-caixa.
+   * Quem responde é o domínio, por `altos`: só ele sabe ler o valor que saiu.
+   * Sem `altos`, nada acende — e não acender é a resposta honesta para "não me
+   * disseram", que é diferente de acender tudo por causa de uma contagem.
    */
-  const alto = (id: string): boolean =>
-    Object.entries(mudou).some(([chave, quanto]) => quanto > 0 && chave.startsWith(`out:${id}.`));
+  const alto = (id: string): boolean => altos?.has(id) === true;
 
   // Contêineres são moldura: uma linha atravessando um deles é normal, e
   // desviar dela empurraria todo fio para fora do desenho.

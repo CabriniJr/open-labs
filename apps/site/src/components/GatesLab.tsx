@@ -1,15 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { World, indexTree } from "@ovh/depth-core";
-import { somadorWorld, viewSomador } from "@ovh/cpu-domain";
+import { portasAltas, somadorWorld, viewSomador } from "@ovh/cpu-domain";
 import { Explorer } from "./Explorer.js";
 
 /**
  * A fatia vertical: o somador aberto até a porta lógica.
  *
- * Uma porta acesa não é enfeite — no modelo, **a presença da mensagem é o bit
- * em alto**, então uma porta que aparece acesa é uma porta cuja saída é 1. E o
- * vai-um subindo de um somador para o próximo é o que cobra profundidade: é
- * por isso que o número de subpassos cresce com o número de bits.
+ * Uma porta acesa não é enfeite: é **o valor que saiu dela**, lido do que a
+ * acomodação emitiu neste tick. Toda linha do circuito carrega o bit dela, alto
+ * ou baixo, então uma porta escura é uma porta que rodou e disse zero — e não
+ * uma porta que ficou parada.
+ *
+ * O vai-um subindo de um somador para o próximo é o que cobra profundidade, e
+ * ele cobra a mesma coisa somando zeros: o atraso é do caminho, não do número.
  */
 
 const BITS = 4;
@@ -80,11 +83,13 @@ export function GatesLab() {
           tickMs={compasso}
           views={[view]}
           readouts={readouts}
+          altos={portasAltas(estado)}
         />
         <p className="gates-lab__legenda">
-          Uma porta acesa é uma porta cuja saída é 1: no modelo, a presença da
-          mensagem <em>é</em> o nível alto, e não chegar nada é zero. O vai-um
-          sobe de um somador para o próximo, e é ele que cobra profundidade.
+          Uma porta acesa é uma porta cuja saída é 1 — e uma escura é uma porta
+          que rodou e disse zero, não uma parada: toda linha aqui carrega o bit
+          dela. O vai-um sobe de um somador para o próximo, e é ele que cobra
+          profundidade, mesmo somando zeros.
         </p>
       </div>
 

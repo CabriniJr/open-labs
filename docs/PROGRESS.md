@@ -709,3 +709,44 @@ No lab: um campo para o botão, e um painel com o que o programa já falou. O pr
 partida deixou de somar 1..5 fixo e passa a somar 1..n, com o n vindo do botão.
 
 Estado: 373 testes unitários, 74 e2e (2 novos), typecheck, boundaries e build verdes.
+
+---
+
+## A mensagem passa a carregar o bit, e `not` existe
+
+**Data:** 2026-08-29. **Código:** `packages/cpu-domain/src/gates.ts`,
+`packages/depth-core/src/scheduler.ts`, `packages/depth-ui/src/Stage.tsx`.
+
+A codificação mudou: **toda linha carrega o bit dela**, alto ou baixo, no lugar de
+"presença é um, ausência é zero". Foi decisão do Luigi, e o motivo é o transistor.
+
+**Por que a codificação bonita não chegava lá.** Uma porta CMOS é uma rede de pull-up
+(PMOS, puxa para 1) e uma de pull-down (NMOS, puxa para 0). Sob presença, *puxado para
+zero* e *não puxado* são o mesmo estado — a rede de pull-down some, e some justamente a
+metade que faz CMOS ser CMOS. O caminho barato era desenhar meia porta e chamar de
+transistor; é exatamente a mentira silenciosa que o projeto persegue. `not` — que estava
+declarado como preço da codificação antiga — também volta, e com ele NAND e NOR, que são
+as portas que o silício tem.
+
+**O que isso cobrou do motor, e é o achado da vez:** a acomodação inteira acontecia e
+**desaparecia**. O livro-caixa guardava *quantas* mensagens saíram de cada porta, nunca o
+que elas diziam — e com toda porta emitindo todo tick, "emitiu" deixou de distinguir um de
+zero. Ler a contagem acenderia o circuito inteiro, sempre. `WorldState.settled` é a
+resposta: o que saiu de cada porta neste tick, por `"id.porta"`, o par acomodado do
+`flight`. O motor continua sem saber o que é um bit — ele só parou de jogar fora a resposta
+que ele mesmo calculou.
+
+**E a tela parou de deduzir.** `alto()` lia o livro-caixa; agora recebe `altos` do domínio,
+que é quem sabe ler `data.bit`. Sem `altos`, nada acende — não acender é a resposta honesta
+para "não me disseram".
+
+**O que a mudança revelou de verdadeiro:** 0 + 0 antes deixava o circuito morto e
+`substeps` em zero. Agora as portas rodam e dizem zero, e o atraso é **o mesmo** de um caso
+que acende tudo. É o que um somador em cascata faz: o atraso é da forma dele, não do número
+que passa. Virou teste.
+
+Três mutantes mortos em `settled` (gravar também no confronto, nunca gravar, e o resíduo do
+tick anterior). O diferencial da CPU passou **sem tocar em nada**: o somador de 32 bits
+feito de portas continua conferindo instrução a instrução contra a referência.
+
+Estado: 379 testes unitários, 74 e2e, typecheck, boundaries e build verdes.

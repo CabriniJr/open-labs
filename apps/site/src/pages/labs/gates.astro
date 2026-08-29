@@ -30,9 +30,12 @@ import "../../components/Explorer.css";
           here was told the answer.
         </p>
         <p>
-          A lit gate is a gate whose output is 1. In this model the presence of a
-          message <em>is</em> the high level, so nothing arriving is a zero — and
-          a gate sitting dark is a gate whose output really is low.
+          A lit gate is a gate whose output is 1. Every line in this circuit
+          carries its own bit, high or low, so a gate sitting dark is a gate that
+          ran and said zero — not a gate that sat still. Set both inputs to zero
+          and watch: the whole circuit goes dark, and the depth counter keeps
+          reporting the same propagation delay. A ripple-carry adder is slow
+          because of its shape, not because of the number you feed it.
         </p>
       </div>
       <aside class="lab-head__note mono">
