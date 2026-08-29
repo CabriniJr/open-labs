@@ -32,7 +32,26 @@ const editar = `https://github.com/CabriniJr/otel-visual-handbook/edit/main/docs
   <SiteNav current="docs" search lang="pt-BR" />
   <div class="doc">
     <aside class="doc__aside" data-pagefind-ignore>
-      <DocSidebar current={chapter.id} />
+      <!-- Em tela estreita o índice inteiro vem antes do texto e empurra o
+           capítulo para 600px abaixo da dobra. Recolhido, ele continua a um
+           toque de distância. O `open` vem marcado no HTML para quem está sem
+           JavaScript nunca ficar sem índice; o script abaixo o fecha quando a
+           tela é estreita, e roda durante o parse para não piscar aberto. -->
+      <details class="doc__fold" open>
+        <summary>Índice da documentação</summary>
+        <DocSidebar current={chapter.id} />
+      </details>
+      <script is:inline>
+        (() => {
+          const dobra = document.currentScript.previousElementSibling;
+          const estreito = window.matchMedia("(max-width: 820px)");
+          const ajustar = () => {
+            dobra.open = !estreito.matches;
+          };
+          ajustar();
+          estreito.addEventListener("change", ajustar);
+        })();
+      </script>
     </aside>
 
     <main class="doc__main" id="content">

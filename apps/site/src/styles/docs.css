@@ -127,7 +127,7 @@
 }
 
 .status--draft {
-  color: var(--sig-mutation);
+  color: var(--ink-warn);
 }
 
 .status--proposal {
@@ -162,6 +162,21 @@
   }
 }
 
+/* Acima de 820px o índice é a coluna da esquerda e está sempre aberto — o
+   resumo viraria um controle que não controla nada. */
+.doc__fold > summary {
+  display: none;
+  cursor: pointer;
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-2);
+  background: var(--paper-raised);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--size-step--1);
+  margin-bottom: var(--space-2);
+}
+
 @media (max-width: 820px) {
   .doc {
     grid-template-columns: minmax(0, 1fr);
@@ -170,7 +185,25 @@
     position: static;
     max-height: none;
   }
+  /* Aqui o índice é uma dobra: o resumo é o controle, e o texto começa logo
+     abaixo dele em vez de depois de doze capítulos. */
+  .doc__fold > summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-1);
+  }
+  /* `display` diferente de `list-item` apaga o marcador do navegador, e um
+     resumo sem seta não se lê como algo que abre. */
+  .doc__fold > summary::after {
+    content: "▾";
+    color: var(--ink-muted);
+  }
+  .doc__fold[open] > summary::after {
+    content: "▴";
+  }
 }
+
 
 /* ---------- índice à esquerda ---------- */
 
@@ -477,21 +510,6 @@
   font-size: var(--size-step--1);
 }
 
-:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-  border-radius: var(--radius-1);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    transition-duration: 0.01ms !important;
-  }
-}
-
 /* ---------- busca ---------- */
 
 .doc-search {
@@ -585,6 +603,11 @@
 @media (max-width: 820px) {
   .site-nav {
     flex-wrap: wrap;
+  }
+  /* Quando a barra quebra, o alternador cai sozinho na linha de baixo; sem
+     isto ele fica encostado à esquerda e a quebra parece defeito. */
+  .site-nav__theme {
+    margin-left: auto;
   }
   .doc-search {
     order: 3;

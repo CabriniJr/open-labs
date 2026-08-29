@@ -33,3 +33,22 @@
   font-size: var(--size-step--1);
   overflow-wrap: anywhere;
 }
+
+/*
+ * A `Timeline` do depth-ui é uma linha só — play, passo, scrub, contador e
+ * velocidade. Abaixo de ~34rem a soma dos mínimos passa da largura da tela e o
+ * corpo inteiro ganha rolagem horizontal. Quebrar em duas linhas é decisão de
+ * layout desta página (o pacote não sabe em que coluna foi posto), e por isso
+ * o ajuste mora aqui.
+ */
+@media (max-width: 34rem) {
+  .hero-sim .dui-timeline {
+    flex-wrap: wrap;
+  }
+
+  /* Linha própria para o scrub, sem `order`: reordenar visualmente deixaria a
+     ordem do teclado diferente da ordem que se vê. */
+  .hero-sim .dui-timeline__scrub {
+    flex-basis: 100%;
+  }
+}
