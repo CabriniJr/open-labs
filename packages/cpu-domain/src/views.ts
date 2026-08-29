@@ -1,4 +1,7 @@
 import type { NodePlacement, View } from "@ovh/depth-ui";
+import { comandoDe, DESENHO_CMOS, portasCmosDe } from "./transistors.js";
+import type { PortaCmos } from "./transistors.js";
+import type { PortaLogica } from "./gates.js";
 
 /**
  * As views do caminho de dados.
@@ -16,7 +19,7 @@ import type { NodePlacement, View } from "@ovh/depth-ui";
 export const VIEW_SISTEMA: View = {
   id: "sistema",
   focus: "sistema",
-  title: "O sistema: CPU, memórias e o relógio que a move",
+  title: "The system: CPU, memories, and the clock that moves it",
   width: 1180,
   height: 640,
   places: [
@@ -55,7 +58,7 @@ export const VIEW_SISTEMA: View = {
 export const VIEW_PROCESSADOR: View = {
   id: "processador",
   focus: "processador",
-  title: "Dentro do processador: PC, banco e a lógica combinacional",
+  title: "Inside the processor: PC, register file, and the combinational logic",
   width: 1000,
   height: 480,
   places: [
@@ -69,7 +72,92 @@ export const VIEW_PROCESSADOR: View = {
   ],
 };
 
-export const CPU_VIEWS: readonly View[] = [VIEW_SISTEMA, VIEW_PROCESSADOR];
+
+/**
+ * Dentro da ULA: o número vira linhas, as linhas viram soma, a soma vira número.
+ *
+ * A vista montada na hora enfileirava as seis peças numa linha só, e a leitura
+ * que importa aqui não é a ordem — é que **o caminho da soma passa por trinta e
+ * dois somadores** enquanto tudo o mais atravessa numa passada. Por isso o
+ * somador é a peça larga do meio, e a unidade lógica corre por baixo dele: as
+ * duas respostas chegam no mesmo mux, e uma custa muito mais que a outra.
+ */
+export const VIEW_ULA: View = {
+  id: "ula",
+  focus: "ula",
+  title: "Inside the ALU: the bus becomes lines, and the lines are added",
+  width: 1160,
+  height: 420,
+  places: [
+    { id: "dispersor", x: 30, y: 130, w: 140, h: 90 },
+    // A peça larga é larga porque é cara: são 32 somadores completos em fila.
+    { id: "somador", x: 220, y: 40, w: 300, h: 150, collapsed: true },
+    { id: "pesos", x: 570, y: 40, w: 180, h: 150, collapsed: true },
+    { id: "coletor", x: 800, y: 70, w: 140, h: 90 },
+    // O outro caminho, e ele é uma folha: está declarado no arquivo que abrir a
+    // lógica bit a bit é o mesmo trabalho do somador, por outro caminho.
+    { id: "unidade-logica", x: 220, y: 270, w: 300, h: 90 },
+    { id: "mux-operacao", x: 990, y: 155, w: 140, h: 110 },
+  ],
+};
+
+export const CPU_VIEWS: readonly View[] = [VIEW_SISTEMA, VIEW_PROCESSADOR, VIEW_ULA];
+
+/**
+ * Uma porta CMOS desenhada como esquemático, e não como fluxo.
+ *
+ * A vista montada na hora enfileirava os transistores da esquerda para a
+ * direita, na ordem em que a corrente os atravessa. Está correto e não ensina
+ * nada: o que separa um NAND de um NOR é **série contra paralelo**, e essa é
+ * uma propriedade da forma, que some quando tudo vira uma fila.
+ *
+ * Aqui a alimentação fica em cima, o terra embaixo, o nó de saída no meio, e
+ * dois transistores lado a lado querem dizer em paralelo. É o desenho que
+ * qualquer livro usa, e é ele que faz a diferença entre as duas portas ser
+ * visível antes de ser lida.
+ */
+export function viewPortaCmos(id: string, tipo: PortaCmos): View {
+  const alturaAndar = 84;
+  const andares = DESENHO_CMOS[tipo];
+
+  /**
+   * Dois PMOS num NAND são o mesmo desenho e fazem coisas diferentes: um é
+   * comandado por `a` e o outro por `b`. Sem dizer qual, o esquemático mostra a
+   * forma certa e deixa o leitor sem saber qual transistor é qual.
+   */
+  const rotulo = (sufixo: string): { label?: string } => {
+    const via = comandoDe(tipo, sufixo);
+    return via === undefined ? {} : { label: `${sufixo.startsWith("p") ? "PMOS" : "NMOS"} · ${via}` };
+  };
+
+  const places = andares.flatMap((andar, i) => {
+    const trilho = andar[0] === "vdd" || andar[0] === "gnd";
+    const y = 30 + i * alturaAndar;
+    const h = trilho ? 46 : 58;
+    if (andar.length === 1) {
+      const sufixo = andar[0]!;
+      return [{ id: `${id}-${sufixo}`, x: 330, y, w: 200, h, ...rotulo(sufixo) }];
+    }
+    // Paralelo: os dois puxam o mesmo nó, e ficam lado a lado por isso.
+    return andar.map((sufixo, j) => ({
+      id: `${id}-${sufixo}`,
+      x: j === 0 ? 110 : 550,
+      y,
+      w: 200,
+      h,
+      ...rotulo(sufixo),
+    }));
+  });
+
+  return {
+    id: `cmos-${id}`,
+    focus: id,
+    title: `${tipo.toUpperCase()}: two complementary networks`,
+    width: 860,
+    height: 30 + andares.length * alturaAndar + 24,
+    places,
+  };
+}
 
 /**
  * A vista do somador de portas, montada por laço.
@@ -125,9 +213,41 @@ export function viewSomador(bits: number, comTransistores = false): View {
   return {
     id: "somador",
     focus: "circuito",
-    title: `Somador de ${bits} bits, porta por porta`,
+    title: `${bits}-bit adder, gate by gate`,
     width: 1100,
     height: altura,
     places,
   };
 }
+
+/**
+ * Todas as vistas do lab das portas: o somador, e uma para cada porta CMOS.
+ *
+ * São muitas — quatro bits vezes cinco portas, e um XOR são quatro NANDs —, e
+ * gerá-las é o único jeito honesto: escrever setenta e seis vistas à mão
+ * garantiria que uma delas ficasse para trás sem ninguém notar. O
+ * `viewDisagreement` continua conferindo cada uma contra a árvore.
+ */
+export function viewsDoSomador(bits: number, comTransistores = false): readonly View[] {
+  const somador = viewSomador(bits, comTransistores);
+  if (!comTransistores) return [somador];
+
+  const portas: View[] = [];
+  for (let i = 0; i < bits; i += 1) {
+    for (const [sufixo, tipo] of PORTAS_DO_SOMADOR) {
+      for (const cmos of portasCmosDe(`bit${i}-${sufixo}`, tipo)) {
+        portas.push(viewPortaCmos(cmos.id, cmos.tipo));
+      }
+    }
+  }
+  return [somador, ...portas];
+}
+
+/** As cinco portas de um somador completo, na ordem em que ele as monta. */
+const PORTAS_DO_SOMADOR: readonly (readonly [string, PortaLogica])[] = [
+  ["xor1", "xor"],
+  ["and1", "and"],
+  ["xor2", "xor"],
+  ["and2", "and"],
+  ["or1", "or"],
+];

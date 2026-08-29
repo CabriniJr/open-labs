@@ -112,9 +112,12 @@ describe("a codificação bate com a especificação do RV32I", () => {
 
   it.each(TODOS.map((c) => [c.asm, c] as const))("%s se lê de volta igual", (_asm, caso) => {
     const lido = decode(caso.hex);
-    expect(lido.mnemonic).toBe(caso.instr.mnemonic);
+    // Uma palavra da spec tem que ser reconhecida: `null` aqui quer dizer que o
+    // subconjunto não sabe ler algo que ele afirma implementar.
+    expect(lido).not.toBeNull();
+    expect(lido?.mnemonic).toBe(caso.instr.mnemonic);
     for (const campo of USA[FORMAS[caso.instr.mnemonic].format]) {
-      expect({ campo, valor: lido[campo] }).toEqual({ campo, valor: caso.instr[campo] });
+      expect({ campo, valor: lido?.[campo] }).toEqual({ campo, valor: caso.instr[campo] });
     }
   });
 
@@ -123,7 +126,9 @@ describe("a codificação bate com a especificação do RV32I", () => {
     (_asm, caso) => {
       // Independe de qual campo o formato usa, e por isso pega troca de bit em
       // qualquer lugar da palavra.
-      expect(encode(decode(caso.hex)) >>> 0).toBe(caso.hex >>> 0);
+      const lido = decode(caso.hex);
+      expect(lido).not.toBeNull();
+      expect(encode(lido!) >>> 0).toBe(caso.hex >>> 0);
     },
   );
 

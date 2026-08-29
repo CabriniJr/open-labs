@@ -1,6 +1,7 @@
 import type { AnyObject, BorneInterno, Message, ObjectSpec, Wire, WorldSpec } from "@ovh/depth-core";
 import { decide } from "./gates.js";
 import type { PortaLogica } from "./gates.js";
+import { ROTULOS } from "./labels.js";
 
 /**
  * O fundo da fatia: a porta lógica feita de transistores.
@@ -49,7 +50,7 @@ export function trilho(id: string, bit: 0 | 1): ObjectSpec {
   return {
     id,
     kind: "source",
-    label: bit === 1 ? "Vdd" : "GND",
+    label: bit === 1 ? ROTULOS.vdd : ROTULOS.gnd,
     leaf: true,
     drives: true,
     behavior: (state, _inbox, ctx) =>
@@ -123,7 +124,7 @@ export function noDeSaida(id: string, saida: string, ramos: number): ObjectSpec 
   return {
     id,
     kind: "router",
-    label: "nó",
+    label: ROTULOS.no,
     leaf: true,
     behavior: (state, inbox, ctx) => {
       if (ctx.phase !== "settle" || inbox.length === 0) return { state, out: [] };
@@ -531,3 +532,30 @@ export function portaCmosWorld(tipo: PortaLogica, comAtalho: boolean, seed = 1):
     ],
   };
 }
+
+/** Todas as portas CMOS dentro de uma porta aberta, com o tipo de cada uma. */
+export function portasCmosDe(
+  id: string,
+  tipo: PortaLogica,
+): readonly { readonly id: string; readonly tipo: PortaCmos }[] {
+  if (tipo === "nand" || tipo === "nor" || tipo === "not") return [{ id, tipo }];
+  return COMPOSTAS[tipo].partes.map((parte) => ({
+    id: `${id}-${parte.sufixo}`,
+    tipo: parte.tipo,
+  }));
+}
+
+/** Qual entrada comanda o terminal de porta de cada transistor. */
+export function comandoDe(tipo: PortaCmos, sufixo: string): "a" | "b" | undefined {
+  return REDES[tipo].comando[sufixo];
+}
+
+/** Como cada rede se empilha no esquemático: alimentação em cima, terra embaixo. */
+export const DESENHO_CMOS: Readonly<
+  Record<PortaCmos, readonly (readonly string[])[]>
+> = {
+  // Uma linha por andar; dois nomes na mesma linha querem dizer em paralelo.
+  not: [["vdd"], ["p1"], ["no"], ["n1"], ["gnd"]],
+  nand: [["vdd"], ["p1", "p2"], ["no"], ["n2"], ["n1"], ["gnd"]],
+  nor: [["vdd"], ["p1"], ["p2"], ["no"], ["n1", "n2"], ["gnd"]],
+};

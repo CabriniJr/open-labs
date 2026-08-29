@@ -74,8 +74,8 @@ export function Explorer({
         ))}
         <span className="explorer__dica">
           {view.id.startsWith("auto:")
-            ? "vista montada na hora · dois cliques para entrar"
-            : "dois cliques para entrar"}
+            ? "auto-laid view · double-click to enter"
+            : "double-click to enter"}
         </span>
       </nav>
 

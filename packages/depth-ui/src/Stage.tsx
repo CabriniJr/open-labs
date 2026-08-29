@@ -237,13 +237,40 @@ export function Stage({
    */
   const familia = (id: string): Family => {
     const node = tree.byId.get(id);
-    const base = node === undefined ? "container" : familyOf(node.kind);
+    let base = node === undefined ? "container" : familyOf(node.kind);
+
+    // Uma caixa recolhida não é moldura: ela **é** a coisa que está dentro
+    // dela, e é por isso que dá para entrar. Desenhá-la como moldura tira dela
+    // a forma e o gesto do que ela representa — a ULA recolhida ficava sem
+    // engrenagem, com um somador de trinta e dois bits girando lá dentro.
+    if (base === "container" && recolhida(id)) base = familiaDoInterior(id) ?? base;
+
     if (base !== "processor") return base;
     const saindo = wires.filter((w) => w.from === id);
     if (saindo.length > 0 && saindo.every((w) => (w.line ?? "data") === "control")) {
       return "controller";
     }
     return base;
+  };
+
+  /** Esta caixa está desenhada fechada nesta view? */
+  const recolhida = (id: string): boolean =>
+    view.places.find((p) => p.id === id)?.collapsed === true;
+
+  /**
+   * A família do que mora dentro. `processor` ganha de tudo: uma caixa que
+   * guarda qualquer coisa que processa é, vista de fora, uma coisa que
+   * processa.
+   */
+  const familiaDoInterior = (id: string): Family | undefined => {
+    let achada: Family | undefined;
+    for (const filho of tree.byId.get(id)?.children ?? []) {
+      const dele = familyOf(filho.kind);
+      const fundo = dele === "container" ? familiaDoInterior(filho.id) : dele;
+      if (fundo === "processor") return "processor";
+      achada ??= fundo;
+    }
+    return achada;
   };
 
   /** Trabalhou: recebeu ou emitiu alguma coisa neste tick. */
@@ -276,10 +303,8 @@ export function Stage({
    * filhos agirem, e animar a moldura junto seria contar a mesma coisa duas
    * vezes.
    */
-  const ativo = (id: string): boolean => {
-    const recolhida = view.places.find((p) => p.id === id)?.collapsed === true;
-    return recolhida ? dentroDe(id).some(trabalhou) : trabalhou(id);
-  };
+  const ativo = (id: string): boolean =>
+    recolhida(id) ? dentroDe(id).some(trabalhou) : trabalhou(id);
 
   /**
    * A saída dele está em alto neste tick.
@@ -535,7 +560,7 @@ export function Stage({
               ) : null}
               {place.collapsed === true ? (
                 <text className="dui-stage__abrir" x={place.x + 10} y={place.y + place.h - 9}>
-                  há mais aqui dentro
+                  more inside
                 </text>
               ) : null}
             </g>

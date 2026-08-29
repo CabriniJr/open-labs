@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { World, indexTree } from "@ovh/depth-core";
-import { portasAltas, somadorWorld, viewSomador } from "@ovh/cpu-domain";
+import { portasAltas, somadorWorld, viewsDoSomador } from "@ovh/cpu-domain";
 import { Explorer } from "./Explorer.js";
 
 /**
@@ -28,7 +28,7 @@ export function GatesLab() {
 
   const spec = useMemo(() => somadorWorld(BITS, false, 1, true), []);
   const arvore = useMemo(() => indexTree(spec.root), [spec]);
-  const view = useMemo(() => viewSomador(BITS, true), []);
+  const views = useMemo(() => viewsDoSomador(BITS, true), []);
   const mundoRef = useRef<World | null>(null);
   if (mundoRef.current === null) mundoRef.current = new World(spec);
 
@@ -81,21 +81,21 @@ export function GatesLab() {
           previous={mundo.previousState}
           edgeTicks={spec.edgeTicks ?? 1}
           tickMs={compasso}
-          views={[view]}
+          views={views}
           readouts={readouts}
           altos={portasAltas(estado, arvore)}
         />
         <p className="gates-lab__legenda">
-          Uma porta acesa é uma porta cuja saída é 1 — e uma escura é uma porta
-          que rodou e disse zero, não uma parada: toda linha aqui carrega o bit
-          dela. O vai-um sobe de um somador para o próximo, e é ele que cobra
-          profundidade, mesmo somando zeros.
+          A lit gate is a gate whose output is 1 — and a dark one is a gate that
+          ran and said zero, not one that sat still: every line here carries its
+          own bit. The carry climbs from one adder to the next, and it is what
+          costs depth, even when adding zeros.
         </p>
       </div>
 
       <aside className="gates-lab__painel">
         <section>
-          <h3>Entradas</h3>
+          <h3>Inputs</h3>
           <label className="gates-lab__entrada">
             <span>a</span>
             <input
@@ -104,7 +104,7 @@ export function GatesLab() {
               max={15}
               value={a}
               onChange={(e) => setA(Number(e.target.value))}
-              aria-label="Primeira parcela"
+              aria-label="First addend"
             />
             <span className="mono">
               {a} · {binario(a)}
@@ -118,7 +118,7 @@ export function GatesLab() {
               max={15}
               value={b}
               onChange={(e) => setB(Number(e.target.value))}
-              aria-label="Segunda parcela"
+              aria-label="Second addend"
             />
             <span className="mono">
               {b} · {binario(b)}
@@ -127,29 +127,29 @@ export function GatesLab() {
         </section>
 
         <section>
-          <h3>Saída</h3>
+          <h3>Output</h3>
           <p className="gates-lab__resultado mono">
             {binario(soma)}
-            {vaium ? " + vai-um" : ""} · {soma + (vaium ? 16 : 0)}
+            {vaium ? " + carry" : ""} · {soma + (vaium ? 16 : 0)}
           </p>
           <p className="gates-lab__nota">
-            {a} + {b} = {a + b}. Quatro bits guardam até 15; o que passa disso sai
-            pelo vai-um, e é a mesma coisa que estouro.
+            {a} + {b} = {a + b}. Four bits hold up to 15; anything past that
+            leaves through the carry, which is exactly what overflow is.
           </p>
         </section>
 
         <section>
-          <h3>Profundidade</h3>
-          <p className="gates-lab__resultado mono">{estado.substeps} subpassos</p>
+          <h3>Depth</h3>
+          <p className="gates-lab__resultado mono">{estado.substeps} substeps</p>
           <p className="gates-lab__nota">
-            É o caminho combinacional mais longo deste tick. Some mais bits e ele
-            cresce — atraso de propagação é literalmente isto.
+            The longest combinational path in this tick. Add more bits and it
+            grows — propagation delay is literally this.
           </p>
         </section>
 
         <div className="gates-lab__controles">
           <button type="button" onClick={() => setRodando((r) => !r)}>
-            {rodando ? "Pausar" : "Rodar"}
+            {rodando ? "Pause" : "Run"}
           </button>
           <button
             type="button"
@@ -170,7 +170,7 @@ export function GatesLab() {
               step={50}
               value={2000 - compasso}
               onChange={(e) => setCompasso(2000 - Number(e.target.value))}
-              aria-label="Velocidade do relógio"
+              aria-label="Clock speed"
             />
           </label>
           <span className="gates-lab__tick mono">tick {tick}</span>

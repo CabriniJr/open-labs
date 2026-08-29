@@ -2,6 +2,7 @@ import type { AnyObject, Emission, Message, ObjectSpec, WorldSpec } from "@ovh/d
 import { ula as ulaComposta } from "./alu.js";
 import { decode } from "./isa.js";
 import type { Instruction, Mnemonic } from "./isa.js";
+import { ROTULOS } from "./labels.js";
 
 /**
  * O caminho de dados, como composição.
@@ -64,7 +65,7 @@ const sinal = (
 const relogio: ObjectSpec<Record<string, never>> = {
   id: "relogio",
   kind: "source",
-  label: "relógio",
+  label: ROTULOS.relogio,
   leaf: true,
   behavior: (state, _inbox, ctx) =>
     ctx.phase === "commit"
@@ -82,7 +83,7 @@ const relogio: ObjectSpec<Record<string, never>> = {
 const pc: ObjectSpec<EstadoPc> = {
   id: "pc",
   kind: "buffer",
-  label: "PC",
+  label: ROTULOS.pc,
   leaf: true,
   init: () => ({ pc: 0 }),
   behavior: (state, inbox, ctx) => {
@@ -100,7 +101,7 @@ function memoriaDeInstrucoes(image: readonly number[]): ObjectSpec<Record<string
   return {
     id: "imem",
     kind: "buffer",
-    label: "memória de instruções",
+    label: ROTULOS.imem,
     leaf: true,
     behavior: (state, inbox, ctx) => {
       if (ctx.phase !== "settle") return { state, out: [] };
@@ -123,7 +124,7 @@ function memoriaDeInstrucoes(image: readonly number[]): ObjectSpec<Record<string
 const decodificador: ObjectSpec<Record<string, never>> = {
   id: "decodificador",
   kind: "router",
-  label: "decodificador",
+  label: ROTULOS.decodificador,
   leaf: true,
   behavior: (state, inbox, ctx) => {
     if (ctx.phase !== "settle") return { state, out: [] };
@@ -192,7 +193,7 @@ function controlar(instr: Instruction): {
 const controle: ObjectSpec<Record<string, never>> = {
   id: "controle",
   kind: "router",
-  label: "unidade de controle",
+  label: ROTULOS.controle,
   leaf: true,
   behavior: (state, inbox, ctx) => {
     if (ctx.phase !== "settle") return { state, out: [] };
@@ -225,7 +226,7 @@ const controle: ObjectSpec<Record<string, never>> = {
 const banco: ObjectSpec<EstadoBanco> = {
   id: "banco",
   kind: "buffer",
-  label: "banco de registradores",
+  label: ROTULOS.banco,
   leaf: true,
   init: (): EstadoBanco => ({ regs: new Array<number>(32).fill(0) }),
   behavior: (state, inbox, ctx) => {
@@ -263,7 +264,7 @@ const banco: ObjectSpec<EstadoBanco> = {
 const muxOperando: ObjectSpec<Record<string, never>> = {
   id: "mux-operando",
   kind: "router",
-  label: "mux de operando",
+  label: ROTULOS.muxOperando,
   leaf: true,
   behavior: (state, inbox, ctx) => {
     if (ctx.phase !== "settle") return { state, out: [] };
@@ -310,7 +311,7 @@ function memoriaPrincipal(image: readonly number[]): ObjectSpec<EstadoMemoria> {
   return {
     id: "memoria",
     kind: "buffer",
-    label: "memória principal",
+    label: ROTULOS.memoria,
     leaf: true,
     init: (): EstadoMemoria => {
       const mem = new Map<number, number>();
@@ -367,7 +368,7 @@ function memoriaPrincipal(image: readonly number[]): ObjectSpec<EstadoMemoria> {
 const muxEscrita: ObjectSpec<Record<string, never>> = {
   id: "mux-escrita",
   kind: "router",
-  label: "mux de escrita",
+  label: ROTULOS.muxEscrita,
   leaf: true,
   behavior: (state, inbox, ctx) => {
     if (ctx.phase !== "commit") return { state, out: [] };
@@ -398,7 +399,7 @@ const muxEscrita: ObjectSpec<Record<string, never>> = {
 const unidadeDeDesvio: ObjectSpec<Record<string, never>> = {
   id: "desvio",
   kind: "router",
-  label: "unidade de desvio",
+  label: ROTULOS.desvio,
   leaf: true,
   behavior: (state, inbox, ctx) => {
     if (ctx.phase !== "commit") return { state, out: [] };
@@ -435,7 +436,7 @@ const unidadeDeDesvio: ObjectSpec<Record<string, never>> = {
 const entrada: ObjectSpec<Record<string, never>> = {
   id: "entrada",
   kind: "source",
-  label: "entrada",
+  label: ROTULOS.entrada,
   leaf: true,
   behavior: (state, _inbox, ctx) =>
     ctx.phase === "commit"
@@ -455,7 +456,7 @@ export interface EstadoSaida {
 const saida: ObjectSpec<EstadoSaida> = {
   id: "saida",
   kind: "sink",
-  label: "saída",
+  label: ROTULOS.saida,
   leaf: true,
   init: () => ({ palavras: [] }),
   behavior: (state, inbox, ctx) => {
@@ -478,25 +479,25 @@ export function cpuWorld(
   const logica: AnyObject = {
     id: "logica",
     kind: "composite",
-    label: "lógica combinacional",
+    label: ROTULOS.logica,
     children: [muxOperando, ula, muxEscrita, unidadeDeDesvio],
   };
   const processador: AnyObject = {
     id: "processador",
     kind: "composite",
-    label: "processador",
+    label: ROTULOS.processador,
     children: [pc, banco, logica],
   };
   const cpu: AnyObject = {
     id: "cpu",
     kind: "composite",
-    label: "CPU",
+    label: ROTULOS.cpu,
     children: [controle, decodificador, processador],
   };
   const root: AnyObject = {
     id: "sistema",
     kind: "composite",
-    label: "sistema",
+    label: ROTULOS.sistema,
     children: [
       relogio,
       entrada,

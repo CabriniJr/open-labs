@@ -18,11 +18,11 @@ test("estouro sai pelo vai-um", async ({ page }) => {
   await page.goto("labs/gates/");
   await expect(page.locator(".dui-stage")).toBeVisible({ timeout: 15_000 });
 
-  await page.getByLabel("Primeira parcela").fill("15");
-  await page.getByLabel("Segunda parcela").fill("15");
+  await page.getByLabel("First addend").fill("15");
+  await page.getByLabel("Second addend").fill("15");
 
   // 15 + 15 = 30: quatro bits guardam 14, e o resto sai pelo vai-um
-  await expect(page.locator(".gates-lab__resultado").first()).toContainText("vai-um", {
+  await expect(page.locator(".gates-lab__resultado").first()).toContainText("carry", {
     timeout: 10_000,
   });
   await expect(page.locator(".gates-lab__resultado").first()).toContainText("30");
@@ -36,25 +36,25 @@ test("porta acesa é porta com saída alta, e com zero não acende nada", async 
     timeout: 10_000,
   });
 
-  await page.getByLabel("Primeira parcela").fill("0");
-  await page.getByLabel("Segunda parcela").fill("0");
+  await page.getByLabel("First addend").fill("0");
+  await page.getByLabel("Second addend").fill("0");
   // Com 0 + 0 as portas rodam e dizem zero — e é justamente por isso que o
   // teste vale: o que apaga a tela é o VALOR que saiu delas, e não o circuito
   // ter ficado parado. Lendo a contagem de emissões, acenderia tudo.
   await expect(page.locator('.dui-stage__objeto[data-alto="true"]')).toHaveCount(0, {
     timeout: 10_000,
   });
-  await expect(page.locator(".gates-lab__resultado").nth(1)).toContainText("subpassos");
+  await expect(page.locator(".gates-lab__resultado").nth(1)).toContainText("substeps");
 });
 
 test("a profundidade cresce quando o vai-um sobe", async ({ page }) => {
   await page.goto("labs/gates/");
   await expect(page.locator(".dui-stage")).toBeVisible({ timeout: 15_000 });
 
-  await page.getByLabel("Primeira parcela").fill("1");
-  await page.getByLabel("Segunda parcela").fill("1");
+  await page.getByLabel("First addend").fill("1");
+  await page.getByLabel("Second addend").fill("1");
   const profundidade = page.locator(".gates-lab__resultado").nth(1);
-  await expect(profundidade).toContainText("subpassos");
+  await expect(profundidade).toContainText("substeps");
 });
 
 test("o lab das portas não rola na horizontal", async ({ page }) => {
@@ -73,7 +73,7 @@ test("dois cliques entram no somador, e a trilha mostra onde você está", async
   await page.locator('.dui-stage__objeto[aria-label^="bit1"]').first().dblclick();
 
   const trilha = page.locator(".explorer__trilha");
-  await expect(trilha).toContainText("circuito");
+  await expect(trilha).toContainText("circuit");
   await expect(trilha).toContainText("bit1");
 
   // lá dentro estão as cinco portas, e elas continuam vivas
@@ -83,7 +83,7 @@ test("dois cliques entram no somador, e a trilha mostra onde você está", async
   });
 
   // e a trilha volta
-  await trilha.getByRole("button", { name: "circuito" }).click();
+  await trilha.getByRole("button", { name: "circuit" }).click();
   await expect(page.locator('.dui-stage__objeto[aria-label^="bit1"]')).toBeVisible();
 });
 
@@ -114,6 +114,6 @@ test("descer da porta lógica até o transistor, e achar silício vivo lá embai
     timeout: 10_000,
   });
 
-  await trilha.getByRole("button", { name: "circuito" }).click();
+  await trilha.getByRole("button", { name: "circuit" }).click();
   await expect(page.locator('.dui-stage__objeto[aria-label^="bit0"]')).toBeVisible();
 });

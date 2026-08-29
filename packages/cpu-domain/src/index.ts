@@ -6,7 +6,15 @@ export { initialCpu, runCpu, stepCpu } from "./reference.js";
 export type { CpuState } from "./reference.js";
 export { cpuWorld, ENDERECO_ENTRADA, ENDERECO_SAIDA } from "./datapath.js";
 export type { EstadoBanco, EstadoMemoria, EstadoPc, EstadoSaida } from "./datapath.js";
-export { CPU_VIEWS, VIEW_PROCESSADOR, VIEW_SISTEMA, viewSomador } from "./views.js";
+export {
+  CPU_VIEWS,
+  VIEW_PROCESSADOR,
+  VIEW_SISTEMA,
+  VIEW_ULA,
+  viewPortaCmos,
+  viewSomador,
+  viewsDoSomador,
+} from "./views.js";
 export { decide, porta, portasAltas, somadorCompleto, somadorWorld } from "./gates.js";
 export {
   fiosDaPortaCmos,

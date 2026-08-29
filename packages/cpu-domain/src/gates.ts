@@ -10,6 +10,7 @@ import type {
 import { borneNode, bornePort } from "@ovh/depth-core";
 import type { TreeIndex } from "@ovh/depth-core";
 import { fiosDaPortaAberta, portaAberta } from "./transistors.js";
+import { ROTULOS } from "./labels.js";
 
 /**
  * A fatia vertical: somador → somador completo → portas lógicas → transistores.
@@ -295,7 +296,7 @@ export function somadorWorld(
   const entradas: ObjectSpec = {
     id: "entradas",
     kind: "source",
-    label: "entradas",
+    label: ROTULOS.entradas,
     leaf: true,
     behavior: (state, _inbox, ctx) => {
       if (ctx.phase !== "commit") return { state, out: [] };
@@ -321,19 +322,19 @@ export function somadorWorld(
     root: {
       id: "circuito",
       kind: "composite",
-      label: "circuito",
+      label: ROTULOS.circuito,
       children: [
         entradas,
-        nivelFixo("cin0", 0, "vem-de-trás"),
+        nivelFixo("cin0", 0, ROTULOS.cin),
         {
           id: "somador",
           kind: "composite",
-          label: `somador de ${bits} bits`,
+          label: ROTULOS.somadorDe(bits),
           replicas: bits,
           children: somadores,
         },
-        ...Array.from({ length: bits }, (_, i) => saida(`soma${i}`, `soma ${i}`)),
-        saida("vaium", "vai-um"),
+        ...Array.from({ length: bits }, (_, i) => saida(`soma${i}`, ROTULOS.soma(i))),
+        saida("vaium", ROTULOS.vaium),
       ],
     },
     wires,

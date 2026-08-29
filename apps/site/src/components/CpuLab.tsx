@@ -6,9 +6,9 @@ import { Explorer } from "./Explorer.js";
 import {
   assemble,
   cpuWorld,
+  CPU_VIEWS,
   decode,
   portasAltas,
-  VIEW_PROCESSADOR,
   VIEW_SISTEMA,
 } from "@ovh/cpu-domain";
 import type {
@@ -27,16 +27,16 @@ import type {
  * responde de verdade.
  */
 
-const PROGRAMA_INICIAL = `# soma 1 + 2 + ... + n, e fala o resultado
-        lui  t3, 1          # 0x1000: fala aqui, ouve em 0x1004
-        lw   t2, 4(t3)      # n vem do botão de entrada
-        addi t2, t2, 1      # limite
-        addi t0, x0, 0      # soma
+const PROGRAMA_INICIAL = `# adds 1 + 2 + ... + n, then says the result
+        lui  t3, 1          # 0x1000: speak here, listen at 0x1004
+        lw   t2, 4(t3)      # n comes from the input dial
+        addi t2, t2, 1      # limit
+        addi t0, x0, 0      # sum
         addi t1, x0, 1      # i
-laco:   add  t0, t0, t1
+loop:   add  t0, t0, t1
         addi t1, t1, 1
-        blt  t1, t2, laco
-        sw   t0, 0(t3)      # fala a soma
+        blt  t1, t2, loop
+        sw   t0, 0(t3)      # say the sum
 `;
 
 const NOMES = [
@@ -46,7 +46,7 @@ const NOMES = [
   "s8", "s9", "s10", "s11", "t3", "t4", "t5", "t6",
 ] as const;
 
-const VIEWS: readonly View[] = [VIEW_SISTEMA, VIEW_PROCESSADOR];
+const VIEWS: readonly View[] = CPU_VIEWS;
 
 const hex = (n: number): string => `0x${(n >>> 0).toString(16).padStart(2, "0")}`;
 
@@ -145,13 +145,13 @@ export function CpuLab() {
 
   const readouts = {
     pc: hex(pcAtual),
-    imem: `${montado?.words.length ?? 0} palavras`,
-    memoria: `${Math.max(0, (memoria?.mem.size ?? 0) - (montado?.words.length ?? 0))} escritas`,
-    banco: `${ocupados}/32 em uso`,
+    imem: `${montado?.words.length ?? 0} words`,
+    memoria: `${Math.max(0, (memoria?.mem.size ?? 0) - (montado?.words.length ?? 0))} writes`,
+    banco: `${ocupados}/32 in use`,
     ula: instrucao?.mnemonic ?? "—",
-    controle: instrucao?.mnemonic ?? "parado",
+    controle: instrucao?.mnemonic ?? "idle",
     entrada: String(entrada),
-    saida: falado.length === 0 ? "calada" : String(falado[falado.length - 1]),
+    saida: falado.length === 0 ? "silent" : String(falado[falado.length - 1]),
   };
 
   return (
@@ -174,13 +174,14 @@ export function CpuLab() {
           />
         ) : (
           <p className="cpu-lab__vazio">
-            O programa não montou. Os erros estão ao lado, com linha e coluna.
+            The program did not assemble. The errors are beside it, with line
+            and column.
           </p>
         )}
 
         <div className="cpu-lab__controles">
           <button type="button" onClick={() => setRodando((r) => !r)} disabled={mundo === null}>
-            {rodando ? "Pausar" : "Rodar"}
+            {rodando ? "Pause" : "Run"}
           </button>
           <button
             type="button"
@@ -193,13 +194,13 @@ export function CpuLab() {
             }}
             disabled={mundo === null}
           >
-            Um ciclo
+            One cycle
           </button>
           <button type="button" onClick={montar}>
-            Montar e reiniciar
+            Assemble and restart
           </button>
           <label className="cpu-lab__compasso">
-            compasso
+            speed
             <input
               type="range"
               min={160}
@@ -207,23 +208,23 @@ export function CpuLab() {
               step={20}
               value={1760 - compasso}
               onChange={(e) => setCompasso(1760 - Number(e.target.value))}
-              aria-label="Velocidade do relógio"
+              aria-label="Clock speed"
             />
           </label>
           <label className="cpu-lab__entrada">
-            entrada
+            input
             <input
               type="number"
               value={entrada}
               onChange={(e) => girar(Number(e.target.value) | 0)}
-              aria-label="Valor do dispositivo de entrada"
+              aria-label="Input device value"
             />
           </label>
           <span className="cpu-lab__tick mono">tick {tick}</span>
           <span className="cpu-lab__tick mono">
-            {estado === null ? "" : `${estado.substeps} subpassos`}
+            {estado === null ? "" : `${estado.substeps} substeps`}
           </span>
-          <div className="cpu-lab__views" role="group" aria-label="Enquadramento">
+          <div className="cpu-lab__views" role="group" aria-label="Framing">
             {VIEWS.map((v) => (
               <button
                 key={v.id}
@@ -231,28 +232,28 @@ export function CpuLab() {
                 aria-pressed={v.id === viewId}
                 onClick={() => setViewId(v.id)}
               >
-                {v.id}
+                {arvore?.byId.get(v.focus)?.label ?? v.id}
               </button>
             ))}
           </div>
         </div>
         <p className="cpu-lab__legenda">
-          Linha cheia é dado; tracejada é controle. O traço fino fecha dentro do
-          mesmo ciclo — o grosso atravessa a borda do relógio, e a bolinha nele é
-          o valor esperando o flanco.
+          Solid lines carry data; dashed lines carry control. Thin ones settle
+          inside the same cycle — thick ones cross the clock edge, and the dot
+          travelling on them is the value waiting for the flank.
         </p>
       </div>
 
       <aside className="cpu-lab__painel">
         <section>
-          <h3>Programa</h3>
+          <h3>Program</h3>
           <textarea
             className="cpu-lab__editor mono"
             value={fonte}
             spellCheck={false}
             rows={12}
             onChange={(e) => setFonte(e.target.value)}
-            aria-label="Programa em assembly"
+            aria-label="Assembly program"
           />
           {erros.length > 0 ? (
             <ul className="cpu-lab__erros">
@@ -269,29 +270,29 @@ export function CpuLab() {
         </section>
 
         <section>
-          <h3>Executando</h3>
+          <h3>Running</h3>
           <p className="cpu-lab__agora mono">
-            {hex(pcAtual)} · {instrucao === null ? "nada (o programa acabou)" : instrucao.mnemonic}
-            {linhaAtual === undefined ? "" : ` · linha ${linhaAtual}`}
+            {hex(pcAtual)} · {instrucao === null ? "nothing (the program ended)" : instrucao.mnemonic}
+            {linhaAtual === undefined ? "" : ` · line ${linhaAtual}`}
           </p>
         </section>
 
         <section>
-          <h3>O que o programa falou</h3>
+          <h3>What the program said</h3>
           <p className="cpu-lab__falou mono">
-            {falado.length === 0 ? "nada ainda" : falado.join(" · ")}
+            {falado.length === 0 ? "nothing yet" : falado.join(" · ")}
           </p>
           <p className="cpu-lab__nota">
-            Guardar em <span className="mono">0x1000</span> é falar; ler de{" "}
-            <span className="mono">0x1004</span> é ouvir o botão. Não há
-            instrução nova — é a mesma <span className="mono">sw</span> e a
-            mesma <span className="mono">lw</span> num endereço que não é
-            memória.
+            Storing to <span className="mono">0x1000</span> is speaking; loading
+            from <span className="mono">0x1004</span> is listening to the dial.
+            No new instruction — the same <span className="mono">sw</span> and
+            the same <span className="mono">lw</span>, at an address that is not
+            memory.
           </p>
         </section>
 
         <section>
-          <h3>Registradores</h3>
+          <h3>Registers</h3>
           <ul className="cpu-lab__regs mono">
             {NOMES.map((nome, i) => {
               const valor = banco?.regs[i] ?? 0;

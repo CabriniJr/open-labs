@@ -4,7 +4,7 @@ import { viewDisagreement } from "@ovh/depth-ui";
 import { assemble } from "./assembler.js";
 import { cpuWorld } from "./datapath.js";
 import { somadorWorld } from "./gates.js";
-import { CPU_VIEWS, VIEW_SISTEMA, viewSomador } from "./views.js";
+import { CPU_VIEWS, VIEW_SISTEMA, viewSomador, viewsDoSomador } from "./views.js";
 
 const r = assemble("addi t0, x0, 1");
 if (!r.ok) throw new Error("o programa de teste tem que montar");
@@ -53,7 +53,12 @@ describe("a view do somador de portas", () => {
     // a view precisa dizer isso — é o invariante de não esconder calado, agora
     // no nível que o lab de fato roda.
     const comSilicio = indexTree(somadorWorld(bits, false, 1, true).root);
-    expect(viewDisagreement(comSilicio, viewSomador(bits, true))).toBeNull();
+    for (const view of viewsDoSomador(bits, true)) {
+      expect({ view: view.id, erro: viewDisagreement(comSilicio, view) }).toEqual({
+        view: view.id,
+        erro: null,
+      });
+    }
   });
 
   it("nenhuma porta desenhada por cima de outra", () => {

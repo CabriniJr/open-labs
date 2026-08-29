@@ -889,3 +889,43 @@ deslocamento, sinal em `slt`, `jalr` zerando o bit baixo — nós dois podemos t
 do mesmo jeito, e é isso que um emulador de terceiro daria.
 
 Estado: 484 testes unitários, 78 e2e, typecheck, boundaries e build verdes.
+
+---
+
+## Refino da CPU: o que o leitor vê
+
+**Data:** 2026-08-29. **Código:** `packages/depth-ui/src/Stage.tsx`,
+`packages/cpu-domain/src/{views,labels,transistors}.ts`, os dois labs.
+
+Tudo daqui saiu de **olhar as telas**, não de rodar teste. Foram quatro coisas.
+
+**A caixa recolhida era desenhada como moldura.** A correção anterior deu `data-ativo` à ULA
+recolhida e eu disse que estava resolvido — não estava: contêiner é moldura, moldura não tem
+engrenagem nem gesto, e a ULA continuava parecendo morta com um somador de 32 bits girando
+lá dentro. O atributo certo, o desenho errado. Agora **uma caixa recolhida toma a família do
+que ela guarda**, porque recolhida ela não é moldura: ela *é* a coisa. O e2e passou a cobrar
+o desenho (`data-familia`, engrenagem) e não só o atributo — e o mutante, que antes
+sobrevivia, morre.
+
+**A vista da ULA era inútil.** A montada na hora enfileirava as seis peças numa linha só,
+cortada no topo, com meia tela vazia embaixo. Virou vista à mão: o somador é a peça larga do
+meio porque é a cara, e a unidade lógica corre por baixo — as duas respostas chegam no mesmo
+mux e uma custa trinta e duas vezes mais.
+
+**A porta CMOS era desenhada como fila.** Correto e inútil: o que separa NAND de NOR é
+**série contra paralelo**, e isso é propriedade da forma, que some quando tudo vira uma
+linha. Agora é esquemático — alimentação em cima, terra embaixo, nó no meio, e dois
+transistores lado a lado querendo dizer paralelo. Os transistores também passaram a dizer
+**qual entrada os comanda**: dois PMOS iguais num NAND fazem coisas diferentes, e sem o nome
+o desenho mostrava a forma certa e deixava o leitor sem saber qual é qual. São setenta e seis
+vistas, geradas — escrever à mão garantiria uma esquecida sem ninguém notar, e
+`viewDisagreement` confere todas.
+
+**Os labs estavam em português num site em inglês.** O leitor lia um parágrafo numa língua e
+mexia num painel noutra. Decisão do Luigi: inglês agora, camada de idioma depois — e por
+isso todo rótulo de modelo passa por `labels.ts`, um mapa só, para a tradução futura ser
+trocar um arquivo em vez de caçar string em vinte. Comentários e identificadores seguem em
+português: não são lidos por quem visita o site. Uma guarda por caractere acentuado impede o
+português de voltar sozinho num rótulo novo.
+
+Estado: 489 testes unitários, 78 e2e, typecheck, boundaries e build verdes.

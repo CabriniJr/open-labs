@@ -1,6 +1,7 @@
 import type { AnyObject, Emission, Message, ObjectSpec, Wire } from "@ovh/depth-core";
 import { somadorCompleto, fiosDoSomador } from "./gates.js";
 import type { Mnemonic } from "./isa.js";
+import { ROTULOS } from "./labels.js";
 
 /**
  * A ULA aberta: por dentro dela, o somador de 32 bits é feito de portas.
@@ -32,7 +33,7 @@ const SOMA = new Set<Mnemonic>(["add", "addi", "lw", "sw", "jalr"]);
 const dispersor: ObjectSpec = {
   id: "dispersor",
   kind: "router",
-  label: "dispersor",
+  label: ROTULOS.dispersor,
   leaf: true,
   behavior: (state, inbox, ctx) => {
     if (ctx.phase !== "settle") return { state, out: [] };
@@ -57,7 +58,7 @@ function peso(i: number): ObjectSpec {
   return {
     id: `peso${i}`,
     kind: "router",
-    label: `2^${i}`,
+    label: ROTULOS.peso(i),
     leaf: true,
     behavior: (state, inbox, ctx) => {
       if (ctx.phase !== "settle" || inbox.length === 0) return { state, out: [] };
@@ -76,7 +77,7 @@ function peso(i: number): ObjectSpec {
 const coletor: ObjectSpec = {
   id: "coletor",
   kind: "router",
-  label: "coletor",
+  label: ROTULOS.coletor,
   leaf: true,
   behavior: (state, inbox, ctx) => {
     if (ctx.phase !== "settle") return { state, out: [] };
@@ -100,7 +101,7 @@ const coletor: ObjectSpec = {
 const unidadeLogica: ObjectSpec = {
   id: "unidade-logica",
   kind: "router",
-  label: "unidade lógica",
+  label: ROTULOS.unidadeLogica,
   leaf: true,
   behavior: (state, inbox, ctx) => {
     if (ctx.phase !== "settle") return { state, out: [] };
@@ -137,7 +138,7 @@ const unidadeLogica: ObjectSpec = {
 const muxOperacao: ObjectSpec = {
   id: "mux-operacao",
   kind: "router",
-  label: "mux de operação",
+  label: ROTULOS.muxOperacao,
   leaf: true,
   behavior: (state, inbox, ctx) => {
     if (ctx.phase !== "settle") return { state, out: [] };
@@ -205,7 +206,7 @@ function somador(): { objeto: AnyObject; wires: readonly Wire[] } {
     objeto: {
       id: "somador",
       kind: "composite",
-      label: `somador de ${LARGURA} bits`,
+      label: ROTULOS.somadorDe(LARGURA),
       replicas: LARGURA,
       children: bits,
     },
@@ -228,7 +229,7 @@ export function ula(comAtalho: boolean): { objeto: AnyObject; wires: readonly Wi
   const base: AnyObject = {
     id: "ula",
     kind: "composite",
-    label: "ULA",
+    label: ROTULOS.ula,
     inlets: {
       in: ["dispersor"],
       // O sinal de operação manda em dois: em quem faz o que não é soma, e em
@@ -239,7 +240,7 @@ export function ula(comAtalho: boolean): { objeto: AnyObject; wires: readonly Wi
     children: [
       dispersor,
       somadorDe32.objeto,
-      { id: "pesos", kind: "composite", label: "pesos", replicas: LARGURA, children: pesos },
+      { id: "pesos", kind: "composite", label: ROTULOS.pesos, replicas: LARGURA, children: pesos },
       coletor,
       unidadeLogica,
       muxOperacao,
