@@ -133,6 +133,12 @@ export interface StepContext {
    * modifica o que o ator faz; nunca é carga, e por isso não vem em `inbox`.
    */
   readonly signals: Readonly<Record<PortId, readonly Message[]>>;
+  /**
+   * Carga que chegou por entrada nomeada, agrupada por porta. **O mesmo que
+   * está em `inbox`**, visto por outro eixo: quem não liga para qual entrada
+   * foi lê `inbox` e ignora isto; quem precisa distinguir as parcelas lê aqui.
+   */
+  readonly inlets: Readonly<Record<PortId, readonly Message[]>>;
 }
 
 /** Função pura. Nunca muta `state`; sempre devolve um novo. */
@@ -156,6 +162,20 @@ export interface ObjectSpec<S = unknown> {
   readonly exit?: string;
   /** Folha mesmo tendo filhos: a válvula da regra de abertura. */
   readonly leaf?: true;
+  /**
+   * As **entradas nomeadas** deste contêiner: nome da porta -> quem, lá dentro,
+   * recebe o que chega por ela.
+   *
+   * Existe porque um objeto de verdade tem mais de uma entrada, e elas não são
+   * intercambiáveis: as duas parcelas e o vem-de-trás entram num somador por
+   * lugares diferentes. Sem nome, o motor só saberia achar **uma** folha de
+   * entrada, e ou o modelo perdia entradas em silêncio, ou o contêiner deixava
+   * de poder ser fechado num atalho.
+   *
+   * Uma entrada pode alimentar vários filhos — é o leque de dentro do bloco,
+   * o pontinho que o esquemático desenha na linha de entrada.
+   */
+  readonly inlets?: Readonly<Record<PortId, readonly string[]>>;
   /**
    * `N` objetos idênticos, um desenhado.
    *
@@ -251,6 +271,8 @@ export interface InFlight {
   readonly sent: number;
   /** Presente só quando este item é um sinal: a porta de destino dele. */
   readonly signalPort?: PortId;
+  /** Por qual entrada nomeada esta carga chega, quando chega por uma. */
+  readonly inPort?: PortId;
 }
 
 export interface WorldState {

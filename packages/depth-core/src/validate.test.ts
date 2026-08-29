@@ -257,10 +257,13 @@ describe("World valida na construção", () => {
     ).toThrow(/linha de controle .* precisa de toPort/);
   });
 
-  it("recusa toPort numa linha de dado: carga entra pela folha de entrada", () => {
+  it("recusa carga entrando por um borne que o destino não tem", () => {
+    // Antes toPort era proibido em linha de dado. Deixou de ser quando o
+    // contêiner ganhou entradas nomeadas — mas entrar por um nome que não
+    // existe continua sendo carga sumindo, e agora a mensagem diz quais existem.
     expect(() =>
       validar({ ...base, wires: [{ from: "a", port: "out", to: "b", toPort: "sel" }] }),
-    ).toThrow(/toPort .* só vale em linha de controle/);
+    ).toThrow(/não declara essa entrada/);
   });
 
   it("recusa toPort com os separadores do livro-caixa", () => {

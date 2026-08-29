@@ -95,3 +95,45 @@ export function resolveSignalTargets(
   }
   return out;
 }
+
+/**
+ * Abre os fios que entram por porta nomeada.
+ *
+ * Um fio para `bloco` na entrada `a` vira os fios concretos até quem, lá
+ * dentro, recebe por `a` — ou um fio para o próprio bloco, quando ele tem
+ * atalho e portanto é ele que age. Rodar essa conversão **uma vez, na entrada
+ * do tick**, é o que faz o resto do motor (ordem topológica, acomodação,
+ * livro-caixa) continuar vendo só fios entre coisas que agem.
+ *
+ * É a diferença entre um contêiner ser uma caixa fechada e ser uma caixa com
+ * bornes: sem isto, um objeto com três entradas distintas não poderia ser
+ * atalhado nem aberto sem trocar a fiação, e essa troca é justamente onde
+ * apareceria uma diferença que ninguém veria.
+ */
+export function expandInlets(tree: TreeIndex, wires: readonly Wire[]): readonly Wire[] {
+  const precisa = wires.some(
+    (w) => (w.line ?? "data") === "data" && w.toPort !== undefined,
+  );
+  if (!precisa) return wires;
+
+  const saida: Wire[] = [];
+  for (const wire of wires) {
+    const porta = wire.toPort;
+    if ((wire.line ?? "data") !== "data" || porta === undefined || wire.to === DROP) {
+      saida.push(wire);
+      continue;
+    }
+    const destino = tree.byId.get(wire.to);
+    // Com atalho, quem age é o contêiner: a carga para NELE, com a marca da
+    // entrada por onde chegou, senão o atalho não saberia qual parcela é qual.
+    if (destino?.shortcut !== undefined) {
+      saida.push(wire);
+      continue;
+    }
+    const dentro = destino?.inlets?.[porta] ?? [];
+    for (const filho of dentro) {
+      saida.push({ ...wire, to: entryLeaf(tree, filho) });
+    }
+  }
+  return saida;
+}

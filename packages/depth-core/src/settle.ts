@@ -3,10 +3,11 @@ import { DROP } from "./model.js";
 import type { Emission, Message, PortId, WorldSpec } from "./model.js";
 import { settleOrder } from "./settle-graph.js";
 
-/** O que chegou a um ator: carga na caixa, sinal por porta. */
+/** O que chegou a um ator: carga na caixa, sinal por porta, carga por entrada. */
 export interface Delivery {
   readonly cargo: readonly Message[];
   readonly signals: Readonly<Record<PortId, readonly Message[]>>;
+  readonly inlets: Readonly<Record<PortId, readonly Message[]>>;
 }
 
 export interface SettleResult {
@@ -28,6 +29,7 @@ export interface SettleResult {
 interface Caixa {
   cargo: Message[];
   signals: Map<PortId, Message[]>;
+  inlets: Map<PortId, Message[]>;
 }
 
 /**
@@ -47,10 +49,12 @@ export function settle(
   spec: WorldSpec,
   clocked: ReadonlyMap<string, readonly Message[]>,
   clockedSignals: ReadonlyMap<string, ReadonlyMap<PortId, readonly Message[]>>,
+  clockedInlets: ReadonlyMap<string, ReadonlyMap<PortId, readonly Message[]>>,
   runOne: (
     id: string,
     cargo: readonly Message[],
     signals: Readonly<Record<PortId, readonly Message[]>>,
+    inlets: Readonly<Record<PortId, readonly Message[]>>,
   ) => readonly Emission[],
 ): SettleResult {
   const ordem = settleOrder(spec.wires);
@@ -66,7 +70,7 @@ export function settle(
   const caixa = (id: string): Caixa => {
     const existente = caixas.get(id);
     if (existente !== undefined) return existente;
-    const nova: Caixa = { cargo: [], signals: new Map() };
+    const nova: Caixa = { cargo: [], signals: new Map(), inlets: new Map() };
     caixas.set(id, nova);
     return nova;
   };
@@ -81,6 +85,12 @@ export function settle(
       signals[porta] = [...(signals[porta] ?? []), ...msgs];
     }
 
+    const inlets: Record<PortId, readonly Message[]> = {};
+    for (const [porta, msgs] of clockedInlets.get(id) ?? []) inlets[porta] = [...msgs];
+    for (const [porta, msgs] of minha?.inlets ?? []) {
+      inlets[porta] = [...(inlets[porta] ?? []), ...msgs];
+    }
+
     // Nada chegou: não há o que propagar a partir daqui.
     if (cargo.length === 0 && Object.keys(signals).length === 0) continue;
 
@@ -91,7 +101,7 @@ export function settle(
     substeps = Math.max(substeps, depth + 1);
     depths.set(id, depth);
 
-    const emissoes = runOne(id, cargo, signals);
+    const emissoes = runOne(id, cargo, signals, inlets);
     if (emissoes.length === 0) continue;
 
     for (const emissao of emissoes) {
@@ -109,6 +119,11 @@ export function settle(
           bump(`sigin:${wire.to}.${porta}`, 1);
         } else {
           destino.cargo.push(emissao.message);
+          if (wire.toPort !== undefined) {
+            const lista = destino.inlets.get(wire.toPort) ?? [];
+            lista.push(emissao.message);
+            destino.inlets.set(wire.toPort, lista);
+          }
           bump(`in:${wire.to}`, 1);
           bump(`in:${wire.to}.weight`, emissao.message.weight);
         }
@@ -120,7 +135,9 @@ export function settle(
   for (const [id, c] of caixas) {
     const signals: Record<PortId, readonly Message[]> = {};
     for (const [porta, msgs] of c.signals) signals[porta] = msgs;
-    deliveries.set(id, { cargo: c.cargo, signals });
+    const inlets: Record<PortId, readonly Message[]> = {};
+    for (const [porta, msgs] of c.inlets) inlets[porta] = msgs;
+    deliveries.set(id, { cargo: c.cargo, signals, inlets });
   }
 
   return { deliveries, substeps, ledger, depths };

@@ -2,7 +2,7 @@ import { DROP } from "./model.js";
 import type { WireTiming, WorldSpec } from "./model.js";
 import { familyOf } from "./model.js";
 import { findCombinationalCycle } from "./settle-graph.js";
-import { entryLeaf } from "./tree.js";
+import { entryLeaf, visibleChild } from "./tree.js";
 import type { TreeIndex } from "./tree.js";
 
 /**
@@ -56,11 +56,34 @@ export function validateWorld(spec: WorldSpec, tree: TreeIndex): void {
       );
     }
 
-    if (line === "data" && wire.toPort !== undefined) {
-      erros.push(
-        `o fio de "${wire.from}.${wire.port}" declara toPort "${wire.toPort}", e ` +
-          `toPort só vale em linha de controle — carga entra pela folha de entrada`,
-      );
+    // Carga com porta nomeada: o destino tem que ter aquele borne. Sem esta
+    // regra, o fio entraria num nome que não existe e a carga sumiria — o
+    // desenho mostraria uma ligação e o modelo não teria nenhuma.
+    if (line === "data" && wire.toPort !== undefined && wire.to !== DROP) {
+      const destino = tree.byId.get(wire.to);
+      const bornes = destino?.inlets;
+      if (destino !== undefined && destino.shortcut === undefined && bornes?.[wire.toPort] === undefined) {
+        erros.push(
+          `o fio de "${wire.from}.${wire.port}" entra em "${wire.to}" pela porta ` +
+            `"${wire.toPort}", e "${wire.to}" não declara essa entrada` +
+            (bornes === undefined
+              ? " — ele não tem entradas nomeadas"
+              : ` — as que ele tem são ${Object.keys(bornes).join(", ")}`),
+        );
+      }
+    }
+
+    // O contrário também: entrar sem nome num objeto que tem bornes deixaria o
+    // motor escolher um deles, e escolher em silêncio é o que não pode.
+    if (line === "data" && wire.toPort === undefined && wire.to !== DROP) {
+      const destino = tree.byId.get(wire.to);
+      if (destino?.inlets !== undefined) {
+        erros.push(
+          `o fio de "${wire.from}.${wire.port}" entra em "${wire.to}" sem dizer por ` +
+            `qual porta, e "${wire.to}" tem entradas nomeadas ` +
+            `(${Object.keys(destino.inlets).join(", ")}). Diga por qual delas`,
+        );
+      }
     }
 
     if (wire.toPort !== undefined && (wire.toPort.includes(".") || wire.toPort.includes(":"))) {
@@ -101,7 +124,9 @@ export function validateWorld(spec: WorldSpec, tree: TreeIndex): void {
 
     const folha = entryLeaf(tree, wire.to);
     const destino = tree.byId.get(folha);
-    if (destino !== undefined && familyOf(destino.kind) !== "plate" && destino.behavior !== undefined) {
+    // Quem tem atalho age: o atalho É o comportamento dele.
+    const age = destino?.behavior !== undefined || destino?.shortcut !== undefined;
+    if (destino !== undefined && familyOf(destino.kind) !== "plate" && age) {
       continue;
     }
     const onde =
@@ -132,6 +157,48 @@ export function validateWorld(spec: WorldSpec, tree: TreeIndex): void {
         `a porta "${wire.port}" de "${wire.from}" mistura tempos: um fio é ` +
           `"${anterior}" e outro é "${timing}". Uma porta entrega numa fase só`,
       );
+    }
+  }
+
+  // As entradas nomeadas precisam apontar para dentro, e para quem age: um
+  // borne ligado a quem não existe, ou a quem não faz nada, é uma entrada que
+  // engole carga.
+  for (const node of tree.byId.values()) {
+    if (node.inlets === undefined) continue;
+    if (node.leaf === true || (node.children ?? []).length === 0) {
+      erros.push(
+        `"${node.id}" declara entradas nomeadas e não tem interior: um borne ` +
+          `serve para dizer quem, lá dentro, recebe — e não há lá dentro`,
+      );
+      continue;
+    }
+    for (const [porta, filhos] of Object.entries(node.inlets)) {
+      if (porta.includes(".") || porta.includes(":")) {
+        erros.push(
+          `a entrada "${porta}" de "${node.id}" usa "." ou ":", que separam ` +
+            `campos no livro-caixa — escolha um nome sem esses caracteres`,
+        );
+      }
+      if (filhos.length === 0) {
+        erros.push(
+          `a entrada "${porta}" de "${node.id}" não leva a ninguém: a carga que ` +
+            `chegasse por ela desapareceria`,
+        );
+      }
+      for (const filho of filhos) {
+        if (!tree.byId.has(filho)) {
+          erros.push(
+            `a entrada "${porta}" de "${node.id}" leva a "${filho}", que não existe`,
+          );
+          continue;
+        }
+        if (visibleChild(tree, node.id, filho).at === "outside") {
+          erros.push(
+            `a entrada "${porta}" de "${node.id}" leva a "${filho}", que está fora ` +
+              `dele — borne é entrada para DENTRO`,
+          );
+        }
+      }
     }
   }
 

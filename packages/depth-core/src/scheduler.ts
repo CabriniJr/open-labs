@@ -12,8 +12,8 @@ import type {
   WorldState,
 } from "./model.js";
 import { settle } from "./settle.js";
-import { resolveSignalTargets, resolveTargets } from "./wiring.js";
-import { shortcutOwner } from "./tree.js";
+import { expandInlets, resolveSignalTargets, resolveTargets } from "./wiring.js";
+import { entryLeaf, shortcutOwner } from "./tree.js";
 import type { TreeIndex } from "./tree.js";
 
 const DEFAULT_EDGE_TICKS = 4;
@@ -72,6 +72,11 @@ export function stepWorld(
 ): WorldState {
   const tick = state.tick + 1;
   const edgeTicks = spec.edgeTicks ?? DEFAULT_EDGE_TICKS;
+  // Uma vez, na entrada do tick: daqui para baixo todo fio liga duas coisas que
+  // agem, e nem a ordem topológica nem o livro-caixa precisam saber que existe
+  // contêiner com bornes.
+  const wires = expandInlets(tree, spec.wires);
+  const fiado: WorldSpec = { ...spec, wires };
 
   const nodes: Record<string, unknown> = { ...state.nodes };
   const ledger: Record<string, number> = { ...state.ledger };
@@ -85,6 +90,7 @@ export function stepWorld(
   // modifica o que o ator faz, e nunca é carga.
   const inbox = new Map<string, Message[]>();
   const sinais = new Map<string, Map<string, Message[]>>();
+  const entradas = new Map<string, Map<string, Message[]>>();
   const stillFlying: InFlight[] = [];
   for (const item of state.flight) {
     if (tick - item.sent < edgeTicks) {
@@ -104,6 +110,13 @@ export function stepWorld(
     const box = inbox.get(item.to) ?? [];
     box.push(item.message);
     inbox.set(item.to, box);
+    if (item.inPort !== undefined) {
+      const porPorta = entradas.get(item.to) ?? new Map<string, Message[]>();
+      const lista = porPorta.get(item.inPort) ?? [];
+      lista.push(item.message);
+      porPorta.set(item.inPort, lista);
+      entradas.set(item.to, porPorta);
+    }
   }
 
   const atores = actors(tree);
@@ -123,7 +136,7 @@ export function stepWorld(
   // Qual regime cada porta tem. `validateWorld` já garantiu que uma porta não
   // mistura os dois, então a primeira aresta que casa decide.
   const tempoDaPorta = new Map<string, WireTiming>();
-  for (const wire of spec.wires) {
+  for (const wire of wires) {
     const chave = `${wire.from}\u0000${wire.port}`;
     if (!tempoDaPorta.has(chave)) tempoDaPorta.set(chave, wire.timing ?? "clocked");
   }
@@ -135,10 +148,12 @@ export function stepWorld(
     node: ObjectSpec,
     phase: TickPhase,
     signals: Readonly<Record<string, readonly Message[]>>,
+    inlets: Readonly<Record<string, readonly Message[]>>,
   ): StepContext => ({
     tick,
     phase,
     signals,
+    inlets,
     params,
     random: (salt = "") => randomAt(spec.seed, tick, `${node.id}:${salt}`),
     emit: (kind: string, weight = 1, data: Record<string, unknown> = {}): Message => {
@@ -157,12 +172,13 @@ export function stepWorld(
     phase: TickPhase,
     cargo: readonly Message[],
     signals: Readonly<Record<string, readonly Message[]>>,
+    inlets: Readonly<Record<string, readonly Message[]>> = {},
   ): readonly Emission[] => {
     const node = porId.get(id);
     const executar = node === undefined ? undefined : acao(node);
     if (node === undefined || executar === undefined) return [];
 
-    const resultado = executar(nodes[id], cargo, contexto(node, phase, signals));
+    const resultado = executar(nodes[id], cargo, contexto(node, phase, signals, inlets));
     // Só o confronto escreve estado. Quem acomoda não guarda — é o que separa
     // lógica combinacional de elemento de memória, e aqui é estrutural: o
     // `state` devolvido na acomodação nem chega a ser lido.
@@ -192,8 +208,8 @@ export function stepWorld(
   };
 
   // FASE 1 — acomodação. Propaga dentro do tick e não escreve estado.
-  const acomodado = settle(spec, inbox, sinais, (id, cargo, sinaisDele) =>
-    rodar(id, "settle", cargo, sinaisDele),
+  const acomodado = settle(fiado, inbox, sinais, entradas, (id, cargo, sinaisDele, entradasDele) =>
+    rodar(id, "settle", cargo, sinaisDele, entradasDele),
   );
   for (const [chave, quanto] of acomodado.ledger) bump(chave, quanto);
 
@@ -214,8 +230,13 @@ export function stepWorld(
       sinaisDaqui[porta] = [...(sinaisDaqui[porta] ?? []), ...msgs];
     }
 
-    for (const emissao of rodar(node.id, "commit", cargo, sinaisDaqui)) {
-      const alvosDeSinal = resolveSignalTargets(spec.wires, node.id, emissao.port);
+    const entradasDaqui: Record<string, readonly Message[]> = { ...(entregue?.inlets ?? {}) };
+    for (const [porta, msgs] of entradas.get(node.id) ?? []) {
+      entradasDaqui[porta] = [...(entradasDaqui[porta] ?? []), ...msgs];
+    }
+
+    for (const emissao of rodar(node.id, "commit", cargo, sinaisDaqui, entradasDaqui)) {
+      const alvosDeSinal = resolveSignalTargets(wires, node.id, emissao.port);
       for (const alvo of alvosDeSinal) {
         launched.push({
           id: `${tick}:${node.id}:${emissao.port}:sig${launched.length}`,
@@ -230,7 +251,7 @@ export function stepWorld(
       // Leque é nativo: cada fio que sai desta porta leva uma cópia, com item
       // em trânsito próprio. `out:` já contou UMA emissão acima; quem conta o
       // espalhamento é o `in:` de cada destino.
-      const destinos = resolveTargets(tree, spec.wires, node.id, emissao.port);
+      const destinos = resolveTargets(tree, wires, node.id, emissao.port);
       if (destinos.length === 0) {
         // Sem fio de dado e sem descarte. Se havia sinal, não é buraco de
         // autoria: a porta é de controle e já entregou acima.
@@ -239,13 +260,24 @@ export function stepWorld(
         }
         continue;
       }
+      // A entrada nomeada viaja com a carga: sem ela, quem recebe por bornes
+      // não saberia por qual borne a coisa entrou.
+      const bornes = wires.filter(
+        (w) =>
+          w.from === node.id &&
+          w.port === emissao.port &&
+          (w.line ?? "data") === "data" &&
+          w.toPort !== undefined,
+      );
       for (const to of destinos) {
+        const borne = bornes.find((w) => w.to !== DROP && entryLeaf(tree, w.to) === to);
         launched.push({
           id: `${tick}:${node.id}:${emissao.port}:${launched.length}`,
           message: emissao.message,
           from: node.id,
           to,
           sent: tick,
+          ...(borne?.toPort === undefined ? {} : { inPort: borne.toPort }),
         });
       }
     }
