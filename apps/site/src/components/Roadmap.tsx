@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { url } from "../lib/urls.js";
 import {
   ANNEX_W,
   ANNEX_X,
@@ -194,7 +195,7 @@ export function Roadmap({ mapa }: { readonly mapa: RoadmapMap }) {
                 {lab.status === "coming" ? (
                   <span className="roadmap__node-title">{lab.title}</span>
                 ) : (
-                  <a className="roadmap__node-title" href={lab.href}>
+                  <a className="roadmap__node-title" href={url(lab.href)}>
                     {lab.title}
                   </a>
                 )}

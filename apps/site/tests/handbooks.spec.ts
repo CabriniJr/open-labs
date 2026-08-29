@@ -37,8 +37,8 @@ test("both handbooks draw their own interactive map", async ({ page }) => {
   // dois nós abrem, e eles levam aos labs que estão no ar
   const abertos = page.locator('.roadmap__node:not([data-status="coming"]) a');
   await expect(abertos).toHaveCount(3);
-  await expect(page.locator('.roadmap__node a[href$="labs/cpu"]').first()).toBeVisible();
-  await expect(page.locator('.roadmap__node a[href$="labs/gates"]').first()).toBeVisible();
+  await expect(page.locator('.roadmap__node a[href*="labs/cpu"]').first()).toBeVisible();
+  await expect(page.locator('.roadmap__node a[href*="labs/gates"]').first()).toBeVisible();
 });
 
 test("nothing on a map promises a link that goes nowhere", async ({ page }) => {
@@ -100,4 +100,20 @@ test("o desenho do mapa e as coordenadas dos nós escalam juntos", async ({ page
     const doDesenho = vbH! / vbW!;
     expect(Math.abs(daCaixa - doDesenho), `${rota} proporção`).toBeLessThan(0.02);
   }
+});
+
+test("os links do mapa levam para onde dizem", async ({ page }) => {
+  // O defeito: o mapa escrevia o href cru, e o navegador resolvia relativo à
+  // página — de dentro de /handbooks/riscv/ o link "labs/cpu" virava
+  // /handbooks/riscv/labs/cpu, que é 404. A página do handbook já passava pelo
+  // helper de base; o mapa, não, e ninguém percebeu porque no OTel todo href
+  // era "#".
+  await page.goto("handbooks/riscv/");
+
+  const link = page.locator('.roadmap__node a').first();
+  await link.scrollIntoViewIfNeeded();
+  await link.click();
+
+  await expect(page).toHaveURL(/\/labs\/(cpu|gates)\/?$/);
+  await expect(page.locator(".dui-stage")).toBeVisible({ timeout: 15_000 });
 });
