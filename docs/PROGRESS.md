@@ -82,17 +82,27 @@ biblioteca e o material didático para ser reusado como material didático.
 Substitui o modelo de quatro níveis fixos por uma árvore de objetos composta de baixo
 para cima. Sessões planejadas (detalhe na §9 da spec):
 
-- [ ] **S1 — Motor composicional** 🚧 *em andamento*. `model`, `tree`, `wiring`,
-      `scheduler`, `world` com eventos de parâmetro, `meters`. Testes 1–5 da §8.
-      **Plano:** `docs/superpowers/plans/2026-08-28-s1-motor-composicional.md`.
+- [x] **S1 — Motor composicional.** `model`, `tree`, `wiring`, `scheduler`, `world` com
+      eventos de parâmetro, `meters` + superfície pública, tudo testado. O modelo antigo
+      (`types.ts`, `engine.ts`) segue exportado como andaime até a S5 migrar a landing —
+      não usar em código novo. **Plano:**
+      `docs/superpowers/plans/2026-08-28-s1-motor-composicional.md`.
       - [x] Task 1 — `model.ts` e `tree.ts` (`c20806a`)
       - [x] Task 1b — retrabalho da revisão de qualidade (`3c9c192`)
       - [x] Task 1b Step 10 — quatro achados da segunda revisão (`564d47c`): fronteira `entry`/
             `exit` validada na **indexação**, não no percurso; `isOpenable` e `entryLeaf`
             param no mesmo predicado; válvulas do invariante cobertas por teste de
             mutação; `byId` tipado como `AnyObject`. 84 testes.
-      - [ ] Task 1c — cinco famílias e `Wire.line`
-      - [ ] Tasks 2–7 — fiação, tick, mundo, medidores, superfície pública, fechamento
+      - [x] Task 1c — cinco famílias e `Wire.line` (`1d92259`)
+      - [x] Task 2 — fiação com encadeamento implícito de `pipeline` (`52edf0e`)
+      - [x] Task 3 — `stepWorld`: um tick como função pura (`a98c192`)
+      - [x] Task 3b — sorteio endereçável (`randomAt`, `pure-rand`), property tests
+            (`fast-check`) e fio esquecido separado do descarte (`dbb76e3`)
+      - [x] Task 4 — `World` com `seek` exato e parâmetro como evento no tempo (`29c8249`)
+      - [x] Task 5 — medidores de porta e travessias de fronteira, com property test de
+            que a vista agregada nunca inventa (`b78fafb`, `813d59f`)
+      - [x] Task 6 — superfície pública em `index.ts` e guarda de fronteira ampliada a
+            protocolo (`d273049`)
 - [ ] **S2 — Arquétipos.** Os oito de hoje **mais a onda 1** de `kinds.md`
       (`transform`, `tee`, `merge`, `batch`, `clock`, `arbiter`): comportamento em
       `depth-core`, contrato visual em `depth-ui`. Aqui também entram o property test
@@ -133,7 +143,18 @@ Todas na spec, mas as que mais custam se forem esquecidas:
 
 - **Só folhas têm comportamento.** Objeto composto nunca tem comportamento próprio.
 - **Mudar parâmetro não zera o tick.** O mundo reage de onde está.
-- **Medidor só lê tráfego de porta**, nunca estado interno.
+- **Medidor só lê tráfego de porta**, nunca estado interno. Não existe caminho de
+  `meters.ts` para `state.nodes` — a assinatura das funções nem recebe o que precisaria
+  para espiar.
+- **A vista agregada é projeção de fronteira do mesmo run**, nunca autorada à parte.
+  `scheduler.property.test.ts` prova, com property test, que ela nunca inventa
+  travessia que não aconteceu.
+- **Fio esquecido é contado em `.unwired`**, separado do descarte deliberado
+  (`@drop`). Silêncio de fiação e decisão de descartar são coisas diferentes, e o
+  livro-caixa não pode confundir uma com a outra.
+- **Sorteio é endereçável** por `(seed, tick, salt)`, nunca um fluxo com estado
+  escondido. É isso que torna o `seek` do `World` exato em vez de aproximado: rebobinar
+  é reler, não reexecutar do tick 0.
 - **Visual pertence ao `Kind`, nunca ao objeto.** Sem essa trava, nada termina.
 - **A chamada da API não é filha do TracerProvider**, e `BatchSpanProcessor` *é* um
   `SpanProcessor`. Fidelidade da árvore é o produto.
