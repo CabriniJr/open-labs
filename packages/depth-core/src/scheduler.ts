@@ -55,7 +55,7 @@ export function initialWorld(tree: TreeIndex): WorldState {
   for (const node of actors(tree)) {
     nodes[node.id] = node.init === undefined ? {} : node.init();
   }
-  return { tick: 0, nodes, flight: [], ledger: {}, substeps: 0, substepOf: {} };
+  return { tick: 0, nodes, flight: [], ledger: {}, substeps: 0, substepOf: {}, settled: {} };
 }
 
 /**
@@ -183,6 +183,21 @@ export function stepWorld(
     },
   });
 
+  /**
+   * O que saiu de cada porta durante a acomodação, por "id.porta".
+   *
+   * A acomodação inteira acontecia e desaparecia: o livro-caixa guardava
+   * **quantas** mensagens saíram de cada porta, e nunca o que elas diziam. Para
+   * quem conta carga isso basta; para quem precisa do valor que saiu — e um
+   * domínio onde a mensagem carrega um bit precisa —, a única saída era
+   * adivinhar pela contagem, que é o mesmo que inventar.
+   *
+   * É o par acomodado do `flight`, que só carrega o tráfego cronometrado. O
+   * motor continua sem saber o que há dentro de `data`: ele só para de jogar
+   * fora a resposta que ele mesmo calculou.
+   */
+  const settled = new Map<string, Message[]>();
+
   /** Roda um ator numa fase, contando as saídas e cobrando o regime da porta. */
   const rodar = (
     id: string,
@@ -220,6 +235,12 @@ export function stepWorld(
       }
       bump(`out:${id}.${emissao.port}`, 1);
       bump(`out:${id}.${emissao.port}.weight`, emissao.message.weight);
+      if (phase === "settle") {
+        const chave = `${id}.${emissao.port}`;
+        const lista = settled.get(chave) ?? [];
+        lista.push(emissao.message);
+        settled.set(chave, lista);
+      }
     }
     return resultado.out;
   };
@@ -310,5 +331,6 @@ export function stepWorld(
     ledger,
     substeps: acomodado.substeps,
     substepOf,
+    settled: Object.fromEntries(settled),
   };
 }

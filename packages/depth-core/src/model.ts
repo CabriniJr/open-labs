@@ -312,4 +312,20 @@ export interface WorldState {
    * coisa que inventá-la.
    */
   readonly substepOf: Readonly<Record<string, number>>;
+  /**
+   * O que saiu de cada porta na acomodação **deste tick**, por `"id.porta"` —
+   * as mesmas chaves que o livro-caixa usa em `out:`, sem o prefixo.
+   *
+   * O livro-caixa é acumulado desde o tick 0; isto é do tick, e some no
+   * seguinte. Carregá-lo adiante acenderia na tela uma porta por causa de um
+   * valor que já passou.
+   *
+   * O livro-caixa conta **quantas** mensagens saíram; isto guarda **quais**. A
+   * diferença importa em domínio onde a mensagem carrega valor: sem isto, quem
+   * desenha só sabe que a porta emitiu, e teria de adivinhar o que ela disse.
+   *
+   * É o par acomodado do `flight` — que carrega só o tráfego que atravessa a
+   * borda do relógio —, e como ele, é resposta do modelo: quem lê não inventa.
+   */
+  readonly settled: Readonly<Record<string, readonly Message[]>>;
 }
