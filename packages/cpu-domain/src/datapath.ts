@@ -492,16 +492,18 @@ export function cpuWorld(image: readonly number[], seed = 1): WorldSpec {
       // o pulso é o que faz o ciclo começar
       { from: "relogio", port: "tick", to: "pc", timing: "clocked" },
 
-      // acomodação: tudo isto fecha dentro do mesmo tick
-      { from: "pc", port: "out", to: "imem", timing: "settle" },
-      { from: "imem", port: "out", to: "decodificador", timing: "settle" },
-      { from: "imem", port: "out", to: "controle", timing: "settle" },
+      // acomodação: tudo isto fecha dentro do mesmo tick. `width: 32` não é
+      // enfeite: a linha é um feixe de 32 vias, e é isso que faz somar dois
+      // números custar 32 vezes um somador de um bit
+      { from: "pc", port: "out", to: "imem", timing: "settle", width: 32 },
+      { from: "imem", port: "out", to: "decodificador", timing: "settle", width: 32 },
+      { from: "imem", port: "out", to: "controle", timing: "settle", width: 32 },
       { from: "decodificador", port: "out", to: "banco", timing: "settle" },
-      { from: "banco", port: "out", to: "mux-operando", timing: "settle" },
-      { from: "mux-operando", port: "out", to: "ula", timing: "settle" },
-      { from: "ula", port: "out", to: "memoria", timing: "settle" },
-      { from: "ula", port: "out", to: "desvio", timing: "settle" },
-      { from: "memoria", port: "out", to: "mux-escrita", timing: "settle" },
+      { from: "banco", port: "out", to: "mux-operando", timing: "settle", width: 32 },
+      { from: "mux-operando", port: "out", to: "ula", timing: "settle", width: 32 },
+      { from: "ula", port: "out", to: "memoria", timing: "settle", width: 32 },
+      { from: "ula", port: "out", to: "desvio", timing: "settle", width: 32 },
+      { from: "memoria", port: "out", to: "mux-escrita", timing: "settle", width: 32 },
 
       // as linhas de controle: metade do diagrama, e nenhuma carrega carga
       { from: "controle", port: "op", to: "ula", line: "control", toPort: "op", timing: "settle" },
@@ -511,8 +513,8 @@ export function cpuWorld(image: readonly number[], seed = 1): WorldSpec {
       { from: "controle", port: "cond", to: "desvio", line: "control", toPort: "cond", timing: "settle" },
 
       // o que atravessa a borda de relógio, e por isso não fecha laço nenhum
-      { from: "mux-escrita", port: "escrita", to: "banco", timing: "clocked" },
-      { from: "desvio", port: "proximo", to: "pc", timing: "clocked" },
+      { from: "mux-escrita", port: "escrita", to: "banco", timing: "clocked", width: 32 },
+      { from: "desvio", port: "proximo", to: "pc", timing: "clocked", width: 32 },
       { from: "memoria", port: "guardar", to: "memoria", timing: "clocked" },
     ],
   };

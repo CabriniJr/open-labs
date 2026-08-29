@@ -54,7 +54,7 @@ export function initialWorld(tree: TreeIndex): WorldState {
   for (const node of actors(tree)) {
     nodes[node.id] = node.init === undefined ? {} : node.init();
   }
-  return { tick: 0, nodes, flight: [], ledger: {}, substeps: 0 };
+  return { tick: 0, nodes, flight: [], ledger: {}, substeps: 0, substepOf: {} };
 }
 
 /**
@@ -251,11 +251,15 @@ export function stepWorld(
     }
   }
 
+  const substepOf: Record<string, number> = {};
+  for (const [id, depth] of acomodado.depths) substepOf[id] = depth;
+
   return {
     tick,
     nodes,
     flight: [...stillFlying, ...launched],
     ledger,
     substeps: acomodado.substeps,
+    substepOf,
   };
 }

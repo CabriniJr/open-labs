@@ -160,6 +160,53 @@
   stroke: color-mix(in oklab, var(--dui-conduit) 55%, var(--rule));
 }
 
+/*
+ * A pilha da réplica: N objetos idênticos, um desenhado. As folhas atrás não
+ * têm preenchimento — elas são o contorno dos outros N-1, não outra caixa.
+ */
+.dui-stage__pilha {
+  fill: none;
+  stroke: color-mix(in oklab, var(--dui-container) 40%, var(--rule));
+  stroke-width: 1.5;
+}
+
+/*
+ * Saída alta. Onde a presença da mensagem É o bit em alto — porta lógica —,
+ * isto é literalmente a porta acesa, lida do livro-caixa. O atraso vem do
+ * subpasso em que ela rodou, então a onda atravessa o desenho na ordem em que
+ * o sinal atravessa o circuito.
+ */
+.dui-stage__objeto[data-alto="true"] > .dui-stage__caixa {
+  fill: color-mix(in oklab, var(--dui-dado) 30%, var(--paper-raised));
+  stroke: var(--dui-dado);
+  animation: dui-acender calc(var(--dui-tick) * 0.5) ease-out both;
+  animation-delay: var(--dui-atraso, 0ms);
+}
+
+@keyframes dui-acender {
+  from {
+    fill: var(--dui-superficie);
+    filter: none;
+  }
+  40% {
+    filter: drop-shadow(0 0 10px color-mix(in oklab, var(--dui-dado) 75%, transparent));
+  }
+  to {
+    filter: drop-shadow(0 0 6px color-mix(in oklab, var(--dui-dado) 45%, transparent));
+  }
+}
+
+.dui-stage__objeto[data-alto="true"] .dui-stage__rotulo {
+  fill: var(--ink);
+  font-weight: 700;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dui-stage__objeto[data-alto="true"] > .dui-stage__caixa {
+    animation: none;
+  }
+}
+
 /* Agir é acender. A borda é a mesma; o que muda é a energia. */
 .dui-stage__objeto[data-ativo="true"] > .dui-stage__caixa {
   stroke: var(--dui-processor);

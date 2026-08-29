@@ -49,27 +49,70 @@ const centro = (p: NodePlacement): Ponto => ({ x: p.x + p.w / 2, y: p.y + p.h / 
  * Quando o destino está atrás da origem, a linha desce para uma faixa livre e
  * volta por baixo: é a realimentação, e ela precisa **parecer** uma volta.
  */
-function caminho(de: NodePlacement, para: NodePlacement, faixa: number): string {
+interface Retangulo {
+  readonly x: number;
+  readonly y: number;
+  readonly w: number;
+  readonly h: number;
+}
+
+const cruzaVertical = (x: number, y1: number, y2: number, r: Retangulo): boolean =>
+  x > r.x - 6 && x < r.x + r.w + 6 && Math.max(y1, y2) > r.y - 6 && Math.min(y1, y2) < r.y + r.h + 6;
+
+const cruzaHorizontal = (y: number, x1: number, x2: number, r: Retangulo): boolean =>
+  y > r.y - 6 && y < r.y + r.h + 6 && Math.max(x1, x2) > r.x - 6 && Math.min(x1, x2) < r.x + r.w + 6;
+
+/** O primeiro candidato que não passa por cima de ninguém, ou o primeiro. */
+function escolher(
+  candidatos: readonly number[],
+  livre: (valor: number) => boolean,
+): number {
+  return candidatos.find(livre) ?? candidatos[0] ?? 0;
+}
+
+/**
+ * O caminho de um fio, em cotovelos retos — é assim que esquemático se desenha,
+ * e a diagonal esconderia por onde a linha passa.
+ *
+ * O cotovelo **desvia de quem estiver no caminho**. Uma linha que atravessa uma
+ * caixa parece entrar nela, e o leitor passa a ver uma ligação que não existe —
+ * é mentira de desenho, e custa o mesmo tanto que mentira de número.
+ */
+function caminho(
+  de: NodePlacement,
+  para: NodePlacement,
+  faixa: number,
+  obstaculos: readonly Retangulo[],
+): string {
   const a = centro(de);
   const b = centro(para);
   const saida = { x: de.x + de.w, y: a.y };
+  const outros = obstaculos.filter((r) => r !== de && r !== para);
 
   // Para a frente: sai pela direita, entra pela esquerda, com um cotovelo no
   // meio. É a leitura natural, e é a maioria dos fios.
   if (para.x >= saida.x + 16) {
     const meio = (saida.x + para.x) / 2;
-    return `M ${saida.x} ${saida.y} H ${meio} V ${b.y} H ${para.x}`;
+    const candidatos = [meio, meio - 14, meio + 14, saida.x + 12, para.x - 12];
+    const x = escolher(candidatos, (c) =>
+      outros.every((r) => !cruzaVertical(c, saida.y, b.y, r)),
+    );
+    return `M ${saida.x} ${saida.y} H ${x} V ${b.y} H ${para.x}`;
   }
 
-  // Destino claramente abaixo ou acima: **desce (ou sobe) pela borda de baixo**,
-  // em vez de sair de lado e cruzar tudo na altura do meio. É o barramento indo
-  // até a memória, e é assim que a figura de livro desenha.
+  // Destino claramente abaixo ou acima: **desce (ou sobe) pela borda**, em vez
+  // de sair de lado e cruzar tudo na altura do meio. É o barramento indo até a
+  // memória, e é assim que a figura de livro desenha.
   const abaixo = para.y > de.y + de.h + 8;
   const acima = para.y + para.h + 8 < de.y;
   if (abaixo || acima) {
-    const lane = abaixo
-      ? (de.y + de.h + para.y) / 2 + (faixa % 24) - 12
-      : (para.y + para.h + de.y) / 2 + (faixa % 24) - 12;
+    const entre = abaixo
+      ? [(de.y + de.h + para.y) / 2, para.y - 16, de.y + de.h + 16]
+      : [(para.y + para.h + de.y) / 2, para.y + para.h + 16, de.y - 16];
+    const candidatos = entre.flatMap((c) => [c, c - 12, c + 12, c - 24, c + 24]);
+    const lane = escolher(candidatos, (c) =>
+      outros.every((r) => !cruzaHorizontal(c, a.x, b.x, r)),
+    );
     const inicioY = abaixo ? de.y + de.h : de.y;
     const fimY = abaixo ? para.y : para.y + para.h;
     return `M ${a.x} ${inicioY} V ${lane} H ${b.x} V ${fimY}`;
@@ -77,7 +120,11 @@ function caminho(de: NodePlacement, para: NodePlacement, faixa: number): string 
 
   // Sobrepostos na vertical: a linha precisa PARECER uma volta. Sai pela
   // direita, contorna por baixo dos dois e entra pela borda de baixo.
-  const lane = Math.max(de.y + de.h, para.y + para.h) + faixa;
+  const base = Math.max(de.y + de.h, para.y + para.h);
+  const lane = escolher(
+    [base + faixa, base + faixa + 14, base + faixa + 28, base + faixa - 10],
+    (c) => outros.every((r) => !cruzaHorizontal(c, saida.x + 14, b.x, r)),
+  );
   return `M ${saida.x} ${saida.y} H ${saida.x + 14} V ${lane} H ${b.x} V ${para.y + para.h}`;
 }
 
@@ -153,6 +200,17 @@ export function Stage({
   const mudou = delta(state, previous);
   const lugares = new Map(view.places.map((p) => [p.id, p]));
 
+  /**
+   * O atraso de cada objeto dentro do tick: o subpasso em que ele rodou, dito
+   * pelo modelo. É o que faz a acomodação **acontecer na tela** em vez de
+   * aparecer pronta — e o que se vê é atraso de propagação, não estilo.
+   */
+  const passos = Math.max(1, state.substeps);
+  const atrasoDe = (id: string): number => {
+    const passo = state.substepOf[id];
+    return passo === undefined ? 0 : (passo / passos) * tickMs * 0.8;
+  };
+
   // Contêineres primeiro: eles são moldura, e moldura desenhada por cima
   // esconderia o que ela emoldura.
   const ordenados = [...view.places].sort((a, b) => b.w * b.h - a.w * a.h);
@@ -174,6 +232,7 @@ export function Stage({
     return base;
   };
 
+  /** Trabalhou: recebeu ou emitiu alguma coisa neste tick. */
   const ativo = (id: string): boolean =>
     Object.entries(mudou).some(
       ([chave, quanto]) =>
@@ -183,6 +242,20 @@ export function Stage({
           chave.startsWith(`sigin:${id}.`)),
     );
 
+  /**
+   * Emitiu: a saída dele foi alta neste tick.
+   *
+   * Num modelo onde a presença da mensagem **é** o valor alto — que é como se
+   * modela porta lógica —, isto é literalmente a porta acesa. Não é enfeite: é
+   * a saída dela, lida do livro-caixa.
+   */
+  const alto = (id: string): boolean =>
+    Object.entries(mudou).some(([chave, quanto]) => quanto > 0 && chave.startsWith(`out:${id}.`));
+
+  // Contêineres são moldura: uma linha atravessando um deles é normal, e
+  // desviar dela empurraria todo fio para fora do desenho.
+  const obstaculos = view.places.filter((p) => familia(p.id) !== "container");
+
   /** Fios desenháveis: os dois pontos precisam estar na view. */
   const arestas = wires
     .map((wire, i) => {
@@ -190,7 +263,7 @@ export function Stage({
       const para = typeof wire.to === "string" ? lugares.get(wire.to) : undefined;
       if (de === undefined || para === undefined) return null;
       const linha = wire.line ?? "data";
-      const d = caminho(de, para, 18 + (i % 3) * 12);
+      const d = caminho(de, para, 18 + (i % 3) * 12, obstaculos);
       return {
         chave: `${wire.from}.${wire.port}->${String(wire.to)}`,
         to: String(wire.to),
@@ -262,7 +335,8 @@ export function Stage({
                   attributeName="stroke-dashoffset"
                   from="120"
                   to="-40"
-                  dur={`${tickMs * 0.7}ms`}
+                  dur={`${Math.max(120, (tickMs * 0.8) / passos)}ms`}
+                  begin={`${atrasoDe(aresta.from)}ms`}
                   fill="freeze"
                 />
               </path>
@@ -315,12 +389,19 @@ export function Stage({
           const leitura = readouts?.[place.id];
           const rotulo = place.label ?? node?.label ?? place.id;
           const agindo = ativo(place.id);
+          const aceso = alto(place.id);
+          // A marca ×N vem do MODELO, não da view: a view não sabe quantos são,
+          // e escrevê-la à mão seria um rótulo sem nada por trás.
+          const replicas = node?.replicas;
+          const atraso = atrasoDe(place.id);
           return (
             <g
               key={place.id}
               className="dui-stage__objeto"
               data-familia={fam}
               data-ativo={agindo ? "true" : undefined}
+              data-alto={aceso ? "true" : undefined}
+              style={{ ["--dui-atraso" as string]: `${atraso}ms` }}
               data-fechado={place.collapsed === true ? "true" : undefined}
               data-selecionado={place.id === selected ? "true" : undefined}
               tabIndex={0}
@@ -333,6 +414,26 @@ export function Stage({
                 if (e.key === " ") onSelect?.(place.id);
               }}
             >
+              {replicas !== undefined ? (
+                <>
+                  <rect
+                    className="dui-stage__pilha"
+                    x={place.x + 7}
+                    y={place.y - 7}
+                    width={place.w}
+                    height={place.h}
+                    rx={8}
+                  />
+                  <rect
+                    className="dui-stage__pilha"
+                    x={place.x + 4}
+                    y={place.y - 4}
+                    width={place.w}
+                    height={place.h}
+                    rx={8}
+                  />
+                </>
+              ) : null}
               <rect
                 className="dui-stage__caixa"
                 x={place.x}
@@ -382,9 +483,14 @@ export function Stage({
                 </>
               )}
 
-              {place.badge !== undefined ? (
-                <text className="dui-stage__marca" x={place.x + place.w - 8} y={place.y + place.h - 8} textAnchor="end">
-                  {place.badge}
+              {place.badge ?? (replicas === undefined ? undefined : `×${replicas}`) ? (
+                <text
+                  className="dui-stage__marca"
+                  x={place.x + place.w - 8}
+                  y={place.y + place.h - 8}
+                  textAnchor="end"
+                >
+                  {place.badge ?? `×${String(replicas)}`}
                 </text>
               ) : null}
               {place.collapsed === true ? (

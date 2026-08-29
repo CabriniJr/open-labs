@@ -3,7 +3,8 @@ import { indexTree } from "@ovh/depth-core";
 import { viewDisagreement } from "@ovh/depth-ui";
 import { assemble } from "./assembler.js";
 import { cpuWorld } from "./datapath.js";
-import { CPU_VIEWS, VIEW_SISTEMA } from "./views.js";
+import { somadorWorld } from "./gates.js";
+import { CPU_VIEWS, VIEW_SISTEMA, viewSomador } from "./views.js";
 
 const r = assemble("addi t0, x0, 1");
 if (!r.ok) throw new Error("o programa de teste tem que montar");
@@ -34,6 +35,26 @@ describe("as views do caminho de dados", () => {
     );
     for (const a of irmas) {
       for (const b of irmas) {
+        if (a.id >= b.id) continue;
+        const separadas =
+          a.x + a.w <= b.x || b.x + b.w <= a.x || a.y + a.h <= b.y || b.y + b.h <= a.y;
+        expect(separadas, `"${a.id}" e "${b.id}" se sobrepõem`).toBe(true);
+      }
+    }
+  });
+});
+
+describe("a view do somador de portas", () => {
+  it.each([2, 4, 8])("concorda com a árvore de %i bits", (bits) => {
+    const arvore = indexTree(somadorWorld(bits).root);
+    expect(viewDisagreement(arvore, viewSomador(bits))).toBeNull();
+  });
+
+  it("nenhuma porta desenhada por cima de outra", () => {
+    const view = viewSomador(4);
+    const portas = view.places.filter((p) => /-(xor|and|or)\d$/.test(p.id));
+    for (const a of portas) {
+      for (const b of portas) {
         if (a.id >= b.id) continue;
         const separadas =
           a.x + a.w <= b.x || b.x + b.w <= a.x || a.y + a.h <= b.y || b.y + b.h <= a.y;

@@ -270,4 +270,14 @@ export interface WorldState {
    * combinacional. Zero num mundo sem aresta acomodada.
    */
   readonly substeps: number;
+  /**
+   * Em que subpasso da acomodação cada objeto rodou neste tick.
+   *
+   * É a profundidade dele no caminho combinacional — e profundidade aqui **é**
+   * atraso de propagação. Fica no estado, e não só na tela, porque é resposta
+   * do modelo: quem desenha só a lê. Sem isto, mostrar a acomodação acontecendo
+   * dentro do tick exigiria que o desenho adivinhasse a ordem, que é a mesma
+   * coisa que inventá-la.
+   */
+  readonly substepOf: Readonly<Record<string, number>>;
 }

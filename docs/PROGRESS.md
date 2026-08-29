@@ -541,3 +541,53 @@ Estado: 345 testes unitários, 56 e2e, typecheck, boundaries e build verdes.
 - `substeps` já é contado e mostrado em número; falta **andar dentro do tick**, que é o
   que transforma o atraso de propagação em algo que se vê
 
+---
+
+## Bloco 6 — a fatia vertical: o somador aberto até a porta lógica
+
+**Data:** 2026-08-29. **Página:** `/labs/gates/`. **Código:** `packages/cpu-domain/src/gates.ts`.
+
+**A codificação que faz uma porta lógica caber no motor sem primitiva nova:**
+
+> **A presença da mensagem é o bit em alto. Não chegar nada é zero.**
+
+Uma porta que recebe só zeros não roda — e não rodar é exatamente o que uma porta faz
+quando a saída dela é zero: nada acontece na linha. Por isso **a porta acesa na tela não é
+um efeito**: é a saída dela, lida do livro-caixa (`data-alto` = emitiu neste tick).
+
+A consequência honesta, escrita no arquivo: **`not` não é expressável assim** e por isso não
+existe ali. Com entrada zero ela nunca rodaria e precisaria emitir um. XOR, AND e OR bastam
+para um somador completo, então a fatia fecha; no dia em que precisar de `not`, a codificação
+é que muda.
+
+**O que existe:** `porta` (xor/and/or), `somadorCompleto` (5 portas), `somadorWorld(bits)` —
+cascata de vai-um com `replicas: bits` **de verdade** (os N somadores existem; a marca só diz
+que são iguais). Property test: soma todo par de 4 bits com vai-um, e a profundidade de um
+somador de 8 bits é maior que a de 2 — atraso de propagação medido, não afirmado.
+
+**Achado que vale registrar:** o somador completo **não** declara atalho, e o motivo é uma
+lacuna real do motor. Um atalho substitui o interior, e quem entrega passa a entregar ao
+contêiner — que tem **uma** folha de entrada. Um somador completo tem três entradas
+distintas (a, b, vai-um) que caem em portas diferentes. Enquanto a fronteira de um contêiner
+não tiver porta nomeada como a linha de controle tem, atalho e composição não aceitam a
+mesma fiação — e declarar um ali seria escrever código que nenhum teste de equivalência
+consegue exercitar.
+
+## O que mais entrou nesta rodada
+
+- **`WorldState.substepOf`** — em que subpasso cada objeto rodou. Fica no **estado**, não na
+  tela, porque é resposta do modelo: sem isso, mostrar a acomodação acontecendo dentro do
+  tick exigiria que o desenho adivinhasse a ordem, que é o mesmo que inventá-la. É ele que
+  escalona a animação, e é por isso que a onda atravessa o desenho na ordem em que o sinal
+  atravessa o circuito
+- **Roteamento que desvia de obstáculo** — uma linha que atravessa uma caixa parece entrar
+  nela, e o leitor passa a ver uma ligação que não existe. Mentira de desenho custa o mesmo
+  que mentira de número
+- **`×N` desenhado** como contorno empilhado, e a marca vem do **modelo** (`ObjectSpec.replicas`),
+  não da view — escrevê-la à mão seria um rótulo sem nada por trás. As marcas `×32` e `/32`
+  que eu tinha posto na view da CPU **eram exatamente isso e foram removidas**; em troca, os
+  fios de dado do caminho de dados agora declaram `width: 32`, que é verdade
+- **`/N` desenhado** ao longo do fio
+
+Estado: 355 testes unitários, 66 e2e, typecheck, boundaries e build verdes.
+

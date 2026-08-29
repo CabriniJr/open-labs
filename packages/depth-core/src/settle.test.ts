@@ -55,4 +55,15 @@ describe("fase de acomodação", () => {
     for (let i = 0; i < 3; i += 1) estado = stepWorld(semAcomodar, tree, estado, spec.params);
     expect(estado.substeps).toBe(0);
   });
+
+  it("diz em que subpasso cada objeto rodou, e é a profundidade dele no caminho", () => {
+    // Sem isto, mostrar a acomodação acontecendo dentro do tick exigiria que o
+    // desenho adivinhasse a ordem — o que é a mesma coisa que inventá-la.
+    const estado = rodar(2);
+    expect(estado.substepOf.a).toBe(0);
+    expect(estado.substepOf.b).toBe(1);
+    expect(estado.substepOf.acc).toBe(2);
+    // quem não participou da acomodação não aparece: não é zero, é ausente
+    expect(estado.substepOf.fonte).toBeUndefined();
+  });
 });

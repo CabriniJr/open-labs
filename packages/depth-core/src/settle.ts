@@ -20,6 +20,8 @@ export interface SettleResult {
   readonly substeps: number;
   /** Contagens a somar no livro-caixa: chave -> quanto. */
   readonly ledger: ReadonlyMap<string, number>;
+  /** Em que subpasso cada ator rodou. É a profundidade dele no caminho. */
+  readonly depths: ReadonlyMap<string, number>;
 }
 
 /** Acumulador mutável de entregas, virado em `Delivery` no fim. */
@@ -54,6 +56,7 @@ export function settle(
   const ordem = settleOrder(spec.wires);
   const caixas = new Map<string, Caixa>();
   const ledger = new Map<string, number>();
+  const depths = new Map<string, number>();
   let substeps = 0;
 
   const bump = (chave: string, quanto: number): void => {
@@ -86,6 +89,7 @@ export function settle(
     // acomodação não emite nada — contar só emissores esconderia o nível em que
     // o valor de fato chegou, que é justamente o atraso que se quer mostrar.
     substeps = Math.max(substeps, depth + 1);
+    depths.set(id, depth);
 
     const emissoes = runOne(id, cargo, signals);
     if (emissoes.length === 0) continue;
@@ -119,5 +123,5 @@ export function settle(
     deliveries.set(id, { cargo: c.cargo, signals });
   }
 
-  return { deliveries, substeps, ledger };
+  return { deliveries, substeps, ledger, depths };
 }

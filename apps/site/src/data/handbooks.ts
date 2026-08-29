@@ -127,7 +127,13 @@ const RISCV: Handbook = {
   ],
   labs: [
     { id: "the-wire", title: "One wire, one tick", status: "coming", phase: 1 },
-    { id: "the-adder", title: "Build a 4-bit adder", status: "coming", phase: 2 },
+    {
+      id: "the-adder",
+      title: "Adding, gate by gate",
+      status: "available",
+      href: "labs/gates",
+      phase: 2,
+    },
     { id: "register-write", title: "Writing a register", status: "coming", phase: 3 },
     {
       id: "single-cycle-datapath",

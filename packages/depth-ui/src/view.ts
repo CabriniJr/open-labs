@@ -32,7 +32,7 @@ export interface NodePlacement {
    * legítima de um objeto com interior não mostrar o interior.
    */
   readonly collapsed?: true;
-  /** Marca de canto — `×32`, `/32`, o que o modelo quiser dizer em dois glifos. */
+  /** Marca de canto — o que o modelo quiser dizer em dois glifos. */
   readonly badge?: string;
   /** Sobrescreve o rótulo da árvore quando o desenho pede um nome mais curto. */
   readonly label?: string;
