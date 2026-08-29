@@ -1,6 +1,7 @@
 import { DROP } from "./model.js";
 import type { WireTiming, WorldSpec } from "./model.js";
 import { familyOf } from "./model.js";
+import { findCombinationalCycle } from "./settle-graph.js";
 import { entryLeaf } from "./tree.js";
 import type { TreeIndex } from "./tree.js";
 
@@ -164,6 +165,19 @@ export function validateWorld(spec: WorldSpec, tree: TreeIndex): void {
     erros.push(
       `"${node.id}" tem init e não tem behavior: esse estado nunca seria criado ` +
         `nem lido. Dê um behavior a ele ou remova o init`,
+    );
+  }
+
+  // Laço combinacional é percurso que não termina, e em hardware é erro de
+  // projeto. Recusar aqui é a diferença entre uma violação impossível e uma
+  // improvável — a alternativa seria um teto de iterações no percurso, que
+  // transformaria "não converge" em "converge errado", em silêncio.
+  const ciclo = findCombinationalCycle(spec.wires);
+  if (ciclo !== null) {
+    erros.push(
+      `laço combinacional: ${ciclo.join(" -> ")}. Um caminho que acomoda não pode ` +
+        `voltar a si mesmo dentro do mesmo tick. Ponha um fio com timing ` +
+        `"clocked" em algum ponto da volta — é o que um registrador faz`,
     );
   }
 

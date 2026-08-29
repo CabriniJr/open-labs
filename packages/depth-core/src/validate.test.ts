@@ -331,4 +331,44 @@ describe("World valida na construção", () => {
     };
     expect(() => validar(spec)).toThrow(/sinal .* "caixa", que não age/);
   });
+  it("recusa laço combinacional, nomeando a volta inteira", () => {
+    // Em hardware isto é erro de projeto, e aqui seria um percurso que não
+    // termina. Recusado na construção do mundo, que é onde a violação vira
+    // impossível em vez de improvável.
+    const spec: WorldSpec = {
+      ...base,
+      root: {
+        id: "root",
+        kind: "composite",
+        label: "root",
+        children: [leaf("a"), leaf("b")],
+      },
+      wires: [
+        { from: "a", port: "out", to: "b", timing: "settle" },
+        { from: "b", port: "out", to: "a", timing: "settle" },
+      ],
+    };
+    expect(() => validar(spec)).toThrow(/laço combinacional/);
+    expect(() => validar(spec)).toThrow(/a -> b -> a|b -> a -> b/);
+  });
+
+  it("aceita realimentação que atravessa uma borda de relógio", () => {
+    // É o que um registrador faz: fecha o laço, mas custando um tick. Recusar
+    // isto proibiria qualquer máquina sequencial.
+    expect(() =>
+      validar({
+        ...base,
+        root: {
+          id: "root",
+          kind: "composite",
+          label: "root",
+          children: [leaf("a"), leaf("b")],
+        },
+        wires: [
+          { from: "a", port: "out", to: "b", timing: "settle" },
+          { from: "b", port: "out", to: "a", timing: "clocked" },
+        ],
+      }),
+    ).not.toThrow();
+  });
 });
