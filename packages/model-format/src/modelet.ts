@@ -20,7 +20,8 @@ const ChildSchema = z.object({ kind: NomeSchema }).passthrough();
 
 export const ModeletSchema = z
   .object({
-    modelet: z.string().min(1),
+    // O nome vira id do mundo compilado, e id não pode carregar "." nem ":".
+    modelet: NomeSchema,
     version: z.number().int().positive(),
     title: z.string().min(1),
     /** Quanto do interior já foi construído. `depth.md` §2. */
