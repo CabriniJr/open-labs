@@ -26,6 +26,21 @@ function removerTituloDuplicado() {
 export default defineConfig({
   site,
   base,
+  /**
+   * A porta é fixa de propósito, e não é preferência.
+   *
+   * O digest de configuração do Astro inclui a porta do servidor de dev.
+   * Subindo numa porta diferente da anterior, ele conclui "config mudou",
+   * **limpa o armazém de conteúdo** — e não o repopula naquela mesma corrida.
+   * O efeito é a coleção `docs` vir vazia e toda página `/docs/*` responder 500,
+   * com uma mensagem que fala de índice e capítulo e não menciona porta nenhuma.
+   * É um dia inteiro procurando no lugar errado.
+   *
+   * Com a porta fixa o digest não muda entre corridas e o armazém sobrevive. Se
+   * você precisar de outra porta, use `--port` sabendo que a **primeira** subida
+   * depois da troca vem sem os docs: reinicie uma vez e passa.
+   */
+  server: { port: 4321 },
   integrations: [react(), pagefind()],
   markdown: { rehypePlugins: [removerTituloDuplicado] },
   build: { inlineStylesheets: "auto" },

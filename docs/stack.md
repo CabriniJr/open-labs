@@ -296,3 +296,29 @@ dois em dia juntos.
 `main`. Com o Vercel em produção são dois publicadores para o mesmo repositório, com caminhos
 de base diferentes (`/<repo>/` contra a raiz). A ordem certa é ligar o Vercel, conferir, e só
 então aposentar o Pages — desligar antes deixaria o projeto sem nada no ar.
+
+## O servidor de dev quebrava sozinho — 2026-08-29
+
+**Sintoma:** toda página `/docs/*` respondia 500 no `pnpm dev`, com a mensagem
+`capítulo "DECISIONS" está no índice e não existe na coleção — ids disponíveis:` (a lista
+vazia). O `pnpm build` gerava as dezenove páginas sem reclamar.
+
+**Causa:** o digest de configuração do Astro inclui a **porta do servidor de dev**. Subindo
+numa porta diferente da corrida anterior, ele conclui que a configuração mudou, **limpa o
+armazém de conteúdo** — e não o repopula naquela mesma corrida. A coleção `docs` vem vazia,
+e a página de capítulo morre dizendo que o capítulo não existe.
+
+A mensagem não menciona porta nenhuma, e aponta para o índice e para a coleção. Quem a lê
+vai conferir o manifesto, o loader, o caminho do `base` — tudo lugar errado. Provado com
+duas corridas: porta nova → coleção vazia; mesma porta de novo → duzentos.
+
+**Correção:** a porta do dev é fixa em `astro.config.mjs` (4321), então o digest não muda
+entre corridas e o armazém sobrevive. Precisando de outra porta, a **primeira** subida
+depois da troca vem sem os docs — reinicie uma vez e passa.
+
+E o e2e ganhou porta própria (4399). Ele dividia a 4321 com o dev, e a corrida ou pegava o
+servidor de dev — que serve outra coisa — ou não subia; nos dois casos a falha aparecia
+como asserção estranha, longe da causa. Ele também passou a falar por **IP** e não por
+`localhost`: o Chrome resolve `localhost` para IPv6 primeiro, e qualquer processo em
+`[::1]` naquela porta sequestra a corrida inteira. Foi o que aconteceu aqui, com um
+servidor de dev esquecido — e por um bom tempo eu culpei o lugar errado.
