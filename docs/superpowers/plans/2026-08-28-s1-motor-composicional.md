@@ -1295,6 +1295,243 @@ git commit -m "feat(depth-core): um tick como funcao pura sobre a arvore"
 
 ---
 
+## Task 3b: Aproveitar o open source — `pure-rand` e `fast-check`
+
+O `docs/stack.md` que entrou com as PRs já fez o levantamento com licença verificada peça a
+peça. Duas dessas peças pertencem à S1, e as duas fecham buracos reais em vez de serem
+enfeite.
+
+**O buraco do determinismo.** `createRandom(seed)` devolve uma **closure com estado
+escondido**. A §5.2 da spec exige `seek` exato; com estado escondido, rebobinar para o tick
+40 obriga a reexecutar do tick 0, e qualquer consumidor que sortear fora de ordem corrompe a
+sequência de todo mundo. A spec já diz o que é preciso: **aleatoriedade como função de
+`(semente, tick)`**, não como fluxo. `pure-rand` (MIT) dá PRNG portátil com estado explícito;
+`xoroshiro128plus` é barato de instanciar, que é o que este uso pede.
+
+**O buraco do teste.** A propriedade central deste motor — a vista agregada é exatamente o
+tráfego que cruzou as portas — é universalmente quantificada: vale para **qualquer** objeto
+em **qualquer** tick. Exemplo escolhido a dedo não testa isso; property test testa.
+`fast-check` (MIT, mesmo autor do `pure-rand`) é a peça, e ela chega agora porque as
+propriedades que já dá para afirmar sobre o `stepWorld` são as que mais custam se quebrarem
+em silêncio.
+
+`createRandom` **fica** onde está: `engine.ts` e `types.ts` legados ainda o usam, e o modelo
+antigo só morre na S5. Coexistência é andaime, não arquitetura — mas derrubar o andaime cedo
+quebra a `main`.
+
+**Files:**
+- Modify: `packages/depth-core/package.json`
+- Modify: `package.json` (raiz)
+- Create: `packages/depth-core/src/rng.ts`
+- Test: `packages/depth-core/src/rng.test.ts`
+- Test: `packages/depth-core/src/scheduler.property.test.ts`
+
+- [ ] **Step 1: Instalar**
+
+```bash
+pnpm add pure-rand --filter @ovh/depth-core
+pnpm add -D -w fast-check
+```
+
+Confira que `pure-rand` entrou como dependência de `packages/depth-core/package.json` (é
+runtime — o motor sorteia) e `fast-check` como `devDependency` da raiz (é ferramenta de
+teste).
+
+- [ ] **Step 2: Escrever o teste que falha**
+
+```ts
+// packages/depth-core/src/rng.test.ts
+import { describe, expect, it } from "vitest";
+import { randomAt } from "./rng.js";
+
+describe("randomAt", () => {
+  it("é função pura: mesma entrada, mesma saída, sempre", () => {
+    expect(randomAt(7, 42, "gate")).toBe(randomAt(7, 42, "gate"));
+  });
+
+  it("não depende de ordem de chamada — é isso que torna o seek exato", () => {
+    // sorteando fora de ordem, o valor do tick 42 não muda
+    const direto = randomAt(7, 42, "gate");
+    for (let t = 0; t < 100; t += 1) randomAt(7, t, "outro");
+    expect(randomAt(7, 42, "gate")).toBe(direto);
+  });
+
+  it("separa por semente, por tick e por sal", () => {
+    expect(randomAt(7, 42, "gate")).not.toBe(randomAt(8, 42, "gate"));
+    expect(randomAt(7, 42, "gate")).not.toBe(randomAt(7, 43, "gate"));
+    expect(randomAt(7, 42, "gate")).not.toBe(randomAt(7, 42, "porta"));
+  });
+
+  it("fica em [0, 1)", () => {
+    for (let t = 0; t < 500; t += 1) {
+      const v = randomAt(3, t, "x");
+      expect(v).toBeGreaterThanOrEqual(0);
+      expect(v).toBeLessThan(1);
+    }
+  });
+
+  it("distribui: 500 sorteios não caem todos na mesma metade", () => {
+    let baixos = 0;
+    for (let t = 0; t < 500; t += 1) if (randomAt(3, t, "x") < 0.5) baixos += 1;
+    expect(baixos).toBeGreaterThan(150);
+    expect(baixos).toBeLessThan(350);
+  });
+});
+```
+
+Run: `pnpm vitest run packages/depth-core/src/rng.test.ts`
+Expected: FAIL — `Failed to resolve import "./rng.js"`
+
+- [ ] **Step 3: Implementar `rng.ts`**
+
+```ts
+import { unsafeUniformIntDistribution, xoroshiro128plus } from "pure-rand";
+
+const RANGE = 2 ** 30;
+
+/**
+ * Mistura os três eixos num inteiro de 32 bits (FNV-1a sobre o sal, temperado
+ * com semente e tick). Não precisa ser criptográfico — precisa é espalhar, para
+ * que dois objetos vizinhos no mesmo tick não sorteiem valores correlacionados.
+ */
+function mix(seed: number, tick: number, salt: string): number {
+  let h = 0x811c9dc5 ^ (seed >>> 0);
+  for (let i = 0; i < salt.length; i += 1) {
+    h ^= salt.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  h ^= tick + 0x9e3779b9;
+  h = Math.imul(h ^ (h >>> 15), 0x85ebca6b);
+  return (h ^ (h >>> 13)) >>> 0;
+}
+
+/**
+ * Aleatoriedade como **função** de (semente, tick, sal), nunca como fluxo.
+ *
+ * Um gerador com estado escondido obrigaria a rebobinar do tick 0 para chegar
+ * ao tick 40, e faria a ordem das chamadas dentro de um tick virar parte do
+ * resultado. Aqui cada sorteio é endereçável: o mesmo endereço devolve sempre o
+ * mesmo valor, e é isso que torna o `seek` exato em vez de aproximado.
+ *
+ * O `salt` é o que separa dois sorteios no mesmo tick — use o id do objeto,
+ * ou o id mais o propósito quando ele sortear duas vezes.
+ */
+export function randomAt(seed: number, tick: number, salt: string): number {
+  const gerador = xoroshiro128plus(mix(seed, tick, salt));
+  return unsafeUniformIntDistribution(0, RANGE - 1, gerador) / RANGE;
+}
+```
+
+Run: `pnpm vitest run packages/depth-core/src/rng.test.ts`
+Expected: PASS — 5 testes
+
+- [ ] **Step 4: O `StepContext` passa a oferecer o sorteio endereçável**
+
+Em `model.ts`, garantir que `StepContext` exponha `random(salt?: string): number`, e em
+`scheduler.ts` construir esse contexto por objeto como
+`random: (salt = "") => randomAt(spec.seed, tick, `${node.id}:${salt}`)`.
+
+O sal padrão embute o id do objeto, então uma folha que sorteia uma vez não precisa pensar
+no assunto, e uma que sorteia duas vezes distingue os sorteios por propósito. Ajuste o que
+for preciso para o `pnpm typecheck` passar.
+
+- [ ] **Step 5: As propriedades do `stepWorld`, com `fast-check`**
+
+```ts
+// packages/depth-core/src/scheduler.property.test.ts
+import fc from "fast-check";
+import { describe, expect, it } from "vitest";
+import { indexTree } from "./tree.js";
+import { initialWorld, stepWorld } from "./scheduler.js";
+import { spec } from "./scheduler.test-fixture.js";
+
+const tree = indexTree(spec.root);
+const params = fc.record({
+  rate: fc.integer({ min: 0, max: 1 }),
+  keepAll: fc.integer({ min: 0, max: 1 }),
+});
+
+function rodar(ticks: number, p: Record<string, number>) {
+  let estado = initialWorld(spec, tree);
+  for (let i = 0; i < ticks; i += 1) estado = stepWorld(spec, tree, estado, p);
+  return estado;
+}
+
+describe("propriedades do tick", () => {
+  it("é determinístico: a mesma entrada dá o mesmo mundo, sempre", () => {
+    fc.assert(
+      fc.property(fc.integer({ min: 0, max: 40 }), params, (ticks, p) => {
+        expect(rodar(ticks, p)).toEqual(rodar(ticks, p));
+      }),
+    );
+  });
+
+  it("nunca muta o estado que recebeu, em nenhum tick", () => {
+    fc.assert(
+      fc.property(fc.integer({ min: 0, max: 40 }), params, (ticks, p) => {
+        const antes = rodar(ticks, p);
+        const foto = JSON.stringify(antes);
+        stepWorld(spec, tree, antes, p);
+        expect(JSON.stringify(antes)).toBe(foto);
+      }),
+    );
+  });
+
+  it("o tick anda exatamente um por passo", () => {
+    fc.assert(
+      fc.property(fc.integer({ min: 0, max: 40 }), params, (ticks, p) => {
+        expect(rodar(ticks, p).tick).toBe(ticks);
+      }),
+    );
+  });
+
+  it("todo id de mensagem em trânsito é único", () => {
+    fc.assert(
+      fc.property(fc.integer({ min: 0, max: 40 }), params, (ticks, p) => {
+        const ids = rodar(ticks, p).flight.map((f) => f.message.id);
+        expect(new Set(ids).size).toBe(ids.length);
+      }),
+    );
+  });
+
+  it("o livro-caixa só cresce — travessia de porta não desconta", () => {
+    fc.assert(
+      fc.property(fc.integer({ min: 1, max: 30 }), params, (ticks, p) => {
+        const antes = rodar(ticks, p);
+        const depois = stepWorld(spec, tree, antes, p);
+        for (const [porta, valor] of Object.entries(antes.ledger)) {
+          expect(depois.ledger[porta] ?? 0).toBeGreaterThanOrEqual(valor);
+        }
+      }),
+    );
+  });
+});
+```
+
+Isto exige extrair o `spec` do `scheduler.test.ts` para
+`packages/depth-core/src/scheduler.test-fixture.ts`, exportando `spec` (e as folhas, se
+ajudar), e fazer o `scheduler.test.ts` importar de lá. Duplicar a fixture seria pior: as duas
+cópias divergiriam e os dois testes passariam a falar de mundos diferentes.
+
+**A propriedade que ainda não dá para escrever aqui** é a central — *a vista agregada é
+exatamente o tráfego que cruzou as portas*. Ela precisa de `boundaryCrossings`, que chega na
+Task 5. Deixe o comentário dizendo isso no topo do arquivo, para o próximo leitor saber que a
+ausência é sequenciamento e não esquecimento.
+
+- [ ] **Step 6: Rodar tudo**
+
+Run: `pnpm test && pnpm typecheck && pnpm boundaries`
+Expected: tudo verde, incluindo `Fronteira motor↔domínio intacta.`
+
+- [ ] **Step 7: Commit**
+
+```bash
+git add packages/depth-core package.json pnpm-lock.yaml
+git commit -m "feat(depth-core): sorteio enderecavel com pure-rand e propriedades com fast-check"
+```
+
+---
+
 ## Task 4: `World` — histórico, `seek` exato e parâmetro como evento
 
 **Files:**
