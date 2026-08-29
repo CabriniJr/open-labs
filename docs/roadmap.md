@@ -53,14 +53,34 @@ revelar, é agora que sai barato.
 
 ---
 
-## F2 — Onda 1 de arquétipos
+## F2 — Prova do motor: o que já está planejado, e basta
 
-Os seis da §3 de `kinds.md`: `transform`, `tee`, `merge`, `batch`, `clock`, `arbiter`.
-Cada um entrega comportamento, contrato visual, regime nomeado, medidores e perturbações —
-os cinco de uma vez, porque arquétipo pela metade não se paga.
+**Corrigido em 28/08/2026.** A versão anterior desta fase propunha um "lab de prova"
+mínimo — a fila enchendo. Era redundante: a spec do handbook
+(`docs/superpowers/specs/2026-08-28-otel-visual-handbook-design.md` §10) **já tem a prova em
+dois estágios**, e melhor desenhada.
 
-**Saída:** um arquivo de teste por arquétipo, sem pixels; e o cenário do BatchSpanProcessor
-expressado como `buffer` mais `batch` mais `clock`, em vez de um bloco que faz tudo.
+| Estágio | O que é | Papel |
+|---|---|---|
+| **Hero da Entrega 1** | Mini-simulação real embutida na landing, sobre `depth-core` e `otel-domain` de verdade | Primeiro teste do motor, sem depender do motor completo |
+| **Piloto da Entrega 2** | *Anatomy of a Trace* com os quatro níveis, mais o anexo W3C Trace Context | Prova da profundidade. Nasce com os quatro porque prova parcial não prova nada |
+
+Nada a acrescentar aqui. A correção que este documento precisava era **retirar** uma fase, não
+inventar outra.
+
+### F2.1 O que o piloto exige de verdade
+
+E uma estimativa deste plano precisa ser corrigida junto. A afirmação de que "o primeiro lab
+não exige nenhum arquétipo novo" valia para o lab da fila, **não** para o piloto:
+
+| Nível | O que exige |
+|---|---|
+| L0 · Flow | O que já existe |
+| L1 · Mechanism | Capacidade e política — F1 |
+| **L2 · Wire** | **Canal abrível.** O enquadramento HTTP/2 mora dentro do `channel` |
+| **L3 · Payload** | **Carga abrível.** O documento OTLP como objeto com interior |
+
+L2 e L3 são o custo real do piloto, e são também o diferencial (`why-simulate.md` §14).
 
 ---
 
@@ -112,19 +132,22 @@ técnico sem link para a fonte.
 
 ---
 
-## F6 — Kafka: a prova de reuso
+## F6 — Kafka: o segundo alvo
 
-Não é "o segundo alvo". É **o teste da tese do projeto**.
+**Revisado em 28/08/2026.** Era "o teste da tese do projeto", medido pelo custo relativo do
+segundo pacote. Com o corte de escopo que fez cada `model` ser ilha
+(`why-simulate.md` §9), reuso deixou de ser requisito — logo, deixou de ser critério de
+saída. O Kafka volta a ser simplesmente o segundo alvo.
 
 Arquétipos da onda 2: `log`, `deliver`, `supervisor`.
 
-**Saída, e é uma medida, não uma sensação:** o pacote do Kafka custa uma fração
-significativa do primeiro. Se custar o mesmo, o reuso não existe e a tese está errada — e
-descobrir isso aqui é o melhor resultado possível, porque ainda dá para corrigir.
+**Saída:** o `model` do Kafka existe, com handbook próprio, e o `log` ensina atraso por
+leitor — o fenômeno mais estranho ao TracerProvider e o que justifica o Kafka ser o segundo.
 
-O que observar com desconfiança: **quantos arquétipos novos o Kafka exigiu além dos três
-previstos.** Um ou dois é normal. Cinco significa que o catálogo está sendo derivado caso a
-caso, e não generalizado.
+O que continua valendo observar, agora como informação e não como nota de aprovação:
+**quantos arquétipos novos o Kafka exigiu além dos três previstos.** Um ou dois é normal.
+Cinco significa que o catálogo está sendo derivado caso a caso — e aí o problema é do
+catálogo, não do reuso.
 
 ---
 
@@ -143,7 +166,7 @@ próprio.
 | Sinal | Bom | Ruim |
 |---|---|---|
 | Arquétipos novos por alvo | Cai a cada alvo | Constante ou crescendo |
-| Custo do segundo pacote | Fração do primeiro | Igual |
+| `modelet` por fenômeno | Menos `modelet` que fenômeno | Trinta `modelet` para oito fenômenos é reimplementação (`why-simulate.md` §3.1) |
 | Parâmetro sem procedência | Zero, garantido por CI | "Depois a gente ancora" |
 | Fenômeno que precisou de roteiro | Zero | Qualquer um |
 | Discordância entre modelo e lab real | Resolvida corrigindo o modelo **ou** declarando o que não é modelado | Resolvida deixando o modelo bonito |
@@ -171,8 +194,15 @@ dado errado é localizável e difável; comportamento errado escondido numa fun�
 ## Ordem, em uma linha
 
 ```
-F0 destravar → F1 núcleo → F2 arquétipos → F3 palco → F4 otel → F5 handbook → F6 kafka → F7 motor
+F0 destravar → F1 núcleo → F3 palco → F2 piloto (Entregas 1 e 2) → F2b arquétipos → F4 otel → F5 handbook → F6 kafka → F7 motor
 ```
+
+O piloto e o palco se sobrepõem: não há lab sem palco, e o palco só se justifica pelo lab. E a
+onda de arquétipos vem **depois** do piloto, porque o piloto revela quais são realmente
+necessários.
+
+O playground (`why-simulate.md` §10) não é fase: ele nasce de graça ao fim de F3, porque é a
+mesma paleta e a mesma engine, sem exigência de procedência.
 
 Nenhuma fase começa antes de a anterior ter fechado o critério de saída. O sinal de alarme
 mais confiável do projeto é começar o Kafka antes de o OTel estar fechado.

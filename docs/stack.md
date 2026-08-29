@@ -127,6 +127,64 @@ modelar. Ver a decisão em `VISION.md` §8.
 **Não usar:** **WebContainers** (StackBlitz) e **CheerpX** são proprietários, com
 restrição de uso comercial. Atraentes e fora da premissa de ser tudo open source.
 
+## 9.5 L2 e L3: as ferramentas que faltavam neste levantamento
+
+**Acrescentado em 28/08/2026.** Este documento foi escrito antes de o diferencial ser
+precisado em L2 (Wire) e L3 (Payload) — `DECISIONS.md` §6. E são justamente os dois níveis com
+exigência técnica própria, que nenhuma linha acima cobria.
+
+### L3 · Payload: protobuf de verdade, não ilustração
+
+O princípio 1 da spec do handbook proíbe ilustração decorativa, e a §4 é explícita: *o JSON
+não é mock ilustrativo, é o mesmo dado que produzia a animação no nível de cima*. Isso exige
+codificar e decodificar OTLP no browser.
+
+| Peça | Escolha | Licença | Nota |
+|---|---|---|---|
+| Runtime protobuf | **`@bufbuild/protobuf`** | Apache-2.0 AND BSD-3-Clause | Conformante nos testes oficiais; ESM e TypeScript de primeira classe |
+| Alternativa | `protobufjs` | BSD-3-Clause | Maduro e sem `protoc`; API mais antiga |
+| Schemas OTLP | **`opentelemetry-proto`** | Apache-2.0 | Os `.proto` oficiais. **Domínio: vive em `otel-domain`, nunca em `depth-core`** |
+| Visão de bytes | Componente próprio | — | Grade hexadecimal com destaque de campo. Simples, e ninguém tem exatamente isto |
+
+Cuidado de fronteira: o runtime de protobuf é agnóstico e pode viver no motor; **os schemas
+OTLP não**. `scripts/check-boundaries.mjs` pega isso, e é bom que pegue.
+
+### L2 · Wire: enquadramento, e a decisão de modelar contra capturar
+
+Frames HTTP/2 têm duas fontes possíveis, e a escolha é de fidelidade.
+
+| Caminho | O que dá | Custo |
+|---|---|---|
+| **Modelar** o enquadramento como `modelet` | Roda em qualquer tick, responde a parâmetro, é reprodutível | Precisa ser fiel à RFC 9113 |
+| **Capturar** do `labs/<slug>/` real e usar como fixture | Fidelidade sem discussão | Não responde a parâmetro; é gravação |
+
+Recomendação: **modelar, com fixture capturada como teste**. Assim o L2 reage a parâmetro — que
+é o requisito do princípio 1 — e a fixture serve de oráculo no CI, provando que o modelo
+concorda com o que o Collector real produziu.
+
+Ferramentas de **autoria** para capturar a fixture, fora do bundle:
+
+| Necessidade | Ferramenta | Nota |
+|---|---|---|
+| Capturar OTLP real | `debug` e `file` exporters do próprio Collector | Sem dependência nova; sai do `compose` do lab |
+| Inspecionar frames | `tcpdump` mais Wireshark, ou `nghttp` | Só na autoria, não no produto |
+| Gerar telemetria de teste | `telemetrygen` (repositório do Collector) | Alvo controlado |
+
+Nada disso entra no site publicado. É bancada, não produto.
+
+### Playground: o que ele exige além do palco
+
+Nada novo, e é a razão de ele ser barato (`why-simulate.md` §10):
+
+| Necessidade | De onde vem |
+|---|---|
+| Recusar ligação inválida | `isValidConnection` do React Flow |
+| Paleta arrastável | Arraste nativo mais `onDrop` do React Flow |
+| Porta tipada | Handles com `id` e tipo, já necessários para as portas |
+| Validar rascunho | O mesmo Zod do pacote de modelo, com procedência **não** exigida |
+
+---
+
 ## 10. Site, conteúdo e medidores
 
 | Peça | Licença | Por que |
@@ -186,7 +244,27 @@ Três peças precisam ser do projeto, e é importante saber por quê:
 | Pacote de modelo | Zod | MIT |
 | Testes | Vitest + fast-check + Playwright | MIT / Apache-2.0 |
 | Medidores | uPlot | MIT |
+| **Payload (L3)** | **`@bufbuild/protobuf` + `opentelemetry-proto`** | **Apache-2.0 AND BSD-3-Clause / Apache-2.0** |
 | Componente real embarcado | por alvo: PGlite, v86, Aedes | Apache-2.0 / BSD-2 / MIT |
 
 Nenhuma dessas escolhas entra sem um commit que a justifique. Dependência nova em
 projeto de ensino é passivo de manutenção, não vitória.
+
+## 15. Lista de compras, por fase
+
+O que instalar quando, para não carregar dependência antes da hora.
+
+| Fase (`roadmap.md`) | Entra |
+|---|---|
+| **F1 · Núcleo** | `pure-rand`. Nada mais — o motor é TypeScript puro, sem I/O |
+| **F3 · Palco** | `@xyflow/react`, `dagre`, `xstate`, `motion`, `uplot` |
+| **F2 · Piloto** | `@bufbuild/protobuf`, `opentelemetry-proto` (em `otel-domain`), `zod` |
+| **F4 · Importador** | `yaml`, `ajv`, `compose-spec-schema` |
+| **Testes, desde F1** | `vitest`, `fast-check`; `playwright` a partir de F3 |
+| **Autoria, fora do bundle** | Nada novo: exporters `debug` e `file` do Collector, mais `telemetrygen` |
+| **Nunca** | tldraw, WebContainers, CheerpX — licença |
+
+Contagem: **onze dependências de runtime** para a v0 completa, e três delas só aparecem no
+importador. `elkjs` e `@lume/kiwi` ficam de reserva, entrando apenas se dagre e o clamp do
+React Flow se mostrarem insuficientes — e nesse caso `elkjs` exige checar EPL-2.0 contra a
+licença escolhida para o projeto.

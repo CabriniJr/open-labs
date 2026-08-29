@@ -43,9 +43,9 @@ A régua é **"a decisão aparece?"**, não "o número está certo?". Fidelidade
 ## 4. Pacote de modelo
 
 **Definição (2026-08-28): um pacote de modelo é uma configuração dos objetos da engine
-que replica uma aplicação.** Nomes propostos na conversa: `.modler` para o pacote e
-`.modlet` para cada instância de `kind` que representa e age como um componente da
-aplicação. O conceito está fechado; a grafia é decisão aberta — ver §9.6.
+que replica uma aplicação.** Nomenclatura decidida em 28/08/2026: **`model`** para o
+agregado que replica a aplicação e **`modelet`** para cada componente dela. Formato
+concreto em `model-format.md`; a discussão que levou a esses nomes está na §9.6.
 
 Isso responde uma pergunta que estava em aberto e é a decisão mais importante desta
 seção: **o pacote é dado, não código.** Ele compõe e configura os arquétipos que já
@@ -427,23 +427,24 @@ Defaults mudam de versão. Um lab que ensina `maxQueueSize` 2048 fica errado em 
 quando o upstream muda. Como cada parâmetro já vai declarar procedência e link, vale um
 teste que confronte o valor declarado com o upstream e falhe quando divergir.
 
-### 9.6 Nomenclatura: `.modler` tem dois problemas
+### 9.6 Nomenclatura — resolvida em 28/08/2026
 
-**Grafia.** Não é palavra em inglês nem em português; será lido como erro de digitação
-de *modeler*. Para um sufixo de arquivo público isso custa caro e para sempre: gente
-digitando errado, busca dividida, correção eterna. `.modlet` herda o problema.
+**Decidido:** `model` para o agregado, `modelet` para o componente.
 
-**Sobrecarga.** Um `.modler` seria ao mesmo tempo pacote de distribuição, árvore de
-objetos, leitor de configuração e conteúdo didático — quatro coisas com ciclos de vida
-diferentes.
+A objeção original valia contra a grafia anterior, `.modler` e `.modlet`: não eram palavra
+em inglês nem em português, e seriam lidas como erro de digitação de *modeler* — o que para
+um sufixo público custa caro e para sempre, com gente digitando errado e busca dividida.
+`model` e `modelet` resolvem: o primeiro é palavra, o segundo se lê como diminutivo.
 
-**Sobre `.modlet`:** os objetos internos já têm nome no motor — são objetos com `kind`.
-Criar um terceiro vocabulário entre motor e conteúdo contraria a regra da spec de que o
-vocabulário do motor nunca vira conteúdo.
+**O que sobrou da objeção, e é de empacotamento:** `.model` puro é extensão genérica demais
+para não colidir na máquina de alguém. Proposta em `model-format.md`:
+`<slug>.model.yaml`, que mantém a palavra e ganha validação por schema no editor.
 
-Recomendação: sem invenção. `<slug>.model.yaml` para a parte declarativa, pacote
-publicado como `@ovh/model-<slug>`. Se houver vontade de marca própria, `.rig` é o
-melhor candidato curto — em simulação, *rig* é a montagem de teste, e o termo está livre.
+**A sobrecarga também sobrou, e foi resolvida por separação, não por nome.** Um pacote
+seria ao mesmo tempo distribuição, árvore de objetos, leitor de configuração e conteúdo
+didático — quatro ciclos de vida diferentes. `model-format.md` separa em três arquivos:
+`.model.yaml` (composição), `.modelet.yaml` (componente reusável) e `.handbook.yaml`
+(ordem de visita).
 
 ## 10. Referências e o que tomar de cada uma
 
