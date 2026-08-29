@@ -264,7 +264,9 @@ export function Stage({
       if (de === undefined || para === undefined) return null;
       const linha = wire.line ?? "data";
       const d = caminho(de, para, 18 + (i % 3) * 12, obstaculos);
+      const marca = { x: de.x + de.w + 6, y: de.y + de.h / 2 - 6 };
       return {
+        marca,
         chave: `${wire.from}.${wire.port}->${String(wire.to)}`,
         to: String(wire.to),
         d,
@@ -342,10 +344,10 @@ export function Stage({
               </path>
             ) : null}
             {aresta.width !== undefined ? (
-              <text className="dui-stage__largura" dy="-4">
-                <textPath href={`#${identificador(aresta.chave)}`} startOffset="50%">
-                  {`/${aresta.width}`}
-                </textPath>
+              // Ao lado da saída, e não sobre o traço: seguindo o caminho, a
+              // marca sai de cabeça para baixo em todo fio que volta.
+              <text className="dui-stage__largura" x={aresta.marca.x} y={aresta.marca.y}>
+                {`/${aresta.width}`}
               </text>
             ) : null}
           </g>
