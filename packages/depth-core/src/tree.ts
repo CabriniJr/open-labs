@@ -103,6 +103,10 @@ function terminal(tree: TreeIndex, id: string, pick: "first" | "last"): string {
   // um objeto que não abre É a folha: leaf, dynamic (conteúdo de runtime) ou
   // contêiner sem tráfego para ver. O mesmo predicado dos dois lados garante
   // que quem desenha e quem percorre nunca discordem sobre o mesmo nó.
+  // Um contêiner com atalho é folha para a fiação e abrível para quem lê: são
+  // perguntas diferentes. Quem entrega uma mensagem para dentro dele entrega a
+  // ELE, porque é ele que age.
+  if (node.shortcut !== undefined) return id;
   if (node.leaf === true || node.dynamic === true || !isOpenable(tree, id)) return id;
 
   const declared = pick === "first" ? node.entry : node.exit;
@@ -122,6 +126,21 @@ export function entryLeaf(tree: TreeIndex, id: string): string {
 
 export function exitLeaf(tree: TreeIndex, id: string): string {
   return terminal(tree, id, "last");
+}
+
+/**
+ * O contêiner com atalho mais próximo acima deste objeto, se houver.
+ *
+ * É o que exclui a subárvore de um atalho da execução: rodar os filhos *e* o
+ * atalho contaria tudo duas vezes, e nada acusaria.
+ */
+export function shortcutOwner(tree: TreeIndex, id: string): string | undefined {
+  let cursor = tree.parent.get(id);
+  while (cursor !== undefined) {
+    if (tree.byId.get(cursor)?.shortcut !== undefined) return cursor;
+    cursor = tree.parent.get(cursor);
+  }
+  return undefined;
 }
 
 /**

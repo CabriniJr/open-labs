@@ -7,10 +7,11 @@ export {
   flowChildren,
   indexTree,
   isOpenable,
+  shortcutOwner,
   visibleChild,
 } from "./tree.js";
 export type { TreeIndex } from "./tree.js";
-export { resolveSignalTargets, resolveTarget } from "./wiring.js";
+export { resolveSignalTargets, resolveTarget, resolveTargets } from "./wiring.js";
 export type { SignalTarget } from "./wiring.js";
 // A ordem de acomodação e a detecção de laço são grafo puro, e quem monta um
 // mundo à mão pode querer conferi-las. `settle.ts` NÃO sai: a fase é mecanismo
@@ -19,6 +20,10 @@ export { findCombinationalCycle, settleOrder } from "./settle-graph.js";
 export type { SettleNode } from "./settle-graph.js";
 // quem monta um mundo à mão, sem passar por `World`, valida com esta.
 export { validateWorld } from "./validate.js";
+// Um atalho só é legítimo se um teste provar que ele concorda com a composição.
+// Estas duas SÃO esse teste, e por isso são superfície pública.
+export { boundaryProjection, shortcutDisagreement } from "./shortcut.js";
+export type { BoundaryProjection } from "./shortcut.js";
 export {
   boundaryCrossings,
   inCount,

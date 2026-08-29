@@ -170,6 +170,20 @@ export interface ObjectSpec<S = unknown> {
   readonly dynamic?: true;
   /** Obrigatório em objeto que age. Composto NUNCA tem comportamento. */
   readonly behavior?: Behavior<S>;
+  /**
+   * Atalho de execução de um contêiner: produz o mesmo resultado que rodar os
+   * filhos, sem rodá-los. Quando presente, **o contêiner age e a subárvore dele
+   * não roda**, e para a fiação ele é folha.
+   *
+   * Roda sempre — nunca "quando ninguém está olhando dentro". Condicioná-lo ao
+   * que o leitor abriu faria a resposta do modelo depender da navegação, e a
+   * vista deixaria de ser projeção do mesmo run para virar outro run.
+   *
+   * **Um atalho só é legítimo se um teste provar que ele concorda com a
+   * composição.** `shortcutDisagreement` é esse teste: roda os dois caminhos e
+   * compara o que o mundo de fora enxerga.
+   */
+  readonly shortcut?: Behavior<S>;
   readonly init?: () => S;
 }
 

@@ -401,3 +401,46 @@ conta receptores (o plano contava emissores e o próprio teste dele exigia o con
 e a asserção do eixo de carga em `control.test.ts` fecha por conservação
 (chegou + em voo == emitido) em vez de ignorar o atraso da aresta.
 
+---
+
+## Bloco 2 da CPU — fan-out, multiplicidade e atalho provado
+
+**Data:** 2026-08-29. **Plano:**
+`docs/superpowers/plans/2026-08-29-f6-b2-fanout-multiplicidade-atalho.md`.
+
+Fecha o contrato do motor. Continua sem uma linha de CPU em lugar nenhum:
+
+- **Leque de carga é nativo da porta.** `n` fios entregam `n` cópias; `out:` conta **uma**
+  emissão e cada destino conta o seu `in:`, e as duas divergirem é informação — é quanto a
+  saída se espalhou. `resolveTarget` virou `resolveTargets(...)[0]`, um mecanismo só. Há
+  teste provando que o leque é igual nas duas fases: a acomodação já percorria todos os
+  fios, e mudar só o confronto faria o mesmo desenho entregar diferente conforme o regime
+  da porta
+- **Caiu a recusa de `f281ece`**, no motor e no compilador — ela existia porque o motor
+  percorria só o primeiro fio
+- **`tee` saiu do catálogo** (`docs/kinds.md`), riscado com o motivo em vez de apagado, e
+  com a dívida que ele levou junto: **política de falha parcial** ("exige todas, ou basta
+  uma") pertence ao regime da aresta, e volta com backpressure
+- **`×N` e `/N` existem e são validadas.** `replicas: N` exige N filhos de fluxo do mesmo
+  kind — a marca diz "desenhe um destes N" e os N existem de verdade. `width: N` é marca de
+  desenho e **não conta nada**: há teste comparando o livro-caixa inteiro com e sem ela
+- **`ObjectSpec.shortcut`**: o contêiner age e a subárvore dele não roda. Roda **sempre**,
+  nunca "quando ninguém está olhando" — condicioná-lo ao que o leitor abriu faria a resposta
+  do modelo depender da navegação
+- **A prova**, em `shortcut.ts`: `shortcutDisagreement` roda os dois caminhos e compara a
+  **projeção de fronteira** (estado e livro-caixa de quem está de fora), não o interior nem
+  os ids de mensagem — os emissores são outros por construção, e exigir id igual reprovaria
+  um atalho correto
+
+Estado: 308 testes unitários, typecheck, boundaries e build verdes.
+
+**Achado que vale para quem for escrever atalho:** um atalho só empata com a composição se a
+cadeia interna **acomodar**. Com aresta cronometrada por dentro, a composição responde um
+tick depois, e o atalho estaria mentindo sobre latência mesmo acertando o valor. A fixture
+de teste mostra isso — e é o caso real, porque atalho existe para cadeia que fecha dentro
+do ciclo.
+
+**Pendente:** desenhar `×N`, `/N` e os subpassos é o Bloco 3 (views, em `depth-ui`).
+Expandir réplicas automaticamente a partir de um modelet continua fora: quem instancia os N
+é quem escreve o modelo, e o motor cobra que eles existam.
+

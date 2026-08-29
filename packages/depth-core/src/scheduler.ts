@@ -13,6 +13,7 @@ import type {
 } from "./model.js";
 import { settle } from "./settle.js";
 import { resolveSignalTargets, resolveTargets } from "./wiring.js";
+import { shortcutOwner } from "./tree.js";
 import type { TreeIndex } from "./tree.js";
 
 const DEFAULT_EDGE_TICKS = 4;
@@ -26,10 +27,17 @@ function actors(tree: TreeIndex): ObjectSpec[] {
   const out: ObjectSpec[] = [];
   for (const node of tree.byId.values()) {
     if (familyOf(node.kind) === "plate") continue;
-    if (node.behavior === undefined) continue;
+    if (acao(node) === undefined) continue;
+    // Dentro de um atalho ninguém roda: quem responde pelo interior é o atalho.
+    if (shortcutOwner(tree, node.id) !== undefined) continue;
     out.push(node);
   }
   return out;
+}
+
+/** O que este objeto executa: o atalho, se houver; senão o comportamento. */
+function acao(node: ObjectSpec): ObjectSpec["behavior"] {
+  return node.shortcut ?? node.behavior;
 }
 
 /**
@@ -151,9 +159,10 @@ export function stepWorld(
     signals: Readonly<Record<string, readonly Message[]>>,
   ): readonly Emission[] => {
     const node = porId.get(id);
-    if (node === undefined || node.behavior === undefined) return [];
+    const executar = node === undefined ? undefined : acao(node);
+    if (node === undefined || executar === undefined) return [];
 
-    const resultado = node.behavior(nodes[id], cargo, contexto(node, phase, signals));
+    const resultado = executar(nodes[id], cargo, contexto(node, phase, signals));
     // Só o confronto escreve estado. Quem acomoda não guarda — é o que separa
     // lógica combinacional de elemento de memória, e aqui é estrutural: o
     // `state` devolvido na acomodação nem chega a ser lido.

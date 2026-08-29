@@ -135,6 +135,28 @@ export function validateWorld(spec: WorldSpec, tree: TreeIndex): void {
     }
   }
 
+  // O atalho substitui a composição, então ele exige que haja composição — e
+  // não pode conviver com um behavior, que seria um segundo comportamento no
+  // mesmo objeto sem nada dizendo qual vence.
+  for (const node of tree.byId.values()) {
+    if (node.shortcut === undefined) continue;
+    if (node.behavior !== undefined) {
+      erros.push(
+        `"${node.id}" tem behavior e shortcut: seriam dois comportamentos no mesmo ` +
+          `objeto, e nada diria qual vence. O atalho é o comportamento de um ` +
+          `contêiner — remova um dos dois`,
+      );
+    }
+    const filhos = (node.children ?? []).filter((c) => familyOf(c.kind) !== "plate");
+    if (filhos.length === 0 || node.leaf === true) {
+      erros.push(
+        `"${node.id}" declara shortcut e não tem composição para atalhar: o atalho ` +
+          `existe para produzir o mesmo que rodar os filhos, e sem filhos não há ` +
+          `com o que comparar — nem teste de equivalência que se possa escrever`,
+      );
+    }
+  }
+
   // As duas marcas de multiplicidade. Cada uma tem uma forma de mentir, e a
   // regra existe contra ela — não contra o dado malformado.
   for (const wire of spec.wires) {
