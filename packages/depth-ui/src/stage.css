@@ -119,6 +119,18 @@
   filter: drop-shadow(0 0 6px color-mix(in oklab, var(--dui-sinal) 70%, transparent));
 }
 
+/*
+ * A carga da acomodação: o que anda DENTRO do tick.
+ *
+ * Menor e sem o halo pesado da carga cronometrada, porque são muitas ao mesmo
+ * tempo e elas contam outra coisa — não é uma coisa atravessando uma borda, é
+ * um valor se propagando por um caminho combinacional.
+ */
+.dui-stage__carga--acomodada {
+  stroke-width: 1;
+  filter: none;
+}
+
 /* A carga muda de aparência atravessando quem a transforma. */
 .dui-stage__carga[data-kind="instrucao"] { fill: #a371f7; }
 .dui-stage__carga[data-kind="proximo"] { fill: #3fb950; }

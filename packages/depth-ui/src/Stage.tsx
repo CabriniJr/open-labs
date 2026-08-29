@@ -357,6 +357,50 @@ export function Stage({
   const identificador = (chave: string): string =>
     `dui-fio-${chave.replace(/[^a-zA-Z0-9-]/g, "_")}`;
 
+  /**
+   * A onda de acomodação, encenada.
+   *
+   * Só o tráfego que atravessa a borda do relógio andava na tela. Só que numa
+   * CPU quase tudo é combinacional: o cálculo inteiro — buscar, decodificar,
+   * somar, escolher — acontecia **dentro** do tick e **sem nada se mexer**. O
+   * desenho mostrava umas poucas bolinhas nas bordas e ficava parado no resto,
+   * que é justamente onde está a coisa que se quer entender.
+   *
+   * A ordem em que as peças agem é do modelo (`substepOf`), e não se inventa
+   * aqui. O que é do desenho é o **espaçamento**: os subpassos visíveis são
+   * enfileirados e distribuídos pelo tick, senão os setenta e cinco subpassos
+   * de um ciclo virariam nove milissegundos cada e ninguém veria nada.
+   */
+  const subpassosVisiveis = [
+    ...new Set(
+      arestas
+        .filter((a) => a.timing === "settle")
+        .map((a) => state.substepOf[a.from])
+        .filter((n): n is number => n !== undefined),
+    ),
+  ].sort((a, b) => a - b);
+
+  const etapas = Math.max(1, subpassosVisiveis.length);
+  const duracaoDaEtapa = tickMs / etapas;
+
+  /** Quando esta emissão parte, em milissegundos dentro do tick. */
+  const partidaDe = (from: string): number => {
+    const subpasso = state.substepOf[from];
+    if (subpasso === undefined) return 0;
+    const posicao = subpassosVisiveis.indexOf(subpasso);
+    return (posicao < 0 ? 0 : posicao) * duracaoDaEtapa;
+  };
+
+  /** O que a acomodação pôs em cada fio desenhável neste tick. */
+  const ondaAcomodada = arestas
+    .filter((a) => a.timing === "settle")
+    .map((a) => {
+      const mensagens = state.settled[`${a.from}.${a.port}`];
+      if (mensagens === undefined || mensagens.length === 0) return null;
+      return { aresta: a, kind: mensagens[0]!.kind, comeca: partidaDe(a.from) };
+    })
+    .filter((x): x is NonNullable<typeof x> => x !== null);
+
   return (
     <svg
       className="dui-stage"
@@ -415,6 +459,42 @@ export function Stage({
             ) : null}
           </g>
         ))}
+      </g>
+
+      {/*
+        A acomodação andando: o que se propaga dentro deste tick, na ordem em
+        que o modelo diz que se propagou.
+      */}
+      <g className="dui-stage__onda">
+        {reduzido
+          ? null
+          : ondaAcomodada.map(({ aresta, kind, comeca }) => (
+              <circle
+                key={`${aresta.chave}:${state.tick}`}
+                className="dui-stage__carga dui-stage__carga--acomodada"
+                data-kind={kind}
+                data-linha={aresta.linha}
+                r={4}
+                opacity={0}
+              >
+                <animateMotion
+                  dur={`${duracaoDaEtapa}ms`}
+                  begin={`${comeca}ms`}
+                  path={aresta.d}
+                  fill="freeze"
+                />
+                {/* aparece ao partir e some ao chegar: fora da vez dela, a
+                    bolinha não existe, em vez de ficar parada num canto */}
+                <animate
+                  attributeName="opacity"
+                  dur={`${duracaoDaEtapa}ms`}
+                  begin={`${comeca}ms`}
+                  values="0;1;1;0"
+                  keyTimes="0;0.15;0.85;1"
+                  fill="freeze"
+                />
+              </circle>
+            ))}
       </g>
 
       {/* a carga em voo: cada item é uma coisa, e viaja pelo fio que o leva */}

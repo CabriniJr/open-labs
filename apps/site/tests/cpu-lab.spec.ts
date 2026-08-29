@@ -144,3 +144,21 @@ test("caixa recolhida com circuito dentro não é desenhada parada", async ({ pa
   await expect(ula).toHaveAttribute("data-familia", "processor");
   await expect(ula.locator(".dui-stage__engrenagem")).toHaveCount(1);
 });
+
+test("o que acontece dentro do ciclo aparece na tela", async ({ page }) => {
+  await page.goto("labs/cpu/");
+  await expect(page.locator(".dui-stage")).toBeVisible({ timeout: 15_000 });
+  await expect(page.locator(".cpu-lab__tick").nth(1)).toContainText("substeps", {
+    timeout: 30_000,
+  });
+
+  // Só o tráfego que atravessa a borda do relógio andava. Numa CPU quase tudo é
+  // combinacional, então o cálculo inteiro — buscar, decodificar, somar,
+  // escolher — acontecia dentro do tick e sem nada se mexer: o desenho ficava
+  // parado justamente onde está a coisa que se quer entender.
+  const acomodadas = page.locator(".dui-stage__carga--acomodada");
+  await expect(acomodadas.first()).toBeAttached({ timeout: 10_000 });
+  expect(await acomodadas.count()).toBeGreaterThan(
+    await page.locator(".dui-stage__cargas .dui-stage__carga").count(),
+  );
+});
