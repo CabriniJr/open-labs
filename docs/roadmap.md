@@ -80,7 +80,7 @@ não exige nenhum arquétipo novo" valia para o lab da fila, **não** para o pil
 | **L2 · Wire** | **Canal abrível.** O enquadramento HTTP/2 mora dentro do `channel` |
 | **L3 · Payload** | **Carga abrível.** O documento OTLP como objeto com interior |
 
-L2 e L3 são o custo real do piloto, e são também o diferencial (`why-simulate.md` §15).
+L2 e L3 são o custo real do piloto, e são também o diferencial (`why-simulate.md` §14).
 
 ---
 
