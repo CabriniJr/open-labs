@@ -1,4 +1,11 @@
-/** Espaço de coordenadas do mapa. Os nós são posicionados em % sobre ele. */
+/**
+ * Espaço de coordenadas do mapa. Os nós são posicionados em % sobre ele.
+ *
+ * Eram constantes do módulo, e o mapa só sabia desenhar o do OTel. Cada
+ * handbook tem o seu — a anatomia é a mesma (roadmap · artigos · labs), o
+ * caminho é que não é —, então elas viraram campos de um mapa que se passa ao
+ * componente.
+ */
 export const MAP_WIDTH = 1000;
 export const MAP_HEIGHT = 870;
 export const SPINE_X = 500;
@@ -10,6 +17,24 @@ export const PHASE_X = 415;
 export const PHASE_W = 170;
 export const ANNEX_X = 40;
 export const ANNEX_W = 160;
+
+/**
+ * Um mapa de handbook: a espinha das fases, os labs pendurados nela, e os
+ * anexos — referência que vários labs puxam, e que não é etapa.
+ */
+export interface RoadmapMap {
+  /** Onde o progresso deste mapa é guardado. Um handbook não conta o do outro. */
+  readonly storageKey: string;
+  readonly height: number;
+  /** A espinha vai daqui até ali, no espaço de coordenadas. */
+  readonly spineTop: number;
+  readonly spineBottom: number;
+  readonly phases: readonly RoadmapPhase[];
+  readonly labs: readonly RoadmapLab[];
+  readonly annexes: readonly RoadmapAnnex[];
+  /** O rótulo da trilha de anexos na legenda: cada handbook chama o seu. */
+  readonly annexLegend: string;
+}
 
 export interface RoadmapPhase {
   readonly number: number;
@@ -50,7 +75,10 @@ export const labs: readonly RoadmapLab[] = [
   { id: "three-pillars", title: "Three pillars, one blind spot", href: "#", status: "coming", side: "left", y: 110, phase: 1 },
   { id: "disconnected-signals", title: "The cost of disconnected signals", href: "#", status: "coming", side: "right", y: 110, phase: 1 },
 
-  { id: "anatomy-of-a-trace", title: "Anatomy of a Trace", href: "#", status: "available", side: "left", y: 244, phase: 2 },
+  // "available" com href "#": o nó abria como link e não levava a lugar nenhum.
+  // A Entrega 2 mudou de rumo e este lab nunca foi construído — então ele é
+  // caminho declarado, como os outros, e é assim que tem que aparecer.
+  { id: "anatomy-of-a-trace", title: "Anatomy of a Trace", href: "#", status: "coming", side: "left", y: 244, phase: 2 },
   { id: "hard-context-and-baggage", title: "Hard context and baggage", href: "#", status: "coming", side: "right", y: 244, phase: 2 },
   { id: "reading-an-otlp-payload", title: "Reading an OTLP payload", href: "#", status: "coming", side: "left", y: 300, phase: 2 },
 
@@ -71,3 +99,15 @@ export const annexes: readonly RoadmapAnnex[] = [
   { id: "otlp", title: "OTLP", y: 300, afterLab: "reading-an-otlp-payload" },
   { id: "grpc-http2", title: "gRPC over HTTP/2", y: 434, afterLab: "collector-pipeline" },
 ];
+
+export const MAPA_OTEL: RoadmapMap = {
+  // A chave antiga, de propósito: mudá-la apagaria o progresso de quem já leu.
+  storageKey: "ovh:progress:v1",
+  height: MAP_HEIGHT,
+  spineTop: 31,
+  spineBottom: 814,
+  phases,
+  labs,
+  annexes,
+  annexLegend: "The Wire · reference, not a step",
+};

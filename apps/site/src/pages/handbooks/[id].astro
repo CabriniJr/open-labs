@@ -88,7 +88,7 @@ if (orfaos.length > 0) {
         The order in which the concepts hold each other up. Not a queue — later
         phases reach back, and the map shows it.
       </p>
-      {handbook.hasMap && <Roadmap client:visible />}
+      {handbook.map && <Roadmap mapa={handbook.map} client:visible />}
       <ol class="hb-phases">
         {
           handbook.phases.map((phase) => (

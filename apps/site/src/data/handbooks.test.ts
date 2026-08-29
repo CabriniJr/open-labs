@@ -68,3 +68,65 @@ describe("catálogo do OpenLabs", () => {
     ).toBe(1);
   });
 });
+
+/**
+ * O catálogo tem que dizer a verdade sobre o que já dá para abrir.
+ *
+ * O defeito que originou estes testes: o handbook do RISC-V anunciava
+ * "Assemble and run your own program" como **coming** enquanto o lab do caminho
+ * de dados já estava no ar fazendo exatamente isso. Ninguém mentiu de propósito
+ * — havia duas listas escritas à mão para o mesmo fato, e elas divergiram.
+ *
+ * A correção de verdade foi juntar as fontes (os labs saem do mapa). Estes
+ * testes são a trava: se alguém escrever uma segunda lista de novo, o desacordo
+ * morre aqui.
+ */
+describe("o catálogo não promete o que não abre, nem esconde o que abre", () => {
+  it.each(HANDBOOKS.map((h) => [h.id, h] as const))(
+    "%s: todo item pronto tem para onde levar",
+    (_id, handbook) => {
+      const mudos = itens(handbook)
+        .filter((item) => item.status === "available" && (item.href ?? "") === "")
+        .map((item) => item.id);
+      // Um item "pronto" sem link é um convite que não abre nada.
+      expect(mudos).toEqual([]);
+    },
+  );
+
+  it.each(HANDBOOKS.map((h) => [h.id, h] as const))(
+    "%s: nada que ainda não existe leva a algum lugar",
+    (_id, handbook) => {
+      const prometidos = itens(handbook)
+        .filter((item) => item.status === "coming" && (item.href ?? "") !== "")
+        .map((item) => item.id);
+      expect(prometidos).toEqual([]);
+    },
+  );
+
+  it.each(HANDBOOKS.filter((h) => h.map !== undefined).map((h) => [h.id, h] as const))(
+    "%s: o mapa e a lista de labs contam a mesma história",
+    (_id, handbook) => {
+      const doMapa = handbook.map!.labs.map((lab) => ({
+        id: lab.id,
+        status: lab.status,
+      }));
+      const daLista = handbook.labs.map((lab) => ({ id: lab.id, status: lab.status }));
+      expect(daLista).toEqual(doMapa);
+    },
+  );
+
+  it("os labs que existem de verdade estão marcados como prontos", () => {
+    // As páginas que o site publica hoje. Escrito à mão de propósito: é a
+    // âncora fora do catálogo, e sem ela os dois lados poderiam concordar
+    // estando os dois errados.
+    const NO_AR = ["labs/gates", "labs/cpu"];
+    const linkados = new Set(
+      HANDBOOKS.flatMap((h) => itens(h))
+        .filter((item) => item.status === "available")
+        .map((item) => item.href),
+    );
+    for (const pagina of NO_AR) {
+      expect([...linkados], `${pagina} está no ar e ninguém aponta para ele`).toContain(pagina);
+    }
+  });
+});

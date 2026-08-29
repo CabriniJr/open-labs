@@ -24,12 +24,29 @@ test("a handbook page shows roadmap, articles and labs", async ({ page }) => {
   await expect(page.locator(".hb-item").first()).toContainText("coming");
 });
 
-test("only the OpenTelemetry handbook draws the interactive map", async ({ page }) => {
+test("both handbooks draw their own interactive map", async ({ page }) => {
+  // O RISC-V ficou sem mapa enquanto o modelo dele não existia — desenhar o
+  // caminho antes de andá-lo seria prometer. O modelo existe, e o mapa dele
+  // mostra os dois labs que abrem e o resto como caminho declarado.
   await page.goto("handbooks/otel/");
   await expect(page.locator(".roadmap")).toBeVisible();
+  await expect(page.locator('.roadmap__node[data-status="coming"]').first()).toBeVisible();
 
   await page.goto("handbooks/riscv/");
-  await expect(page.locator(".roadmap")).toHaveCount(0);
+  await expect(page.locator(".roadmap")).toBeVisible();
+  // dois nós abrem, e eles levam aos labs que estão no ar
+  const abertos = page.locator('.roadmap__node:not([data-status="coming"]) a');
+  await expect(abertos).toHaveCount(3);
+  await expect(page.locator('.roadmap__node a[href$="labs/cpu"]').first()).toBeVisible();
+  await expect(page.locator('.roadmap__node a[href$="labs/gates"]').first()).toBeVisible();
+});
+
+test("nothing on a map promises a link that goes nowhere", async ({ page }) => {
+  // O defeito que originou este teste: um nó marcado como pronto com href "#".
+  for (const rota of ["handbooks/otel/", "handbooks/riscv/"]) {
+    await page.goto(rota);
+    await expect(page.locator('.roadmap__node a[href="#"]')).toHaveCount(0);
+  }
 });
 
 test("the handbooks index links back into each handbook", async ({ page }) => {
@@ -47,5 +64,40 @@ test("handbook pages do not scroll horizontally", async ({ page }) => {
       () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
     );
     expect(overflow, rota).toBeLessThanOrEqual(1);
+  }
+});
+
+test("o desenho do mapa e as coordenadas dos nós escalam juntos", async ({ page }) => {
+  // O defeito: a proporção do mapa estava escrita no CSS com a medida do OTel,
+  // e um mapa de outra altura fazia o SVG e os nós escalarem diferente — as
+  // linhas paravam longe das caixas, mostrando fio ligado a lugar nenhum.
+  //
+  // As linhas vivem no SVG e as caixas são posicionadas em % sobre o contêiner,
+  // então os dois só concordam enquanto ocuparem exatamente a mesma caixa.
+  for (const rota of ["handbooks/otel/", "handbooks/riscv/"]) {
+    await page.goto(rota);
+    const fios = page.locator(".roadmap__wires");
+
+    // Em tela estreita o mapa vira lista empilhada e os fios somem de
+    // propósito: ali não há o que alinhar, e a lista é que precisa existir.
+    if (!(await fios.isVisible())) {
+      await expect(page.locator(".roadmap__node").first()).toBeVisible();
+      continue;
+    }
+
+    // O SVG sempre preenche o contêiner (`inset: 0`), então medir a caixa dele
+    // não prova nada. O que desalinha é a proporção do **viewBox** contra a da
+    // caixa: divergindo, o desenho é encaixado com sobra dentro do próprio SVG
+    // e as coordenadas dele deixam de bater com as porcentagens dos nós.
+    const mapa = await page.locator(".roadmap__map").boundingBox();
+    expect(mapa, rota).not.toBeNull();
+
+    const viewBox = await fios.getAttribute("viewBox");
+    expect(viewBox, rota).not.toBeNull();
+    const [, , vbW, vbH] = viewBox!.split(/\s+/).map(Number);
+
+    const daCaixa = mapa!.height / mapa!.width;
+    const doDesenho = vbH! / vbW!;
+    expect(Math.abs(daCaixa - doDesenho), `${rota} proporção`).toBeLessThan(0.02);
   }
 });

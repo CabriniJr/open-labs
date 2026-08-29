@@ -34,7 +34,11 @@
 
 .roadmap__map {
   position: relative;
-  aspect-ratio: 1000 / 870;
+  /* A medida vem do mapa, não do CSS: eram os números do OTel escritos aqui, e
+     um mapa de outra altura desalinhava os nós das linhas — o desenho mostrava
+     um fio ligado a lugar nenhum. O componente passa a proporção pela variável;
+     o `auto` do mobile continua ganhando, porque quem é inline é a variável. */
+  aspect-ratio: var(--roadmap-aspect, 1000 / 870);
   background: var(--paper-raised);
   border: 1px solid var(--rule);
   border-radius: var(--radius-3);

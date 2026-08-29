@@ -68,9 +68,17 @@ const somaDentro: AnyObject = {
 };
 
 const atalho: Behavior<unknown> = (state, _inbox, ctx) => {
+  const chegadas = (ctx.inlets.a ?? []).length + (ctx.inlets.b ?? []).length;
+  // **Não chegar nada** é diferente de **chegar zero.** A guarda daqui era
+  // `a === 0 && b === 0`, que confunde as duas: com as duas fontes mandando
+  // zero, a composição entregava um "zero" ao destino e o atalho não entregava
+  // nada. O atalho estava errado, e não a composição.
+  //
+  // A varredura completa achou; o sorteio de trinta pares em mil e seiscentos
+  // achava uma vez a cada tantas suítes, o que parece instabilidade e não é.
+  if (chegadas === 0) return { state, out: [] };
   const a = conta(ctx.inlets.a ?? []);
   const b = conta(ctx.inlets.b ?? []);
-  if (a === 0 && b === 0) return { state, out: [] };
   return { state, out: [{ port: "out", message: ctx.emit("v", 1, { n: a * 2 + b * 3 }) }] };
 };
 
@@ -131,6 +139,22 @@ describe("entradas nomeadas", () => {
       }),
       { numRuns: 30 },
     );
+  });
+
+  it("varredura completa: nenhum par de entradas discorda", () => {
+    // O property test acima sorteia trinta pares por corrida, com semente nova
+    // a cada vez — e ele reprovou uma vez numa suíte inteira. Sorteio que falha
+    // raro quer dizer contraexemplo raro, não instabilidade, e "raro" some do
+    // radar. O espaço aqui é pequeno o bastante para varrer inteiro, e varrido
+    // não sobra sorte nenhuma.
+    const discordam: string[] = [];
+    for (let a = 0; a <= 40; a += 1) {
+      for (let b = 0; b <= 40; b += 1) {
+        const achado = shortcutDisagreement(mundo(true, a, b), "bloco", 8);
+        if (achado !== null) discordam.push(`a=${a} b=${b}: ${achado}`);
+      }
+    }
+    expect(discordam.slice(0, 3)).toEqual([]);
   });
 
   it("recusa entrar por um borne que não existe", () => {

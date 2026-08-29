@@ -68,28 +68,45 @@ test("the timeline lets you stop and read the payload", async ({ page }) => {
 });
 
 test("the map tracks progress and it survives a reload", async ({ page }) => {
-  await page.goto("handbooks/otel/");
+  // No RISC-V, e não mais no OTel: só se marca o que abre, e hoje quem tem lab
+  // no ar é este handbook. O OTel voltou a ter todos os nós como caminho
+  // declarado, que é a verdade dele.
+  await page.goto("handbooks/riscv/");
   await page.evaluate(() => window.localStorage.clear());
   await page.reload();
 
   const roadmap = page.locator(".roadmap");
   await roadmap.scrollIntoViewIfNeeded();
 
-  await expect(roadmap.locator(".roadmap__progress-count")).toHaveText("0 of 13");
+  await expect(roadmap.locator(".roadmap__progress-count")).toHaveText("0 of 6");
 
-  const checkButton = page.getByRole("button", { name: /Mark Anatomy of a Trace as done/i });
-  await checkButton.click();
+  const marcar = page.getByRole("button", { name: /Mark The single-cycle datapath as done/i });
+  await marcar.click();
 
-  await expect(roadmap.locator(".roadmap__progress-count")).toHaveText("1 of 13");
+  await expect(roadmap.locator(".roadmap__progress-count")).toHaveText("1 of 6");
 
   await page.reload();
   await roadmap.scrollIntoViewIfNeeded();
 
-  await expect(roadmap.locator(".roadmap__progress-count")).toHaveText("1 of 13");
-  await expect(page.getByRole("button", { name: /Mark Anatomy of a Trace as done/i })).toHaveAttribute(
-    "aria-pressed",
-    "true",
-  );
+  await expect(roadmap.locator(".roadmap__progress-count")).toHaveText("1 of 6");
+  await expect(
+    page.getByRole("button", { name: /Mark The single-cycle datapath as done/i }),
+  ).toHaveAttribute("aria-pressed", "true");
+});
+
+test("os dois handbooks contam o progresso separado", async ({ page }) => {
+  // Eles compartilhavam a chave do localStorage enquanto só um tinha mapa.
+  // Marcar um lab de CPU não pode adiantar o roadmap de OpenTelemetry.
+  await page.goto("handbooks/riscv/");
+  await page.evaluate(() => window.localStorage.clear());
+  await page.reload();
+  const marcar = page.getByRole("button", { name: /Mark The single-cycle datapath as done/i });
+  await marcar.scrollIntoViewIfNeeded();
+  await marcar.click();
+  await expect(page.locator(".roadmap__progress-count")).toHaveText("1 of 6");
+
+  await page.goto("handbooks/otel/");
+  await expect(page.locator(".roadmap__progress-count")).toHaveText("0 of 13");
 });
 
 test("the page does not scroll horizontally", async ({ page }) => {

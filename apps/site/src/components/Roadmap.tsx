@@ -3,25 +3,21 @@ import {
   ANNEX_W,
   ANNEX_X,
   LEFT_X,
-  MAP_HEIGHT,
   MAP_WIDTH,
   NODE_W,
   PHASE_W,
   PHASE_X,
   RIGHT_X,
   SPINE_X,
-  annexes,
-  labs,
-  phases,
   type RoadmapAnnex,
   type RoadmapLab,
+  type RoadmapMap,
+  type RoadmapPhase,
 } from "../data/roadmap.js";
 
-const STORAGE_KEY = "ovh:progress:v1";
-
-function readProgress(): string[] {
+function readProgress(chave: string): string[] {
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
+    const raw = window.localStorage.getItem(chave);
     if (raw === null) return [];
     const parsed: unknown = JSON.parse(raw);
     return Array.isArray(parsed) ? parsed.filter((v): v is string => typeof v === "string") : [];
@@ -30,9 +26,9 @@ function readProgress(): string[] {
   }
 }
 
-function writeProgress(ids: readonly string[]): void {
+function writeProgress(chave: string, ids: readonly string[]): void {
   try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(ids));
+    window.localStorage.setItem(chave, JSON.stringify(ids));
   } catch {
     // Modo privado ou storage cheio: o mapa segue funcionando sem memória.
   }
@@ -51,11 +47,11 @@ const pct = (value: number, total: number): string => `${(value / total) * 100}%
  * (fase | lab | anexo) em vez de renderizar três `.map` separados.
  */
 type RoadmapItem =
-  | { kind: "phase"; phase: (typeof phases)[number] }
+  | { kind: "phase"; phase: RoadmapPhase }
   | { kind: "lab"; lab: RoadmapLab }
   | { kind: "annex"; annex: RoadmapAnnex };
 
-function buildReadingOrder(): RoadmapItem[] {
+function buildReadingOrder({ phases, labs, annexes }: RoadmapMap): RoadmapItem[] {
   const annexesByLab = new Map<string, RoadmapAnnex[]>();
   for (const annex of annexes) {
     const bucket = annexesByLab.get(annex.afterLab) ?? [];
@@ -77,21 +73,22 @@ function buildReadingOrder(): RoadmapItem[] {
   return items;
 }
 
-const readingOrder = buildReadingOrder();
+export function Roadmap({ mapa }: { readonly mapa: RoadmapMap }) {
+  const { labs, annexes, storageKey, height, spineTop, spineBottom } = mapa;
+  const readingOrder = buildReadingOrder(mapa);
 
-export function Roadmap() {
   // Lido só depois da hidratação: o HTML do servidor não conhece o progresso
   // do leitor, e ler no render causaria divergência de hidratação.
   const [done, setDone] = useState<readonly string[]>([]);
 
   useEffect(() => {
-    setDone(readProgress());
-  }, []);
+    setDone(readProgress(storageKey));
+  }, [storageKey]);
 
   const toggle = (id: string): void => {
     const next = done.includes(id) ? done.filter((d) => d !== id) : [...done, id];
     setDone(next);
-    writeProgress(next);
+    writeProgress(storageKey, next);
   };
 
   const total = labs.length;
@@ -112,14 +109,17 @@ export function Roadmap() {
         </div>
       </div>
 
-      <div className="roadmap__map">
+      <div
+        className="roadmap__map"
+        style={{ ["--roadmap-aspect" as string]: `${MAP_WIDTH} / ${height}` }}
+      >
         <svg
           className="roadmap__wires"
-          viewBox={`0 0 ${MAP_WIDTH} ${MAP_HEIGHT}`}
+          viewBox={`0 0 ${MAP_WIDTH} ${height}`}
           aria-hidden="true"
           focusable="false"
         >
-          <line x1={SPINE_X} y1={31} x2={SPINE_X} y2={814} />
+          <line x1={SPINE_X} y1={spineTop} x2={SPINE_X} y2={spineBottom} />
           {labs.map((lab) => (
             <line
               key={lab.id}
@@ -151,7 +151,7 @@ export function Roadmap() {
                   className="roadmap__phase mono"
                   style={{
                     left: pct(PHASE_X, MAP_WIDTH),
-                    top: pct(phase.y, MAP_HEIGHT),
+                    top: pct(phase.y, height),
                     width: pct(PHASE_W, MAP_WIDTH),
                   }}
                 >
@@ -168,7 +168,7 @@ export function Roadmap() {
                   className="roadmap__annex mono"
                   style={{
                     left: pct(ANNEX_X, MAP_WIDTH),
-                    top: pct(annex.y, MAP_HEIGHT),
+                    top: pct(annex.y, height),
                     width: pct(ANNEX_W, MAP_WIDTH),
                   }}
                 >
@@ -187,7 +187,7 @@ export function Roadmap() {
                 data-status={status}
                 style={{
                   left: pct(lab.side === "left" ? LEFT_X : RIGHT_X, MAP_WIDTH),
-                  top: pct(lab.y, MAP_HEIGHT),
+                  top: pct(lab.y, height),
                   width: pct(NODE_W, MAP_WIDTH),
                 }}
               >
@@ -221,7 +221,7 @@ export function Roadmap() {
         <li data-status="done">done</li>
         <li data-status="available">where you are</li>
         <li data-status="coming">not written yet</li>
-        <li data-status="annex">The Wire · reference, not a step</li>
+        <li data-status="annex">{mapa.annexLegend}</li>
       </ul>
     </div>
   );

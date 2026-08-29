@@ -929,3 +929,42 @@ português: não são lidos por quem visita o site. Uma guarda por caractere ace
 português de voltar sozinho num rótulo novo.
 
 Estado: 489 testes unitários, 78 e2e, typecheck, boundaries e build verdes.
+
+---
+
+## O mapa do RISC-V, e três coisas que o site dizia errado
+
+**Data:** 2026-08-29. **Código:** `apps/site/src/data/{roadmap,roadmap-riscv,handbooks}.ts`,
+`apps/site/src/components/Roadmap.{tsx,css}`, `packages/depth-core/src/inlets.test.ts`.
+
+**O handbook do RISC-V ganhou o mapa.** Ele não tinha, e o motivo estava escrito no código:
+desenhar o caminho antes de o modelo existir seria prometer o que não foi andado. O modelo
+existe — executa RV32I e abre até o transistor —, então a razão caiu. O componente do mapa
+deixou de conhecer só o do OTel: a espinha, as fases e os anexos viram um `RoadmapMap` que
+se passa a ele.
+
+**Três defeitos, e os três da mesma família: a página afirmando o que não é.**
+
+1. **O catálogo anunciava como "coming" um lab que já estava no ar.** Ninguém mentiu de
+   propósito — havia duas listas escritas à mão para o mesmo fato, e elas divergiram. A
+   correção não foi acertar a lista: foi **juntar as fontes**, e os labs do RISC-V passaram a
+   sair do mapa, como os do OTel já saíam. Três testes travam o resto: item pronto tem para
+   onde levar, item não escrito não leva a lugar nenhum, e mapa e lista contam a mesma
+   história.
+2. **Um nó do mapa do OTel estava marcado como pronto com link `#`.** Ele abria como link e
+   não levava a nada. A Entrega 2 mudou de rumo e aquele lab nunca foi construído — então ele
+   é caminho declarado, como os outros.
+3. **A proporção do mapa estava escrita no CSS com a medida do OTel.** Um mapa de outra
+   altura fazia o desenho e as coordenadas dos nós escalarem diferente, e as linhas paravam
+   longe das caixas: fio ligado a lugar nenhum. A proporção passou a vir do mapa.
+
+**E um quarto, achado por acidente, que é o mais interessante.** A suíte reprovou **uma vez**
+num property test dos bornes — o tipo de coisa que se reexecuta e se esquece. Reexecutar
+passou quatro vezes seguidas. Mas sorteio que falha raro quer dizer **contraexemplo raro**,
+não instabilidade: o teste tirava trinta pares de mil seiscentos e um. A varredura completa
+achou o único par que discorda, `a=0, b=0`, e o defeito é a conflação de sempre — o atalho
+guardava `a === 0 && b === 0` e devolvia nada, enquanto a composição entregava um zero.
+**Não chegar nada é diferente de chegar zero**, e era o atalho que estava errado. O sorteio
+virou varredura: o espaço é pequeno o bastante para não sobrar sorte.
+
+Estado: 497 testes unitários, 84 e2e, typecheck, boundaries e build verdes.

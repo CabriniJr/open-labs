@@ -1,3 +1,5 @@
+import { MAPA_OTEL, type RoadmapMap } from "./roadmap.js";
+import { MAPA_RISCV } from "./roadmap-riscv.js";
 import { labs as otelLabs, phases as otelPhases } from "./roadmap.js";
 
 /**
@@ -46,11 +48,14 @@ export interface Handbook {
   readonly model: string;
   readonly stage: "building" | "planned";
   /**
-   * Se o roadmap já tem mapa interativo. Só o OTel tem: o mapa é desenho
-   * posicionado à mão, e desenhar o do RISC-V antes de o modelo existir seria
-   * prometer um caminho que ainda não foi andado.
+   * O mapa interativo do roadmap, quando já há caminho para desenhar.
+   *
+   * Era um booleano e o mapa só sabia desenhar o do OTel. O RISC-V ficou sem o
+   * dele porque desenhar o caminho antes de o modelo existir seria prometer o
+   * que não foi andado — razão que caiu em 29/08/2026, quando o modelo passou a
+   * executar RV32I e a abrir até o transistor.
    */
-  readonly hasMap: boolean;
+  readonly map?: RoadmapMap;
   readonly phases: readonly HandbookPhase[];
   readonly articles: readonly HandbookItem[];
   readonly labs: readonly HandbookItem[];
@@ -81,7 +86,7 @@ const OTEL: Handbook = {
     "the OTLP payload underneath, and the same running state producing both.",
   model: "otel.model",
   stage: "building",
-  hasMap: true,
+  map: MAPA_OTEL,
   phases: otelPhases.map((phase) => ({
     number: phase.number,
     title: phase.title,
@@ -97,6 +102,21 @@ const OTEL: Handbook = {
   labs: OTEL_LABS,
 };
 
+/**
+ * Os labs do RISC-V saem do mapa, e não de uma segunda lista.
+ *
+ * Eram duas listas escritas à mão, e elas divergiram: a página do handbook
+ * anunciava como "coming" um lab que já estava no ar. Ninguém mentiu de
+ * propósito — é o que duas fontes para o mesmo fato fazem sozinhas.
+ */
+const RISCV_LABS: readonly HandbookItem[] = MAPA_RISCV.labs.map((lab) => ({
+  id: lab.id,
+  title: lab.title,
+  status: lab.status === "available" ? "available" : "coming",
+  phase: lab.phase,
+  ...(lab.href === "#" ? {} : { href: lab.href }),
+}));
+
 const RISCV: Handbook = {
   id: "riscv",
   name: "RISC-V Visual Handbook",
@@ -108,7 +128,7 @@ const RISCV: Handbook = {
     "is either high or low. You write the assembly; the model runs it.",
   model: "cpu.model",
   stage: "building",
-  hasMap: false,
+  map: MAPA_RISCV,
   phases: [
     { number: 1, title: "Signals", line: "A wire carries one bit, and time is what it takes to settle." },
     { number: 2, title: "Gates", line: "Transistors into gates, gates into adders. Nothing is a black box." },
@@ -125,25 +145,7 @@ const RISCV: Handbook = {
     { id: "control-is-not-data", title: "Control is not data", status: "coming", phase: 5 },
     { id: "writing-rv32i", title: "Writing RV32I by hand", status: "coming", phase: 6 },
   ],
-  labs: [
-    { id: "the-wire", title: "One wire, one tick", status: "coming", phase: 1 },
-    {
-      id: "the-adder",
-      title: "Adding, gate by gate",
-      status: "available",
-      href: "labs/gates",
-      phase: 2,
-    },
-    { id: "register-write", title: "Writing a register", status: "coming", phase: 3 },
-    {
-      id: "single-cycle-datapath",
-      title: "The single-cycle datapath",
-      status: "available",
-      href: "labs/cpu",
-    phase: 4 },
-    { id: "control-lines", title: "The control lines of one opcode", status: "coming", phase: 5 },
-    { id: "assemble-and-run", title: "Assemble and run your own program", status: "coming", phase: 6 },
-  ],
+  labs: RISCV_LABS,
 };
 
 export const HANDBOOKS: readonly Handbook[] = [OTEL, RISCV];
