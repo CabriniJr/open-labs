@@ -1668,6 +1668,20 @@ describe("World", () => {
     expect(JSON.stringify(b.state)).toBe(JSON.stringify(a.state));
   });
 
+  it("rebobinar e mudar parâmetro abandona o futuro que existia", () => {
+    const w = new World(spec);
+    w.advance(3);
+    w.setParam("step", 100);   // evento no tick 3
+    w.advance(3);              // tick 6, total 3 + 300
+    expect(total(w)).toBe(303);
+
+    w.seek(1);
+    w.setParam("step", 2);     // outra linha do tempo a partir do tick 1
+    w.advance(5);              // tick 6
+    // o evento do tick 3 pertencia à linha abandonada: não pode ressuscitar
+    expect(total(w)).toBe(1 + 2 * 5);
+  });
+
   it("o aleatório é função de (seed, tick), não do caminho percorrido", () => {
     const a = new World(spec);
     a.advance(5);
@@ -1711,7 +1725,7 @@ interface ParamEvent {
 export class World {
   readonly #spec: WorldSpec;
   readonly #tree: TreeIndex;
-  readonly #events: ParamEvent[] = [];
+  #events: ParamEvent[] = [];
   #history: WorldState[];
   #tick = 0;
 
@@ -1766,6 +1780,12 @@ export class World {
    * válido, então `seek` para trás segue exato.
    */
   setParam(name: string, value: number): void {
+    // Rebobinar e mexer num parâmetro abandona o futuro que existia: os estados
+    // dali para a frente foram calculados com o valor antigo, e os eventos
+    // marcados lá também pertencem àquela linha do tempo. Descartar só os
+    // estados e guardar os eventos faria o mundo recalcular o passado com uma
+    // decisão que o leitor nunca tomou nesta linha.
+    this.#events = this.#events.filter((e) => e.tick <= this.#tick);
     this.#events.push({ tick: this.#tick, name, value });
     this.#history = this.#history.slice(0, this.#tick + 1);
   }
@@ -1792,7 +1812,7 @@ export class World {
 - [ ] **Step 4: Rodar o teste e confirmar que passa**
 
 Run: `pnpm vitest run packages/depth-core/src/world.test.ts`
-Expected: PASS — 6 testes
+Expected: PASS — 7 testes
 
 - [ ] **Step 5: Commit**
 
