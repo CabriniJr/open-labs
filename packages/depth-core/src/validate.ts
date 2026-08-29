@@ -202,6 +202,36 @@ export function validateWorld(spec: WorldSpec, tree: TreeIndex): void {
     }
   }
 
+  for (const node of tree.byId.values()) {
+    if (node.outlets === undefined) continue;
+    for (const [porta, filhos] of Object.entries(node.outlets)) {
+      if (porta.includes(".") || porta.includes(":")) {
+        erros.push(
+          `a saída "${porta}" de "${node.id}" usa "." ou ":", que separam campos ` +
+            `no livro-caixa — escolha um nome sem esses caracteres`,
+        );
+      }
+      if (filhos.length === 0) {
+        erros.push(
+          `a saída "${porta}" de "${node.id}" não vem de ninguém: nada seria ` +
+            `emitido por ela, e o fio ligado nela nunca teria carga`,
+        );
+      }
+      for (const filho of filhos) {
+        if (!tree.byId.has(filho)) {
+          erros.push(`a saída "${porta}" de "${node.id}" vem de "${filho}", que não existe`);
+          continue;
+        }
+        if (visibleChild(tree, node.id, filho).at === "outside") {
+          erros.push(
+            `a saída "${porta}" de "${node.id}" vem de "${filho}", que está fora ` +
+              `dele — borne é saída de DENTRO`,
+          );
+        }
+      }
+    }
+  }
+
   // O atalho substitui a composição, então ele exige que haja composição — e
   // não pode conviver com um behavior, que seria um segundo comportamento no
   // mesmo objeto sem nada dizendo qual vence.

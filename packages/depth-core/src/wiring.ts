@@ -110,7 +110,29 @@ export function resolveSignalTargets(
  * atalhado nem aberto sem trocar a fiação, e essa troca é justamente onde
  * apareceria uma diferença que ninguém veria.
  */
-export function expandInlets(tree: TreeIndex, wires: readonly Wire[]): readonly Wire[] {
+export function expandPorts(tree: TreeIndex, wires: readonly Wire[]): readonly Wire[] {
+  return expandSaidas(tree, expandEntradas(tree, wires));
+}
+
+/** Bornes de saída: o fio parte de quem, lá dentro, emite por aquela porta. */
+function expandSaidas(tree: TreeIndex, wires: readonly Wire[]): readonly Wire[] {
+  const saida: Wire[] = [];
+  let mudou = false;
+  for (const wire of wires) {
+    const origem = tree.byId.get(wire.from);
+    const dentro = origem?.outlets?.[wire.port];
+    // Com atalho, quem emite é o próprio contêiner: o fio fica como está.
+    if (dentro === undefined || origem?.shortcut !== undefined) {
+      saida.push(wire);
+      continue;
+    }
+    mudou = true;
+    for (const filho of dentro) saida.push({ ...wire, from: filho });
+  }
+  return mudou ? saida : wires;
+}
+
+function expandEntradas(tree: TreeIndex, wires: readonly Wire[]): readonly Wire[] {
   const precisa = wires.some(
     (w) => (w.line ?? "data") === "data" && w.toPort !== undefined,
   );

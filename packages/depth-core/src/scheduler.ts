@@ -2,6 +2,7 @@ import { randomAt } from "./rng.js";
 import { DROP, familyOf } from "./model.js";
 import type {
   Emission,
+  PortId,
   InFlight,
   Message,
   ObjectSpec,
@@ -12,7 +13,7 @@ import type {
   WorldState,
 } from "./model.js";
 import { settle } from "./settle.js";
-import { expandInlets, resolveSignalTargets, resolveTargets } from "./wiring.js";
+import { expandPorts, resolveSignalTargets, resolveTargets } from "./wiring.js";
 import { entryLeaf, shortcutOwner } from "./tree.js";
 import type { TreeIndex } from "./tree.js";
 
@@ -75,7 +76,7 @@ export function stepWorld(
   // Uma vez, na entrada do tick: daqui para baixo todo fio liga duas coisas que
   // agem, e nem a ordem topológica nem o livro-caixa precisam saber que existe
   // contêiner com bornes.
-  const wires = expandInlets(tree, spec.wires);
+  const wires = expandPorts(tree, spec.wires);
   const fiado: WorldSpec = { ...spec, wires };
 
   const nodes: Record<string, unknown> = { ...state.nodes };
@@ -141,6 +142,22 @@ export function stepWorld(
     if (!tempoDaPorta.has(chave)) tempoDaPorta.set(chave, wire.timing ?? "clocked");
   }
 
+  /**
+   * O regime de uma porta segue o mesmo caminho que a carga: se este objeto não
+   * tem fio nessa porta, quem manda é o fio do pai — que é exatamente por onde
+   * a emissão vai sair. Sem esta subida, uma folha dentro de um contêiner cuja
+   * saída é do contêiner seria cobrada por um regime que não é o dela.
+   */
+  const regimeDaPorta = (id: string, port: PortId): WireTiming => {
+    let cursor: string | undefined = id;
+    while (cursor !== undefined) {
+      const achado = tempoDaPorta.get(`${cursor}\u0000${port}`);
+      if (achado !== undefined) return achado;
+      cursor = tree.parent.get(cursor);
+    }
+    return "clocked";
+  };
+
   const porId = new Map(atores.map((n) => [n.id, n]));
   const seqPorNo = new Map<string, number>();
 
@@ -185,7 +202,7 @@ export function stepWorld(
     if (phase === "commit") nodes[id] = resultado.state;
 
     for (const emissao of resultado.out) {
-      const regime = tempoDaPorta.get(`${id}\u0000${emissao.port}`) ?? "clocked";
+      const regime = regimeDaPorta(id, emissao.port);
       if (regime === "settle" && phase === "commit") {
         throw new Error(
           `scheduler: a porta "${emissao.port}" de "${id}" entrega na acomodação, e o ` +

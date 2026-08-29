@@ -35,7 +35,12 @@ function decide(porta: PortaLogica, altas: number): boolean {
  * "chegou uma mensagem" só significa "uma entrada em alto" se ela souber
  * quantas existem no total.
  */
-export function porta(id: string, tipo: PortaLogica, label = tipo.toUpperCase()): ObjectSpec {
+export function porta(
+  id: string,
+  tipo: PortaLogica,
+  saida = "out",
+  label = tipo.toUpperCase(),
+): ObjectSpec {
   return {
     id,
     kind: "router",
@@ -45,7 +50,7 @@ export function porta(id: string, tipo: PortaLogica, label = tipo.toUpperCase())
       if (ctx.phase !== "settle" || inbox.length === 0) return { state, out: [] };
       const altas = inbox.reduce((soma, m) => soma + (m.data.bit === 1 ? 1 : 0), 0);
       if (!decide(tipo, altas)) return { state, out: [] };
-      return { state, out: [{ port: "out", message: ctx.emit("bit", 1, { bit: 1 }) }] };
+      return { state, out: [{ port: saida, message: ctx.emit("bit", 1, { bit: 1 }) }] };
     },
   };
 }
@@ -58,29 +63,56 @@ export function porta(id: string, tipo: PortaLogica, label = tipo.toUpperCase())
  * vaium = (a and b) or ((a xor b) and cin)
  * ```
  *
- * **Sem atalho, e o motivo é um achado:** um atalho substitui o interior, e
- * quem entrega passa a entregar ao contêiner — que tem **uma** folha de
- * entrada. Um somador completo tem três entradas distintas (a, b e o vai-um),
- * e elas caem em portas diferentes. Enquanto a fronteira de um contêiner não
- * tiver porta nomeada como a linha de controle tem, atalho e composição não
- * aceitam a mesma fiação, e declarar um aqui seria escrever código que nenhum
- * teste de equivalência consegue exercitar.
+ * Ele pode ser fechado num **atalho** que faz as duas contas de uma vez, e o
+ * atalho só é legítimo porque um teste prova que ele concorda com as cinco
+ * portas. Isso passou a ser possível quando o contêiner ganhou **bornes**: com
+ * entradas nomeadas, a fiação de fora é a mesma aberto e fechado, e as duas
+ * versões são comparáveis por serem o mesmo modelo.
  */
-export function somadorCompleto(id: string): AnyObject {
+export function somadorCompleto(id: string, comAtalho: boolean): AnyObject {
   const p = (sufixo: string): string => `${id}-${sufixo}`;
-  return {
+  const base: AnyObject = {
     id,
     kind: "composite",
     label: id,
-    entry: p("xor1"),
-    exit: p("xor2"),
+    // Os três bornes. `a` e `b` alimentam duas portas cada — é o leque de
+    // dentro do bloco, o pontinho que o esquemático desenha na linha que entra.
+    inlets: {
+      a: [p("xor1"), p("and1")],
+      b: [p("xor1"), p("and1")],
+      cin: [p("xor2"), p("and2")],
+    },
+    outlets: { soma: [p("xor2")], vaium: [p("or1")] },
     children: [
       porta(p("xor1"), "xor"),
       porta(p("and1"), "and"),
-      porta(p("xor2"), "xor"),
+      // As saídas são nomeadas pelo papel: a emissão sobe para o fio do pai com
+      // o mesmo nome de porta, e é isso que faz a fiação de fora não mudar
+      // quando o bloco fecha.
+      porta(p("xor2"), "xor", "soma"),
       porta(p("and2"), "and"),
-      porta(p("or1"), "or"),
+      porta(p("or1"), "or", "vaium"),
     ],
+  };
+  if (!comAtalho) return base;
+  return {
+    ...base,
+    /**
+     * As duas contas numa passada só. Ele é legítimo porque existe teste
+     * provando que concorda com as cinco portas — e o teste só é possível
+     * porque a fiação de fora é a **mesma** nos dois casos, que é exatamente o
+     * que os bornes destravaram.
+     */
+    shortcut: (state, _inbox, ctx) => {
+      if (ctx.phase !== "settle") return { state, out: [] };
+      const altas =
+        (ctx.inlets.a ?? []).length + (ctx.inlets.b ?? []).length + (ctx.inlets.cin ?? []).length;
+      if (altas === 0) return { state, out: [] };
+      const out: Emission[] = [];
+      if (altas % 2 === 1) out.push({ port: "soma", message: ctx.emit("bit", 1, { bit: 1 }) });
+      if (altas >= 2) out.push({ port: "vaium", message: ctx.emit("bit", 1, { bit: 1 }) });
+      return { state, out };
+    },
   };
 }
 
@@ -88,7 +120,7 @@ export function somadorCompleto(id: string): AnyObject {
 export function fiosDoSomador(id: string): readonly Wire[] {
   const p = (sufixo: string): string => `${id}-${sufixo}`;
   return [
-    // a xor b, e a and b: as duas primeiras portas veem as mesmas entradas
+    // a xor b alimenta as duas portas do segundo estágio
     { from: p("xor1"), port: "out", to: p("xor2"), timing: "settle" },
     { from: p("xor1"), port: "out", to: p("and2"), timing: "settle" },
     { from: p("and1"), port: "out", to: p("or1"), timing: "settle" },
@@ -104,8 +136,8 @@ export function fiosDoSomador(id: string): readonly Wire[] {
  * e é por isso que somar dois números de N bits custa N vezes um somador de um
  * bit, que é a coisa que este modelo existe para mostrar.
  */
-export function somadorWorld(bits: number, seed = 1): WorldSpec {
-  const somadores = Array.from({ length: bits }, (_, i) => somadorCompleto(`bit${i}`));
+export function somadorWorld(bits: number, comAtalho = false, seed = 1): WorldSpec {
+  const somadores = Array.from({ length: bits }, (_, i) => somadorCompleto(`bit${i}`, comAtalho));
   const wires: Wire[] = [];
 
   for (let i = 0; i < bits; i += 1) {
@@ -115,20 +147,33 @@ export function somadorWorld(bits: number, seed = 1): WorldSpec {
     // As entradas chegam por aresta de relógio: elas vêm de fora do circuito,
     // e é a chegada delas que dá início à acomodação deste tick.
     for (const via of ["a", "b"] as const) {
-      wires.push({ from: "entradas", port: `${via}${i}`, to: p("xor1"), timing: "clocked" });
-      wires.push({ from: "entradas", port: `${via}${i}`, to: p("and1"), timing: "clocked" });
+      wires.push({
+        from: "entradas",
+        port: `${via}${i}`,
+        to: `bit${i}`,
+        toPort: via,
+        timing: "clocked",
+      });
     }
 
-    wires.push({ from: p("xor2"), port: "out", to: `soma${i}`, timing: "settle" });
+    // As saídas são do BLOCO: aberto, a emissão da porta sobe para o fio do
+    // pai; fechado, quem emite é o bloco. O fio é o mesmo, e é isso que faz as
+    // duas versões serem comparáveis.
+    wires.push({ from: `bit${i}`, port: "soma", to: `soma${i}`, timing: "settle" });
 
     const proximo = i + 1;
     if (proximo < bits) {
       // O vai-um: é ele que faz a conta ser em cascata, e é ele que custa
       // profundidade. Um somador de 32 bits tem 32 destes em fila.
-      wires.push({ from: p("or1"), port: "out", to: `bit${proximo}-xor2`, timing: "settle" });
-      wires.push({ from: p("or1"), port: "out", to: `bit${proximo}-and2`, timing: "settle" });
+      wires.push({
+        from: `bit${i}`,
+        port: "vaium",
+        to: `bit${proximo}`,
+        toPort: "cin",
+        timing: "settle",
+      });
     } else {
-      wires.push({ from: p("or1"), port: "out", to: "vaium", timing: "settle" });
+      wires.push({ from: `bit${i}`, port: "vaium", to: "vaium", timing: "settle" });
     }
   }
 

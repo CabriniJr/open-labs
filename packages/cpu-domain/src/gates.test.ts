@@ -1,6 +1,6 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
-import { World } from "@ovh/depth-core";
+import { World, shortcutDisagreement } from "@ovh/depth-core";
 import { somadorWorld } from "./gates.js";
 
 /**
@@ -12,8 +12,8 @@ import { somadorWorld } from "./gates.js";
  */
 const BITS = 4;
 
-function somar(a: number, b: number): { soma: number; vaium: boolean } {
-  const mundo = new World(somadorWorld(BITS));
+function somar(a: number, b: number, comAtalho = false): { soma: number; vaium: boolean } {
+  const mundo = new World(somadorWorld(BITS, comAtalho));
   mundo.setParam("a", a);
   mundo.setParam("b", b);
   // um tick para as entradas saírem, outro para a acomodação atravessar as
@@ -76,5 +76,38 @@ describe("o somador feito de portas lógicas", () => {
     const somador = spec.root.children?.find((c) => c.id === "somador");
     expect(somador?.replicas).toBe(BITS);
     expect(somador?.children).toHaveLength(BITS);
+  });
+
+  it("o atalho de um somador completo concorda com as cinco portas", () => {
+    // O que torna isto possível são os bornes: a fiação de fora é a MESMA
+    // aberta e fechada, então as duas versões são o mesmo modelo visto de dois
+    // jeitos. Sem isso não haveria com o que comparar.
+    fc.assert(
+      fc.property(
+        fc.integer({ min: 0, max: 15 }),
+        fc.integer({ min: 0, max: 15 }),
+        fc.integer({ min: 0, max: BITS - 1 }),
+        (a, b, bit) => {
+          const spec = somadorWorld(BITS, true);
+          expect(
+            shortcutDisagreement({ ...spec, params: { a, b } }, `bit${bit}`, 6),
+          ).toBeNull();
+        },
+      ),
+      { numRuns: 40 },
+    );
+  });
+
+  it("fechado nos atalhos, a conta é a mesma — e custa menos profundidade", () => {
+    // O atalho não é uma segunda verdade: é a mesma conta com menos passos. Se
+    // ele mudasse o resultado, o teste de equivalência acima cairia primeiro.
+    for (const [a, b] of [
+      [0, 0],
+      [1, 1],
+      [9, 6],
+      [15, 15],
+    ] as const) {
+      expect(somar(a, b, true)).toEqual(somar(a, b, false));
+    }
   });
 });

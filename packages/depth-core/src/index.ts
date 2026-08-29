@@ -11,7 +11,7 @@ export {
   visibleChild,
 } from "./tree.js";
 export type { TreeIndex } from "./tree.js";
-export { resolveSignalTargets, resolveTarget, resolveTargets } from "./wiring.js";
+export { expandPorts, resolveSignalTargets, resolveTarget, resolveTargets } from "./wiring.js";
 export type { SignalTarget } from "./wiring.js";
 // A ordem de acomodação e a detecção de laço são grafo puro, e quem monta um
 // mundo à mão pode querer conferi-las. `settle.ts` NÃO sai: a fase é mecanismo

@@ -177,6 +177,16 @@ export interface ObjectSpec<S = unknown> {
    */
   readonly inlets?: Readonly<Record<PortId, readonly string[]>>;
   /**
+   * As **saídas nomeadas** deste contêiner: nome da porta -> quem, lá dentro,
+   * emite por ela. O espelho de `inlets`, e pelo mesmo motivo.
+   *
+   * Um somador completo tem duas saídas com papéis diferentes (a soma e o
+   * vai-um), e "a última folha" não distingue as duas. Sem nome, ou a fiação de
+   * fora muda quando o bloco abre — e aí as duas versões deixam de ser o mesmo
+   * modelo — ou uma das saídas se perde.
+   */
+  readonly outlets?: Readonly<Record<PortId, readonly string[]>>;
+  /**
    * `N` objetos idênticos, um desenhado.
    *
    * O invariante que impede a mentira: quem declara `replicas: N` tem que ter
