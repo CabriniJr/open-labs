@@ -177,7 +177,7 @@ export function validateWorld(spec: WorldSpec, tree: TreeIndex): void {
     erros.push(
       `laço combinacional: ${ciclo.join(" -> ")}. Um caminho que acomoda não pode ` +
         `voltar a si mesmo dentro do mesmo tick. Ponha um fio com timing ` +
-        `"clocked" em algum ponto da volta — é o que um registrador faz`,
+        `"clocked" em algum ponto da volta — é o que um elemento de memória faz`,
     );
   }
 

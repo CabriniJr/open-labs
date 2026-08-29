@@ -356,3 +356,48 @@ typecheck e guarda de fronteira verdes.
 ainda não executado — é a próxima coisa a fazer. E as fases do RISC-V no catálogo são
 desenho editorial, não a spec: quando o `cpu.model` existir, os labs de lá viram
 `available` um a um.
+
+---
+
+## Bloco 1 da CPU — as duas fases do tick e a linha de controle
+
+**Data:** 2026-08-29. **Plano:**
+`docs/superpowers/plans/2026-08-29-f6-b1-fases-do-tick-e-controle.md`.
+**Commit do coração:** `8b0c662` (as duas fases em `stepWorld`).
+
+O motor ganhou o que a CPU exige e o OTel não pedia — e nenhum arquivo do motor
+menciona o assunto:
+
+- **Duas fases por tick:** acomodação (propaga dentro do tick) e confronto (onde o
+  estado muda e nascem as mensagens que custam tick). `ctx.phase` diz em qual delas
+  o comportamento está rodando
+- **O padrão da aresta é `clocked`**, então nenhum mundo escrito antes mudou de
+  comportamento — foi o que manteve os 242 testes anteriores verdes
+- **A acomodação percorre um DAG em ordem topológica _porque_ o laço combinacional é
+  recusado na construção.** Some a iteração e some o teto de rodadas: cada ator roda
+  uma vez só, com o conjunto completo das entradas dele. A alternativa (teto de
+  iterações) transformaria "não converge" em "converge errado", em silêncio
+- **A profundidade topológica é o atraso de propagação**, e virou
+  `WorldState.substeps`. Conta o nível de quem *recebeu*, não o de quem emitiu: o
+  último elo de um caminho combinacional costuma ser um elemento de memória, que na
+  acomodação não emite nada
+- **Quem acomoda não guarda:** o `state` devolvido na fase de acomodação nem chega a
+  ser lido. A diferença entre lógica combinacional e elemento de memória virou
+  estrutural, não disciplina
+- **Emitir na fase errada lança**, dizendo qual fase aquela porta espera. Uma porta é
+  de um regime só, e isso é recusado na validação
+- **O eixo `sigin:` é separado de `in:`/`out:`** porque o medidor de porta lê só os
+  eixos de carga — ele portanto **não consegue** enxergar sinal, e a pergunta "quanto
+  dado passou aqui?" continua tendo resposta
+- **A guarda de fronteira passou a vigiar dois domínios**, com duas listas e um só
+  mecanismo de busca. Ela já pegou três comentários meus que diziam "registrador"
+
+Estado: 291 testes unitários, typecheck, boundaries e build verdes.
+
+**Pendente e não óbvio:** desenhar os subpassos na tela é do Bloco 3 (`depth-ui`);
+fan-out de dado, multiplicidade e atalho com equivalência provada são o Bloco 2. Duas
+correções que fiz contra o plano escrito, e que valem para quem for reler: `substeps`
+conta receptores (o plano contava emissores e o próprio teste dele exigia o contrário),
+e a asserção do eixo de carga em `control.test.ts` fecha por conservação
+(chegou + em voo == emitido) em vez de ignorar o atraso da aresta.
+

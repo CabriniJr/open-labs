@@ -10,7 +10,13 @@ export {
   visibleChild,
 } from "./tree.js";
 export type { TreeIndex } from "./tree.js";
-export { resolveTarget } from "./wiring.js";
+export { resolveSignalTargets, resolveTarget } from "./wiring.js";
+export type { SignalTarget } from "./wiring.js";
+// A ordem de acomodação e a detecção de laço são grafo puro, e quem monta um
+// mundo à mão pode querer conferi-las. `settle.ts` NÃO sai: a fase é mecanismo
+// interno, e expô-la convidaria alguém a rodar meia fase.
+export { findCombinationalCycle, settleOrder } from "./settle-graph.js";
+export type { SettleNode } from "./settle-graph.js";
 // quem monta um mundo à mão, sem passar por `World`, valida com esta.
 export { validateWorld } from "./validate.js";
 export {
@@ -37,7 +43,9 @@ export type {
   PortId,
   Role,
   StepContext,
+  TickPhase,
   Wire,
+  WireTiming,
   WorldSpec,
   WorldState,
 } from "./model.js";

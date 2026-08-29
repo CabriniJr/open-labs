@@ -26,6 +26,23 @@ describe("findViolations", () => {
     expect(violations[0].reason).toContain("otlp");
   });
 
+  it("acusa vocabulário do segundo domínio dentro do motor", () => {
+    // Duas listas, um mecanismo: vigiar só o primeiro domínio faria a fronteira
+    // valer contra um assunto e não contra o outro.
+    const violations = findViolations(
+      "packages/depth-core/src/x.ts",
+      "// o registrador guarda o valor\n",
+    );
+    expect(violations).toHaveLength(1);
+    expect(violations[0].reason).toContain("registrador");
+  });
+
+  it("não acusa palavra do segundo domínio fora dos pacotes agnósticos", () => {
+    expect(findViolations("packages/cpu-domain/src/x.ts", "const registrador = 1;\n")).toEqual(
+      [],
+    );
+  });
+
   it("vigia o formato do modelo, que também é agnóstico", () => {
     const found = findViolations(
       "packages/model-format/src/compile.ts",

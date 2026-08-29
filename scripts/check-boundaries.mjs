@@ -17,7 +17,7 @@ const AGNOSTIC = [
 ];
 
 /** Pacotes de domínio que eles não podem importar. */
-const DOMAIN_PACKAGES = ["@ovh/otel-domain"];
+const DOMAIN_PACKAGES = ["@ovh/otel-domain", "@ovh/cpu-domain"];
 
 /**
  * Termos inequívocos de domínio. `span` e `trace` sozinhos ficam de fora de
@@ -25,7 +25,7 @@ const DOMAIN_PACKAGES = ["@ovh/otel-domain"];
  *
  * Protocolo também é domínio: o motor não pode saber que gRPC existe.
  */
-const DOMAIN_WORDS = [
+const OTEL = [
   "otlp",
   "opentelemetry",
   "otel",
@@ -47,6 +47,27 @@ const DOMAIN_WORDS = [
   "hpack",
   "w3c",
 ];
+
+/**
+ * O segundo domínio. Duas listas, **um** mecanismo de busca: o motor existe para
+ * servir mais de um assunto, e agora há dois provando isso — vigiar só o
+ * primeiro faria a fronteira valer contra um domínio e não contra o outro.
+ *
+ * `register` sozinho fica de fora: aparece em `registerX` de biblioteca. Por
+ * isso "register file", que só significa uma coisa.
+ */
+const CPU = [
+  "registrador",
+  "register file",
+  "opcode",
+  "riscv",
+  "risc-v",
+  "assembly",
+  "transistor",
+  "instruction set",
+];
+
+const DOMAIN_WORDS = [...OTEL, ...CPU];
 
 export function findViolations(filePath, source) {
   if (!AGNOSTIC.some((prefix) => filePath.startsWith(prefix))) return [];
@@ -91,7 +112,8 @@ export function verdict(scanned, violations) {
       code: 1,
       report:
         `Fronteira motor↔domínio violada (spec §8):\n\n${linhas}\n\n` +
-        "O motor não pode conhecer OpenTelemetry. Mova isso para packages/otel-domain.",
+        "O motor não pode conhecer domínio nenhum — nem OpenTelemetry, nem CPU. Mova\n" +
+          "isso para o pacote de domínio correspondente.",
     };
   }
 

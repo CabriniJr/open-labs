@@ -353,7 +353,7 @@ describe("World valida na construção", () => {
   });
 
   it("aceita realimentação que atravessa uma borda de relógio", () => {
-    // É o que um registrador faz: fecha o laço, mas custando um tick. Recusar
+    // É o que um elemento de memória faz: fecha o laço, mas custando um tick. Recusar
     // isto proibiria qualquer máquina sequencial.
     expect(() =>
       validar({

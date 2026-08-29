@@ -55,7 +55,7 @@ describe("findCombinationalCycle", () => {
   });
 
   it("não acusa ciclo que só existe passando por aresta cronometrada", () => {
-    // É o que um registrador faz: fecha o laço, mas atravessando uma borda de
+    // É o que um elemento de memória faz: fecha o laço, mas atravessando uma borda de
     // relógio. Isso é realimentação legítima, não laço combinacional.
     expect(findCombinationalCycle([fio("a", "b"), fio("b", "a", "clocked")])).toBeNull();
   });
