@@ -268,3 +268,31 @@ Contagem: **onze dependências de runtime** para a v0 completa, e três delas s�
 importador. `elkjs` e `@lume/kiwi` ficam de reserva, entrando apenas se dagre e o clamp do
 React Flow se mostrarem insuficientes — e nesse caso `elkjs` exige checar EPL-2.0 contra a
 licença escolhida para o projeto.
+
+## Deploy: Vercel lê a branch — 2026-08-29
+
+**`main` é produção; `dev` é onde o trabalho acontece.** Toda branch que não é `main` ganha
+uma URL de preview própria no Vercel, e é isso que "atualizar sozinho" quer dizer aqui: o
+push é o gatilho, e não existe passo manual de publicar.
+
+O que se encontrou ao montar isto, e vale registrado porque nada disso aparecia:
+
+- **O Vercel nunca esteve ligado a uma conta.** O que havia era um deploy anônimo temporário
+  (`.vercel/anonymous.json`, com URL de claim e prazo). O token dele nunca foi commitado —
+  `.vercel` está no `.gitignore`, e a busca no histórico não achou nada.
+- **Quem publicava era o GitHub Pages**, no push para `main` — e a `main` estava **82 commits
+  atrás** da branch de trabalho. Nada da Entrega 2 estava no ar.
+- **O CI só rodava em `main`.** Os mesmos 82 commits nunca passaram por ele. Agora ele roda em
+  toda branch, que é quando o conserto ainda é barato.
+- **A branch padrão do repositório apontava para `entrega-1`**, o que também decide o palpite
+  de produção do Vercel.
+
+**`engines.node` no `package.json` existe por um motivo específico:** a Vercel **não lê o
+`.nvmrc`**. O CI lê, a máquina lê, e a Vercel não — sem o campo, o deploy roda numa versão de
+Node diferente das outras duas, e a divergência só aparece no build que quebra. Mantenha os
+dois em dia juntos.
+
+**Pendência declarada:** o workflow do GitHub Pages continua ativo e publica no push para
+`main`. Com o Vercel em produção são dois publicadores para o mesmo repositório, com caminhos
+de base diferentes (`/<repo>/` contra a raiz). A ordem certa é ligar o Vercel, conferir, e só
+então aposentar o Pages — desligar antes deixaria o projeto sem nada no ar.

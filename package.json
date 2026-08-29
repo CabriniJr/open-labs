@@ -3,6 +3,10 @@
   "private": true,
   "type": "module",
   "packageManager": "pnpm@11.24.0",
+  "engines": {
+    "//": "A Vercel NÃO lê .nvmrc — ela lê daqui. Sem este campo o deploy roda numa versão de Node diferente da do CI e da máquina, e a primeira coisa que se descobre é no build que quebra. Mantenha em dia com .nvmrc.",
+    "node": "24.x"
+  },
   "scripts": {
     "typecheck": "tsc -b --pretty false",
     "test": "vitest run",
