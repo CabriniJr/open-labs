@@ -148,11 +148,15 @@ ensina de graça uma coisa falsa sobre sistema distribuído. Ou um lab ataca iss
 o texto declara o limite em voz alta.
 
 E a §7 abriu uma frente: **a CPU como prova de genericidade** — caminho de dados com assembly
-de entrada e drill-down até a porta lógica, virando a fase **F6b** do `roadmap.md`. Ela tem
+de entrada e drill-down até a porta lógica, virando a fase **F6** do `roadmap.md`. Ela tem
 público (material para as aulas do pai do Luigi), e já nomeou três lacunas reais do motor:
 linha de controle sem semântica, ler sem consumir, e combinacional contra registrado. Nenhuma
-se resolve com um `kind` novo. A ordem dela contra o Kafka está em aberto, e é decisão do
-Luigi.
+se resolve com um `kind` novo.
+
+**Decidido em 29/08/2026: a CPU passa na frente do Kafka** (F6 CPU, F7 Kafka, F8 extração). O
+argumento que decide não é o público, é a estrutura: o Kafka é vizinho do OTel, então reuso
+entre os dois quase não prova nada, e extrair o motor tendo visto só mensageria produziria um
+motor de mensageria com outro nome.
 
 ---
 

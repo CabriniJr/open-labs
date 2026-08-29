@@ -303,24 +303,72 @@ Isso muda o padrão de qualidade da fase: um instrumento didático usado por out
 não pode ter a parte que "quase funciona", que é justamente a tentação de uma prova de
 conceito.
 
-### 7.1 A descida
+### 7.1 O L0 já está desenhado, e já usa as nossas duas linhas
+
+O Luigi apontou o alvo com um diagrama de blocos clássico de arquitetura de computadores:
+entrada e saída nas pontas; uma caixa **CPU** contendo a **unidade de controle** e o
+**processador**, que por sua vez contém **registradores** e **lógica combinacional**; a
+**memória principal** embaixo; e a palavra "instruções" entrando na unidade de controle.
+
+O detalhe que importa não é a topologia, é a **tinta**. Nesse diagrama as setas pretas
+carregam dado e as setas vermelhas saem todas da unidade de controle e não carregam nada
+— são sinal. Isto é, um desenho canônico de livro-texto, feito muito antes deste projeto
+existir, já separa exatamente as duas espécies de linha que a §1 chama de `E_d` e `E_c`.
+Não adaptamos o domínio à nossa gramática; a gramática já estava lá.
+
+O mapeamento do L0, então, é direto:
+
+| No diagrama | No motor | Família |
+|---|---|---|
+| Entrada, Saída | `source`, `sink` | processador |
+| CPU (a caixa externa) | `composite` — contém, não processa | contêiner |
+| Processador (a caixa amarela) | `composite` | contêiner |
+| Registradores | ator que responde a leitura e escrita | processador |
+| Lógica combinacional | onde a carga muda de forma: `transform` | processador |
+| Memória principal | ator endereçado, com `arbiter` quando disputada | processador |
+| **Unidade de controle** | **`controller`** — não recebe carga | controlador |
+| Setas pretas | `Wire.line: "data"` | — |
+| **Setas vermelhas** | **`Wire.line: "control"`** | — |
+
+A família `controller` entrou no catálogo (`DECISIONS.md` §2.2) porque árbitro, relógio e
+supervisor não ficam no caminho do dado. A unidade de controle é o caso mais puro que
+existe dela: ela decide o que todo mundo faz e **não toca no dado**. Tratá-la como
+processador obrigaria a inventar um fluxo que o diagrama, corretamente, não desenha.
+
+E é aqui que a lacuna L1 da §7.5 deixa de ser abstrata: hoje as setas vermelhas seriam
+desenhadas e ignoradas. Metade desse diagrama é vermelha.
+
+### 7.2 A descida
 
 Cada nível abre no de baixo, e todos são projeções (§1.1) do mesmo run:
 
 | Nível | O que se vê | Carga |
 |---|---|---|
-| Sistema | memória, barramento, CPU, E/S | palavras |
-| CPU aberta | busca, decodificação, execução, memória, escrita; banco de registradores; unidade de controle | instrução |
-| Execução aberta | ULA, muxes de operando, caminhos de adiantamento | operandos |
-| ULA aberta | somador, unidade lógica, deslocador, mux de operação | palavras de 32 bits |
-| Somador aberto | cadeia de somadores completos | bits + vai-um |
+| Sistema | entrada, saída, CPU, memória principal | palavras |
+| CPU aberta | unidade de controle, processador, barramentos | instrução |
+| Processador aberto | registradores, lógica combinacional, muxes de operando | operandos |
+| Lógica combinacional aberta | ULA, deslocador, mux de operação | palavras de 32 bits |
+| ULA aberta | somador, unidade lógica | bits e vai-um |
+| Somador aberto | cadeia de somadores completos | um bit e o vai-um |
 | Somador completo aberto | XOR, AND, OR | **um bit** |
+| Porta aberta | rede de transistores em série e paralelo | **nível de tensão** |
 
-Isso é mais fundo que o domínio de OpenTelemetry, e é de propósito: se a profundidade
-aguenta seis níveis num domínio onde cada nível é uma abstração de verdade — não um
-agrupamento visual —, ela aguenta o handbook.
+Oito níveis, e o último é o que fecha o argumento pedagógico: **a porta lógica deixa de ser
+o átomo.** Quem abre um XOR e vê transistores conduzindo ou cortando entende por que a porta
+custa o que custa, por que existe atraso de propagação, e por que "combinacional" não quer
+dizer "instantâneo" — que é exatamente a lacuna L3 da §7.5 vista de baixo.
 
-### 7.2 Assembly é o manifesto
+É mais fundo que o domínio de OpenTelemetry, e é de propósito: se a profundidade aguenta
+oito níveis num domínio onde cada nível é uma abstração de verdade — não um agrupamento
+visual —, ela aguenta o handbook.
+
+Uma ressalva de fidelidade, para não prometer o que não vamos entregar: o nível do transistor
+é **chaveamento digital**, não eletrônica analógica. Transistor conduz ou corta; não há curva
+característica, nem corrente, nem temperatura. Isso ensina construção de porta lógica e
+ensina atraso; não ensina projeto de circuito. Como sempre neste projeto, o que não é
+modelado é dito em voz alta em vez de ficar implícito no desenho.
+
+### 7.3 Assembly é o manifesto
 
 O leitor escreve instruções; um montador (ferramenta de **autoria**, fora do motor)
 produz palavras; as palavras são o estado inicial da memória; o run é a execução
@@ -337,7 +385,7 @@ uso só:
 forma apareça em dois domínios sem combinação prévia é o melhor indício de que ela é a
 forma certa.
 
-### 7.3 O que o motor já dá
+### 7.4 O que o motor já dá
 
 | Necessidade da CPU | O que já existe |
 |---|---|
@@ -354,7 +402,7 @@ Que `mux`/`demux` e `arbiter` tenham entrado no catálogo pensando em gRPC e em 
 e sirvam intactos aqui, é o segundo indício de que o catálogo não é OpenTelemetry
 disfarçado.
 
-### 7.4 O que falta, nomeado
+### 7.5 O que falta, nomeado
 
 Três lacunas reais. Nenhuma é "adicionar um `kind`".
 
@@ -396,7 +444,7 @@ declarados no domínio de OpenTelemetry e ~0,3 ns num domínio de CPU. A constan
 precisa virar propriedade do `WorldSpec`, com a unidade junto — o valor real ao lado do
 controle continua obrigatório nos dois casos.
 
-### 7.5 O critério de saída
+### 7.6 O critério de saída
 
 A prova só conta se for verificável, então ela tem forma de teste, não de intenção:
 

@@ -300,8 +300,15 @@ handbook dependia de o segundo `model` custar uma fração do primeiro. Com ilha
 *vários handbooks que compartilham um motor* — o que continua valioso, mas é uma afirmação
 menor, e a comunicação precisa refletir isso.
 
-Consequência no plano: **F6 deixa de ser "o teste da tese" e passa a ser simplesmente o
-segundo alvo.** O sinal de reuso sai da tabela de critérios e vira curiosidade a observar.
+Consequência no plano: **o Kafka (hoje F7) deixa de ser "o teste da tese" e passa a ser
+simplesmente mais um alvo.** O sinal de reuso sai da tabela de critérios e vira curiosidade a
+observar.
+
+**Atualizado em 29/08/2026:** quem carrega a tese de generalização agora é a **F6, a CPU**, e
+por um motivo estrutural — o Kafka é vizinho do OTel, então reuso entre os dois quase não
+prova nada. A CPU é o alvo mais distante que ainda cabe nas primitivas. Lá o sinal de reuso
+volta a ser critério, e com uma forma verificável: um pacote que importa só o motor e não
+obriga o motor a saber o que é um registrador (`theory.md` §7.6).
 
 ### 9.3 O que fica de `modelet`
 
@@ -411,7 +418,7 @@ Vale definir agora, porque decidir isso sob decepção é pior.
 |---|---|
 | O Collector ganha modo oficial de introspecção visual com controle de tempo | O diferencial evaporou. Contribuir para lá passa a valer mais |
 | Alguém publica open source que simula mecanismo **com drill-down e motor comum** | Contribuir em vez de competir. **Verificado em 28/08/2026: o k8s.info chega perto** — simula e provoca falha, mas com visualizador dedicado por conceito, sem motor nem drill-down. O gatilho não disparou; está a um refactor de disparar |
-| O segundo `model` custa o mesmo que o primeiro | A tese de generalização está errada (`roadmap.md` F6). Vira handbook de OTel e pronto — o que ainda é útil, mas é outro projeto |
+| O segundo `model` custa o mesmo que o primeiro | A tese de generalização está errada (`roadmap.md` F6, a CPU). Vira handbook de OTel e pronto — o que ainda é útil, mas é outro projeto |
 | Ninguém termina o segundo lab | O produto é interessante de construir e chato de usar. É o risco mais silencioso dos quatro |
 
 Nenhuma dessas condições é verdadeira hoje, e as três primeiras foram verificadas em

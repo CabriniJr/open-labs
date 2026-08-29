@@ -214,7 +214,8 @@ Registro append-only com cursor independente por leitor.
 
 `buffer` **não** serve: buffer esvazia ao ser consumido, log retém e é lido. A diferença
 não é detalhe — é o que faz o Kafka ser Kafka, e é o fenômeno mais estranho ao
-TracerProvider. Por isso o Kafka é o segundo alvo certo (§7.3 da visão).
+TracerProvider. Por isso o Kafka continua sendo um alvo certo (§7.3 da visão) — embora,
+desde 29/08/2026, não mais o segundo: a CPU passou na frente (`roadmap.md` F6).
 
 ### `deliver`
 

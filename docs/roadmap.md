@@ -132,26 +132,7 @@ técnico sem link para a fonte.
 
 ---
 
-## F6 — Kafka: o segundo alvo
-
-**Revisado em 28/08/2026.** Era "o teste da tese do projeto", medido pelo custo relativo do
-segundo pacote. Com o corte de escopo que fez cada `model` ser ilha
-(`why-simulate.md` §9), reuso deixou de ser requisito — logo, deixou de ser critério de
-saída. O Kafka volta a ser simplesmente o segundo alvo.
-
-Arquétipos da onda 2: `log`, `deliver`, `supervisor`.
-
-**Saída:** o `model` do Kafka existe, com handbook próprio, e o `log` ensina atraso por
-leitor — o fenômeno mais estranho ao TracerProvider e o que justifica o Kafka ser o segundo.
-
-O que continua valendo observar, agora como informação e não como nota de aprovação:
-**quantos arquétipos novos o Kafka exigiu além dos três previstos.** Um ou dois é normal.
-Cinco significa que o catálogo está sendo derivado caso a caso — e aí o problema é do
-catálogo, não do reuso.
-
----
-
-## F6b — CPU: a prova de genericidade
+## F6 — CPU: a prova de genericidade
 
 Um caminho de dados de CPU, com **assembly como entrada** e drill-down até a porta
 lógica. Detalhamento completo em `theory.md` §7.
@@ -162,19 +143,18 @@ programa em assembly, para ensinar arquitetura de computadores. Deixa de ser só
 de que o motor é genérico e passa a ser uma entrega com destinatário — e um leitor real,
 que não é o Luigi, é a coisa mais escassa que um projeto assim tem.
 
-**Questão de ordem em aberto:** a fase está listada depois do Kafka porque a prova de
-genericidade vale mais com dois alvos fechados. Tendo público, ela pode passar na frente
-— e o Kafka, que não tem, esperar. **A decisão é do Luigi**; o que não pode é a CPU
-entrar antes de o OTel fechar, porque aí o projeto perde o alvo que lhe dá nome.
+**Decidido em 29/08/2026 pelo Luigi: a CPU passa na frente do Kafka.** Dois motivos, e o
+segundo é o que decide. O primeiro é que ela tem público e o Kafka não. O segundo é que
+**extrair o motor tendo visto só domínios de mensageria — OTel e Kafka — é extrair um
+motor de mensageria com outro nome.** A CPU é o alvo mais distante que ainda cabe nas
+primitivas, e é justamente por isso que ela é o teste; o Kafka, colado no OTel, quase
+não pressiona a abstração.
 
-Por que aqui e não antes: um terceiro alvo só prova alguma coisa se os dois primeiros
-já fecharam. Por que **antes** de F7: extrair o motor tendo visto só domínios de
-mensageria (OTel, Kafka) é extrair um motor de mensageria com outro nome. A CPU é o
-alvo mais distante que ainda cabe nas primitivas, e é justamente por isso que ela é o
-teste.
+O que **não** muda: a CPU não entra antes de o OTel fechar (F5). Furar essa ordem faz o
+projeto perder o alvo que lhe dá nome.
 
 Ela já nomeou três lacunas do motor, todas legítimas e nenhuma resolvível com um
-`kind` novo (`theory.md` §7.4):
+`kind` novo (`theory.md` §7.5):
 
 | Lacuna | O que falta |
 |---|---|
@@ -192,9 +172,28 @@ lacunas contam a favor; vocabulário de CPU dentro dele reprova.
 
 ---
 
-## F7 — Extração do motor
+## F7 — Kafka: o terceiro alvo
 
-Só depois de F6 e F6b. Motor extraído antes de dois casos completos fica genérico e inútil, e
+**Revisado em 28/08/2026.** Era "o teste da tese do projeto", medido pelo custo relativo do
+segundo pacote. Com o corte de escopo que fez cada `model` ser ilha
+(`why-simulate.md` §9), reuso deixou de ser requisito — logo, deixou de ser critério de
+saída. O Kafka volta a ser simplesmente mais um alvo.
+
+Arquétipos da onda 2: `log`, `deliver`, `supervisor`.
+
+**Saída:** o `model` do Kafka existe, com handbook próprio, e o `log` ensina atraso por
+leitor — o fenômeno mais estranho ao TracerProvider, e o que justifica o Kafka continuar na lista.
+
+O que continua valendo observar, agora como informação e não como nota de aprovação:
+**quantos arquétipos novos o Kafka exigiu além dos três previstos.** Um ou dois é normal.
+Cinco significa que o catálogo está sendo derivado caso a caso — e aí o problema é do
+catálogo, não do reuso.
+
+---
+
+## F8 — Extração do motor
+
+Só depois de F6 e F7. Motor extraído antes de dois casos completos fica genérico e inútil, e
 motor sem conteúdo não atrai ninguém em open source.
 
 Nesta fase entram o contrato de plugin, o pacote publicável e a decisão do repositório
@@ -235,7 +234,7 @@ dado errado é localizável e difável; comportamento errado escondido numa fun�
 ## Ordem, em uma linha
 
 ```
-F0 destravar → F1 núcleo → F3 palco → F2 piloto (Entregas 1 e 2) → F2b arquétipos → F4 otel → F5 handbook → F6 kafka → F6b cpu → F7 motor
+F0 destravar → F1 núcleo → F3 palco → F2 piloto (Entregas 1 e 2) → F2b arquétipos → F4 otel → F5 handbook → F6 cpu → F7 kafka → F8 motor
 ```
 
 O piloto e o palco se sobrepõem: não há lab sem palco, e o palco só se justifica pelo lab. E a
