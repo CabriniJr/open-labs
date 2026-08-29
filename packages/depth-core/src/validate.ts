@@ -1,5 +1,5 @@
 import { DROP } from "./model.js";
-import type { WorldSpec } from "./model.js";
+import type { WireTiming, WorldSpec } from "./model.js";
 import { familyOf } from "./model.js";
 import { entryLeaf } from "./tree.js";
 import type { TreeIndex } from "./tree.js";
@@ -43,6 +43,42 @@ export function validateWorld(spec: WorldSpec, tree: TreeIndex): void {
         `a porta "${wire.port}" de "${wire.from}" usa "." ou ":", que separam ` +
           `campos no livro-caixa — escolha um nome sem esses caracteres`,
       );
+    }
+
+    const line = wire.line ?? "data";
+
+    if (line === "control" && wire.toPort === undefined) {
+      erros.push(
+        `a linha de controle de "${wire.from}.${wire.port}" precisa de toPort — ` +
+          `carga entra num objeto e o motor acha a folha de entrada, mas sinal ` +
+          `chega numa entrada nomeada, senão quem recebe não sabe qual sinal é`,
+      );
+    }
+
+    if (line === "data" && wire.toPort !== undefined) {
+      erros.push(
+        `o fio de "${wire.from}.${wire.port}" declara toPort "${wire.toPort}", e ` +
+          `toPort só vale em linha de controle — carga entra pela folha de entrada`,
+      );
+    }
+
+    if (wire.toPort !== undefined && (wire.toPort.includes(".") || wire.toPort.includes(":"))) {
+      erros.push(
+        `o toPort "${wire.toPort}" usa "." ou ":", que separam campos no ` +
+          `livro-caixa — escolha um nome sem esses caracteres`,
+      );
+    }
+
+    // Sinal não atravessa contêiner: quem recebe é nomeado, e precisa agir.
+    if (line === "control" && wire.to !== DROP) {
+      const destino = tree.byId.get(wire.to);
+      if (destino !== undefined && destino.behavior === undefined) {
+        erros.push(
+          `o sinal de "${wire.from}.${wire.port}" chega em "${wire.to}", que não age — ` +
+            `sinal tem destinatário nomeado e não atravessa contêiner. Aponte-o ` +
+            `para o objeto que de fato reage a ele`,
+        );
+      }
     }
   }
 
@@ -98,6 +134,26 @@ export function validateWorld(spec: WorldSpec, tree: TreeIndex): void {
         `primeiro seria percorrido — os outros seriam desenho sem caminho. ` +
         `Para replicar a saída use um tee; para escolher entre destinos, um router`,
     );
+  }
+
+  // Uma porta é de um regime só. Sem isso, o ator não teria como saber, ao
+  // emitir, se está acomodando ou confrontando — e a fase é justamente o que
+  // decide se o que ele devolve como estado vale ou é descartado.
+  const tempoDaPorta = new Map<string, WireTiming>();
+  for (const wire of spec.wires) {
+    const chave = `${wire.from}\u0000${wire.port}`;
+    const timing = wire.timing ?? "clocked";
+    const anterior = tempoDaPorta.get(chave);
+    if (anterior === undefined) {
+      tempoDaPorta.set(chave, timing);
+      continue;
+    }
+    if (anterior !== timing) {
+      erros.push(
+        `a porta "${wire.port}" de "${wire.from}" mistura tempos: um fio é ` +
+          `"${anterior}" e outro é "${timing}". Uma porta entrega numa fase só`,
+      );
+    }
   }
 
   // `init` sem `behavior` é erro de autoria, não licença poética: `initialWorld`

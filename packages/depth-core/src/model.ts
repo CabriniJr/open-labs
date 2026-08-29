@@ -61,6 +61,26 @@ export function familyOf(kind: Kind): Family {
  */
 export type LineKind = "data" | "control";
 
+/**
+ * Em que fase do tick uma aresta entrega.
+ *
+ * - `clocked` — custa `edgeTicks`. É o que sempre existiu, e segue sendo o padrão
+ * - `settle` — entrega **dentro do mesmo tick**, na fase de acomodação
+ *
+ * O padrão é `clocked` de propósito: mundo escrito antes desta mudança não muda
+ * de comportamento por causa dela.
+ */
+export type WireTiming = "settle" | "clocked";
+
+/**
+ * Qual das duas fases do tick está rodando.
+ *
+ * - `settle` — propagação dentro do tick. O `state` devolvido é **descartado**:
+ *   quem acomoda não guarda, exatamente como lógica combinacional não guarda
+ * - `commit` — o fim do tick. É onde o estado muda
+ */
+export type TickPhase = "settle" | "commit";
+
 export type PortId = string;
 
 /** Onde uma folha está em relação a um foco. Discriminado de propósito: um id
@@ -106,6 +126,13 @@ export interface StepContext {
     weight?: number,
     data?: Record<string, unknown>,
   ) => Message;
+  /** Em qual das duas fases do tick este comportamento está rodando. */
+  readonly phase: TickPhase;
+  /**
+   * Sinais que chegaram por linha de controle, por porta de entrada. Sinal
+   * modifica o que o ator faz; nunca é carga, e por isso não vem em `inbox`.
+   */
+  readonly signals: Readonly<Record<PortId, readonly Message[]>>;
 }
 
 /** Função pura. Nunca muta `state`; sempre devolve um novo. */
@@ -158,6 +185,15 @@ export interface Wire {
    *  linha de controle carrega sinal (pedido, concessão, gatilho, medida) e
    *  **nunca** carga. */
   readonly line?: LineKind;
+  /**
+   * Em que porta do destino um sinal chega. **Obrigatório** em linha de
+   * controle e **proibido** em linha de dado: carga entra num objeto e o motor
+   * acha a folha de entrada, mas sinal tem destinatário nomeado, porque quem
+   * recebe precisa saber qual sinal é.
+   */
+  readonly toPort?: PortId;
+  /** Quando esta aresta entrega. Ausente significa `"clocked"`. */
+  readonly timing?: WireTiming;
 }
 
 export interface WorldSpec {
@@ -179,6 +215,8 @@ export interface InFlight {
   readonly from: string;
   readonly to: string | Drop;
   readonly sent: number;
+  /** Presente só quando este item é um sinal: a porta de destino dele. */
+  readonly signalPort?: PortId;
 }
 
 export interface WorldState {
@@ -193,4 +231,9 @@ export interface WorldState {
    * "in:no" (mais ".weight"). Por isso id e porta não podem conter "." nem ":".
    */
   readonly ledger: Readonly<Record<string, number>>;
+  /**
+   * Quantos subpassos a acomodação levou neste tick — a profundidade do caminho
+   * combinacional. Zero num mundo sem aresta acomodada.
+   */
+  readonly substeps: number;
 }

@@ -135,7 +135,10 @@ teaches:
 `;
     const r = compileSource(comControle);
     if (!r.ok) throw new Error(r.errors.join(" | "));
-    expect(r.world.wires.filter((w) => w.line === "control")).toHaveLength(1);
+    const controles = r.world.wires.filter((w) => w.line === "control");
+    expect(controles).toHaveLength(1);
+    // Sinal chega numa entrada nomeada, e o nome é o da porta de destino.
+    expect(controles[0]?.toPort).toBe("aviso");
 
     const tree = new World(r.world).tree;
     // A fiação de dado é cega para controle: o que sai de "@in-pausa" não tem

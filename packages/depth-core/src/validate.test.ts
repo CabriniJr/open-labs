@@ -172,7 +172,7 @@ describe("validateWorld", () => {
         },
         wires: [
           { from: "a", port: "out", to: "b" },
-          { from: "a", port: "out", to: "c", line: "control" },
+          { from: "a", port: "out", to: "c", line: "control", toPort: "sel" },
         ],
       }),
     ).not.toThrow();
@@ -246,5 +246,89 @@ describe("World valida na construção", () => {
     });
     expect(w.tree.byId.has("pipe")).toBe(true);
     expect(w.tree.byId.has("dentro")).toBe(true);
+  });
+  it("recusa fio de controle sem toPort: sinal precisa de porta de destino nomeada", () => {
+    // Carga entra num objeto e o motor acha a folha de entrada. Sinal não: ele
+    // chega numa entrada nomeada, porque quem recebe precisa saber QUAL sinal é.
+    expect(() =>
+      validar({ ...base, wires: [{ from: "a", port: "out", to: "b", line: "control" }] }),
+    ).toThrow(/linha de controle .* precisa de toPort/);
+  });
+
+  it("recusa toPort numa linha de dado: carga entra pela folha de entrada", () => {
+    expect(() =>
+      validar({ ...base, wires: [{ from: "a", port: "out", to: "b", toPort: "sel" }] }),
+    ).toThrow(/toPort .* só vale em linha de controle/);
+  });
+
+  it("recusa toPort com os separadores do livro-caixa", () => {
+    expect(() =>
+      validar({
+        ...base,
+        wires: [{ from: "a", port: "out", to: "b", line: "control", toPort: "a.b" }],
+      }),
+    ).toThrow(/separam campos no livro-caixa/);
+  });
+
+  it("aceita linha de controle bem formada, inclusive em leque", () => {
+    // Sinal em leque é a regra, não a exceção: um controle aciona vários.
+    expect(() =>
+      validar({
+        ...base,
+        root: {
+          id: "root",
+          kind: "composite",
+          label: "root",
+          children: [leaf("a"), leaf("b"), leaf("c")],
+        },
+        wires: [
+          { from: "a", port: "out", to: "b" },
+          { from: "a", port: "sel", to: "b", line: "control", toPort: "sel" },
+          { from: "a", port: "sel", to: "c", line: "control", toPort: "sel" },
+        ],
+      }),
+    ).not.toThrow();
+  });
+
+  it("recusa a mesma porta de saída com tempos diferentes", () => {
+    // A porta é de um regime só. Sem isso, o ator não teria como saber, ao
+    // emitir, se está na acomodação ou no confronto.
+    expect(() =>
+      validar({
+        ...base,
+        root: {
+          id: "root",
+          kind: "composite",
+          label: "root",
+          children: [leaf("a"), leaf("b"), leaf("c")],
+        },
+        wires: [
+          { from: "a", port: "out", to: "b", timing: "settle" },
+          { from: "a", port: "out", to: "c", timing: "clocked" },
+        ],
+      }),
+    ).toThrow(/a porta "out" de "a" mistura tempos/);
+  });
+
+  it("recusa fio de controle que chega em quem não age", () => {
+    // Sinal não atravessa contêiner: ele tem destinatário nomeado.
+    const spec: WorldSpec = {
+      ...base,
+      root: {
+        id: "root",
+        kind: "composite",
+        label: "root",
+        children: [
+          leaf("a"),
+          leaf("b"),
+          { id: "caixa", kind: "composite", label: "caixa", children: [leaf("dentro")] },
+        ],
+      },
+      wires: [
+        { from: "a", port: "out", to: "b" },
+        { from: "a", port: "sel", to: "caixa", line: "control", toPort: "sel" },
+      ],
+    };
+    expect(() => validar(spec)).toThrow(/sinal .* "caixa", que não age/);
   });
 });

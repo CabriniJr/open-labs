@@ -262,7 +262,14 @@ export function compileModelet(m: Modelet, opts: CompileOptions = {}): CompileRe
     const de = origem(fio.from);
     const para = destino(fio.to);
     if (de === null || para === null) continue;
-    fios.push({ from: de.from, port: de.port, to: para, line: fio.line });
+    // Sinal chega numa entrada nomeada: o nome é o da porta de destino, que é
+    // por onde quem recebe reconhece qual sinal é. Carga não leva `toPort` —
+    // ela entra no objeto e o motor acha a folha de entrada.
+    fios.push(
+      fio.line === "control"
+        ? { from: de.from, port: de.port, to: para, line: fio.line, toPort: fio.to.port }
+        : { from: de.from, port: de.port, to: para, line: fio.line },
+    );
   }
 
   // Duas linhas de dado saindo da mesma porta: `resolveTarget` devolve a

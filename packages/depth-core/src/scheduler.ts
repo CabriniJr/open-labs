@@ -41,7 +41,7 @@ export function initialWorld(tree: TreeIndex): WorldState {
   for (const node of actors(tree)) {
     nodes[node.id] = node.init === undefined ? {} : node.init();
   }
-  return { tick: 0, nodes, flight: [], ledger: {} };
+  return { tick: 0, nodes, flight: [], ledger: {}, substeps: 0 };
 }
 
 /**
@@ -107,6 +107,10 @@ export function stepWorld(
       tick,
       random: (salt = "") => randomAt(spec.seed, tick, `${node.id}:${salt}`),
       params,
+      // As duas fases entram na Task 5; até lá todo tick é confronto, e é isso
+      // que o contexto diz, em vez de omitir o campo e deixar o ator adivinhar.
+      phase: "commit" as const,
+      signals: {},
       emit: (
         kind: string,
         weight = 1,
@@ -145,5 +149,5 @@ export function stepWorld(
     }
   }
 
-  return { tick, nodes, flight: [...stillFlying, ...launched], ledger };
+  return { tick, nodes, flight: [...stillFlying, ...launched], ledger, substeps: 0 };
 }
