@@ -1,0 +1,59 @@
+---
+import HandbookCard from "../../components/HandbookCard.astro";
+import SiteFooter from "../../components/SiteFooter.astro";
+import SiteNav from "../../components/SiteNav.astro";
+import Base from "../../layouts/Base.astro";
+import { HANDBOOKS } from "../../data/handbooks";
+---
+
+<Base
+  title="Handbooks — OpenLabs"
+  description="Every OpenLabs handbook: a subject modelled as a simulation you can take apart, with a roadmap, articles and labs."
+>
+  <SiteNav current="handbooks" />
+
+  <main id="content">
+    <section class="hbs-head editorial">
+      <div class="prose">
+        <h1>Handbooks</h1>
+        <p>
+          Each handbook is one subject, modelled as a <code>.model</code> on the
+          same engine. The engine does not know what a span is, or what an
+          opcode is — the model does. That is what makes the second handbook
+          cheaper than the first.
+        </p>
+        <p>
+          The anatomy repeats: a <strong>roadmap</strong> of the order the ideas
+          hold each other up, <strong>articles</strong> that explain, and
+          <strong>labs</strong> that run.
+        </p>
+      </div>
+    </section>
+
+    <section class="hbs-grid">
+      {HANDBOOKS.map((handbook) => <HandbookCard handbook={handbook} />)}
+    </section>
+  </main>
+
+  <SiteFooter />
+</Base>
+
+<style>
+  .hbs-head {
+    padding-block: var(--space-5) var(--space-3);
+  }
+
+  h1 {
+    margin: 0 0 var(--space-2);
+    font-size: var(--size-step-3);
+  }
+
+  .hbs-grid {
+    max-width: 92rem;
+    margin-inline: auto;
+    padding: 0 var(--space-3) var(--space-5);
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
+    gap: var(--space-2);
+  }
+</style>

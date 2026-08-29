@@ -12,12 +12,13 @@ const t = chrome(lang);
 
 <footer class="site-footer">
   <div>
-    <p class="site-footer__title">OTel Visual Handbook</p>
+    <p class="site-footer__title">OpenLabs</p>
     <p class="site-footer__note">
       {t.footerNote}
     </p>
   </div>
   <nav aria-label={t.footerNav}>
+    <a href={url("handbooks")}>{t.handbooks}</a>
     <a href={url("docs")}>{t.docs}</a>
     <a href="https://github.com/CabriniJr/otel-visual-handbook" rel="noopener">{t.code}</a>
     <a

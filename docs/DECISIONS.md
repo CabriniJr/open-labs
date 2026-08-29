@@ -200,3 +200,35 @@ os quatro níveis como tipos de coisa.
    o caso real
 3. **`docs/authoring.md` como interface pública.** O teste de "ser base para outros handbooks"
    é um handbook escrito por outra pessoa, e o que habilita isso é o guia, não o motor
+
+---
+
+## 9. O projeto vira OpenLabs, e o handbook vira um `.model` dentro dele
+
+**Data:** 2026-08-29. **Fechada.**
+
+O nome deixou de descrever o projeto no dia em que a CPU entrou no roteiro antes do
+OTel. Um repositório chamado *OTel Visual Handbook* cujo próximo entregável é um
+datapath RV32I está mentindo no título — e a mentira não é cosmética: ela sugere que o
+motor é de telemetria, quando o motor é justamente o que não sabe o que é um span.
+
+Fica assim:
+
+- **OpenLabs** é a casa. Um motor composicional, e vários handbooks rodando nele
+- **Cada handbook é um `.model`**: `otel.model`, `cpu.model`. O que muda de um para o
+  outro é o domínio — nunca o motor
+- **Todo handbook tem a mesma anatomia**, e é ela que dá a página: **roadmap** (a
+  ordem em que os conceitos se sustentam) · **artigos** (o texto que explica) ·
+  **labs** (o modelo que roda). Um handbook sem as três não está pronto, e a página
+  diz isso em vez de esconder
+
+O que **não** muda agora: o repositório segue `otel-visual-handbook` e os pacotes
+seguem no escopo `@ovh/`. Renomear repositório e escopo quebra links, CI e o deploy
+publicado por um ganho só de fachada; o nome do produto é o que o leitor vê, e é ele
+que já está certo. A renomeação técnica fica para quando o motor sair para repositório
+próprio (decisão aberta nº 7 da §7), que é quando ela sai de graça.
+
+**Como isto pode falhar:** o catálogo (`apps/site/src/data/handbooks.ts`) é a promessa
+da capa, e um item apontando para uma fase inexistente sumiria da página sem aviso —
+a mentira silenciosa de sempre. Por isso a página **lança** em vez de pular, e o teste
+do catálogo recusa fase vazia, fase inexistente e id repetido.

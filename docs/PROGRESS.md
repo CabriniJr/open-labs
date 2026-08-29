@@ -334,3 +334,25 @@ junto com `depth-core` e `depth-ui`.
   §4 de `model-format.md`) não foi tocado. O compilador só monta um `modelet` isolado.
 - **A posição do erro no YAML não é usada.** O pacote `yaml` preserva linha e coluna, e as
   mensagens ainda apontam para o caminho do campo, não para a linha do autor.
+
+---
+
+## Sessão — OpenLabs: o projeto passa a ser a casa dos handbooks
+
+**Data:** 2026-08-29. **Decisão:** `docs/DECISIONS.md` §9.
+
+O projeto vira **OpenLabs**; o handbook de OTel e o da CPU viram dois `.model` sobre o
+mesmo motor. No site: catálogo em `apps/site/src/data/handbooks.ts`, cartão
+(`HandbookCard.astro`), índice em `/handbooks/` e página por handbook em
+`/handbooks/[id]/` com a anatomia **roadmap · artigos · labs**. O mapa interativo saiu
+da landing e foi para a página do handbook de OTel — é dele, não da capa; o do RISC-V
+ainda não tem mapa, e a página diz isso em vez de desenhar um caminho não andado.
+
+Estado: 253 testes unitários (11 novos, do catálogo), 46 e2e (5 novos), build,
+typecheck e guarda de fronteira verdes.
+
+**Pendente e não óbvio:** o plano do Bloco 1 da CPU
+(`docs/superpowers/plans/2026-08-29-f6-b1-fases-do-tick-e-controle.md`) está escrito e
+ainda não executado — é a próxima coisa a fazer. E as fases do RISC-V no catálogo são
+desenho editorial, não a spec: quando o `cpu.model` existir, os labs de lá viram
+`available` um a um.

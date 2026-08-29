@@ -1,0 +1,85 @@
+---
+import { url } from "../lib/urls";
+import { readyCount, type Handbook } from "../data/handbooks";
+
+interface Props {
+  handbook: Handbook;
+}
+
+const { handbook } = Astro.props;
+const labsProntos = readyCount(handbook.labs);
+---
+
+<a class="hb-card" href={url(`handbooks/${handbook.id}`)}>
+  <span class="hb-card__subject mono">{handbook.subject}</span>
+  <h3 class="hb-card__name">{handbook.name}</h3>
+  <p class="hb-card__tagline">{handbook.tagline}</p>
+  <p class="hb-card__blurb">{handbook.blurb}</p>
+  <ul class="hb-card__tracks mono" aria-label="Tracks">
+    <li>{handbook.phases.length} phases</li>
+    <li>{handbook.articles.length} articles</li>
+    <li>{labsProntos} of {handbook.labs.length} labs running</li>
+  </ul>
+  <span class="hb-card__model mono">{handbook.model}</span>
+</a>
+
+<style>
+  .hb-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    padding: var(--space-3);
+    background: var(--paper-raised);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius-3);
+    color: var(--ink);
+    text-decoration: none;
+  }
+
+  .hb-card:hover {
+    border-color: var(--accent);
+  }
+
+  .hb-card__subject {
+    color: var(--accent);
+    font-size: var(--size-step--1);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .hb-card__name {
+    margin: 0;
+    font-size: var(--size-step-2);
+  }
+
+  .hb-card__tagline {
+    margin: 0;
+    font-size: var(--size-step-1);
+    color: var(--ink);
+  }
+
+  .hb-card__blurb {
+    margin: 0;
+    color: var(--ink-muted);
+    font-size: var(--size-step--1);
+    line-height: 1.5;
+  }
+
+  .hb-card__tracks {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    list-style: none;
+    margin: var(--space-1) 0 0;
+    padding: 0;
+    color: var(--ink-faint);
+    font-size: var(--size-step--1);
+  }
+
+  .hb-card__model {
+    margin-block-start: auto;
+    padding-block-start: var(--space-1);
+    color: var(--ink-faint);
+    font-size: var(--size-step--1);
+  }
+</style>

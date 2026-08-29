@@ -1,7 +1,15 @@
-# OTel Visual Handbook
+# OpenLabs
 
-Every OpenTelemetry concept as a model you can take apart — from the service
-graph down to the bytes on the wire.
+Handbooks that run. Every subject is a `.model` on the same compositional
+engine — you take the model apart instead of reading about it.
+
+Hoje são dois: o **OpenTelemetry Visual Handbook** (`otel.model`), do grafo de
+serviços até os bytes no fio, e o **RISC-V Visual Handbook** (`cpu.model`), do
+diagrama de blocos até o transistor. O motor não sabe qual é o assunto — é isso
+que faz o segundo handbook custar menos que o primeiro.
+
+Todo handbook tem a mesma anatomia: **roadmap** (a ordem em que os conceitos se
+sustentam), **artigos** e **labs**.
 
 **https://otel-visual-handbook.vercel.app** — o site canônico, servido na raiz.
 Espelho no GitHub Pages: **https://cabrinijr.github.io/otel-visual-handbook**

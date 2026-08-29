@@ -615,3 +615,15 @@
     max-width: none;
   }
 }
+
+/*
+ * Estados de item de handbook. `available` usa o acento porque é o único que
+ * convida a clicar; `coming` fica na tinta fraca, para não competir.
+ */
+.status--available {
+  color: var(--accent);
+}
+
+.status--coming {
+  color: var(--ink-faint);
+}

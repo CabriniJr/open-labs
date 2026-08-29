@@ -17,7 +17,7 @@ async function aguardarHidratacao(page: Page): Promise<void> {
 test("the landing loads and the hero hydrates", async ({ page }) => {
   await page.goto("");
 
-  await expect(page.locator("h1")).toContainText("telemetry");
+  await expect(page.locator("h1")).toContainText("actually works");
   await expect(page.locator(".hero-sim")).toBeVisible();
   await expect(page.getByRole("img", { name: "Service flow" })).toBeVisible();
 });
@@ -68,7 +68,7 @@ test("the timeline lets you stop and read the payload", async ({ page }) => {
 });
 
 test("the map tracks progress and it survives a reload", async ({ page }) => {
-  await page.goto("");
+  await page.goto("handbooks/otel/");
   await page.evaluate(() => window.localStorage.clear());
   await page.reload();
 

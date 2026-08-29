@@ -1,7 +1,7 @@
 ---
 interface Props {
   /** Qual item marcar como atual. */
-  current?: "home" | "docs" | undefined;
+  current?: "home" | "docs" | "handbooks" | undefined;
   /** A busca só existe onde há o que buscar: nas páginas de documentação. */
   search?: boolean | undefined;
   lang?: Lang | undefined;
@@ -18,10 +18,13 @@ import { chrome, type Lang } from "../lib/chrome-strings";
   <a class="site-nav__skip" href="#content">{t.skip}</a>
   <a class="site-nav__brand" href={url()} aria-current={current === "home" ? "page" : undefined}>
     <span class="site-nav__mark" aria-hidden="true"></span>
-    OTel Visual Handbook
+    OpenLabs
   </a>
   {search && <DocSearch />}
   <nav aria-label={t.nav}>
+    <a href={url("handbooks")} aria-current={current === "handbooks" ? "page" : undefined}
+      >{t.handbooks}</a
+    >
     <a href={url("docs")} aria-current={current === "docs" ? "page" : undefined}>{t.docs}</a>
     <a href="https://github.com/CabriniJr/otel-visual-handbook" rel="noopener">GitHub</a>
   </nav>

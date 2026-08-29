@@ -13,6 +13,7 @@ export interface ChromeStrings {
   readonly skip: string;
   readonly nav: string;
   readonly docs: string;
+  readonly handbooks: string;
   readonly theme: string;
   readonly footerNote: string;
   readonly code: string;
@@ -25,6 +26,7 @@ const EN: ChromeStrings = {
   skip: "Skip to content",
   nav: "Main",
   docs: "Docs",
+  handbooks: "Handbooks",
   theme: "Toggle light and dark theme",
   footerNote:
     "Every model on this site is a simulation that actually runs. No animation is scripted.",
@@ -38,6 +40,7 @@ const PT: ChromeStrings = {
   skip: "Pular para o conteúdo",
   nav: "Principal",
   docs: "Documentação",
+  handbooks: "Handbooks",
   theme: "Alternar tema claro e escuro",
   footerNote:
     "Todo modelo deste site é uma simulação que roda de verdade. Nenhuma animação é roteirizada.",
