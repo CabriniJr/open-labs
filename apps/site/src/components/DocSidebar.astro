@@ -1,0 +1,45 @@
+---
+import { STATUS_LABEL, THEMES } from "../data/docs-index";
+import { docUrl, docsHome } from "../lib/urls";
+
+interface Props {
+  /** Id do capítulo aberto, para marcar `aria-current` e abrir o tema dele. */
+  current?: string | undefined;
+}
+
+const { current } = Astro.props;
+// O corpo do `map` é uma expressão, e não um bloco com `return`: o compilador
+// do Astro só reconhece marcação em posição de expressão.
+const temas = THEMES.map((theme) => ({
+  ...theme,
+  aberto: current === undefined || theme.chapters.some((c) => c.id === current),
+}));
+---
+
+<nav class="doc-sidebar" aria-label="Documentação">
+  <a class="doc-sidebar__home" href={docsHome()}>Toda a documentação</a>
+  {
+    temas.map((theme) => (
+      <details class="doc-sidebar__theme" open={theme.aberto}>
+        <summary>
+          <span class="doc-sidebar__theme-title">{theme.title}</span>
+          <span class="doc-sidebar__blurb">{theme.blurb}</span>
+        </summary>
+        <ul>
+          {theme.chapters.map((chapter) => (
+            <li>
+              <a href={docUrl(chapter.id)} aria-current={chapter.id === current ? "page" : undefined}>
+                <span>{chapter.title}</span>
+                {chapter.status !== "stable" && (
+                  <span class={`status status--${chapter.status}`}>
+                    {STATUS_LABEL[chapter.status]}
+                  </span>
+                )}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </details>
+    ))
+  }
+</nav>

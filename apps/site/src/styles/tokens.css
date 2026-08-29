@@ -38,6 +38,23 @@
   --measure: 68ch;
 }
 
+/*
+ * Três estados, não dois: escolha explícita marca `data-theme` na raiz; o
+ * padrão não marca nada, e aí só `prefers-color-scheme` separa claro de
+ * escuro. Definir a cor só dentro do media query deixaria o estado sem marca
+ * com texto de um tema sobre o papel do outro.
+ */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ink: #e8ecf2;
+    --ink-muted: #939bab;
+    --ink-faint: #6f7789;
+    --paper: #0f1116;
+    --paper-raised: #181b21;
+    --rule: #2a2f38;
+  }
+}
+
 :root[data-theme="dark"] {
   --ink: #e8ecf2;
   --ink-muted: #939bab;

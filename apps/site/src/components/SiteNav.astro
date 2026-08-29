@@ -1,0 +1,49 @@
+---
+interface Props {
+  /** Qual item marcar como atual. */
+  current?: "home" | "docs" | undefined;
+}
+
+const { current } = Astro.props;
+import { url } from "../lib/urls";
+---
+
+<header class="site-nav">
+  <a class="site-nav__skip" href="#content">Pular para o conteúdo</a>
+  <a class="site-nav__brand" href={url()} aria-current={current === "home" ? "page" : undefined}>
+    <span class="site-nav__mark" aria-hidden="true"></span>
+    OTel Visual Handbook
+  </a>
+  <nav aria-label="Principal">
+    <a href={url("docs")} aria-current={current === "docs" ? "page" : undefined}>Documentação</a>
+    <a href="https://github.com/CabriniJr/otel-visual-handbook" rel="noopener">GitHub</a>
+  </nav>
+  <button
+    class="site-nav__theme"
+    type="button"
+    data-theme-toggle
+    aria-label="Alternar tema claro e escuro"
+  >
+    <span data-theme-icon aria-hidden="true">◐</span>
+  </button>
+</header>
+
+<script is:inline>
+  // Sem framework e sem esperar hidratação: alternar tema depois da pintura
+  // pisca a página inteira. O estado inicial já foi resolvido no <head>.
+  document.querySelectorAll("[data-theme-toggle]").forEach((botao) => {
+    botao.addEventListener("click", () => {
+      const raiz = document.documentElement;
+      const escuro =
+        raiz.dataset.theme === "dark" ||
+        (raiz.dataset.theme === undefined &&
+          window.matchMedia("(prefers-color-scheme: dark)").matches);
+      raiz.dataset.theme = escuro ? "light" : "dark";
+      try {
+        localStorage.setItem("ovh-theme", raiz.dataset.theme);
+      } catch {
+        // Janela privada ou armazenamento bloqueado: o tema vale só nesta página.
+      }
+    });
+  });
+</script>

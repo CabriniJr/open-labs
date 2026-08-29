@@ -1,0 +1,33 @@
+---
+import { getCollection, render } from "astro:content";
+import Doc from "../../layouts/Doc.astro";
+import { READING_ORDER } from "../../data/docs-index";
+
+// Uma página por capítulo do MANIFESTO, não por arquivo em `docs/`: um plano
+// solto viraria página sem contexto, sem tema e sem vizinhos.
+export async function getStaticPaths() {
+  const entries = await getCollection("docs");
+  const porId = new Map(entries.map((e) => [e.id, e]));
+
+  return READING_ORDER.map((chapter) => {
+    const entry = porId.get(chapter.id);
+    // Falhar o build, e não pular: um capítulo do índice sem documento vira
+    // link morto em produção, que é o mesmo silêncio que este projeto persegue
+    // em toda parte. O teste de `docs-index` pega antes; isto é o cinto.
+    if (entry === undefined) {
+      throw new Error(
+        `capítulo "${chapter.id}" está no índice e não existe na coleção — ` +
+          `ids disponíveis: ${[...porId.keys()].join(", ")}`,
+      );
+    }
+    return { params: { slug: chapter.id }, props: { entry, chapter } };
+  });
+}
+
+const { entry, chapter } = Astro.props;
+const { Content, headings } = await render(entry);
+---
+
+<Doc chapter={chapter} body={entry.body ?? ""} headings={headings}>
+  <Content />
+</Doc>

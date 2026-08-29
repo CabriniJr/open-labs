@@ -25,6 +25,16 @@ const { title, description } = Astro.props;
       rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Outfit:wght@400;500;600;700&display=swap"
     />
+    <script is:inline>
+      // Antes da primeira pintura, senão a página pisca claro e vira escura.
+      // Três estados: escolha explícita, ou nada — e aí quem decide é o SO.
+      try {
+        const salvo = localStorage.getItem("ovh-theme");
+        if (salvo === "dark" || salvo === "light") document.documentElement.dataset.theme = salvo;
+      } catch {
+        // Armazenamento bloqueado: fica valendo a preferência do sistema.
+      }
+    </script>
   </head>
   <body>
     <slot />
