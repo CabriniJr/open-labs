@@ -138,6 +138,64 @@ describe("validateWorld", () => {
     );
   });
 
+  it("recusa duas linhas de dado saindo da mesma porta: só a primeira seria percorrida", () => {
+    // `resolveTarget` devolve a primeira e ignora o resto sem reclamar. O fio
+    // extra não some em `.unwired`, que conta porta sem fio nenhum — ele
+    // simplesmente não existe no percurso, e o desenho mente.
+    const spec: WorldSpec = {
+      ...base,
+      root: {
+        id: "root",
+        kind: "composite",
+        label: "root",
+        children: [leaf("a"), leaf("b"), leaf("c")],
+      },
+      wires: [
+        { from: "a", port: "out", to: "b" },
+        { from: "a", port: "out", to: "c" },
+      ],
+    };
+    expect(() => validar(spec)).toThrow(/2 fios de dado saindo/);
+  });
+
+  it("a mesma porta pode ter uma linha de dado e uma de controle", () => {
+    // A recusa é sobre carga, não sobre linhas: sinal e dado saindo do mesmo
+    // lugar é justamente o que um controlador faz.
+    expect(() =>
+      validar({
+        ...base,
+        root: {
+          id: "root",
+          kind: "composite",
+          label: "root",
+          children: [leaf("a"), leaf("b"), leaf("c")],
+        },
+        wires: [
+          { from: "a", port: "out", to: "b" },
+          { from: "a", port: "out", to: "c", line: "control" },
+        ],
+      }),
+    ).not.toThrow();
+  });
+
+  it("portas diferentes do mesmo objeto não se confundem", () => {
+    expect(() =>
+      validar({
+        ...base,
+        root: {
+          id: "root",
+          kind: "composite",
+          label: "root",
+          children: [leaf("a"), leaf("b"), leaf("c")],
+        },
+        wires: [
+          { from: "a", port: "out", to: "b" },
+          { from: "a", port: "erro", to: "c" },
+        ],
+      }),
+    ).not.toThrow();
+  });
+
   it("acumula todos os erros de uma vez: o autor não conserta em N rodadas", () => {
     const spec: WorldSpec = {
       ...base,
