@@ -65,8 +65,10 @@ describe("o caminho de dados como mundo do motor", () => {
     const emitiu = ledger["out:mux-operacao.out"] ?? 0;
     expect(emitiu).toBeGreaterThan(0);
     // uma emissão, dois destinos: é a divergência que mede o espalhamento
-    expect(ledger["in:memoria"]).toBe(emitiu);
     expect(ledger["in:desvio"]).toBe(emitiu);
+    // A memória também recebe do dispositivo de entrada, então ela conta mais
+    // do que a ULA emitiu — o que importa é que nenhuma cópia se perdeu.
+    expect(ledger["in:memoria"]).toBeGreaterThanOrEqual(emitiu);
   });
 
   it("o atalho da ULA concorda com as duzentas peças de dentro dela", () => {

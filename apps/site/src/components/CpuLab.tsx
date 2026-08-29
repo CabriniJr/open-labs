@@ -10,7 +10,13 @@ import {
   VIEW_PROCESSADOR,
   VIEW_SISTEMA,
 } from "@ovh/cpu-domain";
-import type { AssemblyError, EstadoBanco, EstadoMemoria, EstadoPc } from "@ovh/cpu-domain";
+import type {
+  AssemblyError,
+  EstadoBanco,
+  EstadoMemoria,
+  EstadoPc,
+  EstadoSaida,
+} from "@ovh/cpu-domain";
 
 /**
  * O lab: você escreve o programa, e o processador o executa na sua frente.
@@ -20,16 +26,16 @@ import type { AssemblyError, EstadoBanco, EstadoMemoria, EstadoPc } from "@ovh/c
  * responde de verdade.
  */
 
-const PROGRAMA_INICIAL = `# soma 1 + 2 + ... + 5, e guarda o resultado na memória
+const PROGRAMA_INICIAL = `# soma 1 + 2 + ... + n, e fala o resultado
+        lui  t3, 1          # 0x1000: fala aqui, ouve em 0x1004
+        lw   t2, 4(t3)      # n vem do botão de entrada
+        addi t2, t2, 1      # limite
         addi t0, x0, 0      # soma
         addi t1, x0, 1      # i
-        addi t2, x0, 6      # limite
 laco:   add  t0, t0, t1
         addi t1, t1, 1
         blt  t1, t2, laco
-        addi sp, x0, 256
-        sw   t0, 0(sp)
-        lw   t3, 0(sp)
+        sw   t0, 0(t3)      # fala a soma
 `;
 
 const NOMES = [
@@ -56,6 +62,7 @@ export function CpuLab() {
   const [rodando, setRodando] = useState(false);
   const [compasso, setCompasso] = useState(700);
   const [viewId, setViewId] = useState(VIEW_SISTEMA.id);
+  const [entrada, setEntrada] = useState(5);
   const mundoRef = useRef<World | null>(null);
 
   // Programa não é parâmetro: um programa novo é um mundo novo, começando no
@@ -73,7 +80,11 @@ export function CpuLab() {
     }
     setErros([]);
     setMontado({ words: r.image.words, lineOf: r.image.lineOf });
-    mundoRef.current = new World(cpuWorld(r.image.words));
+    const novo = new World(cpuWorld(r.image.words));
+    // O botão vale desde o começo deste programa: o mundo nasce no tick 0 e a
+    // primeira leitura da entrada só acontece bem depois.
+    novo.setParam("entrada", entrada);
+    mundoRef.current = novo;
     setTick(0);
     setRodando(true);
   };
@@ -83,6 +94,13 @@ export function CpuLab() {
     // só na montagem: o botão cuida das vezes seguintes
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Girar o botão **não** reinicia: é evento no tempo. O programa lê outro
+  // número na próxima vez que olhar para o endereço de entrada.
+  const girar = (valor: number): void => {
+    setEntrada(valor);
+    mundoRef.current?.setParam("entrada", valor);
+  };
 
   useEffect(() => {
     if (!rodando) return;
@@ -110,6 +128,7 @@ export function CpuLab() {
   const banco = estado?.nodes.banco as EstadoBanco | undefined;
   const contador = estado?.nodes.pc as EstadoPc | undefined;
   const memoria = estado?.nodes.memoria as EstadoMemoria | undefined;
+  const falado = (estado?.nodes.saida as EstadoSaida | undefined)?.palavras ?? [];
 
   const pcAtual = contador?.pc ?? 0;
   const palavraAtual = montado?.words[pcAtual / 4];
@@ -130,6 +149,8 @@ export function CpuLab() {
     banco: `${ocupados}/32 em uso`,
     ula: instrucao?.mnemonic ?? "—",
     controle: instrucao?.mnemonic ?? "parado",
+    entrada: String(entrada),
+    saida: falado.length === 0 ? "calada" : String(falado[falado.length - 1]),
   };
 
   return (
@@ -187,6 +208,15 @@ export function CpuLab() {
               aria-label="Velocidade do relógio"
             />
           </label>
+          <label className="cpu-lab__entrada">
+            entrada
+            <input
+              type="number"
+              value={entrada}
+              onChange={(e) => girar(Number(e.target.value) | 0)}
+              aria-label="Valor do dispositivo de entrada"
+            />
+          </label>
           <span className="cpu-lab__tick mono">tick {tick}</span>
           <span className="cpu-lab__tick mono">
             {estado === null ? "" : `${estado.substeps} subpassos`}
@@ -241,6 +271,20 @@ export function CpuLab() {
           <p className="cpu-lab__agora mono">
             {hex(pcAtual)} · {instrucao === null ? "nada (o programa acabou)" : instrucao.mnemonic}
             {linhaAtual === undefined ? "" : ` · linha ${linhaAtual}`}
+          </p>
+        </section>
+
+        <section>
+          <h3>O que o programa falou</h3>
+          <p className="cpu-lab__falou mono">
+            {falado.length === 0 ? "nada ainda" : falado.join(" · ")}
+          </p>
+          <p className="cpu-lab__nota">
+            Guardar em <span className="mono">0x1000</span> é falar; ler de{" "}
+            <span className="mono">0x1004</span> é ouvir o botão. Não há
+            instrução nova — é a mesma <span className="mono">sw</span> e a
+            mesma <span className="mono">lw</span> num endereço que não é
+            memória.
           </p>
         </section>
 

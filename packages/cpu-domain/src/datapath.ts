@@ -1,4 +1,4 @@
-import type { AnyObject, Message, ObjectSpec, WorldSpec } from "@ovh/depth-core";
+import type { AnyObject, Emission, Message, ObjectSpec, WorldSpec } from "@ovh/depth-core";
 import { ula as ulaComposta } from "./alu.js";
 import { decode } from "./isa.js";
 import type { Instruction, Mnemonic } from "./isa.js";
@@ -25,6 +25,17 @@ import type { Instruction, Mnemonic } from "./isa.js";
 
 const PALAVRA = 4;
 
+/**
+ * Entrada e saída mapeadas em memória.
+ *
+ * É assim que máquina pequena conversa com o mundo de verdade: não há
+ * instrução de escrever na tela, há um **endereço** que não é memória. Guardar
+ * ali é falar; ler dali é ouvir. Duas linhas de assembly, e o programa ganhou
+ * periférico.
+ */
+export const ENDERECO_SAIDA = 0x1000;
+export const ENDERECO_ENTRADA = 0x1004;
+
 /** Só os elementos de memória guardam estado. Todo o resto é combinacional. */
 interface EstadoPc {
   readonly pc: number;
@@ -34,6 +45,8 @@ interface EstadoBanco {
 }
 interface EstadoMemoria {
   readonly mem: ReadonlyMap<number, number>;
+  /** O último valor que o dispositivo de entrada entregou. */
+  readonly entrada: number;
 }
 
 const dado = (m: Message | undefined, campo: string): number =>
@@ -286,6 +299,13 @@ const muxOperando: ObjectSpec<Record<string, never>> = {
  * pela mesma aresta `clocked` (aqui, uma que volta para ela mesma). Sem isso, a
  * memória guardaria um tick antes do banco, e o modelo teria dois flancos.
  */
+/** Ler de um endereço: o dispositivo de entrada responde pelo dele. */
+function ler(mem: ReadonlyMap<number, number>, entrada: number, endereco: number): number {
+  if (endereco === ENDERECO_ENTRADA) return entrada;
+  if (endereco === ENDERECO_SAIDA) return 0;
+  return mem.get(endereco) ?? 0;
+}
+
 function memoriaPrincipal(image: readonly number[]): ObjectSpec<EstadoMemoria> {
   return {
     id: "memoria",
@@ -295,30 +315,33 @@ function memoriaPrincipal(image: readonly number[]): ObjectSpec<EstadoMemoria> {
     init: (): EstadoMemoria => {
       const mem = new Map<number, number>();
       image.forEach((word, i) => mem.set(i * PALAVRA, word | 0));
-      return { mem };
+      return { mem, entrada: 0 };
     },
     behavior: (state, inbox, ctx) => {
       const guardar = achar(inbox, "guardar");
       const mem = new Map(state.mem);
-      if (guardar !== undefined) mem.set(dado(guardar, "addr"), dado(guardar, "valor") | 0);
+      // O endereço de saída não é memória: guardar ali é falar, e guardar de
+      // verdade faria o valor virar um número parado num canto do mapa.
+      if (guardar !== undefined && dado(guardar, "addr") !== ENDERECO_SAIDA) {
+        mem.set(dado(guardar, "addr"), dado(guardar, "valor") | 0);
+      }
+      const doDispositivo = achar(inbox, "entrada");
+      const entrada = doDispositivo === undefined ? state.entrada : dado(doDispositivo, "valor");
 
       const acesso = achar(inbox, "resultado");
       const modo = sinal(ctx.signals, "acesso")?.data.modo as Acesso | undefined;
 
       if (ctx.phase === "commit") {
-        const out =
-          acesso !== undefined && modo === "escrever"
-            ? [
-                {
-                  port: "guardar",
-                  message: ctx.emit("guardar", 1, {
-                    addr: dado(acesso, "resultado"),
-                    valor: dado(acesso, "bReg"),
-                  }),
-                },
-              ]
-            : [];
-        return { state: { mem }, out };
+        const out: Emission[] = [];
+        if (acesso !== undefined && modo === "escrever") {
+          const endereco = dado(acesso, "resultado");
+          const valor = dado(acesso, "bReg");
+          out.push({ port: "guardar", message: ctx.emit("guardar", 1, { addr: endereco, valor }) });
+          if (endereco === ENDERECO_SAIDA) {
+            out.push({ port: "saida", message: ctx.emit("palavra", 1, { valor }) });
+          }
+        }
+        return { state: { mem, entrada }, out };
       }
 
       if (acesso === undefined || modo === undefined) return { state, out: [] };
@@ -330,7 +353,7 @@ function memoriaPrincipal(image: readonly number[]): ObjectSpec<EstadoMemoria> {
             message: ctx.emit("acessado", 1, {
               pc: dado(acesso, "pc"),
               resultado: dado(acesso, "resultado"),
-              lido: modo === "ler" ? (mem.get(dado(acesso, "resultado")) ?? 0) : 0,
+              lido: modo === "ler" ? ler(mem, entrada, dado(acesso, "resultado")) : 0,
               rd: dado(acesso, "rd"),
             }),
           },
@@ -404,6 +427,44 @@ const unidadeDeDesvio: ObjectSpec<Record<string, never>> = {
   },
 };
 
+/**
+ * O dispositivo de entrada. O valor dele é parâmetro — evento no tempo, não
+ * recomeço: girar o botão não reinicia o programa, o programa lê outro número
+ * na próxima vez que olhar.
+ */
+const entrada: ObjectSpec<Record<string, never>> = {
+  id: "entrada",
+  kind: "source",
+  label: "entrada",
+  leaf: true,
+  behavior: (state, _inbox, ctx) =>
+    ctx.phase === "commit"
+      ? {
+          state,
+          out: [{ port: "valor", message: ctx.emit("entrada", 1, { valor: ctx.params.entrada ?? 0 }) }],
+        }
+      : { state, out: [] },
+};
+
+export interface EstadoSaida {
+  /** Tudo o que o programa falou, na ordem. */
+  readonly palavras: readonly number[];
+}
+
+/** O dispositivo de saída: guarda o que o programa falou, na ordem. */
+const saida: ObjectSpec<EstadoSaida> = {
+  id: "saida",
+  kind: "sink",
+  label: "saída",
+  leaf: true,
+  init: () => ({ palavras: [] }),
+  behavior: (state, inbox, ctx) => {
+    if (ctx.phase !== "commit" || inbox.length === 0) return { state, out: [] };
+    const novas = inbox.map((m) => (m.data.valor as number | undefined) ?? 0);
+    return { state: { palavras: [...state.palavras, ...novas] }, out: [] };
+  },
+};
+
 /** A árvore. Contêineres organizam e nunca têm comportamento. */
 export function cpuWorld(
   image: readonly number[],
@@ -436,7 +497,14 @@ export function cpuWorld(
     id: "sistema",
     kind: "composite",
     label: "sistema",
-    children: [relogio, cpu, memoriaDeInstrucoes(image), memoriaPrincipal(image)],
+    children: [
+      relogio,
+      entrada,
+      cpu,
+      memoriaDeInstrucoes(image),
+      memoriaPrincipal(image),
+      saida,
+    ],
   };
 
   return {
@@ -444,7 +512,10 @@ export function cpuWorld(
     seed,
     edgeTicks: 1,
     root,
-    params: {},
+    // O que o dispositivo de entrada responde. É parâmetro declarado, e não um
+    // valor que aparece do nada em `ctx.params`: girar o botão é evento no
+    // tempo, e o programa lê outro número na próxima vez que olhar.
+    params: { entrada: 0 },
     wires: [
       ...fiosDaUla,
       // o pulso é o que faz o ciclo começar
@@ -474,6 +545,10 @@ export function cpuWorld(
       { from: "mux-escrita", port: "escrita", to: "banco", timing: "clocked", width: 32 },
       { from: "desvio", port: "proximo", to: "pc", timing: "clocked", width: 32 },
       { from: "memoria", port: "guardar", to: "memoria", timing: "clocked" },
+
+      // o mundo de fora: um endereço que não é memória, dos dois lados
+      { from: "entrada", port: "valor", to: "memoria", timing: "clocked" },
+      { from: "memoria", port: "saida", to: "saida", timing: "clocked" },
     ],
   };
 }

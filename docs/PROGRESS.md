@@ -674,3 +674,38 @@ Estado: 370 testes unitários, 72 e2e, typecheck, boundaries e build verdes.
 (hoje folha, declarado no arquivo). A fatia desce por **um** caminho, e esse caminho é a
 soma — que é a operação que a máquina mais faz.
 
+
+---
+
+## Entrada e saída: dois endereços que não são memória
+
+**Data:** 2026-08-29. **Código:** `packages/cpu-domain/src/datapath.ts`,
+`apps/site/src/components/CpuLab.tsx`.
+
+O programa agora **conversa com o mundo**, e sem nenhuma instrução nova. Guardar em
+`0x1000` é falar; ler de `0x1004` é ouvir o botão. É a mesma `sw` e a mesma `lw` — o que
+muda é que aquele endereço não é memória. É assim que máquina pequena sempre teve teclado e
+tela, e cabe em duas linhas de assembly.
+
+**O botão é parâmetro declarado, não recomeço.** `params: { entrada: 0 }` no `WorldSpec`, e
+girar chama `setParam` — o programa não reinicia, ele lê outro número na próxima vez que
+olhar. Foi isso que decidiu a forma: entrada como *evento no tempo* já era contrato do motor,
+e o dispositivo só precisou ler `ctx.params`.
+
+**Guardar no endereço de saída não guarda.** Se guardasse, o `lw` do mesmo endereço
+devolveria o eco em vez de zero, e a memória cresceria com números que ninguém escreveu ali
+— exatamente a classe de mentira silenciosa que o projeto persegue. O diferencial agora
+compara **também a fala**, palavra por palavra, contra a referência.
+
+Três mutantes mortos: apagar a guarda do endereço de saída, apagar a resposta do dispositivo
+de entrada, e apagar a emissão para o dispositivo de saída. Os três quebram o diferencial.
+
+**A view pegou o defeito antes de mim.** Ao entrar `entrada` e `saida` na árvore, a
+`VIEW_SISTEMA` passou a esconder dois objetos, e `viewDisagreement` derrubou o build com o
+nome de quem faltava. O invariante de "nem inventa, nem esconde calado" funcionou como
+alarme, e não como documentação.
+
+No lab: um campo para o botão, e um painel com o que o programa já falou. O programa de
+partida deixou de somar 1..5 fixo e passa a somar 1..n, com o n vindo do botão.
+
+Estado: 373 testes unitários, 74 e2e (2 novos), typecheck, boundaries e build verdes.

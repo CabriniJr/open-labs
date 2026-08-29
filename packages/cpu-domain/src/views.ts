@@ -39,7 +39,12 @@ export const VIEW_SISTEMA: View = {
     { id: "mux-escrita", x: 800, y: 325, w: 130, h: 50 },
 
     { id: "imem", x: 200, y: 500, w: 250, h: 70 },
-    { id: "memoria", x: 640, y: 500, w: 280, h: 70 },
+    { id: "memoria", x: 610, y: 500, w: 250, h: 70 },
+
+    // Os dois lados do mundo de fora. Ficam junto da memória de propósito: a
+    // entrada e a saída são endereços dela, e não instruções novas.
+    { id: "entrada", x: 480, y: 500, w: 110, h: 70 },
+    { id: "saida", x: 880, y: 500, w: 110, h: 70 },
   ],
 };
 

@@ -1,3 +1,4 @@
+import { ENDERECO_ENTRADA, ENDERECO_SAIDA } from "./datapath.js";
 import { decode } from "./isa.js";
 
 /**
@@ -16,6 +17,10 @@ import { decode } from "./isa.js";
  */
 
 export interface CpuState {
+  /** O que o programa falou pelo endereço de saída, na ordem. */
+  readonly saida: readonly number[];
+  /** O que o dispositivo de entrada responde. Constante durante um run. */
+  readonly entrada: number;
   /** x0..x31. `x0` é sempre zero, e escrever nele não faz nada. */
   readonly regs: readonly number[];
   readonly pc: number;
@@ -25,10 +30,10 @@ export interface CpuState {
   readonly halted: boolean;
 }
 
-export function initialCpu(image: readonly number[], pc = 0): CpuState {
+export function initialCpu(image: readonly number[], pc = 0, entrada = 0): CpuState {
   const mem = new Map<number, number>();
   image.forEach((word, i) => mem.set(i * 4, word | 0));
-  return { regs: new Array<number>(32).fill(0), pc, mem, halted: false };
+  return { regs: new Array<number>(32).fill(0), pc, mem, halted: false, saida: [], entrada };
 }
 
 const u = (n: number): number => n >>> 0;
@@ -42,6 +47,7 @@ export function stepCpu(state: CpuState): CpuState {
 
   const regs = [...state.regs];
   const mem = new Map(state.mem);
+  const saida = [...state.saida];
   const a = regs[instr.rs1] ?? 0;
   const b = regs[instr.rs2] ?? 0;
   const { imm } = instr;
@@ -68,8 +74,23 @@ export function stepCpu(state: CpuState): CpuState {
     case "srai": destino = a >> (imm & 31); break;
     case "slti": destino = a < imm ? 1 : 0; break;
 
-    case "lw": destino = mem.get((a + imm) | 0) ?? 0; break;
-    case "sw": mem.set((a + imm) | 0, b | 0); break;
+    // Os dois endereços que não são memória: ler dali é ouvir, guardar é falar.
+    case "lw": {
+      const endereco = (a + imm) | 0;
+      destino =
+        endereco === ENDERECO_ENTRADA
+          ? state.entrada
+          : endereco === ENDERECO_SAIDA
+            ? 0
+            : (mem.get(endereco) ?? 0);
+      break;
+    }
+    case "sw": {
+      const endereco = (a + imm) | 0;
+      if (endereco === ENDERECO_SAIDA) saida.push(b | 0);
+      else mem.set(endereco, b | 0);
+      break;
+    }
 
     case "beq": if (a === b) proximo = state.pc + imm; break;
     case "bne": if (a !== b) proximo = state.pc + imm; break;
@@ -94,7 +115,7 @@ export function stepCpu(state: CpuState): CpuState {
   // subconjunto cujo comportamento correto É não fazer nada.
   if (destino !== undefined && instr.rd !== 0) regs[instr.rd] = destino | 0;
 
-  return { regs, pc: u(proximo) | 0, mem, halted: false };
+  return { regs, pc: u(proximo) | 0, mem, halted: false, saida, entrada: state.entrada };
 }
 
 /** Roda até `passos` instruções, ou até parar. Devolve a trilha inteira. */

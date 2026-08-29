@@ -107,3 +107,23 @@ test("a profundidade do tick conta a cascata do vai-um de 32 bits", async ({ pag
   await expect(page.locator(".cpu-lab__tick").nth(1)).toContainText("subpassos");
 });
 
+
+test("o programa ouve o botão e fala o resultado", async ({ page }) => {
+  await page.goto("labs/cpu/");
+  await expect(page.locator(".dui-stage")).toBeVisible({ timeout: 15_000 });
+
+  // No compasso mais rápido, para o laço de cinco voltas não custar meio minuto
+  const relogio = page.getByLabel("Velocidade do relógio");
+  await relogio.fill("1600");
+
+  // O programa de partida soma 1..n, com n vindo do endereço de entrada.
+  // 1+2+3+4+5 = 15, e é isso que ele fala pelo endereço de saída.
+  await expect(page.locator(".cpu-lab__falou")).toHaveText("15", { timeout: 20_000 });
+
+  // Girar o botão é evento no tempo, não recomeço: o programa já falou, então
+  // é preciso montar de novo para ele ouvir o número novo desde o começo.
+  await page.getByLabel("Valor do dispositivo de entrada").fill("3");
+  await page.getByRole("button", { name: "Montar e reiniciar" }).click();
+  await relogio.fill("1600");
+  await expect(page.locator(".cpu-lab__falou")).toHaveText("6", { timeout: 20_000 });
+});

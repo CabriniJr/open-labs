@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import { initialWorld, stepWorld, indexTree } from "@ovh/depth-core";
 import { assemble } from "./assembler.js";
 import { cpuWorld } from "./datapath.js";
-import type { EstadoBanco, EstadoMemoria, EstadoPc } from "./datapath.js";
+import type { EstadoBanco, EstadoMemoria, EstadoPc, EstadoSaida } from "./datapath.js";
+import { ENDERECO_ENTRADA, ENDERECO_SAIDA } from "./datapath.js";
 import { initialCpu, stepCpu } from "./reference.js";
 import type { CpuState } from "./reference.js";
 
@@ -32,6 +33,16 @@ function diferenca(modelo: Record<string, unknown>, referencia: CpuState): strin
   const banco = modelo.banco as EstadoBanco;
   const contador = modelo.pc as EstadoPc;
   const memoria = modelo.memoria as EstadoMemoria;
+  const saida = (modelo.saida as EstadoSaida).palavras;
+
+  if (saida.length !== referencia.saida.length) {
+    return `saída: modelo falou ${saida.length} palavra(s), referência ${referencia.saida.length}`;
+  }
+  for (let i = 0; i < saida.length; i += 1) {
+    if (saida[i] !== referencia.saida[i]) {
+      return `saída[${i}]: modelo ${String(saida[i])}, referência ${String(referencia.saida[i])}`;
+    }
+  }
 
   for (let i = 0; i < 32; i += 1) {
     const meu = banco.regs[i] ?? 0;
@@ -53,18 +64,19 @@ function diferenca(modelo: Record<string, unknown>, referencia: CpuState): strin
 }
 
 /** Roda os dois lado a lado e devolve a primeira divergência, ou `null`. */
-function conferir(fonte: string, instrucoes: number): string | null {
+function conferir(fonte: string, instrucoes: number, entrada = 0): string | null {
   const image = montar(fonte);
   const spec = cpuWorld(image);
   const tree = indexTree(spec.root);
+  const params = { ...spec.params, entrada };
 
   let mundo = initialWorld(tree);
-  let cpu = initialCpu(image);
+  let cpu = initialCpu(image, 0, entrada);
 
   for (let k = 0; k < instrucoes; k += 1) {
     cpu = stepCpu(cpu);
     for (let t = 0; t < (k === 0 ? ATRASO : 1); t += 1) {
-      mundo = stepWorld(spec, tree, mundo, spec.params);
+      mundo = stepWorld(spec, tree, mundo, params);
     }
     const achado = diferenca(mundo.nodes, cpu);
     if (achado !== null) return `instrução ${k + 1}: ${achado}`;
@@ -206,6 +218,42 @@ laco:   add  t0, t0, t1
         addi t3, t0, 0
         `,
         20,
+      ),
+    ).toBeNull();
+  });
+
+  it("entrada e saída mapeadas em memória: um endereço que não é memória", () => {
+    // Guardar em 0x1000 é falar; ler de 0x1004 é ouvir. Não há instrução nova —
+    // é a mesma `sw` e a mesma `lw`, e é assim que máquina pequena conversa com
+    // o mundo de verdade.
+    expect(
+      conferir(
+        `
+        lui  t0, 1          # 0x1000
+        addi t1, x0, 42
+        sw   t1, 0(t0)      # fala 42
+        lw   t2, 4(t0)      # ouve a entrada
+        add  t3, t2, t2
+        sw   t3, 0(t0)      # fala o dobro
+        `,
+        6,
+        7,
+      ),
+    ).toBeNull();
+  });
+
+  it("guardar no endereço de saída não deixa o valor parado na memória", () => {
+    // Se ficasse, a memória cresceria com números que ninguém escreveu ali — e
+    // o `lw` do mesmo endereço devolveria o eco em vez de zero.
+    expect(
+      conferir(
+        `
+        lui  t0, 1
+        addi t1, x0, 9
+        sw   t1, 0(t0)
+        lw   t2, 0(t0)      # tem que ler zero, e não o 9 que acabou de falar
+        `,
+        4,
       ),
     ).toBeNull();
   });

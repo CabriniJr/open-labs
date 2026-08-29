@@ -78,6 +78,25 @@
   accent-color: var(--accent);
 }
 
+.cpu-lab__entrada {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--ink-muted);
+  font-size: var(--size-step--1);
+}
+
+.cpu-lab__entrada input {
+  width: 4.5rem;
+  padding: 0.25rem 0.4rem;
+  background: var(--paper-raised);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-1);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: var(--size-step--1);
+}
+
 .cpu-lab__tick {
   color: var(--ink-faint);
   font-size: var(--size-step--1);
@@ -144,6 +163,24 @@
   border-radius: var(--radius-2);
   color: var(--ink);
   font-size: var(--size-step--1);
+}
+
+.cpu-lab__falou {
+  margin: 0;
+  padding: var(--space-1);
+  background: var(--paper-raised);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-2);
+  color: var(--accent);
+  font-size: var(--size-step--1);
+  word-break: break-word;
+}
+
+.cpu-lab__nota {
+  margin: var(--space-1) 0 0;
+  color: var(--ink-muted);
+  font-size: var(--size-step--2, 0.75rem);
+  line-height: 1.5;
 }
 
 .cpu-lab__regs {

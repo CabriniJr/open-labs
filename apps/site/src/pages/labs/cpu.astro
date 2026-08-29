@@ -35,6 +35,13 @@ import "../../components/Explorer.css";
           acted this tick, so a part that sits still is a part that did nothing.
           Slow the clock down and follow one value through.
         </p>
+        <p>
+          The program also talks to the world, and it does so with no new
+          instruction: storing to <code>0x1000</code> is speaking, loading from
+          <code>0x1004</code> is listening to the dial. Two addresses that are
+          not memory — which is how a small machine has always had a keyboard
+          and a screen.
+        </p>
       </div>
       <aside class="lab-head__note mono">
         <p>Same engine as the OpenTelemetry handbook.</p>
