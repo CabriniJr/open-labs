@@ -341,3 +341,160 @@ descobrir no segundo alvo do que no quinto.
 - **Portas tipadas.** A §14 da spec do motor promete encaixe tipado. Com `transform`
   explícito, o tipo da porta passa a ser verificável de verdade — e o property test da
   §1.2 depende disso
+
+---
+
+## 9. Onda 4 — o que este catálogo ainda não cobre
+
+**Status:** proposta, 2026-08-28. Escrita depois de conferir os 19 contra os alvos declarados
+e contra a §6 da `DECISIONS.md` ("ver o mesmo dado atravessar os quatro níveis, até o frame e
+o byte"). Cada entrada paga em dois alvos, pela mesma trava da §3.
+
+O padrão do que falta: **os 19 cobrem bem 1→1 e N→1, e quase não cobrem identidade que se
+divide e se remonta.** `tee` replica (as cópias são independentes), `batch` agrupa (o lote é
+uma carga nova), `merge` funde (a identidade de origem se perde). Nenhum dos três descreve
+uma carga que **vira pedaços e volta a ser ela mesma** — que é literalmente o L2. Sem isso, o
+diferencial do projeto não tem arquétipo.
+
+### 9.1 O par que falta: `fragment` e `reassemble`
+
+Não é `tee` (cópias independentes), não é `batch` (agrupa em carga nova), não é `transform`
+(1→1). É **1→N pedaços que continuam sendo a mesma carga**, e depois N→1 de volta.
+
+| `fragment` | |
+|---|---|
+| Portas | uma entrada, uma saída, descarte |
+| Comportamento | corta a carga em pedaços de tamanho máximo declarado; cada pedaço carrega a identidade do original e o seu índice |
+| Regimes | passando inteiro (cabe), fragmentando, recusando (não cabe e não pode fragmentar) |
+| Medidores | pedaços por carga; **sobrecarga de cabeçalho** — é o que ensina por que fragmentar custa |
+| Perturbações | limite de tamanho encolhendo em tempo de execução |
+| Desenho | a carga entra inteira e sai em pedaços **da mesma cor**, numerados |
+| Paga em | HTTP/2 (`SETTINGS_MAX_FRAME_SIZE`), TCP/IP (MSS e PMTUD), MQTT (payload grande), protobuf (campo que atravessa fronteira de frame) |
+
+| `reassemble` | |
+|---|---|
+| Portas | uma entrada, uma saída, descarte, **e um gatilho de tempo limite** |
+| Comportamento | junta pedaços por identidade até completar; incompleto expira e **é descartado inteiro** |
+| Regimes | montando, completo, expirado |
+| Medidores | pedaços em espera; cargas perdidas por pedaço faltando |
+| Perturbações | um pedaço perdido — que é como se ensina por que perder 1 de 10 custa os 10 |
+| Desenho | os pedaços se encaixam e a carga volta à forma original |
+| Paga em | os mesmos quatro |
+
+O par é indivisível: `fragment` sem `reassemble` ensina que cortar é grátis.
+
+### 9.2 `mux` e `demux` — muitos fluxos lógicos num caminho físico
+
+`merge` funde e perde a origem. Multiplexar **preserva** a identidade do fluxo para que o
+outro lado possa separar de novo. É a diferença entre juntar e entrelaçar, e é o coração do
+HTTP/2.
+
+| Contrato | |
+|---|---|
+| Portas | `mux`: N entradas nomeadas, uma saída. `demux`: uma entrada, N saídas |
+| Comportamento | intercala por política (justo, prioridade, peso); cada carga leva o id do fluxo |
+| Regimes | entrelaçando, um fluxo dominando, um fluxo faminto |
+| Medidores | ocupação do caminho por fluxo; **bloqueio de cabeça de fila** |
+| Perturbações | um fluxo grande e lento junto de vários pequenos |
+| Desenho | faixas de cor diferente compartilhando um cano; do outro lado, separam |
+| Paga em | HTTP/2 (streams numa conexão), MQTT (tópicos numa sessão), Kafka (produtores numa conexão) |
+
+Sem `mux`, "abrir o canal e entender o gRPC" — o exemplo que motivou o projeto — não tem
+como ser desenhado com honestidade.
+
+### 9.3 `enrich` — muda o conteúdo sem mudar a forma
+
+O invariante da §1.2 diz que a **forma** da carga só muda saindo de um `transform`. Mas a
+maioria dos processadores reais não muda a forma: eles **acrescentam campo**. Tratar isso como
+`transform` faria o invariante mentir — o desenho mostraria a carga mudando de aparência onde
+ela não muda.
+
+| Contrato | |
+|---|---|
+| Portas | uma entrada, uma saída, e uma entrada de **consulta** para a placa que fornece os dados |
+| Comportamento | acrescenta ou reescreve campos; a forma da carga é a mesma nas duas pontas; **o peso cresce** |
+| Regimes | enriquecendo, fonte indisponível (passa sem enriquecer, ou segura) |
+| Medidores | crescimento de peso por carga — o custo de anexar contexto |
+| Perturbações | fonte de dados lenta ou fora do ar |
+| Desenho | a carga sai da mesma forma, **maior**, com o campo novo aceso |
+| Paga em | OTel (atributos de recurso, processadores de atributo), Prometheus (relabeling), Kafka (cabeçalhos), qualquer correlação |
+
+### 9.4 `aggregate` — N cargas viram **uma medida**, não um lote
+
+`batch` agrupa N em uma carga de peso N: os itens continuam lá dentro. Agregar **descarta os
+itens** e guarda uma medida. A diferença é a coisa mais confusa de métrica, e o catálogo atual
+não tem como desenhá-la.
+
+| Contrato | |
+|---|---|
+| Portas | uma entrada, uma saída, gatilho de controle |
+| Comportamento | dobra as cargas numa medida (soma, contagem, histograma); política de temporalidade: **cumulativa** (nunca zera) ou **delta** (zera a cada emissão) |
+| Regimes | acumulando, emitindo, ocioso |
+| Medidores | cardinalidade — quantas séries distintas estão vivas; razão de compressão (entrada contra saída) |
+| Perturbações | **explosão de cardinalidade**, que é o modo de falha nº 1 de métrica na vida real |
+| Desenho | as cargas entram e **desaparecem** dentro de um mostrador que sobe. Nada sai até o gatilho |
+| Paga em | Meter Provider (a Entrega 4 inteira), Prometheus (TSDB e `rate`), Kafka Streams, qualquer painel |
+
+Delta contra cumulativa desenhadas lado a lado é, sozinho, um lab que vale o projeto.
+
+### 9.5 `correlate` — casa duas cargas por chave
+
+`merge` junta sem casar. Correlacionar **espera o par** e expira se ele não vier. É o que
+falta para amostragem por cauda, e a §5 já precisou disso à mão dentro do `probe`.
+
+| Contrato | |
+|---|---|
+| Portas | duas entradas nomeadas, uma saída de casados, uma de órfãos, gatilho de tempo limite |
+| Comportamento | guarda por chave até o par chegar; sem par até o limite, sai por órfãos |
+| Regimes | casando, esperando, expirando |
+| Medidores | taxa de casamento; espera até casar; órfãos por lado |
+| Perturbações | um lado atrasado, um lado que não vem |
+| Desenho | duas correntes que se encontram; o que casa segue junto, o que não casa cai |
+| Paga em | OTel (amostragem por cauda: segurar todos os pedaços de um mesmo rastro antes de decidir), `probe` (requisição e resposta), MQTT (QoS 2), Kafka (junção de fluxos) |
+
+Repare que isto **reescreve** o `probe` da §5: ele deixa de correlacionar à mão e vira
+`clock` + emissor + `correlate`. Um arquétipo que simplifica outro é o melhor sinal de que
+faltava mesmo.
+
+### 9.6 `partition` — a mesma chave sempre na mesma saída
+
+`router` escolhe porta por política, e nada o obriga a ser estável. Particionar promete
+**estabilidade por chave**, e é dela que vem a garantia de ordem. Sem isso não dá para
+ensinar por que Kafka ordena dentro da partição e não entre partições.
+
+| Contrato | |
+|---|---|
+| Portas | uma entrada, N saídas |
+| Comportamento | função da chave para a saída; **a mesma chave cai sempre na mesma** |
+| Regimes | equilibrado, torto (uma chave quente), **remapeando** |
+| Medidores | distribuição por saída; desequilíbrio; chaves remapeadas num rebalanceamento |
+| Perturbações | mudar o número de saídas — que é o que ensina hash consistente, porque o desequilíbrio da remapeação aparece |
+| Desenho | leque com rótulo de chave; a mesma cor cai sempre no mesmo ramo |
+| Paga em | Kafka (partição, e a ordem que ela garante), OTel (exportador com balanceamento por rastro), qualquer armazenamento fatiado |
+
+### 9.7 Resumo revisado
+
+| Onda | Arquétipos | Acumulado |
+|---|---|---|
+| Hoje | os 8 | 8 |
+| Onda 1 (v0) | `transform` `tee` `merge` `batch` `clock` `arbiter` | 14 |
+| Onda 2 (Kafka) | `log` `deliver` `supervisor` | 17 |
+| Onda 3 (Prometheus) | `store` `probe` | 19 |
+| **Onda 4 (L2/L3 e métrica)** | `fragment` `reassemble` `mux` `demux` `enrich` `aggregate` `correlate` `partition` | **27** |
+
+### 9.8 O que muda nas ondas anteriores
+
+1. **`probe` encolhe**: passa a ser composição de `clock` + emissor + `correlate` (§9.5).
+2. **`enrich` sai de dentro de `transform`**, e o invariante da §1.2 fica verdadeiro em vez de
+   quase verdadeiro: forma muda só no `transform`, **conteúdo** muda também no `enrich`.
+3. **A onda 1 ganha prioridade nova.** `aggregate` paga na Entrega 4 inteira (Meter Provider),
+   que já está no roteiro — provavelmente deveria subir para a onda 1.
+
+### 9.9 Continua fora, e por quê
+
+| Candidato | Por que não |
+|---|---|
+| `dedupe` | É `store` mais predicado. Tentar como política antes de virar arquétipo |
+| `compress` | É `transform` cuja medida interessante é a razão de tamanho, que o `transform` já mede |
+| `filter` | É `router` com uma saída ligada ao descarte. Criar um arquétipo para isso ensinaria que filtrar e rotear são coisas diferentes, quando não são |
+| `window` | Provável política de `aggregate` e de `batch` (gatilho por tempo, deslizante ou não). Decidir junto com a temporalidade |
