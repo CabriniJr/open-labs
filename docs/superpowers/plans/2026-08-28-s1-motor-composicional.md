@@ -1523,11 +1523,56 @@ ausência é sequenciamento e não esquecimento.
 Run: `pnpm test && pnpm typecheck && pnpm boundaries`
 Expected: tudo verde, incluindo `Fronteira motor↔domínio intacta.`
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 7: O fio esquecido deixa de ser indistinguível do descarte**
+
+Achado da Task 3: uma emissão cuja porta não tem destino (`resolveTarget` devolve `null`) é
+contada no livro-caixa como qualquer travessia e some do trânsito — exatamente como um
+descarte explícito (`to: DROP`). Ou seja, **o autor que esquece de ligar um fio vê a mesma
+coisa que o autor que descartou de propósito**: mensagens saindo e nada chegando, com o
+medidor parecendo normal.
+
+Descartar é uma decisão do modelo e precisa ser visível como decisão. Esquecer o fio é um
+defeito de autoria e precisa gritar. Hoje os dois são o mesmo silêncio, e essa é a classe de
+defeito que a §2.1 diz ser inaceitável.
+
+Em `scheduler.ts`, onde a emissão é resolvida, contar a saída sem destino numa chave própria:
+
+```ts
+    if (destino === null) {
+      // Sem fio declarado e sem descarte: não é uma decisão do modelo, é um
+      // buraco na autoria. Fica contado numa chave própria para que o modo autor
+      // possa acusá-lo, em vez de virar o mesmo silêncio de um descarte.
+      bump(`${node.id}.${emission.port}.unwired`, 1);
+      continue;
+    }
+```
+
+E acrescentar ao `scheduler.test.ts`:
+
+```ts
+  it("saída sem fio é contada à parte, não confundida com descarte", () => {
+    const solto: WorldSpec = {
+      ...spec,
+      wires: [{ from: "src", port: "out", to: "gate" }],
+    };
+    const t = indexTree(solto.root);
+    let estado = initialWorld(solto, t);
+    for (let i = 0; i < 6; i += 1) estado = stepWorld(solto, t, estado, solto.params);
+
+    expect(estado.ledger["gate.keep"]).toBeGreaterThan(0);
+    expect(estado.ledger["gate.keep.unwired"]).toBe(estado.ledger["gate.keep"]);
+    expect(estado.ledger["gate.drop.unwired"]).toBeUndefined();
+  });
+```
+
+Repare no contraste que o teste prende: `gate.keep` sem fio acumula `.unwired`; `gate.drop`,
+que continua ligado ao `DROP`, **não** acumula — porque descartar é decisão, não buraco.
+
+- [ ] **Step 8: Commit**
 
 ```bash
 git add packages/depth-core package.json pnpm-lock.yaml
-git commit -m "feat(depth-core): sorteio enderecavel com pure-rand e propriedades com fast-check"
+git commit -m "feat(depth-core): sorteio enderecavel, propriedades, e o fio esquecido visivel"
 ```
 
 ---
