@@ -45,3 +45,32 @@ export function resolveTarget(
 
   return resolveTarget(tree, wires, parent, "out");
 }
+
+/** Para onde vai um sinal que sai de `(from, port)`, e em que porta ele chega. */
+export interface SignalTarget {
+  readonly to: string;
+  readonly toPort: PortId;
+}
+
+/**
+ * Sinal em leque é a regra, não a exceção: um controle aciona vários. Por isso
+ * esta devolve uma lista, ao contrário de `resolveTarget`, que percorre carga e
+ * onde leque de dado é recusado na validação.
+ *
+ * Sinal também não atravessa contêiner nem sobe para o pai: o destinatário é
+ * nomeado, e `validateWorld` já garantiu que ele age.
+ */
+export function resolveSignalTargets(
+  wires: readonly Wire[],
+  from: string,
+  port: PortId,
+): readonly SignalTarget[] {
+  const out: SignalTarget[] = [];
+  for (const wire of wires) {
+    if ((wire.line ?? "data") !== "control") continue;
+    if (wire.from !== from || wire.port !== port) continue;
+    if (wire.to === DROP || wire.toPort === undefined) continue;
+    out.push({ to: wire.to, toPort: wire.toPort });
+  }
+  return out;
+}

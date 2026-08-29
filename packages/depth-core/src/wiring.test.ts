@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { DROP } from "./model.js";
 import type { ObjectSpec, Wire } from "./model.js";
 import { indexTree } from "./tree.js";
-import { resolveTarget } from "./wiring.js";
+import { resolveSignalTargets, resolveTarget } from "./wiring.js";
 
 const leaf = (id: string, kind: ObjectSpec["kind"]): ObjectSpec => ({
   id,
@@ -80,5 +80,34 @@ describe("resolveTarget", () => {
       { from: "sink", port: "out", to: "src", line: "control" },
     ];
     expect(resolveTarget(tree, comControle, "sink", "out")).toBeNull();
+  });
+});
+
+describe("resolveSignalTargets", () => {
+  const wires: Wire[] = [
+    { from: "ctrl", port: "sel", to: "m1", line: "control", toPort: "sel" },
+    { from: "ctrl", port: "sel", to: "m2", line: "control", toPort: "sel" },
+    { from: "ctrl", port: "en", to: "m1", line: "control", toPort: "enable" },
+    { from: "ctrl", port: "sel", to: "d", line: "data" },
+  ];
+
+  it("devolve todos os destinos de um sinal: leque é a regra, não a exceção", () => {
+    expect(resolveSignalTargets(wires, "ctrl", "sel")).toEqual([
+      { to: "m1", toPort: "sel" },
+      { to: "m2", toPort: "sel" },
+    ]);
+  });
+
+  it("não confunde portas diferentes do mesmo controlador", () => {
+    expect(resolveSignalTargets(wires, "ctrl", "en")).toEqual([{ to: "m1", toPort: "enable" }]);
+  });
+
+  it("ignora linha de dado, mesmo saindo da mesma porta", () => {
+    const so = resolveSignalTargets(wires, "ctrl", "sel");
+    expect(so.map((s) => s.to)).not.toContain("d");
+  });
+
+  it("porta sem linha de controle nenhuma devolve lista vazia", () => {
+    expect(resolveSignalTargets(wires, "ctrl", "nada")).toEqual([]);
   });
 });
