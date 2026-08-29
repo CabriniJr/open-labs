@@ -160,10 +160,10 @@ export function GatesLab() {
               setTick(mundo.tick);
             }}
           >
-            Um ciclo
+            One cycle
           </button>
           <label className="gates-lab__compasso">
-            compasso
+            speed
             <input
               type="range"
               min={200}
