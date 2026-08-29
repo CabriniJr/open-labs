@@ -2,8 +2,19 @@
 import { readFileSync } from "node:fs";
 import { glob } from "node:fs/promises";
 
-/** Pacotes que não podem conhecer domínio nenhum. */
-const AGNOSTIC = ["packages/depth-core/", "packages/depth-ui/"];
+/**
+ * Pacotes que não podem conhecer domínio nenhum.
+ *
+ * `model-format` entra porque ele conhece `kind`, porta, fio e parâmetro —
+ * vocabulário do motor — e nada além disso. É o formato em que um handbook de
+ * outra tecnologia seria escrito; no dia em que ele souber o que é um exportador
+ * de telemetria, deixa de servir para o segundo alvo.
+ */
+const AGNOSTIC = [
+  "packages/depth-core/",
+  "packages/depth-ui/",
+  "packages/model-format/",
+];
 
 /** Pacotes de domínio que eles não podem importar. */
 const DOMAIN_PACKAGES = ["@ovh/otel-domain"];

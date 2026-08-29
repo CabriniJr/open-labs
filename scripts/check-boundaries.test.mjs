@@ -26,6 +26,22 @@ describe("findViolations", () => {
     expect(violations[0].reason).toContain("otlp");
   });
 
+  it("vigia o formato do modelo, que também é agnóstico", () => {
+    const found = findViolations(
+      "packages/model-format/src/compile.ts",
+      "// o collector chega aqui",
+    );
+    expect(found).toHaveLength(1);
+  });
+
+  it("não acusa o vocabulário do formato", () => {
+    const found = findViolations(
+      "packages/model-format/src/schema.ts",
+      "const port = { role: 'data', direction: 'drop' }; // fio, kind, parâmetro",
+    );
+    expect(found).toEqual([]);
+  });
+
   it("ignora arquivos fora dos pacotes agnósticos", () => {
     const source = 'import { parseTraceparent } from "@ovh/otel-domain";';
     expect(findViolations("apps/site/src/labs/hero/scenario.ts", source)).toEqual([]);

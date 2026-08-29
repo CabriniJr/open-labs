@@ -9,6 +9,17 @@ proposta. A tabela da §0 abaixo diz, campo a campo, o que é código.
 
 ---
 
+Nomenclatura decidida pelo Luigi em 28/08/2026: **`.model`** para o agregado que replica
+uma aplicação, **`.modelet`** para o componente. Resolve a crítica registrada em
+`VISION.md` §9.6 — `model` é palavra, e `modelet` se lê como diminutivo sem esforço.
+
+Ressalva pequena, e é de empacotamento, não de nome: `.model` sozinho é extensão genérica
+demais para não colidir com outra ferramenta na máquina de alguém. Proposta:
+**`<slug>.model.yaml`** e **`<slug>.modelet.yaml`** — mantém a palavra, ganha realce de
+sintaxe e validação por schema de graça em qualquer editor.
+
+---
+
 ## 0. O que já é código, e o que ainda é proposta
 
 Um documento de formato que não diz o que está implementado manda o autor tentar coisas
@@ -28,15 +39,6 @@ que não existem.
 O que a implementação acrescentou e não estava escrito aqui: **porta órfã e parâmetro morto
 são erro**, a direção da porta é conferida no uso, e duas linhas de dado saindo da mesma
 porta são recusadas (replicar carga é o `tee`, da onda 1).
-
-Nomenclatura decidida pelo Luigi em 28/08/2026: **`.model`** para o agregado que replica
-uma aplicação, **`.modelet`** para o componente. Resolve a crítica registrada em
-`VISION.md` §9.6 — `model` é palavra, e `modelet` se lê como diminutivo sem esforço.
-
-Ressalva pequena, e é de empacotamento, não de nome: `.model` sozinho é extensão genérica
-demais para não colidir com outra ferramenta na máquina de alguém. Proposta:
-**`<slug>.model.yaml`** e **`<slug>.modelet.yaml`** — mantém a palavra, ganha realce de
-sintaxe e validação por schema de graça em qualquer editor.
 
 ---
 
