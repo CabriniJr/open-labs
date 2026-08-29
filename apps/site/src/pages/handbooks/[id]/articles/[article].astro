@@ -1,0 +1,164 @@
+---
+import { getCollection, render } from "astro:content";
+import SiteFooter from "../../../../components/SiteFooter.astro";
+import SiteNav from "../../../../components/SiteNav.astro";
+import Base from "../../../../layouts/Base.astro";
+import { HANDBOOKS, handbookOf } from "../../../../data/handbooks";
+import { readingTime } from "../../../../lib/reading-time";
+import { url } from "../../../../lib/urls";
+import "../../../../styles/docs.css";
+import "../../../../styles/article.css";
+
+/**
+ * O artigo é a teoria da fase, e a página existe para ser lida na ordem em que
+ * a fase aparece no roadmap — por isso ela carrega a fase, o lab irmão e os
+ * vizinhos. Um artigo solto seria só um texto num site.
+ */
+export async function getStaticPaths() {
+  const artigos = await getCollection("articles");
+
+  return artigos.map((entry) => {
+    const [handbookId, slug] = entry.id.split("/");
+    const handbook = handbookId === undefined ? undefined : handbookOf(handbookId);
+    // Falhar o build, e não pular: um artigo cuja pasta não nomeia um handbook
+    // existente vira página órfã, sem fase, sem vizinhos e sem caminho de volta.
+    if (handbook === undefined || slug === undefined) {
+      throw new Error(
+        `o artigo "${entry.id}" não está sob um handbook conhecido — ` +
+          `pastas válidas: ${HANDBOOKS.map((h) => h.id).join(", ")}`,
+      );
+    }
+    if (entry.data.handbook !== handbook.id) {
+      throw new Error(
+        `o artigo "${entry.id}" está na pasta de "${handbook.id}" e o ` +
+          `frontmatter diz "${entry.data.handbook}"`,
+      );
+    }
+    return { params: { id: handbook.id, article: slug }, props: { entry, handbook } };
+  });
+}
+
+const { entry, handbook } = Astro.props;
+const { Content, headings } = await render(entry);
+
+const fase = handbook.phases.find((p) => p.number === entry.data.phase);
+if (fase === undefined) {
+  throw new Error(
+    `o artigo "${entry.id}" declara a fase ${entry.data.phase}, que não existe ` +
+      `em "${handbook.id}"`,
+  );
+}
+
+const tempo = readingTime(entry.body ?? "");
+
+/** A ordem de leitura é a do roadmap: fase acima, fase abaixo. */
+const irmaos = handbook.articles.filter((a) => a.status === "available");
+const posicao = irmaos.findIndex((a) => a.id === entry.id.split("/")[1]);
+const anterior = posicao > 0 ? irmaos[posicao - 1] : undefined;
+const proximo = posicao >= 0 ? irmaos[posicao + 1] : undefined;
+
+const artigoUrl = (id: string) => url(`handbooks/${handbook.id}/articles/${id}`);
+const secoes = headings.filter((h) => h.depth === 2);
+---
+
+<Base
+  title={`${entry.data.title} — ${handbook.name}`}
+  description={entry.data.dek}
+  domain={handbook.id}
+>
+  <SiteNav current="handbooks" />
+
+  <main id="content" class="article">
+    <header class="article__head editorial">
+      <div>
+        <p class="article__eyebrow mono">
+          <a href={url(`handbooks/${handbook.id}`)}>{handbook.name}</a>
+          <span aria-hidden="true"> · </span>
+          <span>phase {entry.data.phase} · {fase.title}</span>
+        </p>
+        <h1>{entry.data.title}</h1>
+        <p class="article__dek">{entry.data.dek}</p>
+      </div>
+      <aside class="article__meta mono">
+        <p>{tempo.minutes} min read</p>
+        <p>{entry.data.sources.length} primary sources</p>
+        {
+          entry.data.lab && (
+            <p>
+              <a href={url(entry.data.lab)}>open the lab →</a>
+            </p>
+          )
+        }
+      </aside>
+    </header>
+
+    <div class="article__body">
+      {
+        secoes.length > 1 && (
+          <nav class="article__toc" aria-label="On this page">
+            <p class="mono">On this page</p>
+            <ol>
+              {secoes.map((s) => (
+                <li>
+                  <a href={`#${s.slug}`}>{s.text}</a>
+                </li>
+              ))}
+            </ol>
+          </nav>
+        )
+      }
+
+      <article class="prose article__prose">
+        <Content />
+
+        <section class="sources" aria-labelledby="sources-title">
+          <h2 id="sources-title">Primary sources</h2>
+          <p class="sources__note">
+            Cited above by name. Where a source has no link it is because none
+            is stable enough to print — the citation is what you search for.
+          </p>
+          <ol>
+            {
+              entry.data.sources.map((fonte) => (
+                <li id={`src-${fonte.id}`}>
+                  {/* Tudo numa linha so: o Astro preserva o espaco em branco
+                      como HTML, e a quebra de linha antes do ponto final vira
+                      um espaco impresso — "Switching Circuits ." */}
+                  <p class="sources__cite">
+                    <span class="sources__author">{fonte.author}</span>{` (${fonte.year}). `}{fonte.url ? (<a href={fonte.url} rel="noopener"><cite>{fonte.title}</cite></a>) : (<cite>{fonte.title}</cite>)}{`. ${fonte.where}.`}
+                  </p>
+                  <p class="sources__why">{fonte.note}</p>
+                </li>
+              ))
+            }
+          </ol>
+        </section>
+      </article>
+    </div>
+
+    <nav class="article__around" aria-label="Reading order">
+      {
+        anterior ? (
+          <a class="article__around-link" href={artigoUrl(anterior.id)}>
+            <span class="mono">← phase {anterior.phase}</span>
+            <span>{anterior.title}</span>
+          </a>
+        ) : (
+          <span />
+        )
+      }
+      {
+        proximo ? (
+          <a class="article__around-link article__around-link--next" href={artigoUrl(proximo.id)}>
+            <span class="mono">phase {proximo.phase} →</span>
+            <span>{proximo.title}</span>
+          </a>
+        ) : (
+          <span />
+        )
+      }
+    </nav>
+  </main>
+
+  <SiteFooter />
+</Base>

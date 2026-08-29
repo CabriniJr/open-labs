@@ -138,8 +138,20 @@ const RISCV: Handbook = {
     { number: 6, title: "Assembly", line: "Your program is the input. The CPU is the model that consumes it." },
   ],
   articles: [
-    { id: "high-or-low", title: "High or low: what a bit costs", status: "coming", phase: 1 },
-    { id: "from-transistor-to-adder", title: "From transistor to adder", status: "coming", phase: 2 },
+    {
+      id: "high-or-low",
+      title: "High or low: what a bit costs",
+      status: "available",
+      phase: 1,
+      href: "handbooks/riscv/articles/high-or-low",
+    },
+    {
+      id: "from-transistor-to-adder",
+      title: "From transistor to adder",
+      status: "available",
+      phase: 2,
+      href: "handbooks/riscv/articles/from-transistor-to-adder",
+    },
     { id: "the-register-file", title: "The register file", status: "coming", phase: 3 },
     { id: "one-instruction-end-to-end", title: "One instruction, end to end", status: "coming", phase: 4 },
     { id: "control-is-not-data", title: "Control is not data", status: "coming", phase: 5 },

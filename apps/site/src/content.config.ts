@@ -20,4 +20,46 @@ const docs = defineCollection({
   schema: z.object({}).passthrough(),
 });
 
-export const collections = { docs };
+/**
+ * Um artigo é a teoria do assunto, e ele mora numa coleção própria porque não é
+ * documentação de projeto: `docs/` é em português e fala do motor; o artigo é
+ * em inglês e fala do tema, ao lado do lab da mesma fase.
+ *
+ * O que o frontmatter carrega é o que a página promete e o corpo tem que
+ * honrar: o conceito prático no cabeçalho (`dek`) e as **fontes primárias**.
+ * Elas ficam aqui, e não escritas à mão no meio do texto, porque duas listas
+ * da mesma coisa divergem — foi o que já aconteceu entre o mapa e o catálogo de
+ * labs. O texto cita apontando para `#src-<id>`, e um teste cobra os dois lados.
+ */
+const fonte = z.object({
+  /** Como o texto chama esta fonte: o link no corpo é `#src-<id>`. */
+  id: z.string().regex(/^[a-z0-9-]+$/),
+  author: z.string(),
+  year: z.string(),
+  title: z.string(),
+  /** Onde saiu: periódico, editora, escritório de patentes, comitê. */
+  where: z.string(),
+  /**
+   * Opcional de propósito. Uma fonte de 1938 pode não ter endereço estável, e
+   * inventar um é pior que não ter: quem confere descobre que o link mente.
+   */
+  url: z.string().url().optional(),
+  /** Por que vale abrir esta, em uma frase. */
+  note: z.string(),
+});
+
+const articles = defineCollection({
+  loader: glob({ pattern: "**/*.md", base: "./src/content/articles" }),
+  schema: z.object({
+    title: z.string(),
+    /** O conceito prático, definido, que vai no cabeçalho. */
+    dek: z.string(),
+    handbook: z.string(),
+    phase: z.number().int().positive(),
+    /** O lab da mesma fase, quando já existe: o artigo é a teoria dele. */
+    lab: z.string().optional(),
+    sources: z.array(fonte).min(1),
+  }),
+});
+
+export const collections = { docs, articles };

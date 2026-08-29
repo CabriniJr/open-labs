@@ -1,6 +1,7 @@
 import react from "@astrojs/react";
 import pagefind from "astro-pagefind";
 import { defineConfig } from "astro/config";
+import { drillDown } from "./src/lib/drill.ts";
 
 // O GitHub Pages serve em /<repo>/; a Vercel serve na raiz. Quem chama o build
 // declara onde vai servir, em vez de o código adivinhar.
@@ -42,6 +43,6 @@ export default defineConfig({
    */
   server: { port: 4321 },
   integrations: [react(), pagefind()],
-  markdown: { rehypePlugins: [removerTituloDuplicado] },
+  markdown: { rehypePlugins: [removerTituloDuplicado, drillDown] },
   build: { inlineStylesheets: "auto" },
 });

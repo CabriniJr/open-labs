@@ -1,0 +1,252 @@
+/*
+ * O artigo é a teoria da fase, e a página tem uma tarefa: sustentar leitura
+ * longa e ainda deixar o leitor descer quando bater a curiosidade.
+ *
+ * Duas decisões carregam o resto. A medida da linha é curta, porque prosa
+ * técnica com linha larga se perde na volta. E o degrau (`details.drill`) é
+ * desenhado como parte do texto, e não como caixa de aviso: ele é a mesma
+ * conversa um nível abaixo, não um aparte.
+ */
+
+.article {
+  --medida: 68ch;
+}
+
+.article__head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-3);
+  align-items: end;
+  max-width: 92rem;
+  margin-inline: auto;
+  padding: var(--space-5) var(--space-3) var(--space-3);
+}
+
+.article__eyebrow {
+  margin: 0 0 var(--space-1);
+  color: var(--accent);
+  font-size: var(--size-step--1);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.article__head h1 {
+  margin: 0 0 var(--space-2);
+  font-size: var(--size-step-3);
+  max-width: 22ch;
+  text-wrap: balance;
+}
+
+.article__dek {
+  margin: 0;
+  max-width: 58ch;
+  color: var(--muted);
+  font-size: var(--size-step-1);
+  line-height: 1.45;
+}
+
+.article__meta {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--size-step--1);
+  text-align: right;
+}
+
+.article__meta p {
+  margin: 0 0 0.35em;
+}
+
+.article__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+  max-width: 92rem;
+  margin-inline: auto;
+  padding: 0 var(--space-3) var(--space-4);
+}
+
+@media (min-width: 68rem) {
+  .article__body {
+    grid-template-columns: 15rem minmax(0, 1fr);
+  }
+
+  .article__toc {
+    position: sticky;
+    top: var(--space-4);
+    align-self: start;
+  }
+}
+
+.article__toc p {
+  margin: 0 0 var(--space-1);
+  color: var(--muted);
+  font-size: var(--size-step--2);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.article__toc ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-left: 1px solid var(--rule);
+}
+
+.article__toc li {
+  margin: 0;
+}
+
+.article__toc a {
+  display: block;
+  padding: 0.3em 0 0.3em var(--space-2);
+  color: var(--muted);
+  font-size: var(--size-step--1);
+  text-decoration: none;
+  line-height: 1.35;
+}
+
+.article__toc a:hover,
+.article__toc a:focus-visible {
+  color: var(--accent);
+}
+
+.article__prose {
+  max-width: var(--medida);
+}
+
+.article__prose h2 {
+  margin-top: var(--space-4);
+  font-size: var(--size-step-2);
+  scroll-margin-top: var(--space-4);
+}
+
+/* O degrau: fechado por padrão, porque o valor dele é ser uma escolha. */
+.drill {
+  margin: var(--space-3) 0;
+  border-left: 2px solid var(--accent);
+  padding-left: var(--space-2);
+}
+
+.drill > summary {
+  cursor: pointer;
+  color: var(--accent);
+  font-size: var(--size-step--1);
+  letter-spacing: 0.02em;
+  list-style: none;
+}
+
+.drill > summary::-webkit-details-marker {
+  display: none;
+}
+
+.drill > summary::before {
+  content: "▸ ";
+  display: inline-block;
+  transition: transform 120ms ease;
+}
+
+.drill[open] > summary::before {
+  content: "▾ ";
+}
+
+.drill > summary:hover,
+.drill > summary:focus-visible {
+  text-decoration: underline;
+}
+
+.drill > *:not(summary) {
+  color: var(--muted);
+  font-size: var(--size-step--1);
+}
+
+.drill > p:last-child {
+  margin-bottom: 0;
+}
+
+/* As fontes não são rodapé: são o que sustenta o texto, e aparecem inteiras. */
+.sources {
+  margin-top: var(--space-5);
+  border-top: 1px solid var(--rule);
+  padding-top: var(--space-3);
+}
+
+.sources h2 {
+  margin: 0 0 var(--space-1);
+  font-size: var(--size-step-1);
+}
+
+.sources__note {
+  margin: 0 0 var(--space-2);
+  color: var(--muted);
+  font-size: var(--size-step--1);
+  max-width: 52ch;
+}
+
+.sources ol {
+  margin: 0;
+  padding-left: 1.4em;
+}
+
+.sources li {
+  margin-bottom: var(--space-2);
+}
+
+.sources__cite {
+  margin: 0;
+}
+
+.sources__author {
+  font-weight: 500;
+}
+
+.sources__year,
+.sources__why {
+  color: var(--muted);
+}
+
+.sources__why {
+  margin: 0.2em 0 0;
+  font-size: var(--size-step--1);
+  max-width: 56ch;
+}
+
+.article__around {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+  max-width: 92rem;
+  margin-inline: auto;
+  padding: 0 var(--space-3) var(--space-5);
+}
+
+.article__around-link {
+  display: grid;
+  gap: 0.2em;
+  max-width: 22rem;
+  padding: var(--space-2);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  text-decoration: none;
+}
+
+.article__around-link--next {
+  text-align: right;
+  margin-left: auto;
+}
+
+.article__around-link .mono {
+  color: var(--muted);
+  font-size: var(--size-step--2);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 48rem) {
+  .article__head {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .article__meta {
+    text-align: left;
+  }
+}

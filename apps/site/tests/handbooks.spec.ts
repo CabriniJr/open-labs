@@ -21,7 +21,15 @@ test("a handbook page shows roadmap, articles and labs", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Articles and labs" })).toBeVisible();
   await expect(page.locator(".hb-phase")).toHaveCount(6);
   await expect(page.locator(".hb-group")).toHaveCount(6);
-  await expect(page.locator(".hb-item").first()).toContainText("coming");
+  // Um item pronto é um link; um item por escrever é texto. A página não pode
+  // anunciar como pronto o que não abre, nem esconder o que já está escrito.
+  const prontos = page.locator(".hb-item").filter({ has: page.locator(".status--available") });
+  expect(await prontos.count()).toBeGreaterThan(0);
+  for (let i = 0; i < (await prontos.count()); i++) {
+    await expect(prontos.nth(i).locator("a")).toHaveCount(1);
+  }
+  const porEscrever = page.locator(".hb-item").filter({ has: page.locator(".status--coming") });
+  await expect(porEscrever.first().locator("a")).toHaveCount(0);
 });
 
 test("both handbooks draw their own interactive map", async ({ page }) => {

@@ -58,6 +58,7 @@ if (orfaos.length > 0) {
 
 <Base
   title={`${handbook.name} — OpenLabs`}
+  domain={handbook.id}
   description={handbook.blurb}
 >
   <SiteNav current="handbooks" />
@@ -120,7 +121,14 @@ if (orfaos.length > 0) {
               <ul class="hb-items">
                 {grupo.articles.map((item) => (
                   <li class="hb-item">
-                    <span>{item.title}</span>
+                    {/* Mesma marcação dos labs de propósito: um artigo escrito
+                        que aparece como texto morto é indistinguível de um que
+                        não existe — foi o que aconteceu com os dois labs. */}
+                    {item.href === undefined ? (
+                      <span>{item.title}</span>
+                    ) : (
+                      <a href={url(item.href)}>{item.title}</a>
+                    )}
                     <span class={`status status--${item.status}`}>
                       {ITEM_STATUS_LABEL[item.status]}
                     </span>
