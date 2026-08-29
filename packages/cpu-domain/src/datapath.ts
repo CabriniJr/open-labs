@@ -469,13 +469,28 @@ const saida: ObjectSpec<EstadoSaida> = {
 /** A árvore. Contêineres organizam e nunca têm comportamento. */
 export function cpuWorld(
   image: readonly number[],
-  opcoes: { readonly atalhoNaUla?: boolean; readonly seed?: number } = {},
+  opcoes: {
+    readonly atalhoNaUla?: boolean;
+    readonly seed?: number;
+    /**
+     * Abre cada porta do somador até o transistor.
+     *
+     * Fora por padrão, e a razão é medida e não gosto: são trinta e dois bits
+     * vezes cinco portas, e uma XOR sozinha são dezesseis transistores. Quem
+     * liga isto está pedindo a escada inteira — sistema até silício — e paga
+     * por ela em cada tick.
+     */
+    readonly transistoresNaUla?: boolean;
+  } = {},
 ): WorldSpec {
   const seed = opcoes.seed ?? 1;
   // A ULA vem aberta: descer até a porta lógica precisa mostrar coisa viva. O
   // caminho rápido existe e é provado equivalente — ele serve a quem precisa de
   // velocidade, não a quem está estudando.
-  const { objeto: ula, wires: fiosDaUla } = ulaComposta(opcoes.atalhoNaUla === true);
+  const { objeto: ula, wires: fiosDaUla } = ulaComposta(
+    opcoes.atalhoNaUla === true,
+    opcoes.transistoresNaUla === true,
+  );
   const logica: AnyObject = {
     id: "logica",
     kind: "composite",

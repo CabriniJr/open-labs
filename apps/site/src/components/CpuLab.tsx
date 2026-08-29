@@ -8,8 +8,11 @@ import {
   cpuWorld,
   CPU_VIEWS,
   decode,
+  LARGURA,
   portasAltas,
   VIEW_SISTEMA,
+  viewsDasPortas,
+  viewSomadorDaUla,
 } from "@ovh/cpu-domain";
 import type {
   AssemblyError,
@@ -46,7 +49,18 @@ const NOMES = [
   "s8", "s9", "s10", "s11", "t3", "t4", "t5", "t6",
 ] as const;
 
-const VIEWS: readonly View[] = CPU_VIEWS;
+/**
+ * As vistas do enquadramento, e — quando a ULA abre até o transistor — as
+ * esquemáticas de cada porta.
+ *
+ * Sem elas, aproximar uma porta encontraria a vista montada na hora, que
+ * enfileira os transistores na ordem em que a corrente passa. Está correta e
+ * não ensina: o que se quer ver é uma rede em série e outra em paralelo.
+ */
+function vistas(comTransistores: boolean): readonly View[] {
+  const base = [...CPU_VIEWS, viewSomadorDaUla(LARGURA)];
+  return comTransistores ? [...base, ...viewsDasPortas(LARGURA)] : base;
+}
 
 const hex = (n: number): string => `0x${(n >>> 0).toString(16).padStart(2, "0")}`;
 
@@ -64,7 +78,19 @@ export function CpuLab() {
   const [compasso, setCompasso] = useState(700);
   const [viewId, setViewId] = useState(VIEW_SISTEMA.id);
   const [entrada, setEntrada] = useState(5);
+  /**
+   * A ULA aberta até o transistor.
+   *
+   * Desligado por padrão, e a razão é medida: são trinta e dois bits vezes
+   * cinco portas, e uma XOR sozinha são dezesseis transistores — 247 objetos
+   * viram 3639, e o tick sai de 2ms para 130ms. Ligar é pedir a escada inteira,
+   * de sistema a silício, e pagar por ela em cada ciclo. Quem está estudando o
+   * caminho de dados não precisa disso; quem foi até o fundo, precisa.
+   */
+  const [transistores, setTransistores] = useState(false);
   const mundoRef = useRef<World | null>(null);
+  const entradaRef = useRef(entrada);
+  entradaRef.current = entrada;
 
   // Programa não é parâmetro: um programa novo é um mundo novo, começando no
   // tick 0. Tratá-lo como parâmetro faria rebobinar atravessar uma fronteira
@@ -81,13 +107,6 @@ export function CpuLab() {
     }
     setErros([]);
     setMontado({ words: r.image.words, lineOf: r.image.lineOf });
-    const novo = new World(cpuWorld(r.image.words));
-    // O botão vale desde o começo deste programa: o mundo nasce no tick 0 e a
-    // primeira leitura da entrada só acontece bem depois.
-    novo.setParam("entrada", entrada);
-    mundoRef.current = novo;
-    setTick(0);
-    setRodando(true);
   };
 
   useEffect(() => {
@@ -103,28 +122,64 @@ export function CpuLab() {
     mundoRef.current?.setParam("entrada", valor);
   };
 
+  /**
+   * Um `spec` só, e tudo sai dele — o mundo que roda e o desenho.
+   *
+   * Eram três chamadas de `cpuWorld` com as mesmas palavras: uma para o mundo,
+   * duas para o que se desenha. Funcionava por serem estruturalmente iguais — e
+   * é exatamente o tipo de coincidência que se rompe em silêncio no dia em que
+   * uma delas ganhar uma opção que a outra não tem. Foi o que aconteceria aqui:
+   * abrir a ULA até o transistor é opção do `spec`, e o desenho teria ficado
+   * mostrando a versão sem eles.
+   */
+  const spec = useMemo(
+    () =>
+      montado === null
+        ? null
+        : cpuWorld(montado.words, { transistoresNaUla: transistores }),
+    [montado, transistores],
+  );
+  const arvore = useMemo(() => (spec === null ? null : indexTree(spec.root)), [spec]);
+
+  /**
+   * Mundo novo a cada `spec` novo, e no mesmo render.
+   *
+   * Criá-lo num efeito deixaria um quadro com a árvore nova e o estado velho —
+   * o desenho tentando pintar objetos que aquele estado não conhece. Um quadro
+   * só, e mentindo.
+   */
+  const mundo = useMemo(() => {
+    if (spec === null) return null;
+    const novo = new World(spec);
+    // O botão vale desde o começo deste programa: o mundo nasce no tick 0 e a
+    // primeira leitura da entrada só acontece bem depois.
+    novo.setParam("entrada", entradaRef.current);
+    return novo;
+  }, [spec]);
+  mundoRef.current = mundo;
+
+  useEffect(() => {
+    if (mundo === null) return;
+    setTick(0);
+    setRodando(true);
+  }, [mundo]);
+
   useEffect(() => {
     if (!rodando) return;
     const id = window.setInterval(() => {
-      const mundo = mundoRef.current;
-      if (mundo === null) return;
-      mundo.advance(1);
-      setTick(mundo.tick);
+      const agora = mundoRef.current;
+      if (agora === null) return;
+      agora.advance(1);
+      setTick(agora.tick);
     }, compasso);
     return () => window.clearInterval(id);
-  }, [rodando, compasso, montado]);
+  }, [rodando, compasso, mundo]);
 
-  const mundo = mundoRef.current;
   const estado: WorldState | null = mundo === null ? null : mundo.state;
   const anterior = mundo?.previousState;
 
-  const arvore = useMemo(
-    () => (montado === null ? null : indexTree(cpuWorld(montado.words).root)),
-    [montado],
-  );
-  const spec = useMemo(() => (montado === null ? null : cpuWorld(montado.words)), [montado]);
-
-  const view = VIEWS.find((v) => v.id === viewId) ?? VIEW_SISTEMA;
+  const views = useMemo(() => vistas(transistores), [transistores]);
+  const view = CPU_VIEWS.find((v) => v.id === viewId) ?? VIEW_SISTEMA;
 
   const banco = estado?.nodes.banco as EstadoBanco | undefined;
   const contador = estado?.nodes.pc as EstadoPc | undefined;
@@ -166,7 +221,7 @@ export function CpuLab() {
             previous={anterior}
             edgeTicks={spec.edgeTicks ?? 1}
             tickMs={compasso}
-            views={VIEWS}
+            views={views}
             inicial={view.focus}
             fills={fills}
             readouts={readouts}
@@ -225,8 +280,23 @@ export function CpuLab() {
           <span className="cpu-lab__tick mono">
             {estado === null ? "" : `${estado.substeps} substeps`}
           </span>
+          {/*
+            A escada inteira, e o preço dela dito em voz alta.
+            Trinta e dois bits vezes cinco portas, e uma XOR são dezesseis
+            transistores: o modelo passa de algumas centenas de peças para
+            milhares, e o ciclo fica visivelmente mais lento. Escondido num
+            padrão, isso viraria "o lab travou".
+          */}
+          <label className="cpu-lab__fundo">
+            <input
+              type="checkbox"
+              checked={transistores}
+              onChange={(e) => setTransistores(e.target.checked)}
+            />
+            <span>open the ALU down to the transistor</span>
+          </label>
           <div className="cpu-lab__views" role="group" aria-label="Framing">
-            {VIEWS.map((v) => (
+            {CPU_VIEWS.map((v) => (
               <button
                 key={v.id}
                 type="button"

@@ -90,6 +90,10 @@ export const VIEW_ULA: View = {
   height: 420,
   places: [
     { id: "dispersor", x: 30, y: 130, w: 140, h: 90 },
+    // O vai-um do bit zero, amarrado em zero. Estava implícito no circuito e
+    // virou linha de verdade quando a ULA passou a poder abrir até o
+    // transistor — onde "não me acionaram" deixa de poder valer zero.
+    { id: "cin0", x: 30, y: 250, w: 140, h: 46 },
     // A peça larga é larga porque é cara: são 32 somadores completos em fila.
     { id: "somador", x: 220, y: 40, w: 300, h: 150, collapsed: true },
     { id: "pesos", x: 570, y: 40, w: 180, h: 150, collapsed: true },
@@ -231,7 +235,19 @@ export function viewSomador(bits: number, comTransistores = false): View {
 export function viewsDoSomador(bits: number, comTransistores = false): readonly View[] {
   const somador = viewSomador(bits, comTransistores);
   if (!comTransistores) return [somador];
+  return [somador, ...viewsDasPortas(bits)];
+}
 
+/**
+ * As vistas esquemáticas de toda porta de um somador de `bits` bits.
+ *
+ * Vale para qualquer somador construído com `somadorCompleto`, e é por isso que
+ * mora aqui em vez de dentro do somador do lab: o somador da ULA usa o mesmo
+ * esquema de nomes, e sem isto descer nele encontraria a vista montada na hora
+ * — que enfileira transistor da esquerda para a direita e não mostra que uma
+ * rede está em série e a outra em paralelo, que é a coisa a aprender.
+ */
+export function viewsDasPortas(bits: number): readonly View[] {
   const portas: View[] = [];
   for (let i = 0; i < bits; i += 1) {
     for (const [sufixo, tipo] of PORTAS_DO_SOMADOR) {
@@ -240,7 +256,7 @@ export function viewsDoSomador(bits: number, comTransistores = false): readonly 
       }
     }
   }
-  return [somador, ...portas];
+  return portas;
 }
 
 /** As cinco portas de um somador completo, na ordem em que ele as monta. */
@@ -251,3 +267,47 @@ const PORTAS_DO_SOMADOR: readonly (readonly [string, PortaLogica])[] = [
   ["and2", "and"],
   ["or1", "or"],
 ];
+
+/**
+ * O somador de 32 bits da ULA, em serpentina.
+ *
+ * A vista montada na hora enfileirava os trinta e dois somadores numa linha só:
+ * dentro da caixa da ULA aquilo vira uma fita de mil e poucas unidades de
+ * largura por quarenta de altura, e o encaixe uniforme — que é o certo — a
+ * reduz a um fio de peças ilegíveis. Correta, e inútil.
+ *
+ * A serpentina mantém o que há para aprender: o vai-um **atravessa a largura
+ * inteira do número**, um estágio de cada vez, e é isso que custa profundidade.
+ * Ele continua andando em fila; a fila é que dobra ao chegar na borda, como a
+ * linha de um texto. A volta é desenhada da direita para a esquerda, e por isso
+ * a leitura não se perde na dobra.
+ */
+export function viewSomadorDaUla(bits: number, porLinha = 8): View {
+  const largura = 150;
+  const altura = 92;
+  const folga = 26;
+  const linhas = Math.ceil(bits / porLinha);
+
+  return {
+    id: "somador-da-ula",
+    focus: "somador",
+    title: "The carry walks the whole width of the number, one stage at a time",
+    width: porLinha * (largura + folga) + folga,
+    height: linhas * (altura + folga) + folga,
+    places: Array.from({ length: bits }, (_, i) => {
+      const linha = Math.floor(i / porLinha);
+      const coluna = i % porLinha;
+      // Linha ímpar volta ao contrário: é a dobra da serpentina, e sem ela o
+      // vai-um pularia da borda direita para a esquerda por cima de tudo.
+      const x = linha % 2 === 0 ? coluna : porLinha - 1 - coluna;
+      return {
+        id: `bit${i}`,
+        x: folga + x * (largura + folga),
+        y: folga + linha * (altura + folga),
+        w: largura,
+        h: altura,
+        collapsed: true as const,
+      };
+    }),
+  };
+}

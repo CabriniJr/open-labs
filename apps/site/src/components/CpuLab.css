@@ -214,3 +214,17 @@
 .cpu-lab__regs li span:first-child {
   color: var(--ink-muted);
 }
+
+/* A opção que abre a ULA até o silício, com o preço ao lado. */
+.cpu-lab__fundo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45em;
+  color: var(--muted);
+  font-size: var(--size-step--1);
+  cursor: pointer;
+}
+
+.cpu-lab__fundo input {
+  accent-color: var(--accent);
+}

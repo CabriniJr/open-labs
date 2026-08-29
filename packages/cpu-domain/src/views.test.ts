@@ -4,14 +4,23 @@ import { viewDisagreement } from "@ovh/depth-ui";
 import { assemble } from "./assembler.js";
 import { cpuWorld } from "./datapath.js";
 import { somadorWorld } from "./gates.js";
-import { CPU_VIEWS, VIEW_SISTEMA, viewSomador, viewsDoSomador } from "./views.js";
+import {
+  CPU_VIEWS,
+  VIEW_SISTEMA,
+  viewSomador,
+  viewSomadorDaUla,
+  viewsDasPortas,
+  viewsDoSomador,
+} from "./views.js";
+import { LARGURA } from "./alu.js";
+import { interiorDisagreement } from "@ovh/depth-ui";
 
 const r = assemble("addi t0, x0, 1");
 if (!r.ok) throw new Error("o programa de teste tem que montar");
 const tree = indexTree(cpuWorld(r.image.words).root);
 
 describe("as views do caminho de dados", () => {
-  it.each(CPU_VIEWS.map((v) => [v.id, v] as const))(
+  it.each([...CPU_VIEWS, viewSomadorDaUla(LARGURA)].map((v) => [v.id, v] as const))(
     "a view %s concorda com a árvore: não inventa e não esconde",
     (_id, view) => {
       expect(viewDisagreement(tree, view)).toBeNull();
@@ -70,6 +79,59 @@ describe("a view do somador de portas", () => {
         const separadas =
           a.x + a.w <= b.x || b.x + b.w <= a.x || a.y + a.h <= b.y || b.y + b.h <= a.y;
         expect(separadas, `"${a.id}" e "${b.id}" se sobrepõem`).toBe(true);
+      }
+    }
+  });
+});
+
+/**
+ * A escada da ULA, do sistema ao silício.
+ *
+ * Ela existe para ser descida por zoom, e descer por zoom é o desenho
+ * afirmando quem mora dentro de quem. Sem este teste, uma vista com o `focus`
+ * errado poria o interior de uma peça dentro de outra — e o leitor estudaria
+ * uma hierarquia que o modelo não tem.
+ */
+describe("a escada da ULA aberta até o transistor", () => {
+  const fundo = indexTree(cpuWorld(r.image.words, { transistoresNaUla: true }).root);
+  const portas = viewsDasPortas(LARGURA);
+
+  it("o somador da ULA cabe na caixa que a ULA dá a ele", () => {
+    const caixa = CPU_VIEWS.find((v) => v.id === "ula")?.places.find((p) => p.id === "somador");
+    expect(caixa).toBeDefined();
+    expect(interiorDisagreement(fundo, caixa!, viewSomadorDaUla(LARGURA))).toBeNull();
+  });
+
+  it("cada porta do somador tem a esquemática dela, e é dela mesmo", () => {
+    expect(portas.length).toBeGreaterThan(LARGURA * 5);
+    for (const view of portas) {
+      expect(viewDisagreement(fundo, view), `${view.id}`).toBeNull();
+    }
+  });
+
+  it("a serpentina não empilha dois bits no mesmo lugar", () => {
+    const lugares = viewSomadorDaUla(LARGURA).places;
+    const chaves = new Set(lugares.map((p) => `${p.x},${p.y}`));
+    expect(chaves.size).toBe(lugares.length);
+  });
+
+  /**
+   * O vai-um atravessa a largura inteira, e a dobra não pode desfazer isso: dois
+   * bits vizinhos têm que ficar vizinhos na tela, ou na mesma linha ou logo
+   * abaixo. É a única coisa que a serpentina precisa preservar.
+   */
+  it("bits vizinhos ficam vizinhos na tela", () => {
+    const lugares = viewSomadorDaUla(LARGURA).places;
+    for (let i = 1; i < lugares.length; i += 1) {
+      const antes = lugares[i - 1]!;
+      const agora = lugares[i]!;
+      const mesmaLinha = antes.y === agora.y;
+      const distancia = Math.abs(antes.x - agora.x);
+      if (mesmaLinha) {
+        expect(distancia, `bit${i - 1} e bit${i}`).toBe(antes.w + 26);
+      } else {
+        expect(distancia, `bit${i - 1} e bit${i} na dobra`).toBe(0);
+        expect(agora.y - antes.y).toBe(antes.h + 26);
       }
     }
   });

@@ -572,6 +572,7 @@ function Camada({
             <g
               key={place.id}
               className="dui-stage__objeto"
+              data-id={place.id}
               data-familia={fam}
               data-ativo={agindo ? "true" : undefined}
               data-alto={aceso ? "true" : undefined}
