@@ -88,9 +88,14 @@ describe("isOpenable", () => {
 });
 
 describe("flowChildren", () => {
+  it("preserva a ordem onde ela é contrato", () => {
+    const t = indexTree(root);
+    expect(flowChildren(t, "chain")).toEqual(["a", "b"]);
+  });
+
   it("ignora os estáticos, que não são atravessados", () => {
     const t = indexTree(root);
-    expect(flowChildren(t, "box")).toEqual(["gate", "chain"]);
+    expect(flowChildren(t, "box")).not.toContain("note");
   });
 });
 
@@ -106,17 +111,104 @@ describe("entryLeaf e exitLeaf", () => {
 describe("visibleChild", () => {
   it("devolve o filho do foco que contém a folha", () => {
     const t = indexTree(root);
-    expect(visibleChild(t, "root", "a")).toBe("box");
-    expect(visibleChild(t, "box", "a")).toBe("chain");
+    expect(visibleChild(t, "root", "a")).toEqual({ at: "child", id: "box" });
+    expect(visibleChild(t, "box", "a")).toEqual({ at: "child", id: "chain" });
   });
 
-  it("devolve null quando a folha é o próprio foco", () => {
+  it("devolve 'self' quando a folha é o próprio foco", () => {
     const t = indexTree(root);
-    expect(visibleChild(t, "gate", "gate")).toBeNull();
+    expect(visibleChild(t, "gate", "gate")).toEqual({ at: "self" });
   });
 
   it("devolve 'outside' quando a folha está fora do foco", () => {
     const t = indexTree(root);
-    expect(visibleChild(t, "box", "src")).toBe("outside");
+    expect(visibleChild(t, "box", "src")).toEqual({ at: "outside" });
+  });
+});
+
+describe("bordas que a revisão expôs", () => {
+  it("recusa id duplicado", () => {
+    expect(() =>
+      indexTree({
+        id: "r",
+        kind: "composite",
+        label: "r",
+        children: [leaf("dup", "sink"), leaf("dup", "sink")],
+      }),
+    ).toThrow(/id duplicado/);
+  });
+
+  it("recusa comportamento em objeto composto", () => {
+    expect(() =>
+      indexTree({
+        id: "r",
+        kind: "composite",
+        label: "r",
+        behavior: (state) => ({ state, out: [] }),
+        children: [leaf("a", "sink")],
+      }),
+    ).toThrow(/é composto e tem behavior/);
+  });
+
+  it("visibleChild recusa id que não existe em vez de dizer 'outside'", () => {
+    const t = indexTree(root);
+    expect(() => visibleChild(t, "root", "fantasma")).toThrow(/objeto desconhecido/);
+    expect(() => visibleChild(t, "fantasma", "src")).toThrow(/objeto desconhecido/);
+  });
+
+  it("um filho chamado 'outside' não é confundido com estar fora do foco", () => {
+    const t = indexTree({
+      id: "r",
+      kind: "composite",
+      label: "r",
+      children: [leaf("outside", "sink"), leaf("other", "sink")],
+    });
+    expect(visibleChild(t, "r", "outside")).toEqual({ at: "child", id: "outside" });
+    expect(visibleChild(t, "outside", "other")).toEqual({ at: "outside" });
+  });
+
+  it("contêiner só de estáticos não é abrível", () => {
+    const t = indexTree({
+      id: "r",
+      kind: "composite",
+      label: "r",
+      children: [
+        {
+          id: "grp",
+          kind: "composite",
+          label: "grp",
+          children: [leaf("k1", "static"), leaf("k2", "static")],
+        },
+      ],
+    });
+    expect(isOpenable(t, "grp")).toBe(false);
+  });
+
+  it("a fronteira declarada vence a ordem de declaração", () => {
+    const t = indexTree({
+      id: "r",
+      kind: "composite",
+      label: "r",
+      entry: "b",
+      exit: "a",
+      children: [leaf("a", "sink"), leaf("b", "sink")],
+    });
+    expect(entryLeaf(t, "r")).toBe("b");
+    expect(exitLeaf(t, "r")).toBe("a");
+  });
+
+  it("árvore de um nó só se resolve nela mesma", () => {
+    const t = indexTree(leaf("solo", "source"));
+    expect(entryLeaf(t, "solo")).toBe("solo");
+    expect(visibleChild(t, "solo", "solo")).toEqual({ at: "self" });
+  });
+
+  it("indexa canais, que não são filhos de ninguém", () => {
+    const t = indexTree(root, [
+      { id: "pipe", kind: "channel", label: "pipe", children: [leaf("wire", "sink")] },
+    ]);
+    expect(t.byId.get("pipe")?.kind).toBe("channel");
+    expect(t.parent.get("pipe")).toBeUndefined();
+    expect(flowChildren(t, "root")).not.toContain("pipe");
   });
 });

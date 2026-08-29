@@ -34,6 +34,13 @@ export function familyOf(kind: Kind): Family {
 
 export type PortId = string;
 
+/** Onde uma folha está em relação a um foco. Discriminado de propósito: um id
+ *  de objeto nunca pode ser confundido com "está fora daqui". */
+export type Locus =
+  | { readonly at: "child"; readonly id: string }
+  | { readonly at: "self" }
+  | { readonly at: "outside" };
+
 /** Identificador da lixeira. Não é um objeto: é a ausência de destino. */
 export const DROP = "@drop" as const;
 export type Drop = typeof DROP;
@@ -79,7 +86,13 @@ export interface ObjectSpec<S = unknown> {
   readonly kind: Kind;
   readonly role?: Role;
   readonly label: string;
-  readonly children?: readonly ObjectSpec[];
+  readonly children?: readonly AnyObject[];
+  /** Por onde uma aresta que chega neste contêiner entra. Padrão: o primeiro
+   *  filho de fluxo. Num `pipeline` a ordem é contrato e o padrão basta; num
+   *  `composite` ela é acidental, então declare. */
+  readonly entry?: string;
+  /** Por onde uma aresta que sai deste contêiner parte. Padrão: o último. */
+  readonly exit?: string;
   /** Folha mesmo tendo filhos: a válvula da regra de abertura. */
   readonly leaf?: true;
   /** Abrível, mas os filhos são o conteúdo, não uma sub-árvore declarada. */
@@ -88,6 +101,14 @@ export interface ObjectSpec<S = unknown> {
   readonly behavior?: Behavior<S>;
   readonly init?: () => S;
 }
+
+/**
+ * Um objeto de estado qualquer, para uso em posições onde a variância do
+ * estado não importa (a lista de filhos). O `any` é deliberado: sem ele, uma
+ * folha com estado real não pode ser filha de nada.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type AnyObject = ObjectSpec<any>;
 
 export interface Wire {
   readonly from: string;
@@ -104,7 +125,10 @@ export interface Wire {
 export interface WorldSpec {
   readonly id: string;
   readonly seed: number;
-  readonly root: ObjectSpec;
+  readonly root: AnyObject;
+  /** Canais são arestas, não filhos: têm subárvore própria e são indexados
+   *  junto, mas nunca aparecem em `flowChildren` de ninguém. */
+  readonly channels?: readonly AnyObject[];
   readonly wires: readonly Wire[];
   readonly params: Readonly<Record<string, number>>;
   /** Quantos ticks uma mensagem leva para atravessar uma aresta. */
