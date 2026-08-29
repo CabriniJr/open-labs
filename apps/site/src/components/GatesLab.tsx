@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { World, indexTree } from "@ovh/depth-core";
-import { Stage } from "@ovh/depth-ui";
 import { somadorWorld, viewSomador } from "@ovh/cpu-domain";
+import { Explorer } from "./Explorer.js";
 
 /**
  * A fatia vertical: o somador aberto até a porta lógica.
@@ -22,7 +22,6 @@ export function GatesLab() {
   const [tick, setTick] = useState(0);
   const [rodando, setRodando] = useState(true);
   const [compasso, setCompasso] = useState(900);
-  const [selecionado, setSelecionado] = useState<string | undefined>(undefined);
 
   const spec = useMemo(() => somadorWorld(BITS), []);
   const arvore = useMemo(() => indexTree(spec.root), [spec]);
@@ -72,17 +71,15 @@ export function GatesLab() {
   return (
     <div className="gates-lab">
       <div className="gates-lab__palco">
-        <Stage
+        <Explorer
           tree={arvore}
           wires={spec.wires}
-          view={view}
           state={estado}
           previous={mundo.previousState}
           edgeTicks={spec.edgeTicks ?? 1}
           tickMs={compasso}
+          views={[view]}
           readouts={readouts}
-          selected={selecionado}
-          onSelect={setSelecionado}
         />
         <p className="gates-lab__legenda">
           Uma porta acesa é uma porta cuja saída é 1: no modelo, a presença da

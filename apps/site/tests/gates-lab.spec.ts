@@ -62,3 +62,25 @@ test("o lab das portas não rola na horizontal", async ({ page }) => {
   );
   expect(overflow).toBeLessThanOrEqual(1);
 });
+
+test("dois cliques entram no somador, e a trilha mostra onde você está", async ({ page }) => {
+  await page.goto("labs/gates/");
+  await expect(page.locator(".dui-stage")).toBeVisible({ timeout: 15_000 });
+
+  await page.locator('.dui-stage__objeto[aria-label^="bit1"]').first().dblclick();
+
+  const trilha = page.locator(".explorer__trilha");
+  await expect(trilha).toContainText("circuito");
+  await expect(trilha).toContainText("bit1");
+
+  // lá dentro estão as cinco portas, e elas continuam vivas
+  await expect(page.locator(".dui-stage__objeto")).toHaveCount(5);
+  await expect(page.locator('.dui-stage__objeto[data-alto="true"]').first()).toBeVisible({
+    timeout: 10_000,
+  });
+
+  // e a trilha volta
+  await trilha.getByRole("button", { name: "circuito" }).click();
+  await expect(page.locator('.dui-stage__objeto[aria-label^="bit1"]')).toBeVisible();
+});
+

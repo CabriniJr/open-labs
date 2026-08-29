@@ -591,3 +591,39 @@ consegue exercitar.
 
 Estado: 355 testes unitários, 66 e2e, typecheck, boundaries e build verdes.
 
+---
+
+## Bornes, atalho provado e profundidade navegável
+
+**Data:** 2026-08-29.
+
+**O contêiner ganhou bornes — entrada e saída nomeadas.** Era a lacuna que a fatia vertical
+tinha achado, e ela era mais séria do que parecia: sem nome, um objeto com três entradas
+distintas (as duas parcelas e o vem-de-trás) precisava de **fiação diferente** aberto e
+fechado — e aí as duas versões deixavam de ser o mesmo modelo, e o teste de equivalência do
+atalho perdia o sentido. Com `inlets` e `outlets`, a fiação de fora é a mesma, e agora há
+property test rodando as cinco portas contra a conta direta em qualquer um dos bits.
+
+`expandPorts` abre esses fios **uma vez, na entrada do tick**: daí para baixo todo fio liga
+duas coisas que agem, e nem a ordem topológica nem o livro-caixa precisam saber que existe
+contêiner com bornes.
+
+**Três defeitos que só apareceram porque a fiação passou a ser a mesma nos dois casos:**
+
+1. `validateWorld` dizia que um contêiner com atalho "não age" — o atalho **é** o
+   comportamento dele
+2. o regime de uma porta sem fio próprio agora sobe para o fio do pai, que é por onde a
+   emissão de fato sai; antes uma folha dentro de um contêiner era cobrada por um regime que
+   não era o dela
+3. a expansão precisa acontecer **antes** da ordem topológica, senão o grafo de acomodação
+   fica com o contêiner no lugar de quem emite, e a entrega cai numa caixa já processada —
+   em silêncio, que é o pior jeito
+
+**Profundidade virou caminho, e não promessa.** `autoView` monta uma vista para qualquer
+foco: as desenhadas à mão dão o enquadramento bonito dos lugares que importam, e a montada
+na hora cobre todo o resto. Dois cliques entram num objeto; a trilha de migalhas mostra onde
+você está e volta. Quem tem interior sai marcado `collapsed` — o mesmo invariante de sempre:
+nem inventa, nem esconde calado.
+
+Estado: 363 testes unitários, 68 e2e, typecheck, boundaries e build verdes.
+

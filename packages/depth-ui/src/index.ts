@@ -11,3 +11,4 @@ export { Stage } from "./Stage.js";
 export type { StageProps } from "./Stage.js";
 export { familiesOf, viewDisagreement } from "./view.js";
 export type { NodePlacement, View } from "./view.js";
+export { autoView, pathTo } from "./auto-view.js";

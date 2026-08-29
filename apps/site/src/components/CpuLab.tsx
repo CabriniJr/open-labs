@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { World, indexTree } from "@ovh/depth-core";
 import type { WorldState } from "@ovh/depth-core";
-import { Stage } from "@ovh/depth-ui";
 import type { View } from "@ovh/depth-ui";
+import { Explorer } from "./Explorer.js";
 import {
   assemble,
   cpuWorld,
@@ -56,7 +56,6 @@ export function CpuLab() {
   const [rodando, setRodando] = useState(false);
   const [compasso, setCompasso] = useState(700);
   const [viewId, setViewId] = useState(VIEW_SISTEMA.id);
-  const [selecionado, setSelecionado] = useState<string | undefined>(undefined);
   const mundoRef = useRef<World | null>(null);
 
   // Programa não é parâmetro: um programa novo é um mundo novo, começando no
@@ -137,18 +136,18 @@ export function CpuLab() {
     <div className="cpu-lab">
       <div className="cpu-lab__palco">
         {estado !== null && arvore !== null && spec !== null ? (
-          <Stage
+          <Explorer
+            key={viewId}
             tree={arvore}
             wires={spec.wires}
-            view={view}
             state={estado}
             previous={anterior}
             edgeTicks={spec.edgeTicks ?? 1}
             tickMs={compasso}
+            views={VIEWS}
+            inicial={view.focus}
             fills={fills}
             readouts={readouts}
-            selected={selecionado}
-            onSelect={setSelecionado}
           />
         ) : (
           <p className="cpu-lab__vazio">
