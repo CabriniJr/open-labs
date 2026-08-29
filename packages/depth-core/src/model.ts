@@ -156,6 +156,16 @@ export interface ObjectSpec<S = unknown> {
   readonly exit?: string;
   /** Folha mesmo tendo filhos: a válvula da regra de abertura. */
   readonly leaf?: true;
+  /**
+   * `N` objetos idênticos, um desenhado.
+   *
+   * O invariante que impede a mentira: quem declara `replicas: N` tem que ter
+   * exatamente `N` filhos de fluxo, todos do mesmo `kind`. A marca diz "desenhe
+   * um destes N"; os N existem de verdade, e é deles que os números saem. Sem
+   * isso, `×32` seria um rótulo sobre um objeto só, e o leitor leria a conta de
+   * um achando que é a de trinta e dois.
+   */
+  readonly replicas?: number;
   /** Abrível, mas os filhos são o conteúdo, não uma sub-árvore declarada. */
   readonly dynamic?: true;
   /** Obrigatório em objeto que age. Composto NUNCA tem comportamento. */
@@ -194,6 +204,16 @@ export interface Wire {
   readonly toPort?: PortId;
   /** Quando esta aresta entrega. Ausente significa `"clocked"`. */
   readonly timing?: WireTiming;
+  /**
+   * A linha é um feixe de `N` vias em paralelo. Inteiro `>= 2` — declarar `1` é
+   * ruído, e é recusado.
+   *
+   * **É marca de desenho, e não conta nada.** Quem conta é o livro-caixa, e uma
+   * mensagem que atravessa um feixe continua sendo uma mensagem. Há teste
+   * dizendo isso: no dia em que alguém fizer a largura multiplicar peso, ele
+   * cai — que é a diferença entre "o desenho informa" e "o número mente".
+   */
+  readonly width?: number;
 }
 
 export interface WorldSpec {

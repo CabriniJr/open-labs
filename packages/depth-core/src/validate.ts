@@ -135,6 +135,50 @@ export function validateWorld(spec: WorldSpec, tree: TreeIndex): void {
     }
   }
 
+  // As duas marcas de multiplicidade. Cada uma tem uma forma de mentir, e a
+  // regra existe contra ela — não contra o dado malformado.
+  for (const wire of spec.wires) {
+    const width = wire.width;
+    if (width === undefined) continue;
+    if (!Number.isInteger(width) || width < 2) {
+      erros.push(
+        `o fio de "${wire.from}.${wire.port}" declara width ${String(width)}: a ` +
+          `largura é um feixe de vias em paralelo, então precisa ser inteiro >= 2. ` +
+          `Uma via só é uma linha comum, e declará-la é ruído no desenho`,
+      );
+    }
+  }
+
+  for (const node of tree.byId.values()) {
+    const replicas = node.replicas;
+    if (replicas === undefined) continue;
+    if (!Number.isInteger(replicas) || replicas < 2) {
+      erros.push(
+        `"${node.id}" declara replicas ${String(replicas)}: réplica é "N objetos ` +
+          `idênticos, um desenhado", então precisa ser inteiro >= 2`,
+      );
+      continue;
+    }
+    const filhos = (node.children ?? []).filter((c) => familyOf(c.kind) !== "plate");
+    if (filhos.length !== replicas) {
+      erros.push(
+        `"${node.id}" declara replicas ${replicas} e tem ${filhos.length} filhos de ` +
+          `fluxo: a marca diz "desenhe um destes ${replicas}", e os ${replicas} ` +
+          `precisam existir de verdade — senão o leitor lê a conta de um achando ` +
+          `que é a de ${replicas}`,
+      );
+      continue;
+    }
+    const kinds = new Set(filhos.map((c) => c.kind));
+    if (kinds.size > 1) {
+      erros.push(
+        `"${node.id}" declara replicas ${replicas}, mas os filhos não são idênticos ` +
+          `(kinds: ${[...kinds].join(", ")}). Desenhar um só no lugar de todos ` +
+          `esconderia a diferença`,
+      );
+    }
+  }
+
   // `init` sem `behavior` é erro de autoria, não licença poética: `initialWorld`
   // só chama `init` de quem age, então esse estado seria construído por ninguém
   // e lido por ninguém — o autor acha que guardou estado e não guardou.
