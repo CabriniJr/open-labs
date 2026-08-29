@@ -1,58 +1,9 @@
 // packages/depth-core/src/scheduler.test.ts
 import { describe, expect, it } from "vitest";
-import { DROP } from "./model.js";
-import type { ObjectSpec, WorldSpec } from "./model.js";
+import type { WorldSpec } from "./model.js";
 import { indexTree } from "./tree.js";
 import { initialWorld, stepWorld } from "./scheduler.js";
-
-/** Emite uma mensagem por tick enquanto `rate` for 1. */
-const source: ObjectSpec = {
-  id: "src",
-  kind: "source",
-  label: "src",
-  leaf: true,
-  init: () => ({ made: 0 }),
-  behavior: (state, _inbox, ctx) => {
-    const s = state as { made: number };
-    if (ctx.params.rate !== 1) return { state: s, out: [] };
-    return { state: { made: s.made + 1 }, out: [{ port: "out", message: ctx.emit("blob") }] };
-  },
-};
-
-/** Manda para "keep" quando `keepAll` é 1, senão para "drop". */
-const gate: ObjectSpec = {
-  id: "gate",
-  kind: "router",
-  label: "gate",
-  leaf: true,
-  init: () => ({}),
-  behavior: (state, inbox, ctx) => ({
-    state,
-    out: inbox.map((m) => ({ port: ctx.params.keepAll === 1 ? "keep" : "drop", message: m })),
-  }),
-};
-
-const sink: ObjectSpec = {
-  id: "sink",
-  kind: "sink",
-  label: "sink",
-  leaf: true,
-  init: () => ({ got: 0 }),
-  behavior: (state, inbox) => ({ state: { got: (state as { got: number }).got + inbox.length }, out: [] }),
-};
-
-const spec: WorldSpec = {
-  id: "t",
-  seed: 1,
-  edgeTicks: 2,
-  root: { id: "root", kind: "composite", label: "root", children: [source, gate, sink] },
-  wires: [
-    { from: "src", port: "out", to: "gate" },
-    { from: "gate", port: "keep", to: "sink" },
-    { from: "gate", port: "drop", to: DROP },
-  ],
-  params: { rate: 1, keepAll: 1 },
-};
+import { spec } from "./scheduler.test-fixture.js";
 
 const tree = indexTree(spec.root);
 const run = (ticks: number, params = spec.params) => {
@@ -100,5 +51,19 @@ describe("stepWorld", () => {
     const snapshot = JSON.stringify(before);
     stepWorld(spec, tree, before, spec.params);
     expect(JSON.stringify(before)).toBe(snapshot);
+  });
+
+  it("saída sem fio é contada à parte, não confundida com descarte", () => {
+    const solto: WorldSpec = {
+      ...spec,
+      wires: [{ from: "src", port: "out", to: "gate" }],
+    };
+    const t = indexTree(solto.root);
+    let estado = initialWorld(solto, t);
+    for (let i = 0; i < 6; i += 1) estado = stepWorld(solto, t, estado, solto.params);
+
+    expect(estado.ledger["gate.keep"]).toBeGreaterThan(0);
+    expect(estado.ledger["gate.keep.unwired"]).toBe(estado.ledger["gate.keep"]);
+    expect(estado.ledger["gate.drop.unwired"]).toBeUndefined();
   });
 });

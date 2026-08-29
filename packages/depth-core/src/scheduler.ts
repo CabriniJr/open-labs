@@ -1,4 +1,4 @@
-import { createRandom } from "./random.js";
+import { randomAt } from "./rng.js";
 import { DROP } from "./model.js";
 import type {
   InFlight,
@@ -82,7 +82,7 @@ export function stepWorld(
     let seq = 0;
     const ctx = {
       tick,
-      random: createRandom(spec.seed + tick),
+      random: (salt = "") => randomAt(spec.seed, tick, `${node.id}:${salt}`),
       params,
       emit: (
         kind: string,
@@ -105,7 +105,13 @@ export function stepWorld(
       bump(`${node.id}.${emission.port}`, 1);
       bump(`${node.id}.${emission.port}.weight`, emission.message.weight);
       const to = resolveTarget(tree, spec.wires, node.id, emission.port);
-      if (to === null) continue;
+      if (to === null) {
+        // Sem fio declarado e sem descarte: não é uma decisão do modelo, é um
+        // buraco na autoria. Fica contado numa chave própria para que o modo autor
+        // possa acusá-lo, em vez de virar o mesmo silêncio de um descarte.
+        bump(`${node.id}.${emission.port}.unwired`, 1);
+        continue;
+      }
       launched.push({
         id: `${tick}:${node.id}:${emission.port}:${launched.length}`,
         message: emission.message,

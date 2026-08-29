@@ -90,7 +90,12 @@ export interface Emission {
 
 export interface StepContext {
   readonly tick: number;
-  readonly random: () => number;
+  /**
+   * Sorteio endereçável: já vem amarrado a (semente, tick, id do nó). O `salt`
+   * opcional só entra quando a mesma folha sorteia mais de uma vez no mesmo
+   * tick e precisa distinguir os sorteios por propósito.
+   */
+  readonly random: (salt?: string) => number;
   readonly params: Readonly<Record<string, number>>;
   /**
    * Cria uma mensagem com id determinístico, derivado de (tick, nó, ordem).
