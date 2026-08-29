@@ -7,3 +7,7 @@ export type { InspectorLine, InspectorProps } from "./Inspector.js";
 export { Timeline } from "./Timeline.js";
 export type { TimelineProps } from "./Timeline.js";
 export type { FlowEdgeView, FlowNodeView, FlowView } from "./types.js";
+export { Stage } from "./Stage.js";
+export type { StageProps } from "./Stage.js";
+export { familiesOf, viewDisagreement } from "./view.js";
+export type { NodePlacement, View } from "./view.js";

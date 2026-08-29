@@ -1,0 +1,44 @@
+import { describe, expect, it } from "vitest";
+import { indexTree } from "@ovh/depth-core";
+import { viewDisagreement } from "@ovh/depth-ui";
+import { assemble } from "./assembler.js";
+import { cpuWorld } from "./datapath.js";
+import { CPU_VIEWS, VIEW_SISTEMA } from "./views.js";
+
+const r = assemble("addi t0, x0, 1");
+if (!r.ok) throw new Error("o programa de teste tem que montar");
+const tree = indexTree(cpuWorld(r.image.words).root);
+
+describe("as views do caminho de dados", () => {
+  it.each(CPU_VIEWS.map((v) => [v.id, v] as const))(
+    "a view %s concorda com a árvore: não inventa e não esconde",
+    (_id, view) => {
+      expect(viewDisagreement(tree, view)).toBeNull();
+    },
+  );
+
+  it("uma view que esquece um objeto é recusada", () => {
+    // A prova de que o teste acima tem dente: tirar uma peça reprova.
+    const capenga = {
+      ...VIEW_SISTEMA,
+      places: VIEW_SISTEMA.places.filter((p) => p.id !== "ula"),
+    };
+    expect(viewDisagreement(tree, capenga)).toMatch(/"ula" existe dentro de "logica"/);
+  });
+
+  it("nenhuma caixa desenhada por cima de outra irmã", () => {
+    // Não é regra do motor, é regra deste desenho: irmãs sobrepostas seriam um
+    // objeto escondendo o outro, e o leitor não teria como saber.
+    const irmas = VIEW_SISTEMA.places.filter(
+      (p) => !["cpu", "processador", "logica"].includes(p.id),
+    );
+    for (const a of irmas) {
+      for (const b of irmas) {
+        if (a.id >= b.id) continue;
+        const separadas =
+          a.x + a.w <= b.x || b.x + b.w <= a.x || a.y + a.h <= b.y || b.y + b.h <= a.y;
+        expect(separadas, `"${a.id}" e "${b.id}" se sobrepõem`).toBe(true);
+      }
+    }
+  });
+});

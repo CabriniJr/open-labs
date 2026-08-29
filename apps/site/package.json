@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@astrojs/react": "^4.2.0",
+    "@ovh/cpu-domain": "workspace:*",
     "@ovh/depth-core": "workspace:*",
     "@ovh/depth-ui": "workspace:*",
     "@ovh/otel-domain": "workspace:*",

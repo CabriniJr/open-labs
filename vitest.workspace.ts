@@ -12,6 +12,7 @@ export default defineWorkspace([
         "packages/cpu-domain/src/**/*.test.ts",
         "packages/model-format/src/**/*.test.ts",
         "apps/site/src/**/*.test.ts",
+        "packages/depth-ui/src/**/*.test.ts",
         "scripts/**/*.test.mjs",
       ],
     },

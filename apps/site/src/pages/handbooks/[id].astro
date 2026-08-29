@@ -3,6 +3,7 @@ import SiteFooter from "../../components/SiteFooter.astro";
 import SiteNav from "../../components/SiteNav.astro";
 import { Roadmap } from "../../components/Roadmap.tsx";
 import Base from "../../layouts/Base.astro";
+import { url } from "../../lib/urls";
 import {
   HANDBOOKS,
   ITEM_STATUS_LABEL,
@@ -130,7 +131,11 @@ if (orfaos.length > 0) {
               <ul class="hb-items">
                 {grupo.labs.map((item) => (
                   <li class="hb-item">
-                    <span>{item.title}</span>
+                    {item.href === undefined ? (
+                      <span>{item.title}</span>
+                    ) : (
+                      <a href={url(item.href)}>{item.title}</a>
+                    )}
                     <span class={`status status--${item.status}`}>
                       {ITEM_STATUS_LABEL[item.status]}
                     </span>

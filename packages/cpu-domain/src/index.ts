@@ -6,3 +6,4 @@ export { initialCpu, runCpu, stepCpu } from "./reference.js";
 export type { CpuState } from "./reference.js";
 export { cpuWorld } from "./datapath.js";
 export type { EstadoBanco, EstadoMemoria, EstadoPc } from "./datapath.js";
+export { CPU_VIEWS, VIEW_PROCESSADOR, VIEW_SISTEMA } from "./views.js";

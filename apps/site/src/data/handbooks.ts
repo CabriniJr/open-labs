@@ -107,7 +107,7 @@ const RISCV: Handbook = {
     "diagram, through registers and the ALU, to the gates and the wire that " +
     "is either high or low. You write the assembly; the model runs it.",
   model: "cpu.model",
-  stage: "planned",
+  stage: "building",
   hasMap: false,
   phases: [
     { number: 1, title: "Signals", line: "A wire carries one bit, and time is what it takes to settle." },
@@ -129,7 +129,12 @@ const RISCV: Handbook = {
     { id: "the-wire", title: "One wire, one tick", status: "coming", phase: 1 },
     { id: "the-adder", title: "Build a 4-bit adder", status: "coming", phase: 2 },
     { id: "register-write", title: "Writing a register", status: "coming", phase: 3 },
-    { id: "single-cycle-datapath", title: "The single-cycle datapath", status: "coming", phase: 4 },
+    {
+      id: "single-cycle-datapath",
+      title: "The single-cycle datapath",
+      status: "available",
+      href: "labs/cpu",
+    phase: 4 },
     { id: "control-lines", title: "The control lines of one opcode", status: "coming", phase: 5 },
     { id: "assemble-and-run", title: "Assemble and run your own program", status: "coming", phase: 6 },
   ],

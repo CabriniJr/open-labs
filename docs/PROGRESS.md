@@ -499,3 +499,45 @@ Estado: 327 testes, typecheck, boundaries e build verdes.
    transistores) e as **views** (bloco 3). O que existe hoje roda e é conferível; ainda não
    é bonito
 
+---
+
+## Bloco 3 e 7 — as views, e o caminho de dados na tela
+
+**Data:** 2026-08-29. **Página:** `/labs/cpu/`.
+
+**O mecanismo (`depth-ui`):**
+
+- **`view.ts`** — uma view é a **disposição inicial** dos objetos para um foco. O invariante:
+  ela decide **onde** e **como**, nunca **o que existe** nem **o que se liga a quê**. O teste
+  é igualdade: `viewDisagreement` recusa view que inventa objeto, que desenha alguém de fora
+  do foco, que repete um objeto, que dá área zero, que corta na moldura — e, principalmente,
+  que **esconde sem declarar `collapsed`**. Esconder é legítimo; esconder calado não é
+- **`Stage.tsx`** — a view desenhada com o estado por cima. **Nada se move sozinho:** toda
+  animação é disparada por uma diferença no livro-caixa entre dois ticks, então um objeto
+  parado na tela é um objeto que de fato não fez nada naquele tick. As caixas vêm da view, as
+  linhas vêm dos fios, o movimento vem do livro-caixa
+- **A família escolhe a forma e o gesto**: `processor` tem engrenagem, e ela só gira quando
+  ele agiu; `container` é moldura e nunca se mexe; `controller` fica na cor do sinal. E uma
+  correção que vem do modelo e não da view: **quem só emite por linha de controle é
+  controlador**, tenha o `kind` que tiver — enquanto o catálogo não tem `kind` dessa família,
+  o desenho lê o fato onde ele está escrito, nos fios
+- O pulso ao longo do fio acende **todos** os fios que saem da porta, porque o leque é
+  nativo; mostrar só o primeiro seria voltar a mentir sobre o percurso
+
+**O lab (`/labs/cpu/`):** editor de assembly, montar-e-reiniciar (programa não é parâmetro:
+programa novo é mundo novo), rodar/pausar, um ciclo por clique, compasso do relógio,
+duas views (`sistema` e `processador`), painel de registradores e a instrução atual.
+
+Estado: 345 testes unitários, 56 e2e, typecheck, boundaries e build verdes.
+
+**O que ficou para a próxima iteração** (o Luigi já disse que vamos iterar):
+
+- **Roteamento dos fios** é ortogonal simples e ainda cruza caixa quando o caminho é longo.
+  Falta desviar de obstáculo
+- **Portas lógicas acendendo** com a combinação certa depende do bloco 6 (a fatia vertical
+  até o transistor) — hoje não há porta nenhuma modelada
+- **A esteira transformando a carga** aparece por cor de `kind`; falta a forma mudar
+- **`×N` e `/N`** são marcas de canto; falta o contorno empilhado e o feixe desenhado
+- `substeps` já é contado e mostrado em número; falta **andar dentro do tick**, que é o
+  que transforma o atraso de propagação em algo que se vê
+

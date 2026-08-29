@@ -38,6 +38,9 @@ importers:
       '@astrojs/react':
         specifier: ^4.2.0
         version: 4.4.2(@types/node@26.4.0)(@types/react-dom@19.2.5(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(yaml@2.9.0)
+      '@ovh/cpu-domain':
+        specifier: workspace:*
+        version: link:../../packages/cpu-domain
       '@ovh/depth-core':
         specifier: workspace:*
         version: link:../../packages/depth-core
@@ -78,6 +81,9 @@ importers:
       '@ovh/depth-core':
         specifier: workspace:*
         version: link:../depth-core
+      '@ovh/depth-ui':
+        specifier: workspace:*
+        version: link:../depth-ui
 
   packages/depth-core:
     dependencies:
