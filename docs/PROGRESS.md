@@ -18,24 +18,86 @@ Monorepo pnpm (`depth-core`, `otel-domain`, `depth-ui`, `apps/site`), design sys
 derivado do canvas, landing com o herói rodando simulação de verdade, guarda de
 fronteira motor↔domínio no CI, CI e deploy para GitHub Pages.
 
-Estado: 29 commits locais, 58 testes unitários, 12 smoke Playwright, build verde.
-**Nada foi empurrado para o GitHub ainda** — o repo é público e o push aguarda
-autorização explícita.
+Estado: 58 testes unitários, 12 smoke Playwright, build verde. **Empurrada e
+mergeada na `main`.**
 
 ---
 
-## Entrega 2 — Motor composicional 🔜
+## Marco — as cinco PRs de desenho paralelo, aceitas ✅
 
-**Spec:** `docs/superpowers/specs/2026-08-28-motor-composicional-design.md`
-**Plano:** ainda não escrito.
+**Data:** 2026-08-28. Merge `d3900c0` na `main`. PRs #1–#5 (`kiro/visao-e-stack`,
+`kiro/catalogo-de-kinds`, `kiro/consolidado`, `kiro/posicionamento`,
+`kiro/formato-do-modelo`), encadeadas — a #3 continha as outras quatro, então um merge
+fechou as cinco. 2924 linhas, só `docs/`, zero conflito com código.
+
+Entraram: `DECISIONS.md` (ponto de entrada — leia primeiro), `VISION.md`, `kinds.md`
+(catálogo de 19 arquétipos em três ondas), `depth.md`, `model-format.md`,
+`why-simulate.md`, `roadmap.md`, `stack.md`.
+
+**Elas contradizem a spec do motor em três pontos, e vencem nos três.** A reconciliação
+está registrada na §17 da spec, com a precedência declarada:
+`docs/DECISIONS.md` → spec do motor → plano da sessão. Resumo:
+
+1. **A forma da carga muda só na saída de um `transform`** (substitui a §2.3, que
+   espalhava a transformação pela fronteira de qualquer objeto). Vira property test:
+   com ele verde, o modelo não *consegue* mentir sobre onde a transformação acontece.
+   `sink` e `channel` perdem a transformação. → pousa na S2.
+2. **Cinco famílias, não três.** Entra `controller` (relógio, árbitro, supervisor,
+   sonda — não ficam no caminho do dado) e `container` (`pipeline`/`composite`
+   organizam, não processam). → pousa na S1, Task 1c.
+3. **Duas espécies de linha**: dado (traço grosso) e controle (tracejado fino). A
+   pergunta "por onde o dado passa?" passa a se responder olhando só as grossas.
+   → `Wire.line` na S1, Task 1c; a fiação a respeita na Task 2.
+
+O catálogo de 19 `kind`s cresce em ondas (onda 1 na S2: `transform`, `tee`, `merge`,
+`batch`, `clock`, `arbiter`). A trava de entrada é a régua deles: **arquétipo entra
+pagando em dois alvos.** O que a S1 garante é que acrescentar `kind` seja aditivo —
+`familyOf` é um `Record<Kind, Family>`, então esquecer a família de um `kind` novo não
+compila.
+
+Dívida que as PRs abriram e ainda não foi paga: predição antes da revelação, o campo
+"mal-entendido que este lab desfaz" no `teaches`, e `docs/authoring.md` como interface
+pública do projeto.
+
+---
+
+## Marco — licenciamento ✅
+
+**Data:** 2026-08-28. Commit `3b75968`. Era a urgência nº 1 de `DECISIONS.md`:
+repositório público sem licença é *todos os direitos reservados*, e até então nada aqui
+podia ser reusado por ninguém — o oposto do projeto.
+
+`LICENSE` Apache-2.0 (código), `LICENSE-content` CC BY-SA 4.0 (conteúdo editorial: tudo
+em `docs/`, mais prosa, rótulos e `teaches` dos labs), seção no README, campo `license`
+nos cinco `package.json`. Duas licenças porque o motor existe para ser reusado como
+biblioteca e o material didático para ser reusado como material didático.
+
+---
+
+## Entrega 2 — Motor composicional 🚧
+
+**Spec:** `docs/superpowers/specs/2026-08-28-motor-composicional-design.md` (leia a §17:
+é onde ela se reconcilia com as PRs aceitas).
 
 Substitui o modelo de quatro níveis fixos por uma árvore de objetos composta de baixo
 para cima. Sessões planejadas (detalhe na §9 da spec):
 
-- [ ] **S1 — Motor composicional.** `types`, `tree`, `scheduler`, `engine` com eventos
-      de parâmetro, `meters`. Testes 1–5 da §8.
-- [ ] **S2 — Arquétipos.** Os sete `Kind`s (incluindo `composite`): comportamento em `depth-core`, contrato
-      visual em `depth-ui`.
+- [ ] **S1 — Motor composicional** 🚧 *em andamento*. `model`, `tree`, `wiring`,
+      `scheduler`, `world` com eventos de parâmetro, `meters`. Testes 1–5 da §8.
+      **Plano:** `docs/superpowers/plans/2026-08-28-s1-motor-composicional.md`.
+      - [x] Task 1 — `model.ts` e `tree.ts` (`c20806a`)
+      - [x] Task 1b — retrabalho da revisão de qualidade (`3c9c192`)
+      - [x] Task 1b Step 10 — quatro achados da segunda revisão (`564d47c`): fronteira `entry`/
+            `exit` validada na **indexação**, não no percurso; `isOpenable` e `entryLeaf`
+            param no mesmo predicado; válvulas do invariante cobertas por teste de
+            mutação; `byId` tipado como `AnyObject`. 84 testes.
+      - [ ] Task 1c — cinco famílias e `Wire.line`
+      - [ ] Tasks 2–7 — fiação, tick, mundo, medidores, superfície pública, fechamento
+- [ ] **S2 — Arquétipos.** Os oito de hoje **mais a onda 1** de `kinds.md`
+      (`transform`, `tee`, `merge`, `batch`, `clock`, `arbiter`): comportamento em
+      `depth-core`, contrato visual em `depth-ui`. Aqui também entram o property test
+      do invariante do `transform` e os três encolhimentos (`channel` e `sink` perdem a
+      transformação, `buffer` perde o agrupamento).
 - [ ] **S3 — Palco e navegação.** Foco por caminho, breadcrumb, selecionar vs abrir,
       inspector, deep link.
 - [ ] **S4 — Domínio TracerProvider.** Árvore fiel, transformações de mensagem, textos
@@ -83,5 +145,8 @@ Todas na spec, mas as que mais custam se forem esquecidas:
   vivem atrás do modo autor. Se vazam, o handbook explica a si mesmo.
 - **Contenção é estrutural.** Moldura com `clipPath` real — não uma checagem que alguém
   pode esquecer de escrever.
+- **Controlador não fica no caminho do dado.** Árbitro, relógio e supervisor
+  influenciam quem está no caminho, mas não recebem a carga. Tratá-los como processador
+  obrigaria a inventar um fluxo que não existe — o mesmo erro que a placa evita.
 - **Escala de tempo declarada** (1 tick = 100 ms) e valor real ao lado de todo controle.
   Tick abstrato é pior: o leitor inventa a correspondência e a gente não pode corrigir.
