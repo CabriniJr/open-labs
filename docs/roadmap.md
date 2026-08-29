@@ -151,9 +151,39 @@ catálogo, não do reuso.
 
 ---
 
+## F6b — CPU: a prova de genericidade
+
+Um caminho de dados de CPU, com **assembly como entrada** e drill-down até a porta
+lógica. Detalhamento completo em `theory.md` §7.
+
+Por que aqui e não antes: um terceiro alvo só prova alguma coisa se os dois primeiros
+já fecharam. Por que **antes** de F7: extrair o motor tendo visto só domínios de
+mensageria (OTel, Kafka) é extrair um motor de mensageria com outro nome. A CPU é o
+alvo mais distante que ainda cabe nas primitivas, e é justamente por isso que ela é o
+teste.
+
+Ela já nomeou três lacunas do motor, todas legítimas e nenhuma resolvível com um
+`kind` novo (`theory.md` §7.4):
+
+| Lacuna | O que falta |
+|---|---|
+| Linha de controle sem semântica | sinal entregue muda o que o ator faz no ciclo, contado como tráfego e nunca como carga |
+| Ler sem consumir | banco de registradores como ator que responde a pedido — nenhum ator espia o estado de outro |
+| Combinacional × registrado | o tick ganha fases: acomodação até o ponto fixo, depois entrega do que atravessa aresta registrada |
+
+E uma menor: **escala de tempo é do mundo, não do motor** — 100 ms no OTel, ~0,3 ns na
+CPU. A constante vira propriedade do `WorldSpec`, com unidade.
+
+**Saída:** um pacote `cpu-domain` que importa exclusivamente `depth-core` e `depth-ui`,
+executa um programa em assembly de verdade, abre até a porta lógica, e **não obrigou
+`depth-core` a saber o que é um registrador**. Commits em `depth-core` fechando as três
+lacunas contam a favor; vocabulário de CPU dentro dele reprova.
+
+---
+
 ## F7 — Extração do motor
 
-Só depois de F6. Motor extraído antes de dois casos completos fica genérico e inútil, e
+Só depois de F6 e F6b. Motor extraído antes de dois casos completos fica genérico e inútil, e
 motor sem conteúdo não atrai ninguém em open source.
 
 Nesta fase entram o contrato de plugin, o pacote publicável e a decisão do repositório
@@ -194,7 +224,7 @@ dado errado é localizável e difável; comportamento errado escondido numa fun�
 ## Ordem, em uma linha
 
 ```
-F0 destravar → F1 núcleo → F3 palco → F2 piloto (Entregas 1 e 2) → F2b arquétipos → F4 otel → F5 handbook → F6 kafka → F7 motor
+F0 destravar → F1 núcleo → F3 palco → F2 piloto (Entregas 1 e 2) → F2b arquétipos → F4 otel → F5 handbook → F6 kafka → F6b cpu → F7 motor
 ```
 
 O piloto e o palco se sobrepõem: não há lab sem palco, e o palco só se justifica pelo lab. E a
