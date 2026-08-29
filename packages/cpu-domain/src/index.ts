@@ -19,6 +19,7 @@ export {
   viewsDoSomador,
 } from "./views.js";
 export { decide, porta, portasAltas, somadorCompleto, somadorWorld } from "./gates.js";
+export { leituraDaCarga } from "./carga.js";
 export {
   fiosDaPortaCmos,
   noDeSaida,

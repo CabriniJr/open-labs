@@ -117,3 +117,31 @@ test("aproximar não rola a página", async ({ page }) => {
   expect(await page.evaluate(() => window.scrollY)).toBe(antes);
   expect(await zoom(page)).toBeGreaterThan(1.2);
 });
+
+/**
+ * A esteira: o item que anda na linha, com o valor que leva.
+ *
+ * Ele tinha sumido dos labs. `settled` registra quem de fato emitiu, e quem
+ * emite é sempre uma folha — mas o desenho liga fios entre compostos, então a
+ * linha existia, o valor existia, e a carga não aparecia em nenhuma das duas
+ * pontas. Sem ela não há transformação para ver, que é a coisa toda.
+ */
+test("a carga anda na linha com o valor que leva", async ({ page }) => {
+  await page.goto("labs/gates/");
+  await page.waitForSelector("g.dui-stage__objeto");
+
+  // A onda varre o circuito, então a contagem sobe e desce dentro do tick: o
+  // que se cobra é que num instante qualquer haja esteira de verdade.
+  let pico = 0;
+  for (let i = 0; i < 20; i++) {
+    pico = Math.max(pico, await page.locator(".dui-stage__carga-valor").count());
+    await page.waitForTimeout(120);
+  }
+  expect(pico, "a esteira está vazia: nenhuma carga com valor na tela").toBeGreaterThan(3);
+
+  // E cada carga se identifica: bateu a dúvida sobre o que está passando, a
+  // resposta está sob o cursor, com origem e destino.
+  const legenda = await page.locator(".dui-stage__carga-grupo title").first().textContent();
+  expect(legenda).toMatch(/→/);
+  expect(legenda).toMatch(/·/);
+});

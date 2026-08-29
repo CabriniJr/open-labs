@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { isOpenable } from "@ovh/depth-core";
-import type { TreeIndex, Wire, WorldState } from "@ovh/depth-core";
+import type { Message, TreeIndex, Wire, WorldState } from "@ovh/depth-core";
 import { Stage, autoView, pathTo } from "@ovh/depth-ui";
 import type { View } from "@ovh/depth-ui";
 import { Ficha } from "./Ficha.js";
@@ -28,6 +28,8 @@ export interface ExplorerProps {
   readonly readouts?: Readonly<Record<string, string>> | undefined;
   /** Quem está com a saída em alto. Só o domínio sabe ler o valor que saiu. */
   readonly altos?: ReadonlySet<string> | undefined;
+  /** O valor que a carga leva. Quem sabe ler o dado é o domínio. */
+  readonly leituraDaCarga?: ((mensagem: Message) => string | undefined) | undefined;
   /** Mostra a ficha do objeto selecionado ao lado do palco. */
   readonly comFicha?: boolean;
 }
@@ -44,6 +46,7 @@ export function Explorer({
   fills,
   readouts,
   altos,
+  leituraDaCarga,
   comFicha = false,
 }: ExplorerProps) {
   const primeiro = inicial ?? views[0]?.focus ?? tree.rootId;
@@ -122,6 +125,7 @@ export function Explorer({
           onSelect={setSelecionado}
           onOpen={abrir}
           interiores={interiores}
+          leituraDaCarga={leituraDaCarga}
         />
         {comFicha ? <Ficha tree={tree} wires={wires} state={state} id={selecionado} /> : null}
       </div>

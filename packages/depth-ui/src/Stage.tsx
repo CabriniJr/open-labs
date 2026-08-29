@@ -1,6 +1,13 @@
-import { useEffect, useRef, useState } from "react";
-import { familyOf } from "@ovh/depth-core";
-import type { Family, TreeIndex, Wire, WorldState } from "@ovh/depth-core";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { emissoesPorPorta, familyOf } from "@ovh/depth-core";
+import type {
+  EmissaoDaPorta,
+  Family,
+  Message,
+  TreeIndex,
+  Wire,
+  WorldState,
+} from "@ovh/depth-core";
 import type { NodePlacement, View } from "./view.js";
 import { resumoDoKind } from "./kinds.js";
 import { PROFUNDIDADE_MAXIMA, ZOOM_MAXIMO, encaixar, quantoAparece } from "./lod.js";
@@ -60,6 +67,19 @@ export interface StageProps {
    * vezes. `collapsed` é exatamente "os filhos existem e não estão desenhados".
    */
   readonly interiores?: ((id: string) => View | undefined) | undefined;
+  /**
+   * O que a carga mostra na esteira: o valor que ela leva, em dois ou três
+   * caracteres.
+   *
+   * Quem lê o dado é o **domínio**. O motor sabe que uma mensagem tem `kind`,
+   * `weight` e `data`; o que aquele `data` significa só o modelo sabe, e o
+   * desenho não pode adivinhar sem inventar.
+   *
+   * Sem isto a carga andava pela linha como um ponto anônimo. Ela é o item na
+   * esteira: se não dá para ler o que ela leva, não dá para ver a
+   * transformação, que é a coisa toda.
+   */
+  readonly leituraDaCarga?: ((mensagem: Message) => string | undefined) | undefined;
 }
 
 interface CamadaProps extends StageProps {
@@ -73,6 +93,14 @@ interface CamadaProps extends StageProps {
    */
   readonly unidadesPorQuadro: number;
   readonly profundidade: number;
+  /**
+   * O que cada porta emitiu, já com os bornes de saída resolvidos.
+   *
+   * Vem pronto da casca porque a resolução percorre a árvore inteira: fazê-la
+   * dentro de cada camada custaria isso vezes o número de interiores abertos,
+   * a cada quadro.
+   */
+  readonly emissoes: Readonly<Record<string, EmissaoDaPorta>>;
 }
 
 interface Ponto {
@@ -222,6 +250,58 @@ function Engrenagem({ x, y, r }: { x: number; y: number; r: number }) {
   );
 }
 
+
+/**
+ * O item na esteira.
+ *
+ * Ele era um ponto anônimo: dava para ver que **alguma coisa** andava na linha,
+ * e não o que era nem o que levava. Rastrear a transformação — a coisa que este
+ * motor existe para mostrar — exige que a carga tenha identidade na tela: a
+ * forma dela (`kind`), o valor que leva, e de onde para onde vai.
+ *
+ * O `kind` muda quando a carga atravessa quem a transforma, e é por isso que
+ * segui-la é entender o sistema: o que entra num bloco com um nome sai com
+ * outro, e a linha entre os dois mostra exatamente onde isso aconteceu.
+ */
+function Carga({
+  mensagem,
+  leitura,
+  raio,
+  de,
+  para,
+}: {
+  mensagem: Message;
+  leitura: string | undefined;
+  raio: number;
+  de: string;
+  para: string;
+}) {
+  return (
+    <>
+      {/* O hover é o mesmo gesto que já responde "o que é esta peça?": bateu a
+          dúvida sobre o que está passando, a resposta está sob o cursor. */}
+      <title>
+        {`${mensagem.kind}${leitura === undefined ? "" : ` · ${leitura}`}\n${de} → ${para}${
+          mensagem.weight > 1 ? `\n${mensagem.weight} itens` : ""
+        }`}
+      </title>
+      <circle className="dui-stage__carga" r={raio} />
+      {leitura === undefined ? null : (
+        // Ao lado, e não em cima: por cima do ponto o valor fica ilegível
+        // justamente quando a linha está acesa, que é quando se quer lê-lo.
+        <text className="dui-stage__carga-valor" x={raio + 3} y={-raio - 1}>
+          {leitura}
+        </text>
+      )}
+      {mensagem.weight > 1 ? (
+        <text className="dui-stage__carga-peso" x={0} y={raio + 9} textAnchor="middle">
+          {`×${mensagem.weight}`}
+        </text>
+      ) : null}
+    </>
+  );
+}
+
 function Camada({
   tree,
   wires,
@@ -237,8 +317,10 @@ function Camada({
   onSelect,
   onOpen,
   interiores,
+  leituraDaCarga,
   unidadesPorQuadro,
   profundidade,
+  emissoes,
 }: CamadaProps) {
   const reduzido = usaMovimentoReduzido();
   const mudou = delta(state, previous);
@@ -401,11 +483,15 @@ function Camada({
    * enfileirados e distribuídos pelo tick, senão os setenta e cinco subpassos
    * de um ciclo virariam nove milissegundos cada e ninguém veria nada.
    */
+  /** Quem de fato emitiu naquela porta — e é o subpasso dele que vale. */
+  const fonteDe = (from: string, port: string): string =>
+    emissoes[`${from}.${port}`]?.fonte ?? from;
+
   const subpassosVisiveis = [
     ...new Set(
       arestas
         .filter((a) => a.timing === "settle")
-        .map((a) => state.substepOf[a.from])
+        .map((a) => state.substepOf[fonteDe(a.from, a.port)])
         .filter((n): n is number => n !== undefined),
     ),
   ].sort((a, b) => a - b);
@@ -413,9 +499,25 @@ function Camada({
   const etapas = Math.max(1, subpassosVisiveis.length);
   const duracaoDaEtapa = tickMs / etapas;
 
+  /**
+   * Quanto tempo uma carga leva para atravessar o fio dela.
+   *
+   * Era a duração de uma etapa, e isso apagou a esteira. Num circuito com
+   * quarenta e três subpassos por tick, cada etapa dura vinte milissegundos: a
+   * carga nascia e morria antes de o olho pegar, e a tela mostrava um piscar
+   * sem direção. O item na esteira — a coisa que se quer seguir — tinha sumido.
+   *
+   * Agora a partida continua sendo a do modelo (`substepOf`, e não se inventa),
+   * e só a **travessia** ganha um piso legível. As cargas passam a se
+   * sobrepor, e é assim mesmo: numa acomodação real muitos fios carregam ao
+   * mesmo tempo. O que se vê é a onda varrendo o circuito, que é o fato.
+   */
+  const TRAVESSIA_MINIMA = 220;
+  const duracaoDaCarga = Math.max(TRAVESSIA_MINIMA, duracaoDaEtapa);
+
   /** Quando esta emissão parte, em milissegundos dentro do tick. */
-  const partidaDe = (from: string): number => {
-    const subpasso = state.substepOf[from];
+  const partidaDe = (from: string, port: string): number => {
+    const subpasso = state.substepOf[fonteDe(from, port)];
     if (subpasso === undefined) return 0;
     const posicao = subpassosVisiveis.indexOf(subpasso);
     return (posicao < 0 ? 0 : posicao) * duracaoDaEtapa;
@@ -425,9 +527,9 @@ function Camada({
   const ondaAcomodada = arestas
     .filter((a) => a.timing === "settle")
     .map((a) => {
-      const mensagens = state.settled[`${a.from}.${a.port}`];
-      if (mensagens === undefined || mensagens.length === 0) return null;
-      return { aresta: a, kind: mensagens[0]!.kind, comeca: partidaDe(a.from) };
+      const emissao = emissoes[`${a.from}.${a.port}`];
+      if (emissao === undefined || emissao.mensagens.length === 0) return null;
+      return { aresta: a, mensagem: emissao.mensagens[0]!, comeca: partidaDe(a.from, a.port) };
     })
     .filter((x): x is NonNullable<typeof x> => x !== null);
 
@@ -455,7 +557,7 @@ function Camada({
                   from="120"
                   to="-40"
                   dur={`${Math.max(120, (tickMs * 0.8) / passos)}ms`}
-                  begin={`${atrasoDe(aresta.from)}ms`}
+                  begin={`${atrasoDe(fonteDe(aresta.from, aresta.port))}ms`}
                   fill="freeze"
                 />
               </path>
@@ -478,32 +580,27 @@ function Camada({
       <g className="dui-stage__onda">
         {reduzido
           ? null
-          : ondaAcomodada.map(({ aresta, kind, comeca }) => (
-              <circle
+          : ondaAcomodada.map(({ aresta, mensagem, comeca }) => (
+              <g
                 key={`${aresta.chave}:${state.tick}`}
-                className="dui-stage__carga dui-stage__carga--acomodada"
-                data-kind={kind}
+                className="dui-stage__carga-grupo dui-stage__carga-grupo--acomodada"
+                data-carga={aresta.chave}
+                data-kind={mensagem.kind}
                 data-linha={aresta.linha}
-                r={4}
-                opacity={0}
+                style={{
+                  ["--dui-trilho" as string]: `path("${aresta.d}")`,
+                  ["--dui-atraso" as string]: `${comeca}ms`,
+                  ["--dui-travessia" as string]: `${duracaoDaCarga}ms`,
+                }}
               >
-                <animateMotion
-                  dur={`${duracaoDaEtapa}ms`}
-                  begin={`${comeca}ms`}
-                  path={aresta.d}
-                  fill="freeze"
+                <Carga
+                  mensagem={mensagem}
+                  leitura={leituraDaCarga?.(mensagem)}
+                  raio={4}
+                  de={aresta.from}
+                  para={aresta.to}
                 />
-                {/* aparece ao partir e some ao chegar: fora da vez dela, a
-                    bolinha não existe, em vez de ficar parada num canto */}
-                <animate
-                  attributeName="opacity"
-                  dur={`${duracaoDaEtapa}ms`}
-                  begin={`${comeca}ms`}
-                  values="0;1;1;0"
-                  keyTimes="0;0.15;0.85;1"
-                  fill="freeze"
-                />
-              </circle>
+              </g>
             ))}
       </g>
 
@@ -514,24 +611,27 @@ function Camada({
           if (trilho === undefined) return null;
           const andou = (state.tick - item.sent) / edgeTicks;
           return (
-            <circle
+            <g
               key={`${item.id}:${state.tick}`}
-              className="dui-stage__carga"
+              className="dui-stage__carga-grupo dui-stage__carga-grupo--voo"
+              data-carga={item.id}
               data-kind={item.message.kind}
               data-sinal={item.signalPort !== undefined ? "true" : undefined}
-              r={5}
+              style={{
+                ["--dui-trilho" as string]: `path("${trilho}")`,
+                ["--dui-travessia" as string]: `${tickMs}ms`,
+                ["--dui-de" as string]: `${andou * 100}%`,
+                ["--dui-ate" as string]: `${Math.min(1, andou + 1 / edgeTicks) * 100}%`,
+              }}
             >
-              {reduzido ? null : (
-                <animateMotion
-                  dur={`${tickMs}ms`}
-                  path={trilho}
-                  keyPoints={`${andou};${Math.min(1, andou + 1 / edgeTicks)}`}
-                  keyTimes="0;1"
-                  calcMode="linear"
-                  fill="freeze"
-                />
-              )}
-            </circle>
+              <Carga
+                mensagem={item.message}
+                leitura={leituraDaCarga?.(item.message)}
+                raio={5}
+                de={item.from}
+                para={String(item.to)}
+              />
+            </g>
           );
         })}
       </g>
@@ -681,6 +781,8 @@ function Camada({
                       altos={altos}
                       selected={selected}
                       interiores={interiores}
+                      leituraDaCarga={leituraDaCarga}
+                      emissoes={emissoes}
                       unidadesPorQuadro={unidadesPorQuadro / (dentro?.escala ?? 1)}
                       profundidade={profundidade + 1}
                     />
@@ -765,7 +867,12 @@ function Camada({
  * veriam execuções diferentes, que é a otimização recusada em `depth.md` §5.1.
  */
 export function Stage(props: StageProps) {
-  const { view, tickMs = 700 } = props;
+  const { view, tickMs = 700, state, tree } = props;
+
+  // Uma vez por tick, e não uma vez por camada aberta: a resolução percorre a
+  // árvore até o ponto fixo, e um modelo aberto até o fundo tem milhares de
+  // nós.
+  const emissoes = useMemo(() => emissoesPorPorta(state, tree), [state, tree]);
   const svgRef = useRef<SVGSVGElement | null>(null);
   const [camera, setCamera] = useState({
     escala: 1,
@@ -895,7 +1002,12 @@ export function Stage(props: StageProps) {
         </marker>
       </defs>
 
-      <Camada {...props} unidadesPorQuadro={larguraDoQuadro} profundidade={0} />
+      <Camada
+        {...props}
+        emissoes={emissoes}
+        unidadesPorQuadro={larguraDoQuadro}
+        profundidade={0}
+      />
     </svg>
   );
 }

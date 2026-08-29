@@ -156,10 +156,10 @@ test("o que acontece dentro do ciclo aparece na tela", async ({ page }) => {
   // combinacional, então o cálculo inteiro — buscar, decodificar, somar,
   // escolher — acontecia dentro do tick e sem nada se mexer: o desenho ficava
   // parado justamente onde está a coisa que se quer entender.
-  const acomodadas = page.locator(".dui-stage__carga--acomodada");
+  const acomodadas = page.locator(".dui-stage__carga-grupo--acomodada");
   await expect(acomodadas.first()).toBeAttached({ timeout: 10_000 });
   expect(await acomodadas.count()).toBeGreaterThan(
-    await page.locator(".dui-stage__cargas .dui-stage__carga").count(),
+    await page.locator(".dui-stage__cargas .dui-stage__carga-grupo").count(),
   );
 });
 

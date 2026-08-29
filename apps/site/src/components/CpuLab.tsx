@@ -10,6 +10,7 @@ import {
   decode,
   LARGURA,
   portasAltas,
+  leituraDaCarga,
   VIEW_SISTEMA,
   viewsDasPortas,
   viewSomadorDaUla,
@@ -226,6 +227,7 @@ export function CpuLab() {
             fills={fills}
             readouts={readouts}
             altos={portasAltas(estado, arvore)}
+            leituraDaCarga={leituraDaCarga}
             comFicha
           />
         ) : (

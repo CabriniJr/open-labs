@@ -126,7 +126,7 @@
  * tempo e elas contam outra coisa — não é uma coisa atravessando uma borda, é
  * um valor se propagando por um caminho combinacional.
  */
-.dui-stage__carga--acomodada {
+.dui-stage__carga-grupo--acomodada .dui-stage__carga {
   stroke-width: 1;
   filter: none;
 }
@@ -376,5 +376,98 @@
   .dui-stage__interior,
   .dui-stage__rosto {
     transition: none;
+  }
+}
+
+/*
+ * O item na esteira, com identidade.
+ *
+ * O valor que a carga leva fica ao lado do ponto, não em cima: sobre o ponto
+ * aceso ele some justamente quando se quer lê-lo. E não recebe fundo — a linha
+ * é fina, e uma caixinha atrás de cada valor viraria uma fileira de etiquetas
+ * escondendo o circuito.
+ */
+.dui-stage__carga-valor,
+.dui-stage__carga-peso {
+  font-size: 9px;
+  font-weight: 600;
+  fill: var(--ink);
+  /* O contorno é o fundo da página: o valor anda por cima de linhas e caixas,
+     e sem essa borda ele fica ilegível justamente onde o circuito é denso. */
+  paint-order: stroke fill;
+  stroke: var(--paper);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+.dui-stage__carga-peso {
+  fill: var(--ink-faint);
+}
+
+.dui-stage__carga-grupo {
+  cursor: help;
+}
+
+/*
+ * A esteira anda por animação CSS, e não por SMIL.
+ *
+ * O `begin` de um `<animate>` conta a partir do início da linha do tempo do
+ * documento, e não de quando o elemento entrou nela. Como cada tick cria
+ * elementos novos, o intervalo deles já estava no passado no instante do
+ * nascimento: a carga aparecia congelada no valor final — opacidade zero — e a
+ * esteira ficava invisível. O desenho tinha as linhas, tinha os valores, e não
+ * mostrava nada andando. Animação CSS começa quando o elemento entra, que é o
+ * que este caso precisa.
+ */
+.dui-stage__carga-grupo {
+  cursor: help;
+  offset-path: var(--dui-trilho);
+  offset-rotate: 0deg;
+  opacity: 0;
+}
+
+.dui-stage__carga-grupo--acomodada {
+  animation: dui-esteira var(--dui-travessia, 220ms) linear var(--dui-atraso, 0ms) both;
+}
+
+.dui-stage__carga-grupo--voo {
+  animation: dui-voo var(--dui-travessia, 700ms) linear both;
+}
+
+@keyframes dui-esteira {
+  0% {
+    offset-distance: 0%;
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  88% {
+    opacity: 1;
+  }
+  100% {
+    offset-distance: 100%;
+    opacity: 0;
+  }
+}
+
+@keyframes dui-voo {
+  from {
+    offset-distance: var(--dui-de, 0%);
+    opacity: 1;
+  }
+  to {
+    offset-distance: var(--dui-ate, 100%);
+    opacity: 1;
+  }
+}
+
+/* Sem movimento, a carga fica parada onde nasceu — visível, e sem viajar. */
+@media (prefers-reduced-motion: reduce) {
+  .dui-stage__carga-grupo {
+    animation: none;
+    opacity: 1;
+    offset-distance: 50%;
   }
 }
