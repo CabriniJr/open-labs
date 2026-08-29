@@ -103,6 +103,16 @@ para cima. Sessões planejadas (detalhe na §9 da spec):
             que a vista agregada nunca inventa (`b78fafb`, `813d59f`)
       - [x] Task 6 — superfície pública em `index.ts` e guarda de fronteira ampliada a
             protocolo (`d273049`)
+      - [x] Task 8 — três críticos da revisão final (`3b8f652`): mensagem entregue a quem
+            não age não some mais, `behavior` em placa é recusado, `World` indexa os canais
+      - [x] Task 9 — os três achados que sobreviveram (`c9e7b38`). A propriedade da vista
+            agregada vira **igualdade**, não inclusão: provava que ela não inventa travessia
+            e não provava que ela não esconde nenhuma, e dois mutantes passavam em 128
+            testes — um deles jogava fora todo o L0. O rótulo é recalculado dentro do teste,
+            porque teste que chama a mesma função do código erra junto com ela. `setParam`
+            passa a valer do tick seguinte. A guarda de fronteira falha quando lê zero
+            arquivo. E a regra do destino que não age muda de substantivo: vive no **fio**,
+            não no nó, senão recusaria agrupamento decorativo. **160 testes.**
 - [ ] **S2 — Arquétipos.** Os oito de hoje **mais a onda 1** de `kinds.md`
       (`transform`, `tee`, `merge`, `batch`, `clock`, `arbiter`): comportamento em
       `depth-core`, contrato visual em `depth-ui`. Aqui também entram o property test
@@ -117,6 +127,57 @@ para cima. Sessões planejadas (detalhe na §9 da spec):
 - [ ] **S6 — Acabamento.** Modelo estrito de desenho (moldura com recorte, faixas,
       portas), regime nomeado + log de eventos, perturbações, canal-como-aresta
       abrível, smoke.
+
+---
+
+## Marco — teoria do motor ✅
+
+**Data:** 2026-08-29. Commits `4cdd962` e seguinte. `docs/theory.md`: o motor descrito nos
+formalismos de que ele é instância, e o que cada um cobra em teste.
+
+Grafo hierárquico com duas espécies de aresta; profundidade é contração, e a vista de
+fronteira é a imagem do run sob essa contração. Redes de Petri coloridas são o parente mais
+próximo (`kind` é a cor; `edgeTicks` é o carimbo de CPN temporizada; o invariante do
+`transform` é preservação de cor em expressão de arco) — com o preço declarado: **simulamos,
+não verificamos.** Markov na ordem certa: para semente fixa o mundo é trajetória
+determinística, e é isso que torna o `seek` exato; a cadeia aparece ao quantificar sobre a
+semente. Rede de Markov entra como **fronteira, não promessa**.
+
+A §5 é a mais importante: o que o motor NÃO é. Em primeiro lugar o **relógio global**, que
+ensina de graça uma coisa falsa sobre sistema distribuído. Ou um lab ataca isso de frente, ou
+o texto declara o limite em voz alta.
+
+E a §7 abriu uma frente: **a CPU como prova de genericidade** — caminho de dados com assembly
+de entrada e drill-down até a porta lógica, virando a fase **F6b** do `roadmap.md`. Ela tem
+público (material para as aulas do pai do Luigi), e já nomeou três lacunas reais do motor:
+linha de controle sem semântica, ler sem consumir, e combinacional contra registrado. Nenhuma
+se resolve com um `kind` novo. A ordem dela contra o Kafka está em aberto, e é decisão do
+Luigi.
+
+---
+
+## Entrega 2b — site, documentação navegável e Vercel 🚧
+
+**Plano:** `docs/superpowers/plans/2026-08-28-e2b-site-docs-e-vercel.md`
+
+- [x] Task 1 — caminho-base configurável e `vercel.json` (`b078197`). A Vercel serve na raiz,
+      o Pages num subdiretório: quem chama o build declara onde vai servir.
+- [x] Task 2 — documentação como coleção do Astro lendo `../../docs`, com taxonomia num
+      manifesto (`src/data/docs-index.ts`). Os documentos **não ganham frontmatter**: eles
+      também são lidos no repositório. O teste tem as duas direções — capítulo do índice que
+      não existe, e documento que existe e não está em tema nenhum.
+- [x] Task 3 — páginas de documentação: índice à esquerda, sumário à direita, tempo de
+      leitura com código pesando mais que prosa, anterior/próximo, editar no GitHub.
+- [x] Task 4 — busca estática com Pagefind, indexando só o conteúdo (a navegação leva
+      `data-pagefind-ignore`, e isso está verificado no índice construído).
+- [ ] Task 5 — landing com navegação, os quatro níveis como peça visual, a documentação no
+      roteiro com estado real, moldura bilíngue. **Falta a verificação**: e2e verde e a
+      auditoria de contraste nos dois temas.
+
+Armadilhas do Astro que custaram tempo e não estão em lugar nenhum da documentação dele:
+**literal de expressão regular dentro de expressão no template quebra o parser** (a barra
+fecha a tag — por isso `src/lib/urls.ts` existe), e **função de seta com corpo em bloco
+devolvendo marcação também**. As duas dão o mesmo erro inútil: `Syntax error "a"`.
 
 Depois da Entrega 2:
 
