@@ -3,6 +3,7 @@ import { isOpenable } from "@ovh/depth-core";
 import type { TreeIndex, Wire, WorldState } from "@ovh/depth-core";
 import { Stage, autoView, pathTo } from "@ovh/depth-ui";
 import type { View } from "@ovh/depth-ui";
+import { Ficha } from "./Ficha.js";
 
 /**
  * O palco com profundidade: clique duas vezes num objeto e você entra nele.
@@ -27,6 +28,8 @@ export interface ExplorerProps {
   readonly readouts?: Readonly<Record<string, string>> | undefined;
   /** Quem está com a saída em alto. Só o domínio sabe ler o valor que saiu. */
   readonly altos?: ReadonlySet<string> | undefined;
+  /** Mostra a ficha do objeto selecionado ao lado do palco. */
+  readonly comFicha?: boolean;
 }
 
 export function Explorer({
@@ -41,6 +44,7 @@ export function Explorer({
   fills,
   readouts,
   altos,
+  comFicha = false,
 }: ExplorerProps) {
   const primeiro = inicial ?? views[0]?.focus ?? tree.rootId;
   const [foco, setFoco] = useState(primeiro);
@@ -79,21 +83,24 @@ export function Explorer({
         </span>
       </nav>
 
-      <Stage
-        tree={tree}
-        wires={wires}
-        view={view}
-        state={state}
-        previous={previous}
-        {...(edgeTicks === undefined ? {} : { edgeTicks })}
-        {...(tickMs === undefined ? {} : { tickMs })}
-        fills={fills}
-        readouts={readouts}
-        altos={altos}
-        selected={selecionado}
-        onSelect={setSelecionado}
-        onOpen={abrir}
-      />
+      <div className="explorer__corpo" data-com-ficha={comFicha ? "true" : undefined}>
+        <Stage
+          tree={tree}
+          wires={wires}
+          view={view}
+          state={state}
+          previous={previous}
+          {...(edgeTicks === undefined ? {} : { edgeTicks })}
+          {...(tickMs === undefined ? {} : { tickMs })}
+          fills={fills}
+          readouts={readouts}
+          altos={altos}
+          selected={selecionado}
+          onSelect={setSelecionado}
+          onOpen={abrir}
+        />
+        {comFicha ? <Ficha tree={tree} wires={wires} state={state} id={selecionado} /> : null}
+      </div>
     </div>
   );
 }

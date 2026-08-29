@@ -171,6 +171,7 @@ export function CpuLab() {
             fills={fills}
             readouts={readouts}
             altos={portasAltas(estado, arvore)}
+            comFicha
           />
         ) : (
           <p className="cpu-lab__vazio">

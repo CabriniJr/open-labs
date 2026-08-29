@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { indexTree } from "@ovh/depth-core";
+import { FAMILIAS, KINDS } from "@ovh/depth-ui";
 import { assemble } from "./assembler.js";
 import { cpuWorld } from "./datapath.js";
 import { somadorWorld } from "./gates.js";
@@ -50,5 +51,38 @@ describe("o que o leitor vê está em inglês", () => {
   it("o teste tem dente: um rótulo em português reprova", () => {
     expect(ACENTO.test("memória principal")).toBe(true);
     expect(ACENTO.test("main memory")).toBe(false);
+  });
+});
+
+/**
+ * As descrições dos `kind` também são texto que o leitor vê.
+ *
+ * Elas moram em `depth-ui` porque são vocabulário do motor, e passaram
+ * despercebidas na primeira tradução justamente por não estarem onde os rótulos
+ * do modelo estão. A guarda vale para tudo que chega na tela, não para um
+ * arquivo.
+ */
+describe("as descrições dos kind também estão em inglês", () => {
+  it("nenhum resumo ou detalhe acentuado", () => {
+    const textos = [
+      ...Object.entries(KINDS).flatMap(([k, d]) => [
+        [`kind ${k} resumo`, d.resumo] as const,
+        [`kind ${k} detalhe`, d.detalhe] as const,
+      ]),
+      ...Object.entries(FAMILIAS).flatMap(([f, d]) => [
+        [`família ${f} resumo`, d.resumo] as const,
+        [`família ${f} detalhe`, d.detalhe] as const,
+      ]),
+    ];
+    expect(textos.filter(([, t]) => ACENTO.test(t)).map(([onde]) => onde)).toEqual([]);
+  });
+
+  it("todo kind e toda família têm descrição, e nenhuma vazia", () => {
+    // Um kind novo no motor sem descrição apareceria na ficha como um espaço em
+    // branco — o leitor perguntaria "o que é isso?" e a tela não responderia.
+    for (const [nome, d] of [...Object.entries(KINDS), ...Object.entries(FAMILIAS)]) {
+      expect(d.resumo.length, `${nome}: resumo`).toBeGreaterThan(10);
+      expect(d.detalhe.length, `${nome}: detalhe`).toBeGreaterThan(40);
+    }
   });
 });

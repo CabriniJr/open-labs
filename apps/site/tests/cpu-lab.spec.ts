@@ -162,3 +162,39 @@ test("o que acontece dentro do ciclo aparece na tela", async ({ page }) => {
     await page.locator(".dui-stage__cargas .dui-stage__carga").count(),
   );
 });
+
+test("bateu a dúvida do que é a peça, a resposta está ali", async ({ page }) => {
+  await page.goto("labs/cpu/");
+  await expect(page.locator(".dui-stage")).toBeVisible({ timeout: 15_000 });
+
+  // O hover responde sem tirar ninguém da tela...
+  const mux = page.locator('.dui-stage__objeto[aria-label^="operand mux"]').first();
+  await expect(mux.locator("title")).toContainText("router");
+
+  // ...e a ficha responde por extenso, com o que a peça é e o que ela está
+  // fazendo agora. Sem isso, quem não sabe o que é um mux precisa sair da
+  // página para descobrir — e sair da página é onde se perde o fio.
+  await mux.click();
+  const ficha = page.locator(".ficha");
+  await expect(ficha).toContainText("operand mux");
+  await expect(ficha).toContainText("router");
+  await expect(ficha).toContainText("A mux is a router");
+  await expect(ficha).toContainText("processor");
+
+  // e a topologia crua, para conferir o desenho contra o modelo
+  await page.locator(".ficha__dot-botao").click();
+  await expect(page.locator(".ficha__dot")).toContainText("digraph");
+});
+
+test("a ficha de um contêiner mostra o interior dele em grafo", async ({ page }) => {
+  await page.goto("labs/cpu/");
+  await expect(page.locator(".dui-stage")).toBeVisible({ timeout: 15_000 });
+
+  await page.locator('.dui-stage__objeto[aria-label^="ALU"]').first().click();
+  await expect(page.locator(".ficha")).toContainText("composite");
+  await page.locator(".ficha__dot-botao").click();
+  const dot = page.locator(".ficha__dot");
+  // o interior da ULA: o dispersor, o somador, e a aresta entre eles
+  await expect(dot).toContainText("splitter");
+  await expect(dot).toContainText("->");
+});

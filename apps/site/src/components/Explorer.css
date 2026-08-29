@@ -31,3 +31,131 @@
   margin-inline-start: auto;
   color: var(--ink-faint);
 }
+
+/* ---------- corpo: o palco e a ficha lado a lado ---------- */
+
+.explorer__corpo[data-com-ficha="true"] {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 20rem;
+  gap: var(--space-2);
+  align-items: start;
+}
+
+@media (max-width: 70rem) {
+  .explorer__corpo[data-com-ficha="true"] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ---------- a ficha ---------- */
+
+.ficha {
+  padding: var(--space-2);
+  background: var(--paper-raised);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-2);
+  font-size: var(--size-step--1);
+  max-height: 40rem;
+  overflow-y: auto;
+}
+
+.ficha h3 {
+  margin: 0 0 var(--space-1);
+  font-size: var(--size-step--1);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.ficha h4 {
+  margin: var(--space-2) 0 0.4rem;
+  font-size: var(--size-step--1);
+  color: var(--ink-muted);
+}
+
+.ficha__nome {
+  margin: 0;
+  color: var(--ink);
+  font-size: var(--size-step-0);
+}
+
+.ficha__id {
+  margin: 0 0 var(--space-1);
+  color: var(--ink-faint);
+  word-break: break-all;
+}
+
+.ficha__dica {
+  margin: 0;
+  color: var(--ink-muted);
+  line-height: 1.5;
+}
+
+.ficha__campos {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.15rem;
+  margin: 0;
+}
+
+.ficha__campos dt {
+  margin-top: var(--space-1);
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: var(--size-step--2, 0.72rem);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.ficha__campos dd {
+  margin: 0;
+  color: var(--ink);
+}
+
+.ficha__prosa {
+  color: var(--ink-muted);
+  line-height: 1.5;
+}
+
+.ficha__estado {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ficha__estado li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-1);
+  padding: 0.15rem 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.ficha__dot-botao {
+  margin-top: var(--space-2);
+  padding: 0.3rem 0.6rem;
+  background: none;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-1);
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: var(--size-step--2, 0.72rem);
+  cursor: pointer;
+}
+
+.ficha__dot-botao:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.ficha__dot {
+  margin: var(--space-1) 0 0;
+  padding: var(--space-1);
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-1);
+  font-size: 0.68rem;
+  line-height: 1.45;
+  overflow-x: auto;
+  white-space: pre;
+}

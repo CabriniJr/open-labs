@@ -84,6 +84,7 @@ export function GatesLab() {
           views={views}
           readouts={readouts}
           altos={portasAltas(estado, arvore)}
+          comFicha
         />
         <p className="gates-lab__legenda">
           A lit gate is a gate whose output is 1 — and a dark one is a gate that

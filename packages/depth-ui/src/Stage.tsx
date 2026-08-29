@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { familyOf } from "@ovh/depth-core";
 import type { Family, TreeIndex, Wire, WorldState } from "@ovh/depth-core";
 import type { NodePlacement, View } from "./view.js";
+import { resumoDoKind } from "./kinds.js";
 
 /**
  * O palco: uma view desenhada, com o estado do mundo por cima.
@@ -559,6 +560,16 @@ export function Stage({
                 if (e.key === " ") onSelect?.(place.id);
               }}
             >
+              {/*
+                O hover nativo do SVG. Bate a dúvida "o que é um mux?" e a
+                resposta está debaixo do cursor, sem tirar o leitor da tela —
+                que é onde ele consegue relacionar a explicação com a coisa.
+              */}
+              <title>
+                {`${rotulo} · ${node?.kind ?? "?"}\n${
+                  node === undefined ? "" : resumoDoKind(node.kind, fam)
+                }`}
+              </title>
               {replicas !== undefined ? (
                 <>
                   <rect
