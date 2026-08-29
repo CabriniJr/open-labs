@@ -4,6 +4,7 @@
     { "path": "packages/otel-domain" },
     { "path": "packages/depth-core" },
     { "path": "packages/depth-ui" },
+    { "path": "packages/model-format" },
     { "path": "apps/site" }
   ]
 }

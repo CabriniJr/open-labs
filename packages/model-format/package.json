@@ -1,0 +1,17 @@
+{
+  "name": "@ovh/model-format",
+  "version": "0.0.0",
+  "license": "Apache-2.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@ovh/depth-core": "workspace:*",
+    "yaml": "^2.5.0",
+    "zod": "^3.23.0"
+  }
+}
