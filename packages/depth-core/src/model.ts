@@ -19,18 +19,47 @@ export type Kind =
 export type Role = "node" | "message" | "channel";
 
 /**
- * A família vem antes do arquétipo e carrega a linguagem de forma. O `kind` só
- * faz a variação dentro dela — nunca uma forma inteiramente nova. É o que
- * impede o handbook de virar coleção de ilustrações sob medida, e o que faz
- * outro domínio herdar a linguagem inteira trocando só as variações.
+ * A que espécie de coisa um objeto pertence. A família carrega a linguagem de
+ * formas do desenho; o `kind` só faz a variação dentro dela.
+ *
+ * - `container` organiza e nunca tem comportamento próprio
+ * - `processor` age sobre o que o atravessa
+ * - `conduit` transporta e nunca altera a carga
+ * - `controller` observa, concede, dispara — e **não** está no caminho da carga
+ * - `plate` é dado anexado: consultado, nunca atravessado
  */
-export type Family = "block" | "conduit" | "plate";
+export type Family =
+  | "container"
+  | "processor"
+  | "conduit"
+  | "controller"
+  | "plate";
+
+/**
+ * Tabela em vez de cadeia de `if`: sendo um `Record<Kind, Family>`, acrescentar
+ * um `kind` sem lhe dar família deixa de compilar. O catálogo cresce em ondas,
+ * e crescer sem esquecer é o ponto.
+ */
+const FAMILY: Record<Kind, Family> = {
+  composite: "container",
+  pipeline: "container",
+  source: "processor",
+  router: "processor",
+  buffer: "processor",
+  sink: "processor",
+  channel: "conduit",
+  static: "plate",
+};
 
 export function familyOf(kind: Kind): Family {
-  if (kind === "channel") return "conduit";
-  if (kind === "static") return "plate";
-  return "block";
+  return FAMILY[kind];
 }
+
+/**
+ * Duas espécies de linha, e o ganho é de legibilidade: a pergunta "por onde o
+ * dado passa?" se responde olhando só as linhas de dado.
+ */
+export type LineKind = "data" | "control";
 
 export type PortId = string;
 
@@ -120,6 +149,10 @@ export interface Wire {
    * abrível, e a subárvore do canal descreve o interior dele.
    */
   readonly channel?: string;
+  /** Espécie da linha. Ausente significa `"data"` — a esmagadora maioria. Uma
+   *  linha de controle carrega sinal (pedido, concessão, gatilho, medida) e
+   *  **nunca** carga. */
+  readonly line?: LineKind;
 }
 
 export interface WorldSpec {

@@ -47,8 +47,11 @@ describe("familyOf", () => {
   it("agrupa os arquétipos em famílias de forma", () => {
     expect(familyOf("channel")).toBe("conduit");
     expect(familyOf("static")).toBe("plate");
-    for (const kind of ["composite", "source", "router", "pipeline", "buffer", "sink"] as const) {
-      expect(familyOf(kind)).toBe("block");
+    for (const kind of ["composite", "pipeline"] as const) {
+      expect(familyOf(kind)).toBe("container");
+    }
+    for (const kind of ["source", "router", "buffer", "sink"] as const) {
+      expect(familyOf(kind)).toBe("processor");
     }
   });
 });
