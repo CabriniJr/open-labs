@@ -7,13 +7,15 @@ import "@ovh/depth-ui/src/depth-ui.css";
 interface Props {
   title: string;
   description: string;
+  /** A língua da página. O handbook é em inglês; a documentação, em português. */
+  lang?: "en" | "pt-BR" | undefined;
 }
 
-const { title, description } = Astro.props;
+const { title, description, lang = "en" } = Astro.props;
 ---
 
 <!doctype html>
-<html lang="en" data-domain="otel">
+<html lang={lang} data-domain="otel">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -25,6 +27,16 @@ const { title, description } = Astro.props;
       rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Outfit:wght@400;500;600;700&display=swap"
     />
+    <script is:inline>
+      // Antes da primeira pintura, senão a página pisca claro e vira escura.
+      // Três estados: escolha explícita, ou nada — e aí quem decide é o SO.
+      try {
+        const salvo = localStorage.getItem("ovh-theme");
+        if (salvo === "dark" || salvo === "light") document.documentElement.dataset.theme = salvo;
+      } catch {
+        // Armazenamento bloqueado: fica valendo a preferência do sistema.
+      }
+    </script>
   </head>
   <body>
     <slot />

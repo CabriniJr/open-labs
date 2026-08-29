@@ -1,0 +1,33 @@
+.explorer__trilha {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.15rem;
+  margin-block-end: var(--space-1);
+  color: var(--ink-faint);
+  font-size: var(--size-step--1);
+}
+
+.explorer__trilha button {
+  padding: 0.1rem 0.3rem;
+  background: none;
+  border: 0;
+  border-radius: var(--radius-1);
+  color: var(--accent);
+  font: inherit;
+  cursor: pointer;
+}
+
+.explorer__trilha button:hover:not(:disabled) {
+  background: color-mix(in oklab, var(--accent) 12%, transparent);
+}
+
+.explorer__trilha button:disabled {
+  color: var(--ink);
+  cursor: default;
+}
+
+.explorer__dica {
+  margin-inline-start: auto;
+  color: var(--ink-faint);
+}

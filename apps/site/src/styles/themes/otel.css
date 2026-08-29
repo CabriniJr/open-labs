@@ -14,6 +14,12 @@
   --sig-mutation: #f5a800;
 }
 
+@media (prefers-color-scheme: dark) {
+  :root[data-domain="otel"]:not([data-theme="light"]) {
+    --accent: #8fa2ee;
+  }
+}
+
 :root[data-domain="otel"][data-theme="dark"] {
   --accent: #8fa2ee;
 }

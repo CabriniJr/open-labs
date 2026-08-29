@@ -1,0 +1,33 @@
+---
+import { url } from "../lib/urls";
+import { chrome, type Lang } from "../lib/chrome-strings";
+
+interface Props {
+  lang?: Lang | undefined;
+}
+
+const { lang = "en" } = Astro.props;
+const t = chrome(lang);
+---
+
+<footer class="site-footer">
+  <div>
+    <p class="site-footer__title">OpenLabs</p>
+    <p class="site-footer__note">
+      {t.footerNote}
+    </p>
+  </div>
+  <nav aria-label={t.footerNav}>
+    <a href={url("handbooks")}>{t.handbooks}</a>
+    <a href={url("docs")}>{t.docs}</a>
+    <a href="https://github.com/CabriniJr/otel-visual-handbook" rel="noopener">{t.code}</a>
+    <a
+      href="https://github.com/CabriniJr/otel-visual-handbook/blob/main/LICENSE"
+      rel="noopener license">{t.licenseCode}</a
+    >
+    <a
+      href="https://github.com/CabriniJr/otel-visual-handbook/blob/main/LICENSE-content"
+      rel="noopener license">{t.licenseContent}</a
+    >
+  </nav>
+</footer>

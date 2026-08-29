@@ -1,0 +1,302 @@
+---
+import SiteFooter from "../../components/SiteFooter.astro";
+import SiteNav from "../../components/SiteNav.astro";
+import { Roadmap } from "../../components/Roadmap.tsx";
+import Base from "../../layouts/Base.astro";
+import { url } from "../../lib/urls";
+import {
+  HANDBOOKS,
+  ITEM_STATUS_LABEL,
+  type Handbook,
+  type HandbookItem,
+} from "../../data/handbooks";
+import "../../components/Roadmap.css";
+import "../../styles/docs.css";
+
+export function getStaticPaths() {
+  return HANDBOOKS.map((handbook) => ({ params: { id: handbook.id }, props: { handbook } }));
+}
+
+interface Props {
+  handbook: Handbook;
+}
+
+const { handbook } = Astro.props;
+
+/**
+ * Todo handbook tem a mesma anatomia — roadmap, artigos, labs — e a página é
+ * essa anatomia. Agrupar por fase em vez de listar corrido é o que faz o
+ * artigo e o lab da mesma fase aparecerem lado a lado, que é como se estuda.
+ */
+interface Grupo {
+  readonly phase: number;
+  readonly title: string;
+  readonly line: string;
+  readonly articles: readonly HandbookItem[];
+  readonly labs: readonly HandbookItem[];
+}
+
+const grupos: readonly Grupo[] = handbook.phases.map((phase) => ({
+  phase: phase.number,
+  title: phase.title,
+  line: phase.line,
+  articles: handbook.articles.filter((item) => item.phase === phase.number),
+  labs: handbook.labs.filter((item) => item.phase === phase.number),
+}));
+
+const orfaos = [...handbook.articles, ...handbook.labs].filter(
+  (item) => !handbook.phases.some((phase) => phase.number === item.phase),
+);
+if (orfaos.length > 0) {
+  throw new Error(
+    `handbook "${handbook.id}": itens em fase inexistente — ` +
+      `${orfaos.map((item) => item.id).join(", ")}. ` +
+      "Sem isto o item some da página sem aviso.",
+  );
+}
+---
+
+<Base
+  title={`${handbook.name} — OpenLabs`}
+  description={handbook.blurb}
+>
+  <SiteNav current="handbooks" />
+
+  <main id="content">
+    <section class="hb-head editorial">
+      <div class="prose">
+        <p class="hb-head__eyebrow mono">OpenLabs handbook</p>
+        <h1>{handbook.name}</h1>
+        <p class="hb-head__tagline">{handbook.tagline}</p>
+        <p>{handbook.blurb}</p>
+      </div>
+      <aside class="hb-head__note mono">
+        <p>Model: {handbook.model}</p>
+        <p>
+          {
+            handbook.stage === "building"
+              ? "Being built now."
+              : "Designed, not yet running."
+          }
+        </p>
+      </aside>
+    </section>
+
+    <section class="hb-section" id="roadmap">
+      <h2>Roadmap</h2>
+      <p class="hb-section__lede">
+        The order in which the concepts hold each other up. Not a queue — later
+        phases reach back, and the map shows it.
+      </p>
+      {handbook.hasMap && <Roadmap client:visible />}
+      <ol class="hb-phases">
+        {
+          handbook.phases.map((phase) => (
+            <li class="hb-phase">
+              <span class="hb-phase__number mono">{String(phase.number).padStart(2, "0")}</span>
+              <span class="hb-phase__title">{phase.title}</span>
+              <span class="hb-phase__line">{phase.line}</span>
+            </li>
+          ))
+        }
+      </ol>
+    </section>
+
+    <section class="hb-section" id="content-tracks">
+      <h2>Articles and labs</h2>
+      <p class="hb-section__lede">
+        Each phase pairs prose with a model. The article says what is true; the
+        lab is the thing running, and you can break it.
+      </p>
+      <div class="hb-grid">
+        {
+          grupos.map((grupo) => (
+            <section class="hb-group">
+              <h3>
+                <span class="mono">{String(grupo.phase).padStart(2, "0")}</span> {grupo.title}
+              </h3>
+              <p class="hb-group__line">{grupo.line}</p>
+              <p class="hb-group__label mono">Articles</p>
+              <ul class="hb-items">
+                {grupo.articles.map((item) => (
+                  <li class="hb-item">
+                    <span>{item.title}</span>
+                    <span class={`status status--${item.status}`}>
+                      {ITEM_STATUS_LABEL[item.status]}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <p class="hb-group__label mono">Labs</p>
+              <ul class="hb-items">
+                {grupo.labs.map((item) => (
+                  <li class="hb-item">
+                    {item.href === undefined ? (
+                      <span>{item.title}</span>
+                    ) : (
+                      <a href={url(item.href)}>{item.title}</a>
+                    )}
+                    <span class={`status status--${item.status}`}>
+                      {ITEM_STATUS_LABEL[item.status]}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))
+        }
+      </div>
+    </section>
+  </main>
+
+  <SiteFooter />
+</Base>
+
+<style>
+  .hb-head {
+    padding-block: var(--space-5) var(--space-3);
+  }
+
+  .hb-head__eyebrow {
+    color: var(--accent);
+    font-size: var(--size-step--1);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin: 0 0 var(--space-1);
+  }
+
+  h1 {
+    margin: 0 0 var(--space-2);
+    font-size: var(--size-step-3);
+    max-width: 18ch;
+  }
+
+  .hb-head__tagline {
+    font-size: var(--size-step-1);
+  }
+
+  .hb-head__note {
+    align-self: end;
+    color: var(--ink-muted);
+    font-size: var(--size-step--1);
+  }
+
+  .hb-head__note p {
+    margin: 0 0 0.35rem;
+  }
+
+  .hb-section {
+    max-width: 92rem;
+    margin-inline: auto;
+    padding: var(--space-4) var(--space-3);
+    border-block-start: 1px solid var(--rule);
+  }
+
+  h2 {
+    font-size: var(--size-step-2);
+    margin: 0 0 var(--space-1);
+  }
+
+  .hb-section__lede {
+    max-width: var(--measure);
+    color: var(--ink-muted);
+    margin: 0 0 var(--space-3);
+  }
+
+  .hb-phases {
+    list-style: none;
+    margin: var(--space-3) 0 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius-3);
+    overflow: hidden;
+  }
+
+  .hb-phase {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    padding: var(--space-3) var(--space-2);
+    background: var(--paper-raised);
+  }
+
+  .hb-phase__number {
+    color: var(--accent);
+    font-size: var(--size-step--1);
+  }
+
+  .hb-phase__title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: var(--size-step-1);
+    letter-spacing: -0.02em;
+  }
+
+  .hb-phase__line {
+    color: var(--ink-muted);
+    font-size: var(--size-step--1);
+    line-height: 1.45;
+  }
+
+  .hb-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr));
+    gap: var(--space-2);
+  }
+
+  .hb-group {
+    padding: var(--space-3);
+    background: var(--paper-raised);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius-3);
+  }
+
+  .hb-group h3 {
+    margin: 0 0 0.35rem;
+    font-size: var(--size-step-1);
+  }
+
+  .hb-group h3 span {
+    color: var(--accent);
+    font-size: var(--size-step--1);
+  }
+
+  .hb-group__line {
+    margin: 0 0 var(--space-2);
+    color: var(--ink-muted);
+    font-size: var(--size-step--1);
+    line-height: 1.5;
+  }
+
+  .hb-group__label {
+    margin: var(--space-2) 0 0.35rem;
+    color: var(--ink-faint);
+    font-size: var(--size-step--1);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .hb-items {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .hb-item {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-1);
+    padding-block: 0.35rem;
+    border-block-end: 1px solid var(--rule);
+    font-size: var(--size-step--1);
+  }
+
+  .hb-item:last-child {
+    border-block-end: none;
+  }
+</style>

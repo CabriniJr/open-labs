@@ -31,6 +31,14 @@
       "w": 1100,
       "h": 1360,
       "title": "Design scale"
+    },
+    {
+      "file": "Symbols.dc.html",
+      "x": 1300,
+      "y": 2760,
+      "w": 1100,
+      "h": 1720,
+      "title": "L0 symbols"
     }
   ],
   "annotations": [
@@ -54,6 +62,13 @@
       "y": 2460,
       "w": 640,
       "text": "O mapa substituiu a lista de fases: nós são labs, arestas são pré-requisitos.\nAdotamos a ideia do roadmap.sh, não o figurino — cantos retos, traço de 1.5px, cor só onde significa algo.\nO tracejado fino à esquerda são os anexos do The Wire: referência, não etapa do caminho."
+    },
+    {
+      "id": "note-symbols",
+      "x": 1300,
+      "y": 2600,
+      "w": 640,
+      "text": "Vocabulário do L0: a forma diz o que a coisa É, o traço diz como ela está,\ne a marca no fio diz qual sinal está se movendo. Todo glifo desenhado em grade de 24px a 1.6px."
     }
   ],
   "launch": {

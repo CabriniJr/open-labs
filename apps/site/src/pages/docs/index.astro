@@ -1,0 +1,52 @@
+---
+import SiteFooter from "../../components/SiteFooter.astro";
+import SiteNav from "../../components/SiteNav.astro";
+import { STATUS_LABEL, THEMES } from "../../data/docs-index";
+import { docUrl } from "../../lib/urls";
+import Base from "../../layouts/Base.astro";
+import "../../styles/docs.css";
+
+---
+
+<Base
+  title="Documentação — OTel Visual Handbook"
+  description="As decisões, o motor e o formato de autoria do OTel Visual Handbook."
+  lang="pt-BR"
+>
+  <SiteNav current="docs" lang="pt-BR" />
+  <main class="docs-home" id="content">
+    <h1>Documentação</h1>
+    <p class="docs-home__lede">
+      Esta documentação está incompleta, e cada capítulo diz em que estado está. O que já dá
+      para ler inteiro são as <strong>decisões</strong> e a <strong>teoria do motor</strong>; o
+      catálogo de arquétipos e o formato do modelo ainda são proposta, e mudam. Nada aqui é
+      apagado quando muda de ideia — a discussão fica registrada.
+    </p>
+
+    <div class="docs-home__grid">
+      {
+        THEMES.map((theme) => (
+          <section class="docs-home__card">
+            <h2>{theme.title}</h2>
+            <p>{theme.blurb}</p>
+            <ul>
+              {theme.chapters.map((chapter) => (
+                <li>
+                  <a href={docUrl(chapter.id)}>
+                    <span>{chapter.title}</span>
+                    {chapter.status !== "stable" && (
+                      <span class={`status status--${chapter.status}`}>
+                        {STATUS_LABEL[chapter.status]}
+                      </span>
+                    )}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))
+      }
+    </div>
+  </main>
+  <SiteFooter lang="pt-BR" />
+</Base>

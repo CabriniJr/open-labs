@@ -9,7 +9,10 @@ export default defineWorkspace([
       include: [
         "packages/depth-core/src/**/*.test.ts",
         "packages/otel-domain/src/**/*.test.ts",
+        "packages/cpu-domain/src/**/*.test.ts",
+        "packages/model-format/src/**/*.test.ts",
         "apps/site/src/**/*.test.ts",
+        "packages/depth-ui/src/**/*.test.ts",
         "scripts/**/*.test.mjs",
       ],
     },

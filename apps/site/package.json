@@ -1,6 +1,7 @@
 {
   "name": "@ovh/site",
   "version": "0.0.0",
+  "license": "Apache-2.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -11,6 +12,7 @@
   },
   "dependencies": {
     "@astrojs/react": "^4.2.0",
+    "@ovh/cpu-domain": "workspace:*",
     "@ovh/depth-core": "workspace:*",
     "@ovh/depth-ui": "workspace:*",
     "@ovh/otel-domain": "workspace:*",
@@ -20,7 +22,9 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.49.0",
+    "@types/node": "^26.4.0",
     "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0"
+    "@types/react-dom": "^19.0.0",
+    "astro-pagefind": "^2.0.1"
   }
 }

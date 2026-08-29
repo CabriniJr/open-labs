@@ -1,0 +1,117 @@
+.gates-lab {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 20rem);
+  gap: var(--space-2);
+  align-items: start;
+}
+
+@media (max-width: 68rem) {
+  .gates-lab {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.gates-lab__palco {
+  min-width: 0;
+}
+
+.gates-lab__legenda {
+  max-width: 62ch;
+  margin-block: var(--space-1) 0;
+  color: var(--ink-muted);
+  font-size: var(--size-step--1);
+  line-height: 1.5;
+}
+
+.gates-lab__painel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.gates-lab__painel h3 {
+  margin: 0 0 0.4rem;
+  color: var(--ink-faint);
+  font-family: var(--font-mono);
+  font-size: var(--size-step--1);
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.gates-lab__entrada {
+  display: grid;
+  grid-template-columns: 1.2rem minmax(0, 1fr) 5.5rem;
+  align-items: center;
+  gap: 0.5rem;
+  margin-block-end: 0.4rem;
+  color: var(--ink-muted);
+  font-size: var(--size-step--1);
+}
+
+.gates-lab__entrada input {
+  accent-color: var(--accent);
+}
+
+.gates-lab__entrada span:last-child {
+  color: var(--ink);
+  text-align: end;
+}
+
+.gates-lab__resultado {
+  margin: 0;
+  padding: var(--space-1);
+  background: var(--paper-raised);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-2);
+  color: var(--ink);
+  font-size: var(--size-step-0);
+  letter-spacing: 0.08em;
+}
+
+.gates-lab__nota {
+  margin: 0.4rem 0 0;
+  color: var(--ink-muted);
+  font-size: var(--size-step--1);
+  line-height: 1.45;
+}
+
+.gates-lab__controles {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.gates-lab__controles button {
+  padding: 0.35rem 0.8rem;
+  background: var(--paper-raised);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-2);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: var(--size-step--1);
+  cursor: pointer;
+}
+
+.gates-lab__controles button:hover {
+  border-color: var(--accent);
+}
+
+.gates-lab__compasso {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--ink-muted);
+  font-size: var(--size-step--1);
+}
+
+.gates-lab__compasso input {
+  width: 6rem;
+  accent-color: var(--accent);
+}
+
+.gates-lab__tick {
+  color: var(--ink-faint);
+  font-size: var(--size-step--1);
+}

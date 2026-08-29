@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { findViolations } from "./check-boundaries.mjs";
+import { findViolations, verdict } from "./check-boundaries.mjs";
 
 describe("findViolations", () => {
   it("aceita um arquivo agnóstico", () => {
@@ -26,8 +26,89 @@ describe("findViolations", () => {
     expect(violations[0].reason).toContain("otlp");
   });
 
+  it("acusa vocabulário do segundo domínio dentro do motor", () => {
+    // Duas listas, um mecanismo: vigiar só o primeiro domínio faria a fronteira
+    // valer contra um assunto e não contra o outro.
+    const violations = findViolations(
+      "packages/depth-core/src/x.ts",
+      "// o registrador guarda o valor\n",
+    );
+    expect(violations).toHaveLength(1);
+    expect(violations[0].reason).toContain("registrador");
+  });
+
+  it("não acusa palavra do segundo domínio fora dos pacotes agnósticos", () => {
+    expect(findViolations("packages/cpu-domain/src/x.ts", "const registrador = 1;\n")).toEqual(
+      [],
+    );
+  });
+
+  it("vigia o formato do modelo, que também é agnóstico", () => {
+    const found = findViolations(
+      "packages/model-format/src/compile.ts",
+      "// o collector chega aqui",
+    );
+    expect(found).toHaveLength(1);
+  });
+
+  it("não acusa o vocabulário do formato", () => {
+    const found = findViolations(
+      "packages/model-format/src/schema.ts",
+      "const port = { role: 'data', direction: 'drop' }; // fio, kind, parâmetro",
+    );
+    expect(found).toEqual([]);
+  });
+
   it("ignora arquivos fora dos pacotes agnósticos", () => {
     const source = 'import { parseTraceparent } from "@ovh/otel-domain";';
     expect(findViolations("apps/site/src/labs/hero/scenario.ts", source)).toEqual([]);
+  });
+});
+
+describe("guarda ampliada: protocolo também é domínio", () => {
+  it("acusa gRPC no motor", () => {
+    const found = findViolations("packages/depth-core/src/x.ts", "// fala grpc aqui");
+    expect(found).toHaveLength(1);
+  });
+
+  it("acusa spanprocessor no motor", () => {
+    const found = findViolations("packages/depth-core/src/x.ts", "const spanprocessor = 1;");
+    expect(found).toHaveLength(1);
+  });
+
+  it("acusa sampler no motor", () => {
+    const found = findViolations("packages/depth-ui/src/x.tsx", "// o sampler decide");
+    expect(found).toHaveLength(1);
+  });
+
+  it("não acusa vocabulário do motor", () => {
+    const found = findViolations(
+      "packages/depth-core/src/x.ts",
+      "const kind = 'pipeline'; // router, buffer, composite",
+    );
+    expect(found).toEqual([]);
+  });
+});
+
+describe("verdict: um verde precisa ter lido alguma coisa", () => {
+  it("falha quando nenhum arquivo foi varrido, dizendo onde rodar", () => {
+    const { code, report } = verdict(0, []);
+    expect(code).toBe(1);
+    expect(report).toMatch(/nenhum arquivo casou/);
+    expect(report).toMatch(/diretório errado/);
+  });
+
+  it("imprime quantos arquivos foram varridos no sucesso", () => {
+    const { code, report } = verdict(23, []);
+    expect(code).toBe(0);
+    expect(report).toBe("Fronteira motor↔domínio intacta (23 arquivos).");
+  });
+
+  it("a violação vence a contagem", () => {
+    const { code, report } = verdict(23, [
+      { filePath: "packages/depth-core/src/x.ts", reason: 'usa vocabulário de domínio "otlp"' },
+    ]);
+    expect(code).toBe(1);
+    expect(report).toMatch(/depth-core\/src\/x\.ts/);
   });
 });

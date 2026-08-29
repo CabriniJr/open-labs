@@ -26,6 +26,11 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
+        env:
+          # O Pages serve num subdiretório; o build precisa saber disso, senão
+          # todo link interno aponta para a raiz do domínio.
+          PUBLIC_BASE_PATH: /otel-visual-handbook/
+          PUBLIC_SITE_URL: https://cabrinijr.github.io
       - uses: actions/upload-pages-artifact@v3
         with:
           path: apps/site/dist

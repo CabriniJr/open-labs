@@ -2,17 +2,30 @@
 import { readFileSync } from "node:fs";
 import { glob } from "node:fs/promises";
 
-/** Pacotes que não podem conhecer domínio nenhum. */
-const AGNOSTIC = ["packages/depth-core/", "packages/depth-ui/"];
+/**
+ * Pacotes que não podem conhecer domínio nenhum.
+ *
+ * `model-format` entra porque ele conhece `kind`, porta, fio e parâmetro —
+ * vocabulário do motor — e nada além disso. É o formato em que um handbook de
+ * outra tecnologia seria escrito; no dia em que ele souber o que é um exportador
+ * de telemetria, deixa de servir para o segundo alvo.
+ */
+const AGNOSTIC = [
+  "packages/depth-core/",
+  "packages/depth-ui/",
+  "packages/model-format/",
+];
 
 /** Pacotes de domínio que eles não podem importar. */
-const DOMAIN_PACKAGES = ["@ovh/otel-domain"];
+const DOMAIN_PACKAGES = ["@ovh/otel-domain", "@ovh/cpu-domain"];
 
 /**
- * Termos inequívocos de OpenTelemetry. `span` e `trace` sozinhos ficam de fora
- * de propósito: `<span>` é HTML legítimo e "trace" aparece em "traceability".
+ * Termos inequívocos de domínio. `span` e `trace` sozinhos ficam de fora de
+ * propósito: `<span>` é HTML legítimo e "trace" aparece em "traceability".
+ *
+ * Protocolo também é domínio: o motor não pode saber que gRPC existe.
  */
-const DOMAIN_WORDS = [
+const OTEL = [
   "otlp",
   "opentelemetry",
   "otel",
@@ -23,7 +36,38 @@ const DOMAIN_WORDS = [
   "spanid",
   "traceid",
   "collector",
+  "tracerprovider",
+  "spanprocessor",
+  "batchspanprocessor",
+  "spanexporter",
+  "sampler",
+  "grpc",
+  "http2",
+  "protobuf",
+  "hpack",
+  "w3c",
 ];
+
+/**
+ * O segundo domínio. Duas listas, **um** mecanismo de busca: o motor existe para
+ * servir mais de um assunto, e agora há dois provando isso — vigiar só o
+ * primeiro faria a fronteira valer contra um domínio e não contra o outro.
+ *
+ * `register` sozinho fica de fora: aparece em `registerX` de biblioteca. Por
+ * isso "register file", que só significa uma coisa.
+ */
+const CPU = [
+  "registrador",
+  "register file",
+  "opcode",
+  "riscv",
+  "risc-v",
+  "assembly",
+  "transistor",
+  "instruction set",
+];
+
+const DOMAIN_WORDS = [...OTEL, ...CPU];
 
 export function findViolations(filePath, source) {
   if (!AGNOSTIC.some((prefix) => filePath.startsWith(prefix))) return [];
@@ -53,24 +97,54 @@ export function findViolations(filePath, source) {
   return violations;
 }
 
+/**
+ * O veredito, separado de `main` para poder ser testado.
+ *
+ * Zero arquivo varrido é FALHA, não sucesso: os padrões são relativos à raiz do
+ * repositório, então rodar de outro diretório casava com nada e a guarda dava
+ * verde tendo lido zero arquivo — justamente na peça que existe para dar
+ * significado ao verde de todas as outras.
+ */
+export function verdict(scanned, violations) {
+  if (violations.length > 0) {
+    const linhas = violations.map((v) => `  ${v.filePath}: ${v.reason}`).join("\n");
+    return {
+      code: 1,
+      report:
+        `Fronteira motor↔domínio violada (spec §8):\n\n${linhas}\n\n` +
+        "O motor não pode conhecer domínio nenhum — nem OpenTelemetry, nem CPU. Mova\n" +
+          "isso para o pacote de domínio correspondente.",
+    };
+  }
+
+  if (scanned === 0) {
+    return {
+      code: 1,
+      report:
+        "Guarda de fronteira: nenhum arquivo casou com os padrões de varredura.\n" +
+        "Um verde sem arquivo lido não prova nada. Os padrões partem da raiz do " +
+        "repositório — provavelmente o comando rodou do diretório errado. Rode " +
+        "`pnpm boundaries` na raiz.",
+    };
+  }
+
+  return { code: 0, report: `Fronteira motor↔domínio intacta (${scanned} arquivos).` };
+}
+
 async function main() {
   const all = [];
+  let scanned = 0;
   for (const prefix of AGNOSTIC) {
     for await (const file of glob(`${prefix}src/**/*.{ts,tsx}`)) {
+      scanned += 1;
       all.push(...findViolations(file, readFileSync(file, "utf8")));
     }
   }
 
-  if (all.length > 0) {
-    console.error("Fronteira motor↔domínio violada (spec §8):\n");
-    for (const v of all) console.error(`  ${v.filePath}: ${v.reason}`);
-    console.error(
-      "\nO motor não pode conhecer OpenTelemetry. Mova isso para packages/otel-domain.",
-    );
-    process.exit(1);
-  }
-
-  console.log("Fronteira motor↔domínio intacta.");
+  const { code, report } = verdict(scanned, all);
+  if (code === 0) console.log(report);
+  else console.error(report);
+  process.exit(code);
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

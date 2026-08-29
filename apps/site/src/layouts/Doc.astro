@@ -1,0 +1,114 @@
+---
+import type { MarkdownHeading } from "astro";
+import DocSidebar from "../components/DocSidebar.astro";
+import DocToc from "../components/DocToc.astro";
+import SiteNav from "../components/SiteNav.astro";
+import SiteFooter from "../components/SiteFooter.astro";
+import { STATUS_LABEL, neighbours, themeOf, type Chapter } from "../data/docs-index";
+import { readingTime } from "../lib/reading-time";
+import { docUrl, docsHome } from "../lib/urls";
+import Base from "./Base.astro";
+import "../styles/docs.css";
+
+interface Props {
+  chapter: Chapter;
+  /** O markdown cru, para o tempo de leitura. */
+  body: string;
+  headings: readonly MarkdownHeading[];
+}
+
+const { chapter, body, headings } = Astro.props;
+const tempo = readingTime(body);
+const tema = themeOf(chapter.id);
+const { prev, next } = neighbours(chapter.id);
+const editar = `https://github.com/CabriniJr/otel-visual-handbook/edit/main/docs/${chapter.id}.md`;
+---
+
+<Base
+  title={`${chapter.title} — OTel Visual Handbook`}
+  description={tema?.blurb ?? chapter.title}
+  lang="pt-BR"
+>
+  <SiteNav current="docs" search lang="pt-BR" />
+  <div class="doc">
+    <aside class="doc__aside" data-pagefind-ignore>
+      <!-- Em tela estreita o índice inteiro vem antes do texto e empurra o
+           capítulo para 600px abaixo da dobra. Recolhido, ele continua a um
+           toque de distância. O `open` vem marcado no HTML para quem está sem
+           JavaScript nunca ficar sem índice; o script abaixo o fecha quando a
+           tela é estreita, e roda durante o parse para não piscar aberto. -->
+      <details class="doc__fold" open>
+        <summary>Índice da documentação</summary>
+        <DocSidebar current={chapter.id} />
+      </details>
+      <script is:inline>
+        (() => {
+          const dobra = document.currentScript.previousElementSibling;
+          const estreito = window.matchMedia("(max-width: 820px)");
+          const ajustar = () => {
+            dobra.open = !estreito.matches;
+          };
+          ajustar();
+          estreito.addEventListener("change", ajustar);
+        })();
+      </script>
+    </aside>
+
+    <main class="doc__main" id="content">
+      <nav class="doc__crumbs" aria-label="Trilha" data-pagefind-ignore>
+        <a href={docsHome()}>Documentação</a>
+        {tema && <span aria-hidden="true">&#47;</span>}
+        {tema && <span>{tema.title}</span>}
+      </nav>
+
+      <h1 data-pagefind-meta="title">{chapter.title}</h1>
+
+      <p class="doc__meta" data-pagefind-ignore>
+        {
+          chapter.status !== "stable" && (
+            <span class={`status status--${chapter.status}`}>{STATUS_LABEL[chapter.status]}</span>
+          )
+        }
+        <span>{tempo.minutes} min de leitura</span>
+        <span aria-hidden="true">·</span>
+        <span>{tempo.words.toLocaleString("pt-BR")} palavras</span>
+        <span aria-hidden="true">·</span>
+        <a href={editar} rel="noopener">Editar no GitHub</a>
+      </p>
+
+      <article
+        class="doc__prose"
+        data-pagefind-body
+        data-pagefind-meta={`status:${STATUS_LABEL[chapter.status]}`}
+      >
+        <slot />
+      </article>
+
+      <nav class="doc__around" aria-label="Capítulos vizinhos" data-pagefind-ignore>
+        {
+          prev ? (
+            <a class="doc__around-link" href={docUrl(prev.id)} rel="prev">
+              <span>Anterior</span>
+              <strong>{prev.title}</strong>
+            </a>
+          ) : (
+            <span></span>
+          )
+        }
+        {
+          next && (
+            <a class="doc__around-link doc__around-link--next" href={docUrl(next.id)} rel="next">
+              <span>Próximo</span>
+              <strong>{next.title}</strong>
+            </a>
+          )
+        }
+      </nav>
+    </main>
+
+    <aside class="doc__toc" data-pagefind-ignore>
+      <DocToc headings={headings} />
+    </aside>
+  </div>
+  <SiteFooter lang="pt-BR" />
+</Base>

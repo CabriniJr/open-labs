@@ -19,10 +19,17 @@
   /* Tinta e papel — neutro frio, de propósito: geométrica pede papel frio */
   --ink: #111419;
   --ink-muted: #59616f;
-  --ink-faint: #8b94a5;
+  --ink-faint: #666f86;
   --paper: #f5f7fa;
   --paper-raised: #ffffff;
   --rule: #dde3ec;
+
+  /*
+   * Aviso editorial (a etiqueta `draft`). Nasce aqui, e não no tema de
+   * domínio: `--sig-mutation` é âmbar de diagrama, escolhido para brilhar
+   * sobre traço — como texto sobre papel claro ele dá 1,9:1 e reprova.
+   */
+  --ink-warn: #8a5300;
 
   /* Raio — sistema, não exceção. Cresce com a superfície. */
   --radius-1: 4px;
@@ -38,11 +45,30 @@
   --measure: 68ch;
 }
 
+/*
+ * Três estados, não dois: escolha explícita marca `data-theme` na raiz; o
+ * padrão não marca nada, e aí só `prefers-color-scheme` separa claro de
+ * escuro. Definir a cor só dentro do media query deixaria o estado sem marca
+ * com texto de um tema sobre o papel do outro.
+ */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ink: #e8ecf2;
+    --ink-muted: #939bab;
+    --ink-faint: #808a9c;
+    --paper: #0f1116;
+    --paper-raised: #181b21;
+    --rule: #2a2f38;
+    --ink-warn: #f5a800;
+  }
+}
+
 :root[data-theme="dark"] {
   --ink: #e8ecf2;
   --ink-muted: #939bab;
-  --ink-faint: #6f7789;
+  --ink-faint: #808a9c;
   --paper: #0f1116;
   --paper-raised: #181b21;
   --rule: #2a2f38;
+  --ink-warn: #f5a800;
 }

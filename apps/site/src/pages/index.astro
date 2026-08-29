@@ -1,32 +1,59 @@
 ---
 import { HeroSim } from "../components/HeroSim.tsx";
-import { Roadmap } from "../components/Roadmap.tsx";
+import HandbookCard from "../components/HandbookCard.astro";
+import SiteFooter from "../components/SiteFooter.astro";
+import SiteNav from "../components/SiteNav.astro";
+import DocsState from "../components/DocsState.astro";
 import Base from "../layouts/Base.astro";
+import { url } from "../lib/urls";
+import { HANDBOOKS } from "../data/handbooks";
 import "../components/HeroSim.css";
-import "../components/Roadmap.css";
+import "../styles/docs.css";
+
+/**
+ * Os quatro níveis são a ideia central do projeto, e até aqui viviam escondidos
+ * num parágrafo. Viram peça: quatro faixas, na ordem em que se desce.
+ */
+const LEVELS = [
+  {
+    id: "L0",
+    name: "Flow",
+    line: "Services and telemetry moving between them. The shape of the system.",
+  },
+  {
+    id: "L1",
+    name: "Mechanism",
+    line: "Inside one component: the processors, the queue, the exporter.",
+  },
+  { id: "L2", name: "Wire", line: "The channel opened up — HTTP/2 frames, one by one." },
+  { id: "L3", name: "Payload", line: "The OTLP message, field by field, with the change lit up." },
+] as const;
 ---
 
 <Base
-  title="OTel Visual Handbook"
-  description="Every OpenTelemetry concept as a model you can take apart — from the service graph down to the bytes on the wire."
+  title="OpenLabs"
+  description="Handbooks that run: every subject modelled as a simulation you can take apart, on one engine that does not know what the subject is."
 >
-  <header class="site-header">
-    <p class="site-header__mark mono">OTel Visual Handbook</p>
-  </header>
+  <SiteNav current="home" />
 
-  <main>
+  <main id="content">
     <section class="hero editorial">
       <div>
-        <h1>See how the telemetry actually moves.</h1>
+        <h1>See how the thing actually works.</h1>
         <p class="hero__lede prose">
-          Most OpenTelemetry material shows you a diagram and a config file. This
-          one gives you the running mechanism: change something, watch the trace
-          react, then open it up and read the exact bytes that produced what you
-          just saw.
+          OpenLabs builds handbooks that run. Most material shows you a diagram
+          and a config file; here the diagram is the running mechanism — change
+          something, watch it react, then open it up and read the exact bytes
+          that produced what you just saw.
         </p>
         <p class="prose">
-          Turn off context propagation below. The picture breaks — and so does
-          the payload underneath it, because they are the same data.
+          One engine, many subjects. Below is a piece of the OpenTelemetry
+          handbook: turn off context propagation and the picture breaks — and so
+          does the payload underneath it, because they are the same data.
+        </p>
+        <p class="hero__cta">
+          <a class="cta cta--primary" href={url("handbooks")}>Browse the handbooks</a>
+          <a class="cta" href={url("docs")}>Read the documentation</a>
         </p>
       </div>
       <aside class="hero__note mono">
@@ -42,17 +69,18 @@ import "../components/Roadmap.css";
       <div class="prose">
         <h2>What a lab is</h2>
         <p>
-          Every lab answers one concrete question, and it answers it four times —
-          at four depths. The outside view shows services and telemetry flowing.
-          Go one level down and you are inside a component. Another, and you are
-          on the wire, in HTTP/2 frames. Another, and you are reading the OTLP
-          payload field by field, with whatever just changed still highlighted.
+          Every lab answers one concrete question, and it answers it at several
+          depths. The outside view shows the parts and what moves between them.
+          Go one level down and you are inside a part. Keep going and you reach
+          the thing itself — the bytes on the wire, or the wire that is either
+          high or low.
         </p>
         <p>
-          Those are not four drawings. They are four views of one running state,
+          Those are not separate drawings. They are views of one running state,
           so what you read at the bottom is what produced the picture at the top.
-          When a lab makes a claim, there is a <code>docker compose</code> in the
-          repository that lets you check it against a real Collector.
+          Only the leaves have behaviour; everything above is the result of
+          running what is inside it. When a lab makes a claim, the repository
+          has a way to check it against the real thing.
         </p>
       </div>
       <aside class="sidenote">
@@ -64,41 +92,47 @@ import "../components/Roadmap.css";
       </aside>
     </section>
 
-    <section class="path">
+    <section class="levels">
+      <p class="levels__intro">
+        The depths are named by the model, not by the engine. In the
+        OpenTelemetry handbook they read like this:
+      </p>
+      <ol class="levels__list">
+        {
+          LEVELS.map((level) => (
+            <li class="levels__item">
+              <span class="levels__id mono">{level.id}</span>
+              <span class="levels__name">{level.name}</span>
+              <span class="levels__line">{level.line}</span>
+            </li>
+          ))
+        }
+      </ol>
+      <p class="levels__note mono">
+        One run, four projections. Nothing below is drawn by hand.
+      </p>
+    </section>
+
+    <section class="path" id="handbooks">
       <div class="path__intro">
-        <h2>The path</h2>
+        <h2>The handbooks</h2>
         <p>
-          The phases are not a queue. Instrumentation and pipelines cross; a list
-          would hide that, so the map shows it. Click any node to open the lab,
-          and mark it off when you are done.
+          Each one is a <code>.model</code> on the same engine, and each one has
+          the same anatomy: a roadmap, articles, and labs. Open one to see where
+          it stands — nothing here claims to be finished when it is not.
         </p>
       </div>
-      <Roadmap client:visible />
+      <div class="handbooks">
+        {HANDBOOKS.map((handbook) => <HandbookCard handbook={handbook} />)}
+      </div>
+      <DocsState />
     </section>
   </main>
 
-  <footer class="site-footer editorial">
-    <p class="mono">
-      Open source ·
-      <a href="https://github.com/CabriniJr/otel-visual-handbook">GitHub</a>
-      · Built with Claude
-    </p>
-  </footer>
+  <SiteFooter />
 </Base>
 
 <style>
-  .site-header {
-    padding: var(--space-2) var(--space-3);
-    border-block-end: 1px solid var(--rule);
-  }
-
-  .site-header__mark {
-    margin: 0;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    font-size: var(--size-step--1);
-  }
-
   .hero {
     padding-block: var(--space-5) var(--space-3);
   }
@@ -157,10 +191,94 @@ import "../components/Roadmap.css";
     align-self: start;
   }
 
-  .site-footer {
-    padding-block: var(--space-3);
-    border-block-start: 1px solid var(--rule);
+  .hero__cta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+    margin-block-start: var(--space-3);
+  }
+
+  .cta {
+    display: inline-block;
+    padding: 0.5rem var(--space-2);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius-2);
+    color: var(--ink);
+    font-size: var(--size-step--1);
+  }
+
+  .cta:hover {
+    border-color: var(--accent);
+  }
+
+  .cta--primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--paper);
+  }
+
+  .levels {
+    max-width: 92rem;
+    margin-inline: auto;
+    padding: 0 var(--space-3) var(--space-4);
+  }
+
+  .levels__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius-3);
+    overflow: hidden;
+  }
+
+  .levels__item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    padding: var(--space-3) var(--space-2);
+    background: var(--paper-raised);
+  }
+
+  .levels__id {
+    color: var(--accent);
+    font-size: var(--size-step--1);
+    letter-spacing: 0.08em;
+  }
+
+  .levels__name {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: var(--size-step-1);
+    letter-spacing: -0.02em;
+  }
+
+  .levels__line {
     color: var(--ink-muted);
+    font-size: var(--size-step--1);
+    line-height: 1.45;
+  }
+
+  .handbooks {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
+    gap: var(--space-2);
+    margin-block-end: var(--space-4);
+  }
+
+  .levels__intro {
+    max-width: var(--measure);
+    margin: 0 0 var(--space-2);
+    color: var(--ink-muted);
+  }
+
+  .levels__note {
+    margin: var(--space-2) 0 0;
+    color: var(--ink-faint);
     font-size: var(--size-step--1);
   }
 </style>

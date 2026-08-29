@@ -1,15 +1,31 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
+
+/**
+ * O herói é uma ilha `client:visible`: o HTML vem pronto do servidor, mas os
+ * controles só respondem depois de hidratar. Sem esperar, um `fill` no scrub
+ * cai no vazio de vez em quando e o teste falha sem que nada esteja quebrado.
+ * O sinal é do próprio Astro: a ilha larga o atributo `ssr` ao hidratar.
+ */
+async function aguardarHidratacao(page: Page): Promise<void> {
+  // `client:visible` só hidrata quando a ilha entra na tela: em telefone o
+  // herói começa abaixo da dobra, então rolar até ele faz parte da espera.
+  const ilha = page.locator("astro-island:has(.hero-sim)");
+  await ilha.scrollIntoViewIfNeeded();
+  await expect(ilha).not.toHaveAttribute("ssr", /.*/);
+}
 
 test("the landing loads and the hero hydrates", async ({ page }) => {
   await page.goto("");
 
-  await expect(page.locator("h1")).toContainText("telemetry");
+  await expect(page.locator("h1")).toContainText("actually works");
   await expect(page.locator(".hero-sim")).toBeVisible();
   await expect(page.getByRole("img", { name: "Service flow" })).toBeVisible();
 });
 
 test("turning propagation off breaks the trace", async ({ page }) => {
   await page.goto("");
+
+  await aguardarHidratacao(page);
 
   const heroSim = page.locator(".hero-sim");
   await heroSim.getByRole("checkbox").uncheck();
@@ -27,6 +43,8 @@ test("turning propagation off breaks the trace", async ({ page }) => {
 test("with propagation on, both spans share the trace", async ({ page }) => {
   await page.goto("");
 
+  await aguardarHidratacao(page);
+
   const heroSim = page.locator(".hero-sim");
   await page.getByRole("slider", { name: "Timeline" }).fill("22");
 
@@ -40,6 +58,8 @@ test("with propagation on, both spans share the trace", async ({ page }) => {
 test("the timeline lets you stop and read the payload", async ({ page }) => {
   await page.goto("");
 
+  await aguardarHidratacao(page);
+
   const heroSim = page.locator(".hero-sim");
   await page.getByRole("slider", { name: "Timeline" }).fill("20");
 
@@ -48,7 +68,7 @@ test("the timeline lets you stop and read the payload", async ({ page }) => {
 });
 
 test("the map tracks progress and it survives a reload", async ({ page }) => {
-  await page.goto("");
+  await page.goto("handbooks/otel/");
   await page.evaluate(() => window.localStorage.clear());
   await page.reload();
 

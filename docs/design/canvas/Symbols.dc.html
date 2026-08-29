@@ -1,0 +1,244 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Outfit:wght@400;500;600;700&display=swap">
+  <style>
+    body { margin: 0; background: #f5f7fa; }
+    a { color: #425cc7; } a:hover { color: #2f43a0; }
+    .sans { font-family: "Outfit", system-ui, sans-serif; }
+    .mono { font-family: "JetBrains Mono", ui-monospace, monospace; }
+    .lbl { font-family: "JetBrains Mono", monospace; font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: #59616f; margin: 0 0 18px; }
+    .cap { font-family: "JetBrains Mono", monospace; font-size: 10px; fill: #8b94a5; }
+    .nm  { font-family: "Outfit", sans-serif; font-size: 12.5px; font-weight: 500; fill: #111419; }
+    .sub { font-family: "JetBrains Mono", monospace; font-size: 8.5px; fill: #8b94a5; }
+    .g   { fill: none; stroke: #111419; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+    .gm  { fill: none; stroke: #8b94a5; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+    x-dc [style*="border: 1px solid"] { border-radius: 10px; }
+  </style>
+</helmet>
+
+<div class="sans" style="width: 1100px; background: #f5f7fa; color: #111419; padding: 56px 64px; font-size: 16px; line-height: 1.6;">
+
+  <h1 style="margin: 0 0 8px; font-size: 40px; font-weight: 700; letter-spacing: -0.03em;">L0 symbols</h1>
+  <p style="margin: 0 0 48px; color: #59616f; max-width: 64ch;">The outside view has to say what a thing <em>is</em> before it says what it is called. Shape carries kind, stroke carries state, and the mark on the wire carries which signal is moving. Every glyph is drawn on a 24px grid at 1.6px, so they stay siblings at any size.</p>
+
+  <div style="border-top: 1px solid #dde3ec; padding-top: 28px; margin-bottom: 44px;">
+    <p class="lbl">Kinds · shape says what it is</p>
+    <div style="background: #ffffff; border: 1px solid #dde3ec; padding: 26px 20px;">
+      <svg viewBox="0 0 1000 110" style="width: 100%; height: auto;">
+        <g transform="translate(20,14)">
+          <path class="g" d="M2 4 h20 v15 h-20 z M2 9 h20 M5.5 6.6 h0.01 M8.5 6.6 h0.01"/>
+          <text class="cap" x="12" y="40" text-anchor="middle">client</text>
+        </g>
+        <g transform="translate(160,14)">
+          <path class="g" d="M3 4 h18 v6 h-18 z M3 14 h18 v6 h-18 z M6 7 h0.01 M6 17 h0.01"/>
+          <text class="cap" x="12" y="40" text-anchor="middle">service</text>
+        </g>
+        <g transform="translate(300,14)">
+          <path class="g" d="M3 6 a9 3 0 0 0 18 0 a9 3 0 0 0 -18 0 M3 6 v12 a9 3 0 0 0 18 0 v-12 M3 12 a9 3 0 0 0 18 0"/>
+          <text class="cap" x="12" y="40" text-anchor="middle">database</text>
+        </g>
+        <g transform="translate(440,14)">
+          <path class="g" d="M2 4 v16 M22 4 v16 M7 8 v8 M12 6 v12 M17 8 v8"/>
+          <text class="cap" x="12" y="40" text-anchor="middle">queue</text>
+        </g>
+        <g transform="translate(580,14)">
+          <path class="g" d="M2 4 h20 l-7 8 v8 l-6 -3 v-5 z"/>
+          <text class="cap" x="12" y="40" text-anchor="middle">collector</text>
+        </g>
+        <g transform="translate(720,14)">
+          <path class="g" d="M2 5 h20 v4 h-20 z M2 10 h20 v4 h-20 z M2 15 h20 v4 h-20 z"/>
+          <text class="cap" x="12" y="40" text-anchor="middle">backend</text>
+        </g>
+        <g transform="translate(860,14)">
+          <path class="g" style="stroke-dasharray: 3.5 3;" d="M2 4 h13 v16 h-17 v-16 z"/>
+          <path class="g" d="M15 10 l7 -6 M17 4 h5 v5"/>
+          <text class="cap" x="12" y="40" text-anchor="middle">external</text>
+        </g>
+
+        <line x1="20" y1="76" x2="980" y2="76" stroke="#dde3ec" stroke-width="1"/>
+        <text class="cap" x="20" y="98">A kind is never spelled out in the label. The label is the name of the thing; the glyph is what it is.</text>
+      </svg>
+    </div>
+  </div>
+
+  <div style="border-top: 1px solid #dde3ec; padding-top: 28px; margin-bottom: 44px;">
+    <p class="lbl">Anatomy · one node, annotated</p>
+    <div style="background: #ffffff; border: 1px solid #dde3ec; padding: 30px 24px;">
+      <svg viewBox="0 0 1000 180" style="width: 100%; height: auto;">
+        <rect x="330" y="46" width="200" height="58" rx="8" fill="#f5f7fa" stroke="#111419" stroke-width="1.6"/>
+        <rect x="330" y="46" width="4" height="58" rx="2" fill="#425cc7"/>
+        <g transform="translate(348,63)"><path class="g" d="M3 4 h18 v6 h-18 z M3 14 h18 v6 h-18 z M6 7 h0.01 M6 17 h0.01"/></g>
+        <text class="nm" x="386" y="72">checkout</text>
+        <text class="sub" x="386" y="88">POST /charge · 24 rps</text>
+        <circle cx="512" cy="61" r="3.5" fill="#3f7a52"/>
+
+        <path class="gm" d="M300 75 h20"/><text class="cap" x="296" y="79" text-anchor="end">state bar · idle, active, saturated, failing</text>
+        <path class="gm" d="M360 128 v-16"/><text class="cap" x="360" y="144" text-anchor="middle">kind glyph</text>
+        <path class="gm" d="M420 128 v-32"/><text class="cap" x="440" y="144" text-anchor="middle">name · Outfit 500</text>
+        <path class="gm" d="M520 128 v-24"/><text class="cap" x="560" y="144" text-anchor="middle">what it is doing · mono, optional</text>
+        <path class="gm" d="M560 61 h30"/><text class="cap" x="596" y="65">health dot</text>
+      </svg>
+    </div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 40px; border-top: 1px solid #dde3ec; padding-top: 28px; margin-bottom: 44px;">
+    <div>
+      <p class="lbl">Signals · the mark says what moves</p>
+      <div style="background: #ffffff; border: 1px solid #dde3ec; padding: 22px 20px;">
+        <svg viewBox="0 0 460 190" style="width: 100%; height: auto;">
+          <line x1="20" y1="26" x2="200" y2="26" stroke="#dde3ec" stroke-width="1.6"/>
+          <circle cx="110" cy="26" r="5" fill="#425cc7"/>
+          <text class="cap" x="220" y="30">trace · a span in flight</text>
+
+          <line x1="20" y1="66" x2="200" y2="66" stroke="#dde3ec" stroke-width="1.6"/>
+          <path d="M110 60 l6 6 l-6 6 l-6 -6 z" fill="#425cc7"/>
+          <text class="cap" x="220" y="70">metric · a data point</text>
+
+          <line x1="20" y1="106" x2="200" y2="106" stroke="#dde3ec" stroke-width="1.6"/>
+          <rect x="105" y="101" width="10" height="10" rx="2" fill="#425cc7"/>
+          <text class="cap" x="220" y="110">log · a record</text>
+
+          <line x1="20" y1="146" x2="200" y2="146" stroke="#dde3ec" stroke-width="1.6" stroke-dasharray="4 4"/>
+          <circle cx="110" cy="146" r="5" fill="none" stroke="#b8442a" stroke-width="1.6"/>
+          <path d="M106 142 l8 8" stroke="#b8442a" stroke-width="1.6" stroke-linecap="round"/>
+          <text class="cap" x="220" y="150">dropped · hollow, vermilion</text>
+        </svg>
+      </div>
+    </div>
+
+    <div>
+      <p class="lbl">Wires · the line says how it travels</p>
+      <div style="background: #ffffff; border: 1px solid #dde3ec; padding: 22px 20px;">
+        <svg viewBox="0 0 460 190" style="width: 100%; height: auto;">
+          <line x1="20" y1="26" x2="200" y2="26" stroke="#111419" stroke-width="1.6"/>
+          <text class="cap" x="220" y="30">synchronous call</text>
+
+          <line x1="20" y1="66" x2="200" y2="66" stroke="#111419" stroke-width="1.6" stroke-dasharray="6 5"/>
+          <text class="cap" x="220" y="70">asynchronous · queue, event</text>
+
+          <line x1="20" y1="106" x2="200" y2="106" stroke="#8b94a5" stroke-width="1.2" stroke-dasharray="2 3"/>
+          <text class="cap" x="220" y="110">telemetry export · never the app's path</text>
+
+          <line x1="20" y1="146" x2="200" y2="146" stroke="#111419" stroke-width="3.2"/>
+          <text class="cap" x="220" y="150">batched · thickness is volume</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <div style="border-top: 1px solid #dde3ec; padding-top: 28px; margin-bottom: 44px;">
+    <p class="lbl">States · the stroke says how it is doing</p>
+    <div style="background: #ffffff; border: 1px solid #dde3ec; padding: 26px 20px;">
+      <svg viewBox="0 0 1000 120" style="width: 100%; height: auto;">
+        <g transform="translate(20,10)">
+          <rect x="0" y="0" width="190" height="50" rx="8" fill="#f5f7fa" stroke="#dde3ec" stroke-width="1.6"/>
+          <g transform="translate(16,14)"><path class="gm" d="M3 4 h18 v6 h-18 z M3 14 h18 v6 h-18 z"/></g>
+          <text class="nm" x="54" y="30" fill="#59616f">idle</text>
+          <text class="cap" x="0" y="76">nothing flowing</text>
+        </g>
+        <g transform="translate(270,10)">
+          <rect x="0" y="0" width="190" height="50" rx="8" fill="#ffffff" stroke="#111419" stroke-width="1.6"/>
+          <rect x="0" y="0" width="4" height="50" rx="2" fill="#425cc7"/>
+          <g transform="translate(16,14)"><path class="g" d="M3 4 h18 v6 h-18 z M3 14 h18 v6 h-18 z"/></g>
+          <text class="nm" x="54" y="30">active</text>
+          <text class="cap" x="0" y="76">handling traffic</text>
+        </g>
+        <g transform="translate(520,10)">
+          <rect x="0" y="0" width="190" height="50" rx="8" fill="#ffffff" stroke="#f5a800" stroke-width="1.6"/>
+          <rect x="0" y="0" width="4" height="50" rx="2" fill="#f5a800"/>
+          <g transform="translate(16,14)"><path class="g" d="M3 4 h18 v6 h-18 z M3 14 h18 v6 h-18 z"/></g>
+          <text class="nm" x="54" y="30">saturated</text>
+          <text class="sub" x="54" y="42">queue 498/512</text>
+          <text class="cap" x="0" y="76">still up, about to shed</text>
+        </g>
+        <g transform="translate(770,10)">
+          <rect x="0" y="0" width="190" height="50" rx="8" fill="#ffffff" stroke="#b8442a" stroke-width="1.6"/>
+          <rect x="0" y="0" width="4" height="50" rx="2" fill="#b8442a"/>
+          <g transform="translate(16,14)"><path class="g" style="stroke: #b8442a;" d="M3 4 h18 v6 h-18 z M3 14 h18 v6 h-18 z"/></g>
+          <text class="nm" x="54" y="30">failing</text>
+          <text class="cap" x="0" y="76">dropping, erroring, orphaning</text>
+        </g>
+      </svg>
+    </div>
+  </div>
+
+  <div style="border-top: 1px solid #dde3ec; padding-top: 28px;">
+    <p class="lbl">The vocabulary in one scene</p>
+    <div style="background: #ffffff; border: 1px solid #dde3ec; padding: 32px 26px;">
+      <svg viewBox="0 0 1000 400" style="width: 100%; height: auto;">
+        <line x1="150" y1="66" x2="330" y2="66" stroke="#111419" stroke-width="1.6"/>
+        <circle cx="250" cy="66" r="5" fill="#425cc7"/>
+        <line x1="490" y1="66" x2="670" y2="66" stroke="#111419" stroke-width="1.6"/>
+        <line x1="830" y1="66" x2="890" y2="66" stroke="#111419" stroke-width="1.6"/>
+        <path d="M760 96 v54 h130" stroke="#111419" stroke-width="1.6" stroke-dasharray="6 5" fill="none"/>
+
+        <path d="M410 96 v190 h180" stroke="#8b94a5" stroke-width="1.2" stroke-dasharray="2 3" fill="none"/>
+        <path d="M760 96 v96 h-170 v94" stroke="#8b94a5" stroke-width="1.2" stroke-dasharray="2 3" fill="none"/>
+        <line x1="750" y1="286" x2="830" y2="286" stroke="#111419" stroke-width="3.2"/>
+
+        <g transform="translate(20,42)">
+          <rect x="0" y="0" width="130" height="48" rx="8" fill="#f5f7fa" stroke="#dde3ec" stroke-width="1.6"/>
+          <g transform="translate(14,12)"><path class="gm" d="M2 4 h20 v15 h-20 z M2 9 h20 M5.5 6.6 h0.01 M8.5 6.6 h0.01"/></g>
+          <text class="nm" x="50" y="29" fill="#59616f">browser</text>
+        </g>
+
+        <g transform="translate(330,42)">
+          <rect x="0" y="0" width="160" height="48" rx="8" fill="#ffffff" stroke="#111419" stroke-width="1.6"/>
+          <rect x="0" y="0" width="4" height="48" rx="2" fill="#425cc7"/>
+          <g transform="translate(16,12)"><path class="g" d="M3 4 h18 v6 h-18 z M3 14 h18 v6 h-18 z M6 7 h0.01 M6 17 h0.01"/></g>
+          <text class="nm" x="52" y="24">api</text>
+          <text class="sub" x="52" y="37">24 rps</text>
+          <circle cx="142" cy="14" r="3.5" fill="#3f7a52"/>
+        </g>
+
+        <g transform="translate(670,42)">
+          <rect x="0" y="0" width="160" height="48" rx="8" fill="#ffffff" stroke="#111419" stroke-width="1.6"/>
+          <rect x="0" y="0" width="4" height="48" rx="2" fill="#425cc7"/>
+          <g transform="translate(16,12)"><path class="g" d="M3 4 h18 v6 h-18 z M3 14 h18 v6 h-18 z M6 7 h0.01 M6 17 h0.01"/></g>
+          <text class="nm" x="52" y="24">checkout</text>
+          <text class="sub" x="52" y="37">POST /charge</text>
+          <circle cx="142" cy="14" r="3.5" fill="#3f7a52"/>
+        </g>
+
+        <g transform="translate(890,42)">
+          <rect x="0" y="0" width="90" height="48" rx="8" fill="#f5f7fa" stroke="#dde3ec" stroke-width="1.6"/>
+          <g transform="translate(12,12)"><path class="gm" d="M3 6 a9 3 0 0 0 18 0 a9 3 0 0 0 -18 0 M3 6 v12 a9 3 0 0 0 18 0 v-12 M3 12 a9 3 0 0 0 18 0"/></g>
+          <text class="nm" x="48" y="29" fill="#59616f">pg</text>
+        </g>
+
+        <g transform="translate(890,126)">
+          <rect x="0" y="0" width="90" height="48" rx="8" fill="#f5f7fa" stroke="#dde3ec" stroke-width="1.6"/>
+          <g transform="translate(12,12)"><path class="gm" d="M2 4 v16 M22 4 v16 M7 8 v8 M12 6 v12 M17 8 v8"/></g>
+          <text class="nm" x="48" y="29" fill="#59616f">jobs</text>
+        </g>
+
+        <g transform="translate(590,262)">
+          <rect x="0" y="0" width="160" height="48" rx="8" fill="#ffffff" stroke="#f5a800" stroke-width="1.6"/>
+          <rect x="0" y="0" width="4" height="48" rx="2" fill="#f5a800"/>
+          <g transform="translate(16,12)"><path class="g" d="M2 4 h20 l-7 8 v8 l-6 -3 v-5 z"/></g>
+          <text class="nm" x="52" y="24">collector</text>
+          <text class="sub" x="52" y="37">queue 498/512</text>
+        </g>
+
+        <g transform="translate(830,262)">
+          <rect x="0" y="0" width="150" height="48" rx="8" fill="#f5f7fa" stroke="#dde3ec" stroke-width="1.6"/>
+          <g transform="translate(14,12)"><path class="gm" d="M2 5 h20 v4 h-20 z M2 10 h20 v4 h-20 z M2 15 h20 v4 h-20 z"/></g>
+          <text class="nm" x="50" y="29" fill="#59616f">backend</text>
+        </g>
+
+        <text class="cap" x="20" y="372">Solid lines are the request. Dotted lines are telemetry leaving — never the same path. The collector is amber because its queue is nearly full.</text>
+      </svg>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

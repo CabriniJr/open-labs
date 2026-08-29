@@ -1,0 +1,27 @@
+---
+import type { MarkdownHeading } from "astro";
+
+interface Props {
+  headings: readonly MarkdownHeading[];
+}
+
+// h4 para baixo polui, e um sumário de dois itens ocupa uma coluna sem ajudar
+// ninguém — nesse caso o componente não renderiza nada.
+const items = Astro.props.headings.filter((h) => h.depth === 2 || h.depth === 3);
+const suficiente = items.filter((h) => h.depth === 2).length >= 3;
+---
+
+{
+  suficiente && (
+    <nav class="doc-toc" aria-label="Nesta página">
+      <p class="doc-toc__title">Nesta página</p>
+      <ul>
+        {items.map((h) => (
+          <li class={`doc-toc__d${h.depth}`}>
+            <a href={`#${h.slug}`}>{h.text}</a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  )
+}

@@ -1,0 +1,321 @@
+/*
+ * O palco. Um esquemático que respira.
+ *
+ * A regra de cor: **a família escolhe**, e o domínio não pinta nada. Um
+ * `processor` é sempre a mesma coisa, esteja ele numa CPU ou num pipeline de
+ * telemetria — é isso que faz o leitor reconhecer a segunda vez que vê.
+ *
+ * A regra de movimento: nada se mexe sozinho. Toda animação daqui é disparada
+ * por uma diferença no livro-caixa, e por isso um objeto parado na tela é um
+ * objeto que de fato não fez nada naquele tick.
+ */
+.dui-stage {
+  --dui-tick: 700ms;
+
+  /* dado e sinal: as duas espécies de linha, e nunca a mesma cor */
+  --dui-dado: #2f81f7;
+  --dui-sinal: #f0883e;
+
+  /* as famílias */
+  --dui-processor: #1f6feb;
+  --dui-container: #8b93a7;
+  --dui-controller: #f0883e;
+  --dui-conduit: #3fb950;
+
+  --dui-superficie: color-mix(in oklab, var(--paper-raised) 88%, var(--paper));
+  --dui-borda: var(--rule);
+
+  display: block;
+  width: 100%;
+  height: auto;
+  background:
+    radial-gradient(circle at 1px 1px, color-mix(in oklab, var(--rule) 70%, transparent) 1px, transparent 0)
+      0 0 / 22px 22px,
+    var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-3);
+  font-family: var(--font-mono);
+}
+
+/* ---------- fios ---------- */
+
+.dui-stage__trilho {
+  fill: none;
+  stroke: color-mix(in oklab, var(--dui-dado) 45%, var(--rule));
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.dui-stage__fio[data-linha="control"] .dui-stage__trilho {
+  stroke: color-mix(in oklab, var(--dui-sinal) 45%, var(--rule));
+  stroke-dasharray: 6 4;
+}
+
+.dui-stage__fio marker path,
+.dui-stage #dui-seta path {
+  fill: currentColor;
+}
+
+.dui-stage__fio {
+  color: color-mix(in oklab, var(--dui-dado) 45%, var(--rule));
+}
+
+.dui-stage__fio[data-linha="control"] {
+  color: color-mix(in oklab, var(--dui-sinal) 45%, var(--rule));
+}
+
+/* Aresta acomodada: fecha dentro do tick, e o traço mais fino diz isso. */
+.dui-stage__fio[data-timing="settle"] .dui-stage__trilho {
+  stroke-width: 1.5;
+}
+
+.dui-stage__fio[data-acesa="true"] {
+  color: var(--dui-dado);
+}
+
+.dui-stage__fio[data-acesa="true"] .dui-stage__trilho {
+  stroke: var(--dui-dado);
+}
+
+.dui-stage__fio[data-linha="control"][data-acesa="true"],
+.dui-stage__fio[data-linha="control"][data-acesa="true"] .dui-stage__trilho {
+  stroke: var(--dui-sinal);
+  color: var(--dui-sinal);
+}
+
+/* O pulso: a corrente passando. Some sozinho quando o tick acaba. */
+.dui-stage__pulso {
+  fill: none;
+  stroke: var(--dui-dado);
+  stroke-width: 3.5;
+  stroke-linecap: round;
+  stroke-dasharray: 26 400;
+  filter: drop-shadow(0 0 5px color-mix(in oklab, var(--dui-dado) 60%, transparent));
+}
+
+.dui-stage__fio[data-linha="control"] .dui-stage__pulso {
+  stroke: var(--dui-sinal);
+  filter: drop-shadow(0 0 5px color-mix(in oklab, var(--dui-sinal) 60%, transparent));
+}
+
+.dui-stage__largura {
+  fill: var(--ink-faint);
+  font-size: 9px;
+  letter-spacing: 0.04em;
+}
+
+/* ---------- carga ---------- */
+
+.dui-stage__carga {
+  fill: var(--dui-dado);
+  stroke: var(--paper);
+  stroke-width: 1.5;
+  filter: drop-shadow(0 0 6px color-mix(in oklab, var(--dui-dado) 70%, transparent));
+}
+
+.dui-stage__carga[data-sinal="true"] {
+  fill: var(--dui-sinal);
+  filter: drop-shadow(0 0 6px color-mix(in oklab, var(--dui-sinal) 70%, transparent));
+}
+
+/* A carga muda de aparência atravessando quem a transforma. */
+.dui-stage__carga[data-kind="instrucao"] { fill: #a371f7; }
+.dui-stage__carga[data-kind="proximo"] { fill: #3fb950; }
+.dui-stage__carga[data-kind="escrita"] { fill: #db61a2; }
+.dui-stage__carga[data-kind="guardar"] { fill: #e3b341; }
+.dui-stage__carga[data-kind="pulso"] { fill: var(--ink-faint); }
+
+/* ---------- objetos ---------- */
+
+.dui-stage__objeto {
+  cursor: pointer;
+}
+
+.dui-stage__caixa {
+  fill: var(--dui-superficie);
+  stroke: var(--dui-borda);
+  stroke-width: 1.5;
+  transition: stroke 160ms ease, fill 160ms ease;
+}
+
+.dui-stage__objeto[data-familia="container"] > .dui-stage__caixa {
+  fill: color-mix(in oklab, var(--dui-container) 6%, transparent);
+  stroke: color-mix(in oklab, var(--dui-container) 45%, var(--rule));
+  stroke-dasharray: 3 5;
+}
+
+.dui-stage__objeto[data-familia="processor"] > .dui-stage__caixa {
+  fill: color-mix(in oklab, var(--dui-processor) 10%, var(--paper-raised));
+  stroke: color-mix(in oklab, var(--dui-processor) 55%, var(--rule));
+}
+
+.dui-stage__objeto[data-familia="controller"] > .dui-stage__caixa {
+  fill: color-mix(in oklab, var(--dui-controller) 12%, var(--paper-raised));
+  stroke: color-mix(in oklab, var(--dui-controller) 60%, var(--rule));
+}
+
+.dui-stage__objeto[data-familia="conduit"] > .dui-stage__caixa {
+  fill: color-mix(in oklab, var(--dui-conduit) 10%, var(--paper-raised));
+  stroke: color-mix(in oklab, var(--dui-conduit) 55%, var(--rule));
+}
+
+/*
+ * A pilha da réplica: N objetos idênticos, um desenhado. As folhas atrás não
+ * têm preenchimento — elas são o contorno dos outros N-1, não outra caixa.
+ */
+.dui-stage__pilha {
+  fill: none;
+  stroke: color-mix(in oklab, var(--dui-container) 40%, var(--rule));
+  stroke-width: 1.5;
+}
+
+/*
+ * Saída alta. Onde a presença da mensagem É o bit em alto — porta lógica —,
+ * isto é literalmente a porta acesa, lida do livro-caixa. O atraso vem do
+ * subpasso em que ela rodou, então a onda atravessa o desenho na ordem em que
+ * o sinal atravessa o circuito.
+ */
+.dui-stage__objeto[data-alto="true"] > .dui-stage__caixa {
+  fill: color-mix(in oklab, var(--dui-dado) 30%, var(--paper-raised));
+  stroke: var(--dui-dado);
+  animation: dui-acender calc(var(--dui-tick) * 0.5) ease-out both;
+  animation-delay: var(--dui-atraso, 0ms);
+}
+
+@keyframes dui-acender {
+  from {
+    fill: var(--dui-superficie);
+    filter: none;
+  }
+  40% {
+    filter: drop-shadow(0 0 10px color-mix(in oklab, var(--dui-dado) 75%, transparent));
+  }
+  to {
+    filter: drop-shadow(0 0 6px color-mix(in oklab, var(--dui-dado) 45%, transparent));
+  }
+}
+
+.dui-stage__objeto[data-alto="true"] .dui-stage__rotulo {
+  fill: var(--ink);
+  font-weight: 700;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dui-stage__objeto[data-alto="true"] > .dui-stage__caixa {
+    animation: none;
+  }
+}
+
+/* Agir é acender. A borda é a mesma; o que muda é a energia. */
+.dui-stage__objeto[data-ativo="true"] > .dui-stage__caixa {
+  stroke: var(--dui-processor);
+  stroke-width: 2;
+  filter: drop-shadow(0 0 4px color-mix(in oklab, var(--dui-processor) 30%, transparent));
+}
+
+.dui-stage__objeto[data-familia="controller"][data-ativo="true"] > .dui-stage__caixa {
+  stroke: var(--dui-controller);
+  filter: drop-shadow(0 0 5px color-mix(in oklab, var(--dui-controller) 35%, transparent));
+}
+
+.dui-stage__objeto[data-familia="controller"] .dui-stage__engrenagem circle,
+.dui-stage__objeto[data-familia="controller"] .dui-stage__dente {
+  fill: color-mix(in oklab, var(--dui-controller) 55%, var(--paper-raised));
+}
+
+.dui-stage__objeto[data-familia="controller"] .dui-stage__eixo {
+  fill: var(--paper-raised);
+}
+
+.dui-stage__objeto[data-familia="controller"] .dui-stage__leitura {
+  fill: var(--dui-controller);
+}
+
+.dui-stage__objeto[data-selecionado="true"] > .dui-stage__caixa {
+  stroke: var(--accent);
+  stroke-width: 2.5;
+}
+
+.dui-stage__objeto:focus-visible > .dui-stage__caixa {
+  stroke: var(--accent);
+  stroke-width: 2.5;
+}
+
+.dui-stage__objeto:focus {
+  outline: none;
+}
+
+.dui-stage__nivel {
+  fill: color-mix(in oklab, var(--dui-processor) 30%, transparent);
+  transition: y var(--dui-tick) linear, height var(--dui-tick) linear;
+}
+
+.dui-stage__rotulo {
+  fill: var(--ink);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.dui-stage__leitura {
+  fill: var(--dui-processor);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.dui-stage__titulo {
+  fill: var(--ink-muted);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.dui-stage__marca {
+  fill: var(--ink-faint);
+  font-size: 10px;
+}
+
+.dui-stage__abrir {
+  fill: var(--ink-faint);
+  font-size: 9px;
+  letter-spacing: 0.04em;
+}
+
+.dui-stage__objeto[data-fechado="true"] > .dui-stage__caixa {
+  stroke-dasharray: 8 4;
+}
+
+/* ---------- a engrenagem ---------- */
+
+.dui-stage__engrenagem circle {
+  fill: color-mix(in oklab, var(--dui-processor) 55%, var(--paper-raised));
+}
+
+.dui-stage__engrenagem .dui-stage__eixo {
+  fill: var(--paper-raised);
+}
+
+.dui-stage__dente {
+  fill: color-mix(in oklab, var(--dui-processor) 55%, var(--paper-raised));
+}
+
+.dui-stage__gira {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.dui-stage__objeto[data-ativo="true"] .dui-stage__gira {
+  animation: dui-girar var(--dui-tick) linear infinite;
+}
+
+@keyframes dui-girar {
+  to {
+    transform: rotate(45deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dui-stage__gira {
+    animation: none !important;
+  }
+}
