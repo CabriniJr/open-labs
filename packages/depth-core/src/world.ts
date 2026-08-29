@@ -2,6 +2,7 @@ import type { WorldSpec, WorldState } from "./model.js";
 import { initialWorld, stepWorld } from "./scheduler.js";
 import { indexTree } from "./tree.js";
 import type { TreeIndex } from "./tree.js";
+import { validateWorld } from "./validate.js";
 
 interface ParamEvent {
   readonly tick: number;
@@ -27,7 +28,10 @@ export class World {
 
   constructor(spec: WorldSpec) {
     this.#spec = spec;
-    this.#tree = indexTree(spec.root);
+    this.#tree = indexTree(spec.root, spec.channels);
+    // Antes de qualquer tick: um mundo mal fiado precisa falhar aqui, alto, e
+    // não rodar em silêncio perdendo mensagens pelo caminho.
+    validateWorld(spec, this.#tree);
     this.#history = [initialWorld(spec, this.#tree)];
   }
 

@@ -186,6 +186,11 @@ export interface WorldState {
   /** Estado interno de cada folha, por id. */
   readonly nodes: Readonly<Record<string, unknown>>;
   readonly flight: readonly InFlight[];
-  /** Livro-caixa de portas: "no.porta" → contagem. Única fonte dos medidores. */
+  /**
+   * Livro-caixa do tráfego. Única fonte dos medidores. Dois eixos, em espaços
+   * de nome separados para que uma contagem nunca some por cima da outra:
+   * saídas em "out:no.porta" (mais ".weight" e ".unwired"), chegadas em
+   * "in:no" (mais ".weight"). Por isso id e porta não podem conter "." nem ":".
+   */
   readonly ledger: Readonly<Record<string, number>>;
 }

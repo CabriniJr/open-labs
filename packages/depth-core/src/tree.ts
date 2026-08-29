@@ -1,3 +1,4 @@
+import { familyOf } from "./model.js";
 import type { AnyObject, Locus } from "./model.js";
 
 export interface TreeIndex {
@@ -17,9 +18,24 @@ export function indexTree(
     if (byId.has(node.id)) {
       throw new Error(`tree: id duplicado "${node.id}"`);
     }
+    // O livro-caixa monta as chaves dele juntando eixo, id e porta com ":" e
+    // ".". Um id que carregue um desses caracteres escreveria no balde de
+    // outro, e a contagem perdida não daria erro nenhum.
+    if (node.id.includes(".") || node.id.includes(":")) {
+      throw new Error(
+        `tree: o id "${node.id}" usa "." ou ":", que separam campos no ` +
+          `livro-caixa — escolha um id sem esses caracteres.`,
+      );
+    }
     byId.set(node.id, node);
+    if (node.behavior !== undefined && familyOf(node.kind) === "plate") {
+      throw new Error(
+        `tree: "${node.id}" é placa e tem behavior — placa é consultada, nunca ` +
+          `atravessada. Troque o kind ou remova o behavior.`,
+      );
+    }
     if (node.behavior !== undefined && node.leaf !== true && node.dynamic !== true) {
-      const flow = (node.children ?? []).filter((c) => c.kind !== "static");
+      const flow = (node.children ?? []).filter((c) => familyOf(c.kind) !== "plate");
       if (flow.length > 0) {
         throw new Error(
           `tree: "${node.id}" é composto e tem behavior — o que um composto faz ` +
@@ -30,7 +46,7 @@ export function indexTree(
     // A fronteira declarada é validada aqui, e não em quem percorre: assim
     // nenhum TreeIndex chega a existir com uma fronteira que aponta para fora.
     const flowIds = (node.children ?? [])
-      .filter((c) => c.kind !== "static")
+      .filter((c) => familyOf(c.kind) !== "plate")
       .map((c) => c.id);
     for (const [campo, declarado] of [
       ["entry", node.entry],
@@ -78,7 +94,7 @@ export function isOpenable(tree: TreeIndex, id: string): boolean {
 /** Filhos que participam do fluxo. Estático é consultado, não atravessado. */
 export function flowChildren(tree: TreeIndex, id: string): string[] {
   return (spec(tree, id).children ?? [])
-    .filter((c) => c.kind !== "static")
+    .filter((c) => familyOf(c.kind) !== "plate")
     .map((c) => c.id);
 }
 

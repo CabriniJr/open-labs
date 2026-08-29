@@ -11,7 +11,15 @@ export {
 } from "./tree.js";
 export type { TreeIndex } from "./tree.js";
 export { resolveTarget } from "./wiring.js";
-export { boundaryCrossings, portCount, portWeight } from "./meters.js";
+// quem monta um mundo à mão, sem passar por `World`, valida com esta.
+export { validateWorld } from "./validate.js";
+export {
+  boundaryCrossings,
+  inCount,
+  inWeight,
+  portCount,
+  portWeight,
+} from "./meters.js";
 export type { Crossing } from "./meters.js";
 export { DROP, familyOf } from "./model.js";
 export type {

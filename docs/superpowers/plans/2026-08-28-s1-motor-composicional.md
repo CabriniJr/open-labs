@@ -2231,7 +2231,7 @@ estão em `.in` de ninguém, não estão em `.unwired`, não estouraram.
 É o mesmo silêncio que o `.unwired` eliminou, um passo adiante: lá era a saída sem destino,
 aqui é a entrega em quem não recebe.
 
-- [ ] **Step 1: `validate.ts` — o mundo é checado antes de rodar**
+- [x] **Step 1: `validate.ts` — o mundo é checado antes de rodar**
 
 `indexTree` não conhece fios, então a checagem mora um nível acima. Criar:
 
@@ -2292,7 +2292,7 @@ export function validateWorld(spec: WorldSpec, tree: TreeIndex): void {
 }
 ```
 
-- [ ] **Step 2: cinto além do suspensório, no `stepWorld`**
+- [x] **Step 2: cinto além do suspensório, no `stepWorld`**
 
 Mesmo com o mundo validado, uma entrega para um id sem ator é bug do motor e não pode passar
 calada. Depois de montar o `inbox`, antes de rodar os atores:
@@ -2309,7 +2309,7 @@ calada. Depois de montar o `inbox`, antes de rodar os atores:
   }
 ```
 
-- [ ] **Step 3: `World` valida na construção**
+- [x] **Step 3: `World` valida na construção**
 
 Em `world.ts`, no construtor, depois de indexar: `validateWorld(spec, this.#tree);`
 
@@ -2325,7 +2325,7 @@ não um por vez.
 inicial nem chega a existir. É a mesma regra do invariante do composto, aplicada por omissão
 em vez de por erro.
 
-- [ ] **Step 4: `indexTree` recusa placa com comportamento**
+- [x] **Step 4: `indexTree` recusa placa com comportamento**
 
 Dentro de `walk`, junto dos outros guards, com a mesma redação do guard do composto:
 
@@ -2348,7 +2348,7 @@ Teste correspondente em `tree.test.ts`.
 indexados, `tree.ts` implementa, `tree.test.ts` testa — e o único ponto de entrada público
 joga fora. Três funções discordam sobre o mesmo fato.
 
-- [ ] **Step 5: passar os canais**
+- [x] **Step 5: passar os canais**
 
 `indexTree(spec.root, spec.channels)`. Teste: um mundo com canal declarado tem
 `w.tree.byId.has("pipe") === true`, e um `Wire.channel` apontando para id não indexado é
@@ -2363,7 +2363,7 @@ recusado por `validateWorld` (já coberto no Step 1).
 legenda, nota, tabela de configuração —, ela compila, entra em `flowChildren`, muda
 `isOpenable`, muda a fronteira desenhada, e não há um erro sequer.
 
-- [ ] **Step 6: trocar os quatro por `familyOf(...) !== "plate"`**
+- [x] **Step 6: trocar os quatro por `familyOf(...) !== "plate"`**
 
 Deixe `kind === "pipeline"` em `wiring.ts` como está: ali a ordem é contrato **daquele
 arquétipo**, não da família.
@@ -2380,7 +2380,7 @@ Chegadas gravam em `${id}.in`; emissões gravam em `${id}.${port}`. Um nó que e
 para porta chamada `"weight"` ou `"unwired"`, e para qualquer id que contenha ponto. **Uma
 contagem some, somada por cima de outra, sem erro.**
 
-- [ ] **Step 7: separar os espaços de nome e proibir o separador**
+- [x] **Step 7: separar os espaços de nome e proibir o separador**
 
 Chaves passam a ser prefixadas: emissões em `out:${id}.${port}` (e
 `out:${id}.${port}.weight`, `out:${id}.${port}.unwired`), chegadas em `in:${id}` e
@@ -2401,7 +2401,7 @@ conter `:`.
 Apagando o bloco que conta chegadas, **128/128 continuam passando**. Todo o eixo `.in` está
 sem cobertura.
 
-- [ ] **Step 8: cobrir o eixo das chegadas**
+- [x] **Step 8: cobrir o eixo das chegadas**
 
 Testes que leem as chaves de chegada e prendem os números, e que morreriam se a contagem
 sumisse. Depois de escrever, **verifique a mutação**: apague o bloco de contagem de chegadas,
@@ -2409,7 +2409,7 @@ confirme que a suíte quebra, restaure. Relate o resultado.
 
 ---
 
-- [ ] **Step 9: verde e commit**
+- [x] **Step 9: verde e commit**
 
 Run: `pnpm test && pnpm typecheck && pnpm boundaries && pnpm build`
 

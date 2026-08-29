@@ -18,6 +18,9 @@ const leaf = (id: string, kind: ObjectSpec["kind"]): ObjectSpec => ({
   behavior: (state) => ({ state, out: [] }),
 });
 
+/** Placa é consultada, nunca atravessada: por isso nunca tem behavior. */
+const plate = (id: string): ObjectSpec => ({ id, kind: "static", label: id, leaf: true });
+
 const root: ObjectSpec = {
   id: "root",
   kind: "composite",
@@ -29,7 +32,7 @@ const root: ObjectSpec = {
       kind: "composite",
       label: "box",
       children: [
-        leaf("note", "static"),
+        plate("note"),
         leaf("gate", "router"),
         {
           id: "chain",
@@ -180,7 +183,7 @@ describe("bordas que a revisão expôs", () => {
           id: "grp",
           kind: "composite",
           label: "grp",
-          children: [leaf("k1", "static"), leaf("k2", "static")],
+          children: [plate("k1"), plate("k2")],
         },
       ],
     });
@@ -227,7 +230,7 @@ describe("bordas que a revisão expôs", () => {
         kind: "composite",
         label: "r",
         entry: "note",
-        children: [leaf("note", "static"), leaf("a", "sink")],
+        children: [plate("note"), leaf("a", "sink")],
       }),
     ).toThrow(/não é filho de fluxo dele/);
   });
@@ -254,7 +257,7 @@ describe("bordas que a revisão expôs", () => {
           id: "grp",
           kind: "composite",
           label: "grp",
-          children: [leaf("k1", "static"), leaf("k2", "static")],
+          children: [plate("k1"), plate("k2")],
         },
       ],
     });
@@ -320,6 +323,43 @@ describe("bordas que a revisão expôs", () => {
     });
     expect(entryLeaf(t, "q")).toBe("q");
     expect(exitLeaf(t, "q")).toBe("q");
+  });
+
+  it("recusa comportamento numa placa, que nunca é atravessada", () => {
+    expect(() =>
+      indexTree({
+        id: "r",
+        kind: "composite",
+        label: "r",
+        children: [leaf("note", "static"), leaf("a", "sink")],
+      }),
+    ).toThrow(/é placa e tem behavior/);
+  });
+
+  it("recusa id que contém os separadores do livro-caixa", () => {
+    for (const mau of ["a.b", "a:b"]) {
+      expect(() =>
+        indexTree({ id: "r", kind: "composite", label: "r", children: [leaf(mau, "sink")] }),
+      ).toThrow(/separam campos no livro-caixa/);
+    }
+  });
+
+  it("flowChildren filtra por família, não pelo literal de um kind", () => {
+    // Um filho de cada arquétipo do catálogo. Quando uma onda futura
+    // acrescentar uma segunda placa, este teste passa a cobri-la sozinho — e
+    // quebra se alguém voltar a comparar o kind na mão.
+    const kinds = ["composite", "pipeline", "source", "router", "buffer", "sink", "channel", "static"] as const;
+    const t = indexTree({
+      id: "r",
+      kind: "composite",
+      label: "r",
+      children: kinds.map((kind) =>
+        familyOf(kind) === "plate"
+          ? { id: kind, kind, label: kind, leaf: true }
+          : leaf(kind, kind),
+      ),
+    });
+    expect(flowChildren(t, "r")).toEqual(kinds.filter((kind) => familyOf(kind) !== "plate"));
   });
 
   it("indexa canais, que não são filhos de ninguém", () => {

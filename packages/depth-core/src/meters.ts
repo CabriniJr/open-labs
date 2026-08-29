@@ -12,11 +12,24 @@ import type { TreeIndex } from "./tree.js";
  * `state.nodes` a partir daqui.
  */
 export function portCount(state: WorldState, node: string, port: PortId): number {
-  return state.ledger[`${node}.${port}`] ?? 0;
+  return state.ledger[`out:${node}.${port}`] ?? 0;
 }
 
 export function portWeight(state: WorldState, node: string, port: PortId): number {
-  return state.ledger[`${node}.${port}.weight`] ?? 0;
+  return state.ledger[`out:${node}.${port}.weight`] ?? 0;
+}
+
+/**
+ * O outro eixo do livro-caixa: o que CHEGOU num objeto. Um objeto não tem
+ * portas de entrada nomeadas — tudo que lhe é entregue cai na mesma caixa —,
+ * então a contagem é por objeto, e não por (objeto, porta).
+ */
+export function inCount(state: WorldState, node: string): number {
+  return state.ledger[`in:${node}`] ?? 0;
+}
+
+export function inWeight(state: WorldState, node: string): number {
+  return state.ledger[`in:${node}.weight`] ?? 0;
 }
 
 export interface Crossing {

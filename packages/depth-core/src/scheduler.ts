@@ -1,5 +1,5 @@
 import { randomAt } from "./rng.js";
-import { DROP } from "./model.js";
+import { DROP, familyOf } from "./model.js";
 import type {
   InFlight,
   Message,
@@ -20,7 +20,7 @@ const DEFAULT_EDGE_TICKS = 4;
 function actors(tree: TreeIndex): ObjectSpec[] {
   const out: ObjectSpec[] = [];
   for (const node of tree.byId.values()) {
-    if (node.kind === "static") continue;
+    if (familyOf(node.kind) === "plate") continue;
     if (node.behavior === undefined) continue;
     out.push(node);
   }
@@ -64,6 +64,20 @@ export function stepWorld(
     inbox.set(item.to, box);
   }
 
+  const atores = actors(tree);
+  // Uma entrega para quem não age é bug do motor, não do autor: `validateWorld`
+  // já recusou esse mundo na construção. Se chegar aqui, a caixa morreria com o
+  // Map local e a mensagem sumiria sem aparecer em lugar nenhum do livro-caixa.
+  const ehAtor = new Set(atores.map((n) => n.id));
+  for (const destino of inbox.keys()) {
+    if (!ehAtor.has(destino)) {
+      throw new Error(
+        `scheduler: entrega para "${destino}", que não age — ` +
+          `validateWorld deveria ter recusado este mundo`,
+      );
+    }
+  }
+
   const nodes: Record<string, unknown> = { ...state.nodes };
   const ledger: Record<string, number> = { ...state.ledger };
   const launched: InFlight[] = [];
@@ -72,11 +86,11 @@ export function stepWorld(
     ledger[key] = (ledger[key] ?? 0) + by;
   };
 
-  for (const node of actors(tree)) {
+  for (const node of atores) {
     const box = inbox.get(node.id) ?? [];
     if (box.length > 0) {
-      bump(`${node.id}.in`, box.length);
-      for (const message of box) bump(`${node.id}.in.weight`, message.weight);
+      bump(`in:${node.id}`, box.length);
+      for (const message of box) bump(`in:${node.id}.weight`, message.weight);
     }
 
     let seq = 0;
@@ -102,14 +116,14 @@ export function stepWorld(
     nodes[node.id] = result.state;
 
     for (const emission of result.out) {
-      bump(`${node.id}.${emission.port}`, 1);
-      bump(`${node.id}.${emission.port}.weight`, emission.message.weight);
+      bump(`out:${node.id}.${emission.port}`, 1);
+      bump(`out:${node.id}.${emission.port}.weight`, emission.message.weight);
       const to = resolveTarget(tree, spec.wires, node.id, emission.port);
       if (to === null) {
         // Sem fio declarado e sem descarte: não é uma decisão do modelo, é um
         // buraco na autoria. Fica contado numa chave própria para que o modo autor
         // possa acusá-lo, em vez de virar o mesmo silêncio de um descarte.
-        bump(`${node.id}.${emission.port}.unwired`, 1);
+        bump(`out:${node.id}.${emission.port}.unwired`, 1);
         continue;
       }
       launched.push({

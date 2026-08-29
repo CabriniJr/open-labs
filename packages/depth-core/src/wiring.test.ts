@@ -12,6 +12,9 @@ const leaf = (id: string, kind: ObjectSpec["kind"]): ObjectSpec => ({
   behavior: (state) => ({ state, out: [] }),
 });
 
+/** Placa é consultada, nunca atravessada: por isso nunca tem behavior. */
+const plate = (id: string): ObjectSpec => ({ id, kind: "static", label: id, leaf: true });
+
 const root: ObjectSpec = {
   id: "root",
   kind: "composite",
@@ -28,7 +31,7 @@ const root: ObjectSpec = {
           id: "chain",
           kind: "pipeline",
           label: "chain",
-          children: [leaf("a", "sink"), leaf("note", "static"), leaf("b", "sink")],
+          children: [leaf("a", "sink"), plate("note"), leaf("b", "sink")],
         },
       ],
     },

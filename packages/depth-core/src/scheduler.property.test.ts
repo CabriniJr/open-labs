@@ -68,6 +68,34 @@ describe("propriedades do tick", () => {
     );
   });
 
+  it("toda chave do livro-caixa declara o eixo dela", () => {
+    // Os dois eixos moram em espaços de nome separados: sem prefixo, um nó que
+    // emitisse na porta "in" somaria por cima das chegadas dele.
+    fc.assert(
+      fc.property(fc.integer({ min: 0, max: 30 }), params, (ticks, p) => {
+        for (const chave of Object.keys(rodar(ticks, p).ledger)) {
+          expect(chave.startsWith("in:") || chave.startsWith("out:")).toBe(true);
+        }
+      }),
+    );
+  });
+
+  it("o eixo das chegadas nunca supera o que foi de fato emitido", () => {
+    fc.assert(
+      fc.property(fc.integer({ min: 0, max: 40 }), params, (ticks, p) => {
+        const estado = rodar(ticks, p);
+        const chegadas = Object.entries(estado.ledger)
+          .filter(([k]) => k.startsWith("in:") && !k.endsWith(".weight"))
+          .reduce((soma, [, v]) => soma + v, 0);
+        const saidas = Object.entries(estado.ledger)
+          .filter(([k]) => k.startsWith("out:") && !k.endsWith(".weight") && !k.endsWith(".unwired"))
+          .reduce((soma, [, v]) => soma + v, 0);
+        // o que chegou já saiu de alguém; o resto está em trânsito ou foi descartado
+        expect(chegadas).toBeLessThanOrEqual(saidas);
+      }),
+    );
+  });
+
   it("a vista agregada nunca inventa: toda travessia está de fato em trânsito", () => {
     // usa a fixture de meters.test.ts, que tem um pipeline aninhado ("box"),
     // e percorre TODO foco possível — não só a raiz — para que um bug que só

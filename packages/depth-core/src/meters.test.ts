@@ -1,6 +1,6 @@
 // packages/depth-core/src/meters.test.ts
 import { describe, expect, it } from "vitest";
-import { boundaryCrossings, portCount, portWeight } from "./meters.js";
+import { boundaryCrossings, inCount, inWeight, portCount, portWeight } from "./meters.js";
 import { spec } from "./meters.test-fixture.js";
 import { World } from "./world.js";
 
@@ -16,6 +16,34 @@ describe("portCount e portWeight", () => {
     const w = new World(spec);
     w.advance(6);
     expect(portCount(w.state, "src", "inexistente")).toBe(0);
+  });
+});
+
+describe("inCount e inWeight", () => {
+  it("leem o eixo das chegadas, que é por objeto e não por porta", () => {
+    const w = new World(spec);
+    w.advance(6);
+    // src emite peso 2 por tick; com edgeTicks 2, "a" (folha de entrada de
+    // "box") recebe nos ticks 3..6
+    expect(inCount(w.state, "a")).toBe(4);
+    expect(inWeight(w.state, "a")).toBe(8);
+  });
+
+  it("não confundem chegada com saída no mesmo objeto", () => {
+    const w = new World(spec);
+    w.advance(6);
+    // "a" recebe e emite na porta "out": duas contagens, dois baldes
+    expect(inCount(w.state, "a")).toBe(portCount(w.state, "a", "out"));
+    expect(inWeight(w.state, "a")).toBe(portWeight(w.state, "a", "out"));
+    expect(inCount(w.state, "src")).toBe(0);
+    expect(portCount(w.state, "src", "out")).toBe(6);
+  });
+
+  it("devolvem zero para objeto que nunca recebeu nada", () => {
+    const w = new World(spec);
+    w.advance(6);
+    expect(inCount(w.state, "src")).toBe(0);
+    expect(inWeight(w.state, "src")).toBe(0);
   });
 });
 
