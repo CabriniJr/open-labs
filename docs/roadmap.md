@@ -203,17 +203,44 @@ vontade:
 > um simulador de arquitetura de computadores completo **não é**, e a hora de parar é a
 > hora em que a próxima tarefa da CPU não ensina mais nada ao motor.
 
-Ela já nomeou três lacunas do motor, todas legítimas e nenhuma resolvível com um
-`kind` novo (`theory.md` §7.5):
+Ela nomeou **seis** lacunas do motor — três previstas e três que só a construção achou —,
+todas legítimas e nenhuma resolvível com um `kind` novo. **Todas fechadas em 29/08/2026:**
 
-| Lacuna | O que falta |
-|---|---|
-| Linha de controle sem semântica | sinal entregue muda o que o ator faz no ciclo, contado como tráfego e nunca como carga |
-| Ler sem consumir | banco de registradores como ator que responde a pedido — nenhum ator espia o estado de outro |
-| Combinacional × registrado | o tick ganha fases: acomodação até o ponto fixo, depois entrega do que atravessa aresta registrada |
+| Lacuna | O que faltava | Onde fechou |
+|---|---|---|
+| Linha de controle sem semântica | sinal muda o que o ator faz no ciclo, contado como tráfego e nunca como carga | `sigin:`, `ctx.signals`, `toPort` obrigatório |
+| Ler sem consumir | banco como ator que responde a pedido — nenhum ator espia o estado de outro | o banco responde; a escrita do tick já vale para a leitura dele |
+| Combinacional × registrado | o tick ganha fases: acomodação em ordem topológica, depois o que atravessa a borda | `Wire.timing`, `settle` × `clocked` |
+| **A acomodação era invisível de fora** | o livro-caixa contava *quantas* mensagens saíram, nunca o que diziam | `WorldState.settled` |
+| **Não havia fonte constante da acomodação** | um trilho de alimentação não recebe nada e precisa dirigir dentro do tick | `ObjectSpec.drives`, com as duas mentiras recusadas na construção |
+| **Bornes não compunham** | a expansão abria uma camada e a carga caía no terminal errado, calada | expansão recursiva, `Borne = string \| { node, port }` |
 
-E uma menor: **escala de tempo é do mundo, não do motor** — 100 ms no OTel, ~0,3 ns na
-CPU. A constante vira propriedade do `WorldSpec`, com unidade.
+E uma menor, ainda aberta: **escala de tempo é do mundo, não do motor** — 100 ms no OTel,
+~0,3 ns na CPU. A constante vira propriedade do `WorldSpec`, com unidade.
+
+### O critério de reentrada foi atingido — 2026-08-29
+
+As três condições, com a evidência de cada uma:
+
+- **As mudanças da F1 fechadas** — as cinco previstas e mais três achadas no caminho.
+- **`cpu-domain` roda programa de verdade** — RV32I, montador com erro em linha e coluna,
+  diferencial instrução a instrução, 484 testes unitários e 78 e2e verdes.
+- **`depth-core` não sabe o que é um registrador** — `pnpm boundaries` verde em 60 arquivos,
+  e nenhuma das seis mudanças acima usa vocabulário de CPU.
+
+A fatia vertical desceu até o fim: `circuito › bit0 › XOR › NAND › PMOS`, oito níveis, com o
+somador de 4 bits rodando em transistores de verdade.
+
+**E o sinal de parada apareceu.** O que sobrou da CPU — abrir a unidade lógica (deslocador,
+comparador, lógica bit a bit) — é o mesmo trabalho do somador repetido em outro caminho, e
+não ensina nada novo ao motor. Ela fica folha, e isso está declarado no arquivo. Pela regra
+escrita acima, **é aqui que se para**.
+
+Fica uma decisão de ordem para o Luigi, e ela não é nossa: a linha de ordem manda
+`F6 → F6b (ATmega) → F4 (OTel)`, e o critério de reentrada diz que o OTel recomeça no fim da
+F6. O ATmega traz **interrupção** — controle assíncrono que preempta o fluxo, o primeiro
+fenômeno que talvez não caiba nas primitivas —, então ele ainda ensinaria o motor; mas ele
+também é mais um passo antes do alvo que dá nome ao projeto.
 
 **Saída:** um pacote `cpu-domain` que importa exclusivamente `depth-core` e `depth-ui`,
 executa um programa em assembly de verdade, abre até a porta lógica, e **não obrigou
