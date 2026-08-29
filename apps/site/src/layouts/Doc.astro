@@ -24,8 +24,12 @@ const { prev, next } = neighbours(chapter.id);
 const editar = `https://github.com/CabriniJr/otel-visual-handbook/edit/main/docs/${chapter.id}.md`;
 ---
 
-<Base title={`${chapter.title} — OTel Visual Handbook`} description={tema?.blurb ?? chapter.title}>
-  <SiteNav current="docs" search />
+<Base
+  title={`${chapter.title} — OTel Visual Handbook`}
+  description={tema?.blurb ?? chapter.title}
+  lang="pt-BR"
+>
+  <SiteNav current="docs" search lang="pt-BR" />
   <div class="doc">
     <aside class="doc__aside" data-pagefind-ignore>
       <DocSidebar current={chapter.id} />
@@ -87,5 +91,5 @@ const editar = `https://github.com/CabriniJr/otel-visual-handbook/edit/main/docs
       <DocToc headings={headings} />
     </aside>
   </div>
-  <SiteFooter />
+  <SiteFooter lang="pt-BR" />
 </Base>

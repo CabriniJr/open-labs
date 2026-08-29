@@ -1,20 +1,42 @@
 ---
 import { HeroSim } from "../components/HeroSim.tsx";
 import { Roadmap } from "../components/Roadmap.tsx";
+import SiteFooter from "../components/SiteFooter.astro";
+import SiteNav from "../components/SiteNav.astro";
+import DocsState from "../components/DocsState.astro";
 import Base from "../layouts/Base.astro";
+import { url } from "../lib/urls";
 import "../components/HeroSim.css";
 import "../components/Roadmap.css";
+import "../styles/docs.css";
+
+/**
+ * Os quatro níveis são a ideia central do projeto, e até aqui viviam escondidos
+ * num parágrafo. Viram peça: quatro faixas, na ordem em que se desce.
+ */
+const LEVELS = [
+  {
+    id: "L0",
+    name: "Flow",
+    line: "Services and telemetry moving between them. The shape of the system.",
+  },
+  {
+    id: "L1",
+    name: "Mechanism",
+    line: "Inside one component: the processors, the queue, the exporter.",
+  },
+  { id: "L2", name: "Wire", line: "The channel opened up — HTTP/2 frames, one by one." },
+  { id: "L3", name: "Payload", line: "The OTLP message, field by field, with the change lit up." },
+] as const;
 ---
 
 <Base
   title="OTel Visual Handbook"
   description="Every OpenTelemetry concept as a model you can take apart — from the service graph down to the bytes on the wire."
 >
-  <header class="site-header">
-    <p class="site-header__mark mono">OTel Visual Handbook</p>
-  </header>
+  <SiteNav current="home" />
 
-  <main>
+  <main id="content">
     <section class="hero editorial">
       <div>
         <h1>See how the telemetry actually moves.</h1>
@@ -27,6 +49,10 @@ import "../components/Roadmap.css";
         <p class="prose">
           Turn off context propagation below. The picture breaks — and so does
           the payload underneath it, because they are the same data.
+        </p>
+        <p class="hero__cta">
+          <a class="cta cta--primary" href={url("docs")}>Read the documentation</a>
+          <a class="cta" href="#path">See the path</a>
         </p>
       </div>
       <aside class="hero__note mono">
@@ -64,7 +90,24 @@ import "../components/Roadmap.css";
       </aside>
     </section>
 
-    <section class="path">
+    <section class="levels">
+      <ol class="levels__list">
+        {
+          LEVELS.map((level) => (
+            <li class="levels__item">
+              <span class="levels__id mono">{level.id}</span>
+              <span class="levels__name">{level.name}</span>
+              <span class="levels__line">{level.line}</span>
+            </li>
+          ))
+        }
+      </ol>
+      <p class="levels__note mono">
+        One run, four projections. Nothing below is drawn by hand.
+      </p>
+    </section>
+
+    <section class="path" id="path">
       <div class="path__intro">
         <h2>The path</h2>
         <p>
@@ -74,31 +117,14 @@ import "../components/Roadmap.css";
         </p>
       </div>
       <Roadmap client:visible />
+      <DocsState />
     </section>
   </main>
 
-  <footer class="site-footer editorial">
-    <p class="mono">
-      Open source ·
-      <a href="https://github.com/CabriniJr/otel-visual-handbook">GitHub</a>
-      · Built with Claude
-    </p>
-  </footer>
+  <SiteFooter />
 </Base>
 
 <style>
-  .site-header {
-    padding: var(--space-2) var(--space-3);
-    border-block-end: 1px solid var(--rule);
-  }
-
-  .site-header__mark {
-    margin: 0;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    font-size: var(--size-step--1);
-  }
-
   .hero {
     padding-block: var(--space-5) var(--space-3);
   }
@@ -157,10 +183,81 @@ import "../components/Roadmap.css";
     align-self: start;
   }
 
-  .site-footer {
-    padding-block: var(--space-3);
-    border-block-start: 1px solid var(--rule);
+  .hero__cta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+    margin-block-start: var(--space-3);
+  }
+
+  .cta {
+    display: inline-block;
+    padding: 0.5rem var(--space-2);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius-2);
+    color: var(--ink);
+    font-size: var(--size-step--1);
+  }
+
+  .cta:hover {
+    border-color: var(--accent);
+  }
+
+  .cta--primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--paper);
+  }
+
+  .levels {
+    max-width: 92rem;
+    margin-inline: auto;
+    padding: 0 var(--space-3) var(--space-4);
+  }
+
+  .levels__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius-3);
+    overflow: hidden;
+  }
+
+  .levels__item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    padding: var(--space-3) var(--space-2);
+    background: var(--paper-raised);
+  }
+
+  .levels__id {
+    color: var(--accent);
+    font-size: var(--size-step--1);
+    letter-spacing: 0.08em;
+  }
+
+  .levels__name {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: var(--size-step-1);
+    letter-spacing: -0.02em;
+  }
+
+  .levels__line {
     color: var(--ink-muted);
+    font-size: var(--size-step--1);
+    line-height: 1.45;
+  }
+
+  .levels__note {
+    margin: var(--space-2) 0 0;
+    color: var(--ink-faint);
     font-size: var(--size-step--1);
   }
 </style>

@@ -4,29 +4,32 @@ interface Props {
   current?: "home" | "docs" | undefined;
   /** A busca só existe onde há o que buscar: nas páginas de documentação. */
   search?: boolean | undefined;
+  lang?: Lang | undefined;
 }
 
-const { current, search } = Astro.props;
+const { current, search, lang = "en" } = Astro.props;
+const t = chrome(lang);
 import DocSearch from "./DocSearch.astro";
 import { url } from "../lib/urls";
+import { chrome, type Lang } from "../lib/chrome-strings";
 ---
 
 <header class="site-nav">
-  <a class="site-nav__skip" href="#content">Pular para o conteúdo</a>
+  <a class="site-nav__skip" href="#content">{t.skip}</a>
   <a class="site-nav__brand" href={url()} aria-current={current === "home" ? "page" : undefined}>
     <span class="site-nav__mark" aria-hidden="true"></span>
     OTel Visual Handbook
   </a>
   {search && <DocSearch />}
-  <nav aria-label="Principal">
-    <a href={url("docs")} aria-current={current === "docs" ? "page" : undefined}>Documentação</a>
+  <nav aria-label={t.nav}>
+    <a href={url("docs")} aria-current={current === "docs" ? "page" : undefined}>{t.docs}</a>
     <a href="https://github.com/CabriniJr/otel-visual-handbook" rel="noopener">GitHub</a>
   </nav>
   <button
     class="site-nav__theme"
     type="button"
     data-theme-toggle
-    aria-label="Alternar tema claro e escuro"
+    aria-label={t.theme}
   >
     <span data-theme-icon aria-hidden="true">◐</span>
   </button>

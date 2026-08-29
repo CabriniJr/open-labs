@@ -12,7 +12,7 @@ export default defineConfig({
     command: "pnpm build && pnpm preview --port 4321",
     url: origin,
     reuseExistingServer: !process.env.CI,
-    timeout: 120_000,
+    timeout: 240_000,
   },
   projects: [
     { name: "desktop", use: { ...devices["Desktop Chrome"] } },

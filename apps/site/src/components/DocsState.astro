@@ -1,0 +1,128 @@
+---
+import { STATUS_LABEL, THEMES } from "../data/docs-index";
+import { docUrl, url } from "../lib/urls";
+
+/**
+ * A documentação aparece no roteiro com o estado real, em vez de ficar de fora
+ * até estar pronta. A fonte é o mesmo manifesto que monta o índice — uma só,
+ * senão a landing e a documentação divergem e ninguém percebe.
+ */
+const chapters = THEMES.flatMap((t) => t.chapters);
+const contagem = {
+  stable: chapters.filter((c) => c.status === "stable").length,
+  draft: chapters.filter((c) => c.status === "draft").length,
+  proposal: chapters.filter((c) => c.status === "proposal").length,
+};
+
+const EN_STATUS: Record<keyof typeof contagem, string> = {
+  stable: "settled",
+  draft: "drafted",
+  proposal: "still a proposal",
+};
+---
+
+<section class="docs-state">
+  <div class="docs-state__intro">
+    <h3>The written record</h3>
+    <p>
+      The design is written down as it happens, and it is <strong>incomplete on purpose</strong> —
+      publishing only what is finished would hide the part that is still being argued. Every
+      chapter says which it is: {contagem.stable} settled, {contagem.draft} drafted, {
+        contagem.proposal
+      } still proposals.
+    </p>
+    <p><a href={url("docs")}>Read all of it →</a></p>
+  </div>
+
+  <ul class="docs-state__list">
+    {
+      THEMES.map((theme) => (
+        <li class="docs-state__theme">
+          <p class="docs-state__theme-title mono">{theme.title}</p>
+          <ul>
+            {theme.chapters.map((chapter) => (
+              <li>
+                <a href={docUrl(chapter.id)}>{chapter.title}</a>
+                <span class={`status status--${chapter.status}`} title={STATUS_LABEL[chapter.status]}>
+                  {EN_STATUS[chapter.status]}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </li>
+      ))
+    }
+  </ul>
+</section>
+
+<style>
+  .docs-state {
+    display: grid;
+    grid-template-columns: minmax(0, 22rem) minmax(0, 1fr);
+    gap: var(--space-4);
+    margin-block-start: var(--space-5);
+    padding-block-start: var(--space-4);
+    border-block-start: 1px solid var(--rule);
+  }
+
+  @media (max-width: 60rem) {
+    .docs-state {
+      grid-template-columns: minmax(0, 1fr);
+      gap: var(--space-3);
+    }
+  }
+
+  h3 {
+    margin: 0 0 var(--space-1);
+    font-family: var(--font-display);
+    font-size: var(--size-step-1);
+    letter-spacing: -0.02em;
+  }
+
+  .docs-state__intro p {
+    color: var(--ink-muted);
+    font-size: var(--size-step--1);
+  }
+
+  .docs-state__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+    gap: var(--space-3);
+  }
+
+  .docs-state__theme > ul {
+    list-style: none;
+    margin: var(--space-1) 0 0;
+    padding: 0;
+  }
+
+  .docs-state__theme-title {
+    margin: 0;
+    color: var(--ink-faint);
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .docs-state__theme li {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    justify-content: space-between;
+    padding-block: 0.25rem;
+    border-block-start: 1px solid var(--rule);
+    font-size: var(--size-step--1);
+  }
+
+  .docs-state__theme li a {
+    color: var(--ink);
+    border-block-end: 0;
+  }
+
+  .docs-state__theme li a:hover {
+    color: var(--accent);
+  }
+</style>
