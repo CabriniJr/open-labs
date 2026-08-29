@@ -1,52 +1,8 @@
 // packages/depth-core/src/meters.test.ts
 import { describe, expect, it } from "vitest";
-import { DROP } from "./model.js";
-import type { ObjectSpec, WorldSpec } from "./model.js";
 import { boundaryCrossings, portCount, portWeight } from "./meters.js";
+import { spec } from "./meters.test-fixture.js";
 import { World } from "./world.js";
-
-const relay = (id: string): ObjectSpec => ({
-  id,
-  kind: "sink",
-  label: id,
-  leaf: true,
-  init: () => ({}),
-  behavior: (state, inbox) => ({ state, out: inbox.map((m) => ({ port: "out", message: m })) }),
-});
-
-const spec: WorldSpec = {
-  id: "m",
-  seed: 3,
-  edgeTicks: 2,
-  root: {
-    id: "root",
-    kind: "composite",
-    label: "root",
-    children: [
-      {
-        id: "src",
-        kind: "source",
-        label: "src",
-        leaf: true,
-        init: () => ({}),
-        behavior: (state, _inbox, ctx) => ({ state, out: [{ port: "out", message: ctx.emit("blob", 2) }] }),
-      },
-      {
-        id: "box",
-        kind: "pipeline",
-        label: "box",
-        children: [relay("a"), relay("b")],
-      },
-      relay("end"),
-    ],
-  },
-  wires: [
-    { from: "src", port: "out", to: "box" },
-    { from: "box", port: "out", to: "end" },
-    { from: "end", port: "sunk", to: DROP },
-  ],
-  params: {},
-};
 
 describe("portCount e portWeight", () => {
   it("leem só o livro-caixa de portas", () => {

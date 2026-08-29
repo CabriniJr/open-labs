@@ -1,11 +1,8 @@
 // packages/depth-core/src/scheduler.property.test.ts
-//
-// A propriedade que ainda não dá para escrever aqui é a central — a vista
-// agregada é exatamente o tráfego que cruzou as portas. Ela precisa de
-// `boundaryCrossings`, que chega na Task 5. A ausência é sequenciamento, não
-// esquecimento.
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
+import { boundaryCrossings } from "./meters.js";
+import { spec as fronteiraSpec } from "./meters.test-fixture.js";
 import { indexTree } from "./tree.js";
 import { initialWorld, stepWorld } from "./scheduler.js";
 import { spec } from "./scheduler.test-fixture.js";
@@ -66,6 +63,30 @@ describe("propriedades do tick", () => {
         const depois = stepWorld(spec, tree, antes, p);
         for (const [porta, valor] of Object.entries(antes.ledger)) {
           expect(depois.ledger[porta] ?? 0).toBeGreaterThanOrEqual(valor);
+        }
+      }),
+    );
+  });
+
+  it("a vista agregada nunca inventa: toda travessia está de fato em trânsito", () => {
+    // usa a fixture de meters.test.ts, que tem um pipeline aninhado ("box"),
+    // e percorre TODO foco possível — não só a raiz — para que um bug que só
+    // aparece um nível abaixo não fique escondido.
+    const fronteiraTree = indexTree(fronteiraSpec.root);
+    const focos = [...fronteiraTree.byId.keys()];
+
+    fc.assert(
+      fc.property(fc.integer({ min: 0, max: 30 }), (ticks) => {
+        let estado = initialWorld(fronteiraSpec, fronteiraTree);
+        for (let i = 0; i < ticks; i += 1) {
+          estado = stepWorld(fronteiraSpec, fronteiraTree, estado, fronteiraSpec.params);
+        }
+        const emTransito = new Set(estado.flight.map((f) => f.id));
+
+        for (const foco of focos) {
+          for (const crossing of boundaryCrossings(fronteiraTree, estado, foco)) {
+            expect(emTransito.has(crossing.item.id)).toBe(true);
+          }
         }
       }),
     );
