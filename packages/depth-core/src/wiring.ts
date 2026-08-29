@@ -1,4 +1,4 @@
-import { DROP } from "./model.js";
+import { borneNode, bornePort, DROP } from "./model.js";
 import type { Drop, PortId, Wire } from "./model.js";
 import { entryLeaf, flowChildren } from "./tree.js";
 import type { TreeIndex } from "./tree.js";
@@ -111,8 +111,29 @@ export function resolveSignalTargets(
  * atalhado nem aberto sem trocar a fiação, e essa troca é justamente onde
  * apareceria uma diferença que ninguém veria.
  */
+/**
+ * Abre os bornes até o fundo, e não só uma casca.
+ *
+ * Bornes **compõem**: um contêiner com bornes pode ter, lá dentro, outro
+ * contêiner com bornes — é o que "profundidade é a árvore de composição"
+ * significa quando o objeto tem mais de uma entrada. Uma volta só resolveria a
+ * camada de fora e pararia, e o fio acabaria entregue pela folha de entrada do
+ * filho, que é o terminal errado, em silêncio.
+ *
+ * Termina porque cada volta desce um nível de uma árvore finita; o teto é a
+ * altura dela, e estourá-lo é bug do motor, não do modelo.
+ */
 export function expandPorts(tree: TreeIndex, wires: readonly Wire[]): readonly Wire[] {
-  return expandSaidas(tree, expandEntradas(tree, wires));
+  let atual = wires;
+  for (let volta = 0; volta <= tree.byId.size; volta += 1) {
+    const proximo = expandSaidas(tree, expandEntradas(tree, atual));
+    if (proximo === atual) return atual;
+    atual = proximo;
+  }
+  throw new Error(
+    "wiring: os bornes não pararam de abrir depois de percorrer a árvore inteira — " +
+      "isso é bug do motor",
+  );
 }
 
 /** Bornes de saída: o fio parte de quem, lá dentro, emite por aquela porta. */
@@ -128,7 +149,16 @@ function expandSaidas(tree: TreeIndex, wires: readonly Wire[]): readonly Wire[] 
       continue;
     }
     mudou = true;
-    for (const filho of dentro) saida.push({ ...wire, from: filho });
+    for (const alvo of dentro) {
+      const porta = bornePort(alvo);
+      // Com a porta nomeada, o fio passa a partir do filho POR ELA — e se ele
+      // também tiver bornes, a próxima volta abre de novo.
+      saida.push(
+        porta === undefined
+          ? { ...wire, from: borneNode(alvo) }
+          : { ...wire, from: borneNode(alvo), port: porta },
+      );
+    }
   }
   return mudou ? saida : wires;
 }
@@ -138,6 +168,7 @@ function expandEntradas(tree: TreeIndex, wires: readonly Wire[]): readonly Wire[
   if (!precisa) return wires;
 
   const saida: Wire[] = [];
+  let mudou = false;
   for (const wire of wires) {
     const porta = wire.toPort;
     if (porta === undefined || wire.to === DROP) {
@@ -158,9 +189,18 @@ function expandEntradas(tree: TreeIndex, wires: readonly Wire[]): readonly Wire[
       saida.push(wire);
       continue;
     }
-    for (const filho of dentro) {
-      saida.push({ ...wire, to: entryLeaf(tree, filho) });
+    for (const alvo of dentro) {
+      const filho = borneNode(alvo);
+      const portaFilho = bornePort(alvo);
+      // Nome pelado: quem age é o filho, e a folha de entrada dele resolve.
+      // Porta nomeada: o fio para NELE, com o nome dela, e a próxima volta abre.
+      saida.push(
+        portaFilho === undefined
+          ? { ...wire, to: entryLeaf(tree, filho) }
+          : { ...wire, to: filho, toPort: portaFilho },
+      );
+      mudou = true;
     }
   }
-  return saida;
+  return mudou ? saida : wires;
 }

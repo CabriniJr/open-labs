@@ -1,6 +1,6 @@
 import { DROP } from "./model.js";
 import type { Wire, WireTiming, WorldSpec } from "./model.js";
-import { familyOf } from "./model.js";
+import { borneNode, bornePort, familyOf } from "./model.js";
 import { findCombinationalCycle } from "./settle-graph.js";
 import { entryLeaf, visibleChild } from "./tree.js";
 import type { TreeIndex } from "./tree.js";
@@ -192,7 +192,9 @@ export function validateWorld(spec: WorldSpec, tree: TreeIndex): void {
             `chegasse por ela desapareceria`,
         );
       }
-      for (const filho of filhos) {
+      for (const alvo of filhos) {
+        const filho = borneNode(alvo);
+        const portaFilho = bornePort(alvo);
         if (!tree.byId.has(filho)) {
           erros.push(
             `a entrada "${porta}" de "${node.id}" leva a "${filho}", que não existe`,
@@ -203,6 +205,28 @@ export function validateWorld(spec: WorldSpec, tree: TreeIndex): void {
           erros.push(
             `a entrada "${porta}" de "${node.id}" leva a "${filho}", que está fora ` +
               `dele — borne é entrada para DENTRO`,
+          );
+        }
+        const dentro = tree.byId.get(filho)!;
+        const bornesDoFilho = dentro.inlets;
+        // Nome pelado num filho que também tem bornes: o motor resolveria pela
+        // folha de entrada dele, e a carga chegaria no terminal errado sem que
+        // ninguém percebesse. Aqui vira erro de construção.
+        if (portaFilho === undefined && bornesDoFilho !== undefined && dentro.shortcut === undefined) {
+          erros.push(
+            `a entrada "${porta}" de "${node.id}" leva a "${filho}" sem dizer por qual ` +
+              `porta, e "${filho}" também tem entradas nomeadas ` +
+              `(${Object.keys(bornesDoFilho).join(", ")}). Escreva ` +
+              `{ node: "${filho}", port: "..." }`,
+          );
+        }
+        if (portaFilho !== undefined && bornesDoFilho?.[portaFilho] === undefined) {
+          erros.push(
+            `a entrada "${porta}" de "${node.id}" leva à porta "${portaFilho}" de ` +
+              `"${filho}", que não a declara` +
+              (bornesDoFilho === undefined
+                ? " — ele não tem entradas nomeadas"
+                : ` — as que ele tem são ${Object.keys(bornesDoFilho).join(", ")}`),
           );
         }
       }
@@ -224,10 +248,32 @@ export function validateWorld(spec: WorldSpec, tree: TreeIndex): void {
             `emitido por ela, e o fio ligado nela nunca teria carga`,
         );
       }
-      for (const filho of filhos) {
+      for (const alvo of filhos) {
+        const filho = borneNode(alvo);
+        const portaFilho = bornePort(alvo);
         if (!tree.byId.has(filho)) {
           erros.push(`a saída "${porta}" de "${node.id}" vem de "${filho}", que não existe`);
           continue;
+        }
+        const dentro = tree.byId.get(filho)!;
+        const bornesDoFilho = dentro.outlets;
+        // O espelho do caso da entrada: sem o nome da porta, o fio sairia do
+        // filho por uma porta que ele não emite, e nunca teria carga.
+        if (portaFilho === undefined && bornesDoFilho !== undefined && dentro.shortcut === undefined && bornesDoFilho[porta] === undefined) {
+          erros.push(
+            `a saída "${porta}" de "${node.id}" vem de "${filho}" sem dizer por qual ` +
+              `porta, e "${filho}" só emite por ${Object.keys(bornesDoFilho).join(", ")}. ` +
+              `Escreva { node: "${filho}", port: "..." }`,
+          );
+        }
+        if (portaFilho !== undefined && bornesDoFilho?.[portaFilho] === undefined) {
+          erros.push(
+            `a saída "${porta}" de "${node.id}" vem da porta "${portaFilho}" de ` +
+              `"${filho}", que não a declara` +
+              (bornesDoFilho === undefined
+                ? " — ele não tem saídas nomeadas"
+                : ` — as que ele tem são ${Object.keys(bornesDoFilho).join(", ")}`),
+          );
         }
         if (visibleChild(tree, node.id, filho).at === "outside") {
           erros.push(

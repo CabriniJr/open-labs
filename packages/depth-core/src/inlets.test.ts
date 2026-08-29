@@ -173,3 +173,97 @@ describe("entradas nomeadas", () => {
     expect(() => new World(comBorneParaFora)).toThrow(/está fora dele/);
   });
 });
+
+describe("bornes compõem: um contêiner com bornes dentro de outro", () => {
+  /** Guarda em qual terminal ela foi tocada. É o olho do fundo do poço. */
+  const terminal = (id: string): AnyObject => ({
+    id,
+    kind: "sink",
+    label: id,
+    leaf: true,
+    init: () => ({ visto: 0 }),
+    behavior: (state, inbox, ctx) =>
+      ctx.phase === "commit" && inbox.length > 0
+        ? { state: { visto: conta(inbox) }, out: [] }
+        : { state, out: [] },
+  });
+
+  /** Um bloco com dois terminais distintos, que é o caso que exige nome. */
+  const interno: AnyObject = {
+    id: "interno",
+    kind: "composite",
+    label: "interno",
+    inlets: { esq: ["t-esq"], dir: ["t-dir"] },
+    children: [terminal("t-esq"), terminal("t-dir")],
+  };
+
+  /** E o mesmo bloco embrulhado, cujos bornes apontam para os bornes dele. */
+  const externo: AnyObject = {
+    id: "externo",
+    kind: "composite",
+    label: "externo",
+    inlets: {
+      a: [{ node: "interno", port: "esq" }],
+      b: [{ node: "interno", port: "dir" }],
+    },
+    children: [interno],
+  };
+
+  const fonte: AnyObject = {
+    id: "fonte",
+    kind: "source",
+    label: "fonte",
+    leaf: true,
+    behavior: (state, _inbox, ctx) =>
+      ctx.phase === "commit"
+        ? {
+            state,
+            out: [
+              { port: "a", message: ctx.emit("v", 1, { n: 7 }) },
+              { port: "b", message: ctx.emit("v", 1, { n: 30 }) },
+            ],
+          }
+        : { state, out: [] },
+  };
+
+  const spec: WorldSpec = {
+    id: "aninhado",
+    seed: 1,
+    edgeTicks: 1,
+    params: {},
+    root: { id: "raiz", kind: "composite", label: "raiz", children: [fonte, externo] },
+    wires: [
+      { from: "fonte", port: "a", to: "externo", toPort: "a", timing: "clocked" },
+      { from: "fonte", port: "b", to: "externo", toPort: "b", timing: "clocked" },
+    ],
+  };
+
+  it("a carga desce dois níveis e chega no terminal certo", () => {
+    // Com a expansão de uma volta só, os dois fios acabavam na folha de entrada
+    // de "interno" — o mesmo terminal para os dois, e nada avisaria.
+    const mundo = new World(spec);
+    mundo.advance(2);
+    expect((mundo.state.nodes["t-esq"] as { visto: number }).visto).toBe(7);
+    expect((mundo.state.nodes["t-dir"] as { visto: number }).visto).toBe(30);
+  });
+
+  it("nome pelado num filho que tem bornes é recusado na construção", () => {
+    const cego: AnyObject = {
+      ...externo,
+      inlets: { a: ["interno"], b: [{ node: "interno", port: "dir" }] },
+    };
+    expect(
+      () => new World({ ...spec, root: { ...spec.root, children: [fonte, cego] } }),
+    ).toThrow(/sem dizer por qual porta.*esq, dir/s);
+  });
+
+  it("apontar para uma porta que o filho não tem é recusado", () => {
+    const torto: AnyObject = {
+      ...externo,
+      inlets: { a: [{ node: "interno", port: "meio" }], b: [{ node: "interno", port: "dir" }] },
+    };
+    expect(
+      () => new World({ ...spec, root: { ...spec.root, children: [fonte, torto] } }),
+    ).toThrow(/porta "meio" de "interno", que não a declara/);
+  });
+});

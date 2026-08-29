@@ -148,6 +148,33 @@ export type Behavior<S = unknown> = (
   ctx: StepContext,
 ) => { readonly state: S; readonly out: readonly Emission[] };
 
+/**
+ * Para onde um borne leva, lá dentro.
+ *
+ * O nome do filho basta quando o filho **age** — uma folha, ou um contêiner
+ * fechado num atalho. Quando o filho é ele mesmo um contêiner com bornes, o
+ * nome sozinho não diz o bastante: "entra no somador" não escolhe entre as duas
+ * parcelas e o vem-de-trás. Aí o borne nomeia também a porta do filho, e a
+ * expansão continua para dentro dele.
+ *
+ * Sem essa forma, o motor resolveria o filho pela folha de entrada dele e a
+ * carga chegaria no terminal errado **em silêncio**. `validateWorld` recusa o
+ * nome pelado quando o filho tem bornes, exatamente para isso não ser possível.
+ */
+export interface BorneInterno {
+  readonly node: string;
+  readonly port: PortId;
+}
+
+export type Borne = string | BorneInterno;
+
+/** O filho para onde o borne leva, seja qual for a forma. */
+export const borneNode = (b: Borne): string => (typeof b === "string" ? b : b.node);
+
+/** A porta do filho, quando o borne nomeia uma. */
+export const bornePort = (b: Borne): PortId | undefined =>
+  typeof b === "string" ? undefined : b.port;
+
 export interface ObjectSpec<S = unknown> {
   readonly id: string;
   readonly kind: Kind;
@@ -192,7 +219,7 @@ export interface ObjectSpec<S = unknown> {
    * Uma entrada pode alimentar vários filhos — é o leque de dentro do bloco,
    * o pontinho que o esquemático desenha na linha de entrada.
    */
-  readonly inlets?: Readonly<Record<PortId, readonly string[]>>;
+  readonly inlets?: Readonly<Record<PortId, readonly Borne[]>>;
   /**
    * As **saídas nomeadas** deste contêiner: nome da porta -> quem, lá dentro,
    * emite por ela. O espelho de `inlets`, e pelo mesmo motivo.
@@ -202,7 +229,7 @@ export interface ObjectSpec<S = unknown> {
    * fora muda quando o bloco abre — e aí as duas versões deixam de ser o mesmo
    * modelo — ou uma das saídas se perde.
    */
-  readonly outlets?: Readonly<Record<PortId, readonly string[]>>;
+  readonly outlets?: Readonly<Record<PortId, readonly Borne[]>>;
   /**
    * `N` objetos idênticos, um desenhado.
    *

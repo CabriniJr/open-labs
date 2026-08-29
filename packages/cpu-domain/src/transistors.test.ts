@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { World, shortcutDisagreement } from "@ovh/depth-core";
+import type { WorldSpec } from "@ovh/depth-core";
 import { decide } from "./gates.js";
 import { portaCmos, portaCmosWorld, fiosDaPortaCmos, transistor } from "./transistors.js";
 import type { PortaCmos } from "./transistors.js";
@@ -97,16 +98,16 @@ describe("a porta CMOS, transistor por transistor", () => {
     // Trocar o canal de um NMOS por PMOS faz as duas redes fecharem juntas com
     // a entrada em zero: uma puxa para 1, a outra para 0.
     const spec = portaCmosWorld("not", false);
-    const trocado = {
+    const trocado: WorldSpec = {
       ...spec,
       root: {
         ...spec.root,
-        children: spec.root.children?.map((filho) =>
+        children: (spec.root.children ?? []).map((filho) =>
           filho.id !== "porta"
             ? filho
             : {
                 ...filho,
-                children: filho.children?.map((neto) =>
+                children: (filho.children ?? []).map((neto) =>
                   neto.id === "porta-n1" ? transistor("porta-n1", "pmos") : neto,
                 ),
               },
