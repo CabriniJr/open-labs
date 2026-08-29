@@ -82,7 +82,7 @@ detecção sem precisar da execução.
 - Modify: `packages/depth-core/src/validate.ts`
 - Test: `packages/depth-core/src/validate.test.ts`
 
-- [ ] **Step 1: escreva os testes que falham**
+- [x] **Step 1: escreva os testes que falham**
 
 Acrescente ao fim do `describe("validateWorld", ...)` em
 `packages/depth-core/src/validate.test.ts`:
@@ -174,12 +174,12 @@ Acrescente ao fim do `describe("validateWorld", ...)` em
   });
 ```
 
-- [ ] **Step 2: rode e confirme que falham**
+- [x] **Step 2: rode e confirme que falham**
 
 Run: `pnpm vitest run packages/depth-core/src/validate.test.ts`
 Esperado: 6 falhas, todas por não lançar.
 
-- [ ] **Step 3: acrescente os tipos em `model.ts`**
+- [x] **Step 3: acrescente os tipos em `model.ts`**
 
 Logo abaixo de `export type LineKind = "data" | "control";`:
 
@@ -248,7 +248,7 @@ Em `WorldState`, acrescente:
   readonly substeps: number;
 ```
 
-- [ ] **Step 4: implemente as regras em `validate.ts`**
+- [x] **Step 4: implemente as regras em `validate.ts`**
 
 Acrescente `WireTiming` ao `import type` de `./model.js`. Dentro do primeiro
 `for (const wire of spec.wires)`, depois da checagem de `wire.port`:
@@ -315,14 +315,14 @@ E, depois do laço de fan-out que já existe, o regime único por porta:
   }
 ```
 
-- [ ] **Step 5: rode e confirme que passam**
+- [x] **Step 5: rode e confirme que passam**
 
 Run: `pnpm vitest run packages/depth-core/src/validate.test.ts`
 Esperado: todos verdes. O quarto teste do Step 1 (leque de controle) prova que a checagem de
 fan-out continua valendo só para dado; se ele falhar, o filtro `(wire.line ?? "data")` foi
 perdido.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add packages/depth-core/src/model.ts packages/depth-core/src/validate.ts \
@@ -348,7 +348,7 @@ devolve vale ou e descartado."
 - Create: `packages/depth-core/src/settle-graph.ts`
 - Test: `packages/depth-core/src/settle-graph.test.ts`
 
-- [ ] **Step 1: escreva os testes que falham**
+- [x] **Step 1: escreva os testes que falham**
 
 ```ts
 // packages/depth-core/src/settle-graph.test.ts
@@ -421,12 +421,12 @@ describe("findCombinationalCycle", () => {
 });
 ```
 
-- [ ] **Step 2: rode e confirme que falham**
+- [x] **Step 2: rode e confirme que falham**
 
 Run: `pnpm vitest run packages/depth-core/src/settle-graph.test.ts`
 Esperado: falha com "Cannot find module './settle-graph.js'".
 
-- [ ] **Step 3: implemente `settle-graph.ts`**
+- [x] **Step 3: implemente `settle-graph.ts`**
 
 ```ts
 // packages/depth-core/src/settle-graph.ts
@@ -583,12 +583,12 @@ export function findCombinationalCycle(wires: readonly Wire[]): readonly string[
 }
 ```
 
-- [ ] **Step 4: rode e confirme que passam**
+- [x] **Step 4: rode e confirme que passam**
 
 Run: `pnpm vitest run packages/depth-core/src/settle-graph.test.ts`
 Esperado: 9 verdes.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add packages/depth-core/src/settle-graph.ts packages/depth-core/src/settle-graph.test.ts
@@ -616,7 +616,7 @@ ha um laco obriga o autor a procurar."
 - Modify: `packages/depth-core/src/validate.ts`
 - Test: `packages/depth-core/src/validate.test.ts`
 
-- [ ] **Step 1: escreva os testes que falham**
+- [x] **Step 1: escreva os testes que falham**
 
 Acrescente ao `describe("validateWorld", ...)`:
 
@@ -663,12 +663,12 @@ Acrescente ao `describe("validateWorld", ...)`:
   });
 ```
 
-- [ ] **Step 2: rode e confirme que o primeiro falha**
+- [x] **Step 2: rode e confirme que o primeiro falha**
 
 Run: `pnpm vitest run packages/depth-core/src/validate.test.ts -t "laço combinacional"`
 Esperado: falha por não lançar.
 
-- [ ] **Step 3: implemente**
+- [x] **Step 3: implemente**
 
 No topo de `validate.ts`, acrescente `import { findCombinationalCycle } from "./settle-graph.js";`.
 Antes do `if (erros.length > 0)` final:
@@ -688,12 +688,12 @@ Antes do `if (erros.length > 0)` final:
   }
 ```
 
-- [ ] **Step 4: rode e confirme que passam**
+- [x] **Step 4: rode e confirme que passam**
 
 Run: `pnpm vitest run packages/depth-core/src/validate.test.ts`
 Esperado: todos verdes.
 
-- [ ] **Step 5: verifique por mutação que a regra tem dente**
+- [x] **Step 5: verifique por mutação que a regra tem dente**
 
 Em `settle-graph.ts`, troque, dentro de `settleEdges`,
 `if ((wire.timing ?? "clocked") !== "settle") continue;` por `if (false) continue;`.
@@ -705,7 +705,7 @@ a mutação.
 Se ele não falhar, o teste está fraco e a regra recusaria máquina sequencial — pare e conserte
 o teste antes de seguir.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add packages/depth-core/src/validate.ts packages/depth-core/src/validate.test.ts
@@ -728,7 +728,7 @@ por mutacao."
 - Modify: `packages/depth-core/src/wiring.ts`
 - Test: `packages/depth-core/src/wiring.test.ts`
 
-- [ ] **Step 1: escreva os testes que falham**
+- [x] **Step 1: escreva os testes que falham**
 
 Acrescente a `packages/depth-core/src/wiring.test.ts`:
 
@@ -766,12 +766,12 @@ describe("resolveSignalTargets", () => {
 Acrescente `resolveSignalTargets` ao import de `./wiring.js` e `Wire` ao import de tipo, se
 ainda não estiverem lá.
 
-- [ ] **Step 2: rode e confirme que falham**
+- [x] **Step 2: rode e confirme que falham**
 
 Run: `pnpm vitest run packages/depth-core/src/wiring.test.ts`
 Esperado: falha por `resolveSignalTargets` não existir.
 
-- [ ] **Step 3: implemente**
+- [x] **Step 3: implemente**
 
 No fim de `packages/depth-core/src/wiring.ts` (e acrescente `PortId` ao `import type` de
 `./model.js`):
@@ -807,12 +807,12 @@ export function resolveSignalTargets(
 }
 ```
 
-- [ ] **Step 4: rode e confirme que passam**
+- [x] **Step 4: rode e confirme que passam**
 
 Run: `pnpm vitest run packages/depth-core/src/wiring.test.ts`
 Esperado: todos verdes.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add packages/depth-core/src/wiring.ts packages/depth-core/src/wiring.test.ts
@@ -833,7 +833,7 @@ carga — o destinatario de um sinal e nomeado."
 - Test: `packages/depth-core/src/settle.test.ts`
 - Modify: `packages/depth-core/src/scheduler.ts`
 
-- [ ] **Step 1: escreva a fixture**
+- [x] **Step 1: escreva a fixture**
 
 ```ts
 // packages/depth-core/src/settle.test-fixture.ts
@@ -913,7 +913,7 @@ export const spec: WorldSpec = {
 };
 ```
 
-- [ ] **Step 2: escreva os testes que falham**
+- [x] **Step 2: escreva os testes que falham**
 
 ```ts
 // packages/depth-core/src/settle.test.ts
@@ -976,12 +976,12 @@ describe("fase de acomodação", () => {
 });
 ```
 
-- [ ] **Step 3: rode e confirme que falham**
+- [x] **Step 3: rode e confirme que falham**
 
 Run: `pnpm vitest run packages/depth-core/src/settle.test.ts`
 Esperado: falhas — hoje `stepWorld` não conhece fase nenhuma.
 
-- [ ] **Step 4: implemente `settle.ts`**
+- [x] **Step 4: implemente `settle.ts`**
 
 ```ts
 // packages/depth-core/src/settle.ts
@@ -1104,7 +1104,7 @@ export function settle(
 }
 ```
 
-- [ ] **Step 5: reescreva `stepWorld` com as duas fases**
+- [x] **Step 5: reescreva `stepWorld` com as duas fases**
 
 Substitua todo o corpo de `stepWorld` em `packages/depth-core/src/scheduler.ts` por:
 
@@ -1314,7 +1314,7 @@ E `initialWorld` passa a devolver `substeps: 0`:
   return { tick: 0, nodes, flight: [], ledger: {}, substeps: 0 };
 ```
 
-- [ ] **Step 6: rode a suíte inteira**
+- [x] **Step 6: rode a suíte inteira**
 
 Run: `pnpm vitest run packages/depth-core`
 Esperado: os testes de `settle.test.ts` passam **e** os 242 anteriores continuam passando —
@@ -1325,7 +1325,7 @@ Se algum teste antigo quebrar por causa do formato do id da mensagem (que agora 
 para a forma nova mantendo o que ele de fato prova (ids não se repetem, replay reproduz os
 mesmos ids).
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add packages/depth-core/src
@@ -1354,7 +1354,7 @@ exato."
 - Create: `packages/depth-core/src/control.test-fixture.ts`
 - Test: `packages/depth-core/src/control.test.ts`
 
-- [ ] **Step 1: escreva a fixture**
+- [x] **Step 1: escreva a fixture**
 
 ```ts
 // packages/depth-core/src/control.test-fixture.ts
@@ -1431,7 +1431,7 @@ export const spec: WorldSpec = {
 };
 ```
 
-- [ ] **Step 2: escreva os testes**
+- [x] **Step 2: escreva os testes**
 
 ```ts
 // packages/depth-core/src/control.test.ts
@@ -1493,14 +1493,14 @@ describe("linha de controle", () => {
 });
 ```
 
-- [ ] **Step 3: rode**
+- [x] **Step 3: rode**
 
 Run: `pnpm vitest run packages/depth-core/src/control.test.ts`
 Esperado: todos verdes. A Task 5 já implementou o caminho de sinal; se algum falhar, o defeito
 está lá — em particular o último, que depende de `alvosDeSinal.length === 0` guardar o `bump`
 de `.unwired`.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add packages/depth-core/src/control.test-fixture.ts packages/depth-core/src/control.test.ts
@@ -1520,7 +1520,7 @@ acusar buraco de autoria, e ali nao ha buraco."
 **Files:**
 - Test: `packages/depth-core/src/settle.property.test.ts`
 
-- [ ] **Step 1: escreva os property tests**
+- [x] **Step 1: escreva os property tests**
 
 ```ts
 // packages/depth-core/src/settle.property.test.ts
@@ -1612,12 +1612,12 @@ describe("propriedades da acomodação", () => {
 });
 ```
 
-- [ ] **Step 2: rode**
+- [x] **Step 2: rode**
 
 Run: `pnpm vitest run packages/depth-core/src/settle.property.test.ts`
 Esperado: todos verdes.
 
-- [ ] **Step 3: verifique por mutação que a primeira propriedade tem dente**
+- [x] **Step 3: verifique por mutação que a primeira propriedade tem dente**
 
 Em `settle.ts`, troque `for (const { id, depth } of ordem)` por
 `for (const { id, depth } of [...ordem].reverse())`.
@@ -1628,7 +1628,7 @@ Esperado: **falha**. Percorrer o DAG ao contrário quebra a propagação. Desfa�
 Se não falhar, a fixture não tem cadeia combinacional de verdade e a propriedade não está
 provando nada. Pare e conserte a fixture antes de seguir.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add packages/depth-core/src/settle.property.test.ts
@@ -1651,7 +1651,7 @@ por mutacao."
 - Test: `scripts/check-boundaries.test.mjs`
 - Modify: `docs/PROGRESS.md`
 
-- [ ] **Step 1: exporte o que é público**
+- [x] **Step 1: exporte o que é público**
 
 Em `packages/depth-core/src/index.ts`, acrescente:
 
@@ -1667,7 +1667,7 @@ e, na lista de tipos de `./model.js`, acrescente `TickPhase` e `WireTiming`.
 `settle.ts` **não** é exportado: quem consome o motor usa `World` e `stepWorld`, e a fase de
 acomodação é mecanismo interno. Exportá-la convidaria alguém a rodar meia fase.
 
-- [ ] **Step 2: escreva o teste da guarda que falha**
+- [x] **Step 2: escreva o teste da guarda que falha**
 
 Em `scripts/check-boundaries.test.mjs`, acrescente:
 
@@ -1688,12 +1688,12 @@ test("não acusa palavra de domínio em pacote de domínio", () => {
 });
 ```
 
-- [ ] **Step 3: rode e confirme que o primeiro falha**
+- [x] **Step 3: rode e confirme que o primeiro falha**
 
 Run: `node --test scripts/check-boundaries.test.mjs`
 Esperado: falha — hoje a guarda não conhece essas palavras.
 
-- [ ] **Step 4: acrescente a segunda lista**
+- [x] **Step 4: acrescente a segunda lista**
 
 Em `scripts/check-boundaries.mjs`, junto da lista de termos que já existe, acrescente os
 termos de CPU **ao mesmo mecanismo de busca** (não crie um segundo caminho de código):
@@ -1717,7 +1717,7 @@ const CPU = [
 Cuidado com falso positivo: `register` sozinho aparece em `registerX` de bibliotecas — por
 isso a lista traz `register file` e não `register`.
 
-- [ ] **Step 5: rode tudo**
+- [x] **Step 5: rode tudo**
 
 ```bash
 node --test scripts/check-boundaries.test.mjs
@@ -1730,7 +1730,7 @@ Esperado: todos zero.
 Se `pnpm boundaries` acusar algo no motor, **leia o achado antes de silenciar**: pode ser um
 comentário que de fato usa a palavra, e nesse caso o comentário é que muda.
 
-- [ ] **Step 6: atualize `docs/PROGRESS.md`**
+- [x] **Step 6: atualize `docs/PROGRESS.md`**
 
 Acrescente, na seção da Entrega 2, um bloco com estes fatos:
 
@@ -1746,7 +1746,7 @@ Acrescente, na seção da Entrega 2, um bloco com estes fatos:
 
 Cite o SHA do commit da Task 5.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add packages/depth-core/src/index.ts scripts/check-boundaries.mjs \
