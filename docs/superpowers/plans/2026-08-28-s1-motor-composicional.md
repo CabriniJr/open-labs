@@ -2202,3 +2202,318 @@ git commit -m "docs: S1 concluida"
 - Remoção de `types.ts`/`engine.ts` e migração do herói — **S5**.
 - Regime nomeado, log de eventos, perturbações — **S6**.
 - Cenários, encaixe tipado, manifesto e contrato de fidelidade — **Entrega 3**.
+
+---
+
+## Task 8: Achados da revisão final da S1
+
+A revisão do conjunto achou nove defeitos, três críticos, todos reproduzidos com código
+rodando — e dois deles são **mutantes que sobrevivem à suíte inteira de 128 testes**. Esta
+tarefa fecha todos. O padrão da casa vale aqui como valeu nas anteriores: mover a validação
+para o ponto onde a violação vira **impossível**, não improvável.
+
+**Files:**
+- Create: `packages/depth-core/src/validate.ts`
+- Test: `packages/depth-core/src/validate.test.ts`
+- Modify: `packages/depth-core/src/tree.ts`, `scheduler.ts`, `world.ts`, `meters.ts`, `index.ts`
+- Modify: `packages/depth-core/src/scheduler.test.ts`, `scheduler.property.test.ts`, `meters.test.ts`
+- Modify: `scripts/check-boundaries.mjs`, `scripts/check-boundaries.test.mjs`
+
+---
+
+### C1 — mensagem entregue a objeto sem comportamento some sem erro e sem contagem
+
+`scheduler.ts` monta o `inbox` para **qualquer** `item.to`, mas o laço só percorre
+`actors(tree)`. Quem não é ator nunca é visitado, e a caixa dele morre com o `Map` local.
+Reproduzido: seis emissões, uma em trânsito, cinco desaparecidas — não estão em trânsito, não
+estão em `.in` de ninguém, não estão em `.unwired`, não estouraram.
+
+É o mesmo silêncio que o `.unwired` eliminou, um passo adiante: lá era a saída sem destino,
+aqui é a entrega em quem não recebe.
+
+- [ ] **Step 1: `validate.ts` — o mundo é checado antes de rodar**
+
+`indexTree` não conhece fios, então a checagem mora um nível acima. Criar:
+
+```ts
+import { DROP } from "./model.js";
+import type { WorldSpec } from "./model.js";
+import { familyOf } from "./model.js";
+import { isOpenable } from "./tree.js";
+import type { TreeIndex } from "./tree.js";
+
+/**
+ * Recusa um mundo que rodaria mentindo. Roda uma vez, na construção — depois
+ * disso o motor pode confiar na fiação em vez de checá-la a cada tick.
+ *
+ * Acumula todos os erros antes de lançar: devolver o primeiro obriga o autor a
+ * consertar em N rodadas.
+ */
+export function validateWorld(spec: WorldSpec, tree: TreeIndex): void {
+  const erros: string[] = [];
+
+  const edge = spec.edgeTicks;
+  if (edge !== undefined && (!Number.isInteger(edge) || edge < 1)) {
+    erros.push(
+      `edgeTicks precisa ser inteiro >= 1 (recebi ${String(edge)}) — ` +
+        `zero entregaria no mesmo tick da emissão e a travessia sumiria da tela`,
+    );
+  }
+
+  for (const wire of spec.wires) {
+    if (!tree.byId.has(wire.from)) {
+      erros.push(`fio parte de "${wire.from}", que não existe na árvore`);
+    }
+    if (wire.to !== DROP && !tree.byId.has(wire.to)) {
+      erros.push(`fio chega em "${wire.to}", que não existe na árvore`);
+    }
+    if (wire.channel !== undefined && !tree.byId.has(wire.channel)) {
+      erros.push(
+        `fio declara o canal "${wire.channel}", que não está indexado — ` +
+          `canais vão em WorldSpec.channels, nunca em children`,
+      );
+    }
+  }
+
+  // Todo objeto que pode receber precisa saber receber.
+  for (const node of tree.byId.values()) {
+    if (familyOf(node.kind) === "plate") continue;
+    if (isOpenable(tree, node.id)) continue;
+    if (node.behavior !== undefined) continue;
+    erros.push(
+      `"${node.id}" é folha de fluxo e não tem behavior: uma mensagem entregue ` +
+        `nele desapareceria. Dê um behavior, marque-o como estático, ou remova-o`,
+    );
+  }
+
+  if (erros.length > 0) {
+    throw new Error(`mundo inválido:\n- ${erros.join("\n- ")}`);
+  }
+}
+```
+
+- [ ] **Step 2: cinto além do suspensório, no `stepWorld`**
+
+Mesmo com o mundo validado, uma entrega para um id sem ator é bug do motor e não pode passar
+calada. Depois de montar o `inbox`, antes de rodar os atores:
+
+```ts
+  const ehAtor = new Set(atores.map((n) => n.id));
+  for (const destino of inbox.keys()) {
+    if (!ehAtor.has(destino)) {
+      throw new Error(
+        `scheduler: entrega para "${destino}", que não age — ` +
+          `validateWorld deveria ter recusado este mundo`,
+      );
+    }
+  }
+```
+
+- [ ] **Step 3: `World` valida na construção**
+
+Em `world.ts`, no construtor, depois de indexar: `validateWorld(spec, this.#tree);`
+
+Testes: um mundo com folha de fluxo sem `behavior` é recusado com mensagem que cita o id; um
+fio para id inexistente é recusado; `edgeTicks: 0` é recusado; todos os erros aparecem juntos,
+não um por vez.
+
+---
+
+### C2 — `behavior` num estático nunca roda, e ninguém avisa
+
+`indexTree` aceita `kind: "static"` com `behavior`; o escalonador pula estáticos. O estado
+inicial nem chega a existir. É a mesma regra do invariante do composto, aplicada por omissão
+em vez de por erro.
+
+- [ ] **Step 4: `indexTree` recusa placa com comportamento**
+
+Dentro de `walk`, junto dos outros guards, com a mesma redação do guard do composto:
+
+```ts
+    if (node.behavior !== undefined && familyOf(node.kind) === "plate") {
+      throw new Error(
+        `tree: "${node.id}" é placa e tem behavior — placa é consultada, nunca ` +
+          `atravessada. Troque o kind ou remova o behavior.`,
+      );
+    }
+```
+
+Teste correspondente em `tree.test.ts`.
+
+---
+
+### C3 — `World` ignora `spec.channels`
+
+`world.ts` chama `indexTree(spec.root)` sem o segundo argumento. O tipo promete que canais são
+indexados, `tree.ts` implementa, `tree.test.ts` testa — e o único ponto de entrada público
+joga fora. Três funções discordam sobre o mesmo fato.
+
+- [ ] **Step 5: passar os canais**
+
+`indexTree(spec.root, spec.channels)`. Teste: um mundo com canal declarado tem
+`w.tree.byId.has("pipe") === true`, e um `Wire.channel` apontando para id não indexado é
+recusado por `validateWorld` (já coberto no Step 1).
+
+---
+
+### I1 — o catálogo aditivo já vaza em quatro literais
+
+`tree.ts` (três pontos) e `scheduler.ts` (um) testam `kind === "static"` na mão. A tabela
+`FAMILY` existe para ser a única fonte. Quando a onda 2 acrescentar uma segunda placa —
+legenda, nota, tabela de configuração —, ela compila, entra em `flowChildren`, muda
+`isOpenable`, muda a fronteira desenhada, e não há um erro sequer.
+
+- [ ] **Step 6: trocar os quatro por `familyOf(...) !== "plate"`**
+
+Deixe `kind === "pipeline"` em `wiring.ts` como está: ali a ordem é contrato **daquele
+arquétipo**, não da família.
+
+Teste de regressão: declare um `kind` de placa hipotético no teste, se der; senão, um teste
+que afirme que `flowChildren` filtra por família e não por literal.
+
+---
+
+### I2 — o livro-caixa tem dois significados na mesma chave
+
+Chegadas gravam em `${id}.in`; emissões gravam em `${id}.${port}`. Um nó que emite na porta
+`"in"` escreve no mesmo balde das chegadas dele, e `portCount` não distingue. Vale também
+para porta chamada `"weight"` ou `"unwired"`, e para qualquer id que contenha ponto. **Uma
+contagem some, somada por cima de outra, sem erro.**
+
+- [ ] **Step 7: separar os espaços de nome e proibir o separador**
+
+Chaves passam a ser prefixadas: emissões em `out:${id}.${port}` (e
+`out:${id}.${port}.weight`, `out:${id}.${port}.unwired`), chegadas em `in:${id}` e
+`in:${id}.weight`. Ajustar `portCount`/`portWeight` em `meters.ts` para lerem o prefixo
+`out:`, e acrescentar `inCount`/`inWeight` para o outro eixo.
+
+E, em `indexTree`, recusar id que contenha `.` ou `:`; em `validateWorld`, recusar porta com
+`.` ou `:` — com mensagem dizendo que esses caracteres separam campos no livro-caixa. Sem
+isso a ambiguidade volta pela porta dos fundos.
+
+O sal do sorteio (`` `${node.id}:${salt}` ``) fica correto de graça, porque o id não pode mais
+conter `:`.
+
+---
+
+### I3 — metade do livro-caixa não tem teste nenhum
+
+Apagando o bloco que conta chegadas, **128/128 continuam passando**. Todo o eixo `.in` está
+sem cobertura.
+
+- [ ] **Step 8: cobrir o eixo das chegadas**
+
+Testes que leem as chaves de chegada e prendem os números, e que morreriam se a contagem
+sumisse. Depois de escrever, **verifique a mutação**: apague o bloco de contagem de chegadas,
+confirme que a suíte quebra, restaure. Relate o resultado.
+
+---
+
+- [ ] **Step 9: verde e commit**
+
+Run: `pnpm test && pnpm typecheck && pnpm boundaries && pnpm build`
+
+```bash
+git add packages/depth-core/src
+git commit -m "fix(depth-core): mundo validado, placa sem comportamento, canais indexados"
+```
+
+---
+
+## Task 9: Achados da revisão final — vista agregada, linha do tempo e a guarda
+
+### I4 — a vista agregada não tem teste de completude, só de não-invenção
+
+A suíte prova `travessias ⊆ trânsito`. **Nada prova a volta** — e é a volta que é a tese do
+projeto ("a vista não pode divergir do interior"). Dois mutantes sobrevivem à suíte inteira:
+
+| Mutante | O que ele faz | Suíte |
+|---|---|---|
+| Descartar toda travessia em que um lado é `"outside"` | o L0 de qualquer bloco aninhado para de mostrar o que entra e o que sai | 128/128 passam |
+| Fazer `DROP` rotular como `"outside"` | descarte deliberado vira indistinguível de "foi para fora do foco" | 128/128 passam |
+
+- [ ] **Step 1: propriedade de igualdade, não de inclusão**
+
+Em `scheduler.property.test.ts`, trocar a inclusão por igualdade: para cada foco, o conjunto
+devolvido por `boundaryCrossings` deve ser **exatamente**
+`flight.filter(f => nome(f.from) !== nome(f.to))`, com `nome` recalculado de forma
+independente dentro do teste — não importado de `meters.ts`, senão o teste e o código erram
+juntos.
+
+- [ ] **Step 2: o descarte tem rótulo próprio**
+
+Teste explícito de que uma mensagem a caminho do descarte aparece com `toVisible` marcando
+descarte, distinto de `"outside"`. É o invariante do `.unwired` aplicado ao medidor.
+
+- [ ] **Step 3: confirmar que os dois mutantes agora morrem**
+
+Aplique cada mutante, rode, confirme que a suíte quebra, restaure. Relate.
+
+---
+
+### I5 — `paramsAt(T)` afirma um valor com o qual `history[T]` não foi calculado
+
+`setParam` grava o evento em `tick: #tick` mas preserva `history[#tick]`, que foi computado
+com o valor **antigo**. Hoje ninguém recomputa, então é armadilha e não bug — mas arma
+exatamente quando a dívida do histórico ilimitado for paga: qualquer poda com checkpoint mais
+recomputação devolveria um passado diferente do que o leitor viu. A semântica está sem trava
+nenhuma: mutar para `#tick + 1` deixa **128/128 passando**.
+
+- [ ] **Step 4: o evento vale a partir do próximo tick**
+
+Em `setParam`: gravar em `tick: this.#tick + 1` e filtrar `e.tick <= this.#tick + 1`.
+
+Confira que os testes existentes continuam verdes e que os números continuam batendo — eles
+já descrevem esta semântica: `advance(5)` com `step` 1 dá 5; `setParam("step", 10)`;
+`advance(1)` dá 15, porque o valor novo vale do tick 6 em diante.
+
+- [ ] **Step 5: o teste que trava a semântica**
+
+Um `World` novo, alimentado com o mesmo log de eventos e avançado do zero, deve produzir
+histórico **idêntico**. É esse teste que impede a armadilha de voltar quando alguém
+implementar checkpoint.
+
+---
+
+### I6 — a guarda de fronteira passa tendo lido zero arquivos
+
+```
+$ cd packages && node ../scripts/check-boundaries.mjs
+Fronteira motor↔domínio intacta.
+exit=0
+```
+
+Um verde que não significa nada, e ele está justamente na peça que existe para dar significado
+ao verde.
+
+- [ ] **Step 6: contar o que foi varrido**
+
+Contar arquivos varridos; sair com 1 se for zero, com mensagem dizendo que nenhum arquivo
+casou e que provavelmente o comando rodou do diretório errado; e imprimir o número no sucesso
+(`Fronteira motor↔domínio intacta (N arquivos).`). Teste correspondente.
+
+---
+
+### Sugestões da revisão, aceitas
+
+- [ ] **Step 7: fio órfão é reportado como fio, não como esquecimento**
+
+Um erro de digitação em `wire.from` faz a emissão virar `.unwired` — o autor é informado de
+que **esqueceu** um fio quando na verdade **escreveu** um que não liga em nada. `validateWorld`
+(Task 8) já recusa `wire.from` inexistente, o que resolve; confirme que a mensagem distingue
+os dois casos.
+
+- [ ] **Step 8: limpeza**
+
+`initialWorld(spec, tree)` não usa `spec` — remova o parâmetro ou use-o. `init` sem `behavior`
+nunca roda: decida se é erro de autoria (e então `validateWorld` acusa) ou se é legítimo, e
+registre a decisão em comentário.
+
+- [ ] **Step 9: verde e commit**
+
+Run: `pnpm test && pnpm typecheck && pnpm boundaries && pnpm build`
+
+```bash
+git add packages/depth-core/src scripts
+git commit -m "fix(depth-core): vista agregada com teste de igualdade, evento no proximo tick, guarda que conta arquivos"
+```
