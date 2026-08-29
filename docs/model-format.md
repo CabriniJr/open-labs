@@ -1,8 +1,33 @@
 # Formato do modelo: `model` e `modelet`
 
-**Status:** proposta para discussão. Nada implementado.
-**Data:** 2026-08-28
+**Status:** **parcialmente implementado** em `packages/model-format` (`@ovh/model-format`).
+O `modelet` das §3 e §3.1 é lido, validado e compilado para um mundo que o motor roda. O
+`model` da §4 e tudo que depende dele — procedência, âncora, `valid_for` — continua
+proposta. A tabela da §0 abaixo diz, campo a campo, o que é código.
+**Data:** 2026-08-28 (proposta), 2026-08-29 (implementação parcial)
 **Depende de:** `VISION.md`, `kinds.md`, `depth.md`
+
+---
+
+## 0. O que já é código, e o que ainda é proposta
+
+Um documento de formato que não diz o que está implementado manda o autor tentar coisas
+que não existem.
+
+| Parte | Situação |
+|---|---|
+| `modelet`: `ports`, `params`, `children`, `wires`, `teaches`, `not_modeled` (§3) | **Código.** `parseModelet` valida, inclusive as regras que só valem olhando o documento inteiro |
+| As cinco garantias da §3.1 | **Código**, com uma ressalva: `{ param: x }` é aceito, e o compilador recusa argumento que o `kind` não implementa |
+| Compilar para o motor | **Código.** `compileModelet` devolve um `WorldSpec` |
+| `kind` das ondas futuras (`clock`, `batch`, `transform`, …) | **Recusado com mensagem que diz em que onda ele chega.** Fingir que compila produziria um lab que roda errado |
+| `kind` de hoje que compila como filho | Só `source`, `buffer` e `sink`. `composite`, `pipeline`, `channel`, `router` e `static` são recusados, cada um com o seu motivo |
+| Linha de controle até um filho | **Recusado**: nenhum `kind` de hoje tem porta de controle. Entre portas da fronteira, vale |
+| `modelet` dentro de `modelet` | Proposta |
+| `model` inteiro (§4): `components`, `boundary`, procedência, `anchor`, `valid_for` | Proposta |
+
+O que a implementação acrescentou e não estava escrito aqui: **porta órfã e parâmetro morto
+são erro**, a direção da porta é conferida no uso, e duas linhas de dado saindo da mesma
+porta são recusadas (replicar carga é o `tee`, da onda 1).
 
 Nomenclatura decidida pelo Luigi em 28/08/2026: **`.model`** para o agregado que replica
 uma aplicação, **`.modelet`** para o componente. Resolve a crítica registrada em

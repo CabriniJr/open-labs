@@ -308,7 +308,7 @@ observar.
 por um motivo estrutural — o Kafka é vizinho do OTel, então reuso entre os dois quase não
 prova nada. A CPU é o alvo mais distante que ainda cabe nas primitivas. Lá o sinal de reuso
 volta a ser critério, e com uma forma verificável: um pacote que importa só o motor e não
-obriga o motor a saber o que é um registrador (`theory.md` §7.6).
+obriga o motor a saber o que é um registrador (`theory.md` §7.7).
 
 ### 9.3 O que fica de `modelet`
 

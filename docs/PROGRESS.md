@@ -113,6 +113,10 @@ para cima. Sessões planejadas (detalhe na §9 da spec):
             passa a valer do tick seguinte. A guarda de fronteira falha quando lê zero
             arquivo. E a regra do destino que não age muda de substantivo: vive no **fio**,
             não no nó, senão recusaria agrupamento decorativo. **160 testes.**
+- [x] **S1b — Formato do modelo em código** (`@ovh/model-format`). `docs/model-format.md`
+      deixa de ser só prosa: schema, validação do documento inteiro e compilador para
+      `WorldSpec`. Detalhe na seção "Entrega 2 · S1b" no fim deste arquivo. **Plano:**
+      `docs/superpowers/plans/2026-08-28-s1b-formato-do-modelo.md`.
 - [ ] **S2 — Arquétipos.** Os oito de hoje **mais a onda 1** de `kinds.md`
       (`transform`, `tee`, `merge`, `batch`, `clock`, `arbiter`): comportamento em
       `depth-core`, contrato visual em `depth-ui`. Aqui também entram o property test
@@ -153,10 +157,35 @@ público (material para as aulas do pai do Luigi), e já nomeou três lacunas re
 linha de controle sem semântica, ler sem consumir, e combinacional contra registrado. Nenhuma
 se resolve com um `kind` novo.
 
-**Decidido em 29/08/2026: a CPU passa na frente do Kafka** (F6 CPU, F7 Kafka, F8 extração). O
-argumento que decide não é o público, é a estrutura: o Kafka é vizinho do OTel, então reuso
-entre os dois quase não prova nada, e extrair o motor tendo visto só mensageria produziria um
-motor de mensageria com outro nome.
+**Decidido em 29/08/2026: a CPU passa na frente do Kafka e também do OTel.** Ordem nova:
+F1 núcleo → F3 palco → F2 piloto → F2b arquétipos → **F6 CPU → F6b ATmega** → F4 otel →
+F5 handbook → F7 kafka → F8 extração. Os identificadores de fase são nomes, não sequência.
+
+Dois argumentos. Contra o Kafka: ele é vizinho do OTel, então reuso entre os dois quase não
+prova nada, e extrair o motor tendo visto só mensageria produziria um motor de mensageria com
+outro nome. Contra o OTel: o que falta lá é sobretudo **editorial** — currículo, texto,
+procedência — e esse trabalho consome tempo sem pressionar o motor; a CPU é o oposto, quase
+sem texto e com verdade de campo dura. Ela amadurece o motor por unidade de esforço, e motor
+maduro é pré-requisito de o OTel ficar bom.
+
+**O risco está declarado junto com a trava.** O projeto se chama OTel Visual Handbook e acaba
+de adiar o OTel; se a CPU virar o produto, trocou de identidade sem decidir trocar. Por isso a
+F6 carrega um **critério de reentrada**: ela termina quando as cinco mudanças da F1 fecharem e
+o `cpu-domain` rodar um programa de verdade sem `depth-core` ter ganhado uma linha que saiba o
+que é um registrador. A hora de parar é a hora em que a próxima tarefa da CPU não ensina mais
+nada ao motor — e isso virou linha na tabela de sinais do roadmap.
+
+**Duas mudanças migraram da F6 para a F1**, porque são de contrato: semântica da linha de
+controle (muda a assinatura de `Behavior`) e **fases do tick** (muda o significado de "um
+passo" para todo arquétipo já escrito). A F1 sempre disse ser "a fase que pode revelar que o
+tick único não aguenta"; a CPU revelou antes de ela começar, e a resposta já é conhecida —
+acomodação até o ponto fixo, depois entrega do que atravessa aresta registrada, com laço
+combinacional recusado na construção do mundo.
+
+**Depois da CPU genérica vem um ATmega** (F6b), e não é repetição: a CPU testa mecanismo, o
+ATmega testa fidelidade contra um datasheet que não controlamos. Ele traz **interrupção** —
+controle assíncrono que preempta o fluxo —, que é o primeiro fenômeno da lista que talvez não
+caiba nas primitivas atuais, e por isso o mais valioso de tentar.
 
 ---
 
@@ -241,3 +270,67 @@ Todas na spec, mas as que mais custam se forem esquecidas:
   obrigaria a inventar um fluxo que não existe — o mesmo erro que a placa evita.
 - **Escala de tempo declarada** (1 tick = 100 ms) e valor real ao lado de todo controle.
   Tick abstrato é pior: o leitor inventa a correspondência e a gente não pode corrigir.
+
+---
+
+## Entrega 2 · S1b — Formato do modelo em código ✅
+
+**Data:** 2026-08-29. **Plano:** `docs/superpowers/plans/2026-08-28-s1b-formato-do-modelo.md`
+
+Pacote novo `@ovh/model-format`, entre o motor e o conteúdo. Ele conhece `kind`, porta,
+fio e parâmetro — vocabulário do motor — e por isso **entrou na guarda de fronteira**
+junto com `depth-core` e `depth-ui`.
+
+- `schema.ts` — porta, parâmetro e fio em Zod, todos `.strict()`.
+- `modelet.ts` — `parseModelet`: YAML → `Modelet` validado, com as regras que só valem
+  olhando o documento inteiro.
+- `compile.ts` — `compileModelet`/`compileSource`: `Modelet` → `WorldSpec` que o `World`
+  roda.
+- `behaviors.ts` — o comportamento mínimo de `source`, `buffer` e `sink`, que é o que
+  falta para um `WorldSpec` compilado ser executável.
+
+**42 testes** no pacote (216 no repositório).
+
+### Decisões desta sessão que não estão óbvias no código
+
+- **O compilador recusa `kind` de onda futura em vez de fingir**, dizendo em que onda ele
+  chega (`clock` → onda 1). Um lab que roda errado é pior que um lab que não roda. `kind`
+  fora do catálogo é erro de digitação, e a mensagem lista os disponíveis.
+- **Porta órfã e parâmetro morto são erro, não aviso.** Porta declarada que nenhum fio usa
+  aparece no desenho sem fazer nada; parâmetro que nenhum filho referencia vira controle
+  que não controla.
+- **As regras são de igualdade, não de inclusão.** Todo fio aponta para porta que existe
+  *e* toda porta é usada; todo `{ param: x }` cita parâmetro que existe *e* todo parâmetro
+  é citado. Provar só um lado deixaria passar metade dos desenhos que mentem.
+- **As pontas dos fios saem do parse já resolvidas** (`Endpoint` discriminado). Depois do
+  parse ninguém parte `"queue.out"` em dois, então ninguém pode partir errado — e o nome
+  recusa `.` e `:` no próprio nome, não em quem o usa.
+- **A tabela `CONTRATOS` é o coração do compilador**: por `kind`, as portas de entrada, as
+  de saída e os argumentos que ele de fato implementa. Emissão numa porta que ninguém
+  entrega e argumento que o autor configura sem nada ler são a mesma mentira silenciosa,
+  vista de dois lados; a tabela torna as duas impossíveis.
+- **Parâmetro `enum` não entra em `WorldSpec.params`.** Params do motor são números, e um
+  nome não tem número honesto — indexar a lista inventaria uma correspondência que ninguém
+  declarou. Fica em `ParamInfo`, com os valores. Duração vira milissegundos, com a unidade
+  ao lado.
+- **A fronteira é alimentada por contorno** (`model-format.md` §1.2): porta de entrada
+  ganha fonte sintética, porta de saída ganha consumo sintético, porta de descarte vai
+  para `DROP`. Os nós de contorno usam o prefixo `@`, que nenhum nome do formato pode ter.
+
+### O que ficou de fora, e por quê
+
+- **Cinco dos oito `kind`s de hoje não compilam como filho**, cada um com a sua mensagem:
+  `composite`/`pipeline` (contêiner não é folha), `channel` (canal é aresta), `router`
+  (precisa de política de rota, que o formato não declara) e `static` (precisa de conteúdo,
+  que o formato não declara). Compilam: `source`, `buffer`, `sink`.
+- **Fio de controle que toca um filho é recusado.** Nenhum `kind` de hoje tem porta de
+  controle — `clock` e `arbiter` chegam na onda 1. Fio de controle entre portas da
+  fronteira vale, chega ao `WorldSpec` com `line: "control"` e a fiação de dado o ignora.
+  **Dívida:** o escalonador não entrega nada por linha de controle; hoje ela é declaração,
+  não caminho. Quando o `clock` chegar, isso precisa mudar junto.
+- **Duas linhas de dado saindo da mesma porta são recusadas** — `resolveTarget` segue só a
+  primeira, então a segunda seria desenho sem percurso. Replicar carga é o `tee`, da onda 1.
+- **`modelet` aninhado dentro de `modelet` não existe**, e o `.model` (a camada de cima,
+  §4 de `model-format.md`) não foi tocado. O compilador só monta um `modelet` isolado.
+- **A posição do erro no YAML não é usada.** O pacote `yaml` preserva linha e coluna, e as
+  mensagens ainda apontam para o caminho do campo, não para a linha do autor.

@@ -25,10 +25,10 @@ Sem código. É a fase mais curta e a que mais importa.
 
 ---
 
-## F1 — Núcleo: as três mudanças que não podem ser feitas depois
+## F1 — Núcleo: as cinco mudanças que não podem ser feitas depois
 
-Recurso, backpressure e transformação mexem no contrato de comportamento. Fazer depois de
-existirem arquétipos e pacotes significa reescrever todos.
+Recurso, backpressure, transformação, **controle e fases do tick** mexem no contrato de
+comportamento. Fazer depois de existirem arquétipos e pacotes significa reescrever todos.
 
 **São uma fase só de propósito.** Contenção de recurso *é* backpressure; separar produziria
 dois mecanismos concorrentes para o mesmo fenômeno.
@@ -40,6 +40,15 @@ dois mecanismos concorrentes para o mesmo fenômeno.
 | Regime propagando para trás | O estado "bloqueada" sobe a cadeia |
 | Recurso como porta | `arbiter` como folha; pedido e concessão viram tráfego de porta, e o medidor segue honesto |
 | `transform` como arquétipo | Sai do `channel` e do `sink`. A carga muda em um lugar só |
+| **Semântica da linha de controle** | Sinal entregue muda o que o ator faz **naquele tick**, contado no livro-caixa como tráfego e nunca como carga. Hoje `Wire.line: "control"` é desenho: `resolveTarget` a ignora |
+| **Fases do tick** | Um tick passa a ter acomodação (ponto fixo do subgrafo combinacional) e confronto (entrega do que atravessa aresta registrada) |
+
+**Por que as duas últimas entraram aqui, em 29/08/2026.** Elas vieram da CPU (F6), e a
+tentação era deixá-las lá. Mas as duas mudam a assinatura de `Behavior` e o significado de um
+tick — que é exatamente o critério desta fase. Uma linha de controle que muda comportamento
+obriga o ator a receber sinal além de carga; fases do tick mudam o que "um passo" quer dizer
+para **todo** arquétipo já escrito. Chegar na F6 com trinta arquétipos e descobrir isso é o
+retrabalho que esta fase existe para evitar.
 
 **Saída:**
 - A perturbação da janela do receptor fechando derruba dado **por emergência**, sem roteiro
@@ -48,8 +57,20 @@ dois mecanismos concorrentes para o mesmo fenômeno.
   nas duas pontas, exceto saindo de `transform`
 - `seek` continua exato com eventos de parâmetro e de recurso no histórico
 
-**Risco:** é a fase que pode revelar que a arquitetura de tick único não aguenta. Se
-revelar, é agora que sai barato.
+Saída acrescentada pelas duas mudanças novas:
+- Um sinal de controle chega, muda a decisão do ator no mesmo tick, e **aparece no
+  livro-caixa** — sem nunca ser contado como carga
+- Um caminho puramente combinacional resolve dentro de um tick; um que atravessa aresta
+  registrada custa um tick. Os dois são visíveis, e a diferença entre eles é visível
+- **Laço combinacional é recusado na construção do mundo, com o ciclo nomeado.** Em hardware
+  ele é erro de projeto; aqui seria ponto fixo que não converge, ou seja, trava
+
+**Risco: já se materializou, e a resposta já é conhecida.** Esta fase sempre foi "a que pode
+revelar que a arquitetura de tick único não aguenta". A CPU revelou antes de a fase começar:
+tick único não distingue o que fecha dentro de um ciclo do que atravessa um registrador. A
+saída **não** é abandonar o mínimo de um tick por aresta — é dar fases ao tick, que é como
+simulador de lógica síncrona já funciona (os *delta cycles* de VHDL e Verilog) e é a distinção
+que CPN faz entre transição imediata e transição temporizada. Detalhe em `theory.md` §7.5.
 
 ---
 
@@ -132,7 +153,7 @@ técnico sem link para a fonte.
 
 ---
 
-## F6 — CPU: a prova de genericidade
+## F6 — CPU: onde o motor amadurece
 
 Um caminho de dados de CPU, com **assembly como entrada** e drill-down até a porta
 lógica. Detalhamento completo em `theory.md` §7.
@@ -150,8 +171,31 @@ motor de mensageria com outro nome.** A CPU é o alvo mais distante que ainda ca
 primitivas, e é justamente por isso que ela é o teste; o Kafka, colado no OTel, quase
 não pressiona a abstração.
 
-O que **não** muda: a CPU não entra antes de o OTel fechar (F5). Furar essa ordem faz o
-projeto perder o alvo que lhe dá nome.
+**Revisto no mesmo dia, e é uma inversão de verdade: a CPU passa também na frente do
+OTel** (F4 e F5). A versão anterior desta linha dizia o contrário — que furar essa ordem
+faria o projeto perder o alvo que lhe dá nome. O argumento do Luigi que a derrubou:
+
+> "o otel é bom mas vai precisar de bastante trabalho e refinamento, para isso quero
+> amadurecer mais o motor com o `.model` da cpu"
+
+E ele está certo sobre a natureza dos dois trabalhos. O que falta no OTel é sobretudo
+**editorial** — currículo, texto, procedência, fidelidade a uma especificação enorme —, e
+esse trabalho não pressiona o motor; ele consome tempo enquanto o motor fica igual.
+A CPU é o oposto: pouquíssimo texto, e uma verdade de campo dura e verificável (uma ISA
+executa um programa ou não executa). É o alvo que **amadurece o motor por unidade de
+esforço**, e amadurecer o motor é pré-requisito de o OTel ficar bom, não concorrente
+dele.
+
+**O risco disso, dito em voz alta:** o projeto se chama OTel Visual Handbook e acaba de
+adiar o OTel. Se a CPU virar o produto, o projeto trocou de identidade sem decidir
+trocar. A trava contra isso é um **critério de reentrada declarado**, e não força de
+vontade:
+
+> A F6 termina — e o OTel recomeça — quando as cinco mudanças da F1 estiverem fechadas
+> **e** o `cpu-domain` rodar um programa de verdade sem que `depth-core` tenha ganhado
+> uma linha que saiba o que é um registrador. Amadurecer o motor é o objetivo; construir
+> um simulador de arquitetura de computadores completo **não é**, e a hora de parar é a
+> hora em que a próxima tarefa da CPU não ensina mais nada ao motor.
 
 Ela já nomeou três lacunas do motor, todas legítimas e nenhuma resolvível com um
 `kind` novo (`theory.md` §7.5):
@@ -169,6 +213,36 @@ CPU. A constante vira propriedade do `WorldSpec`, com unidade.
 executa um programa em assembly de verdade, abre até a porta lógica, e **não obrigou
 `depth-core` a saber o que é um registrador**. Commits em `depth-core` fechando as três
 lacunas contam a favor; vocabulário de CPU dentro dele reprova.
+
+### F6b — ATmega: a fidelidade posta à prova
+
+Pedido pelo Luigi em 29/08/2026, **depois** de a CPU genérica estar bem feita. Um AVR de
+8 bits (o ATmega328P é o candidato óbvio: é o do Arduino Uno, tem datasheet público e
+detalhado, e é o chip que mais gente já viu).
+
+Os dois alvos testam coisas diferentes, e é por isso que os dois valem:
+
+| A CPU genérica testa | O ATmega testa |
+|---|---|
+| **Mecanismo** — o motor consegue expressar caminho de dados, controle e ciclo? | **Fidelidade** — o modelo bate com um chip real, num nível em que a discordância é objetiva? |
+| A verdade de campo é uma ISA que a gente escolhe | A verdade de campo é um datasheet que a gente não controla |
+| Erra-se por incapacidade do motor | Erra-se por o modelo ser mais simples que o mundo — e aí o `not_modeled` precisa dizer isso |
+
+E ele pressiona coisas que a CPU didática não tem, cada uma um candidato a lacuna nova:
+
+- **Interrupção** — controle *assíncrono* que preempta o fluxo. O motor hoje não tem nada
+  que interrompa o que está acontecendo; é o primeiro fenômeno da lista que talvez não
+  caiba nas primitivas atuais, e por isso é o mais valioso de tentar.
+- **Periférico mapeado em memória** — temporizador, GPIO, USART, ADC. Escrever num
+  endereço faz uma coisa acontecer no mundo, o que é um efeito colateral endereçado.
+- **Harvard** — programa e dados em memórias separadas, com barramentos separados. Bom
+  contraste com a von Neumann do alvo anterior, e de graça: é a mesma peça em outra
+  topologia.
+- **Pinos** — a fronteira do chip com o lado de fora vira porta de verdade.
+
+**Sinal a observar, não critério:** quantas lacunas novas do motor o ATmega abre depois
+da CPU genérica. Zero significa que o motor amadureceu. Cinco significa que ele estava
+sendo derivado do primeiro alvo, e aí o problema é do motor, não do ATmega.
 
 ---
 
@@ -209,6 +283,7 @@ próprio.
 | `modelet` por fenômeno | Menos `modelet` que fenômeno | Trinta `modelet` para oito fenômenos é reimplementação (`why-simulate.md` §3.1) |
 | Parâmetro sem procedência | Zero, garantido por CI | "Depois a gente ancora" |
 | Fenômeno que precisou de roteiro | Zero | Qualquer um |
+| Tarefa da CPU que não ensina nada ao motor | É o sinal de parar e voltar ao OTel | Fazer mesmo assim, porque é divertido |
 | Discordância entre modelo e lab real | Resolvida corrigindo o modelo **ou** declarando o que não é modelado | Resolvida deixando o modelo bonito |
 
 O quarto é o mais importante. No dia em que um fenômeno precisar ser roteirizado para
@@ -234,12 +309,20 @@ dado errado é localizável e difável; comportamento errado escondido numa fun�
 ## Ordem, em uma linha
 
 ```
-F0 destravar → F1 núcleo → F3 palco → F2 piloto (Entregas 1 e 2) → F2b arquétipos → F4 otel → F5 handbook → F6 cpu → F7 kafka → F8 motor
+F0 destravar → F1 núcleo → F3 palco → F2 piloto (Entregas 1 e 2) → F2b arquétipos
+  → F6 cpu → F6b atmega → F4 otel → F5 handbook → F7 kafka → F8 motor
 ```
+
+Os identificadores de fase são **nomes, não sequência** — F3 sempre veio antes de F2, e desde
+29/08/2026 a F6 vem antes da F4. Quem manda é a linha acima.
 
 O piloto e o palco se sobrepõem: não há lab sem palco, e o palco só se justifica pelo lab. E a
 onda de arquétipos vem **depois** do piloto, porque o piloto revela quais são realmente
 necessários.
+
+A CPU vem antes do OTel porque amadurece o motor por unidade de esforço, e o motor maduro é
+pré-requisito de o OTel ficar bom. O critério de reentrada está na F6, e existe justamente
+porque essa ordem é a que mais facilmente vira desvio permanente.
 
 O playground (`why-simulate.md` §10) não é fase: ele nasce de graça ao fim de F3, porque é a
 mesma paleta e a mesma engine, sem exigência de procedência.

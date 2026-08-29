@@ -427,24 +427,70 @@ acontece *dentro* de um ciclo (combinacional); atravessar um registrador de pipe
 custa *um* ciclo (registrado). Sem os dois regimes, o modelo ou mente sobre o que cabe
 num ciclo ou desenha um pipeline de 40 estágios que não existe.
 
-A saída provável não é abandonar o mínimo de 1 tick, e sim dar **fases ao tick**: uma
-fase de acomodação, que roda o subgrafo combinacional até o ponto fixo, e uma fase de
-confronto, que entrega o que atravessa aresta registrada. É como simulador de lógica
-síncrona já funciona (os *delta cycles* de VHDL e Verilog), e é a distinção que CPN faz
-entre transição imediata e transição temporizada — de novo, um formalismo já resolveu
-isso e a gente instancia em vez de inventar.
+**Desenho escolhido (Luigi, 29/08/2026): fases no tick.** Não abandonamos o mínimo de um
+tick por aresta; damos duas fases a cada tick.
 
-E há um bônus visual que não é pequeno: a acomodação combinacional, mostrada como
-subpassos dentro do tick, é **um eixo de profundidade no tempo**, irmão do eixo de
-profundidade no espaço que o projeto já tem. Sem ela, "o que acontece dentro de um
-ciclo" é justamente o que nenhum diagrama de CPU consegue mostrar.
+1. **Acomodação.** As arestas marcadas como combinacionais propagam repetidamente até o
+   **ponto fixo** — nenhum valor muda mais. Não custa tick.
+2. **Confronto.** O que atravessa aresta registrada é entregue, e o tick fecha.
+
+É como simulador de lógica síncrona já funciona (os *delta cycles* de VHDL e Verilog), e
+é a distinção que CPN faz entre transição imediata e transição temporizada. De novo: um
+formalismo já resolveu isso, e a gente instancia em vez de inventar.
+
+Quatro consequências que precisam ser tratadas como parte do desenho, e não descobertas
+depois:
+
+- **Laço combinacional trava.** Um ciclo no subgrafo combinacional é ponto fixo que pode
+  não convergir. Em hardware isso é erro de projeto, e aqui também: `validateWorld`
+  recusa o mundo na construção, **nomeando o ciclo**. É a regra da §5 outra vez — mover a
+  validação para onde a violação vira impossível, em vez de pôr um teto de iterações e
+  torcer.
+- **A pureza tem que sobreviver.** `stepWorld` continua sendo função pura de
+  `(estado, params)`; a acomodação acontece **dentro** dela. Se vazasse para fora, o
+  `seek` deixaria de ser exato — que é o preço que este projeto não paga.
+- **Determinismo do ponto fixo.** A ordem em que os atores acomodam não pode mudar o
+  resultado, senão dois runs com a mesma semente divergem. É property test, não
+  comentário: acomodar em ordem aleatória dá o mesmo estado final.
+- **A travessia continua visível.** O mínimo de `edgeTicks: 1` existe porque uma
+  travessia de custo zero sumiria da tela. Com fases, o que sumiria da tela é a
+  acomodação — e a resposta é mostrá-la como **subpassos dentro do tick**, não escondê-la.
+
+E aí vem um bônus que não é pequeno: a acomodação combinacional, mostrada como subpassos,
+é **um eixo de profundidade no tempo**, irmão do eixo de profundidade no espaço que o
+projeto já tem. Sem ela, "o que acontece dentro de um ciclo" é justamente o que nenhum
+diagrama de CPU consegue mostrar — e passa a ser algo que só este instrumento mostra.
+
+**Onde isso pousa:** na F1 do `roadmap.md`, não na F6. Fases do tick mudam o significado
+de "um passo" para todo arquétipo já escrito, e semântica de controle muda a assinatura
+de `Behavior`. As duas são mudanças de contrato, que é exatamente o critério da F1.
 
 Uma quarta, menor: **escala de tempo é do mundo, não do motor.** Um tick vale 100 ms
 declarados no domínio de OpenTelemetry e ~0,3 ns num domínio de CPU. A constante
 precisa virar propriedade do `WorldSpec`, com a unidade junto — o valor real ao lado do
 controle continua obrigatório nos dois casos.
 
-### 7.6 O critério de saída
+### 7.6 Depois da CPU genérica: um ATmega
+
+O Luigi pediu, para depois de a CPU estar bem feita, um **ATmega** — AVR de 8 bits, do
+qual o 328P (o do Arduino Uno) é o candidato natural: datasheet público e detalhado, e é
+o chip que mais gente já viu por dentro.
+
+Não é "a mesma coisa de novo". Os dois alvos testam eixos diferentes: a CPU genérica
+testa **mecanismo** (o motor consegue expressar isto?), e o ATmega testa **fidelidade**
+(o modelo bate com um chip real, num nível em que discordar é objetivo?). No primeiro, a
+verdade de campo é uma ISA que nós escolhemos; no segundo, é um datasheet que não
+controlamos — e é aí que `not_modeled` deixa de ser higiene e vira a parte honesta do
+produto.
+
+E ele traz um fenômeno que a CPU didática não tem e que talvez **não caiba** nas
+primitivas de hoje: **interrupção**. Controle assíncrono que preempta o que está
+acontecendo. Nada no motor hoje interrompe coisa alguma — todo tick roda até o fim. Por
+isso é o item mais valioso da lista: é o mais provável de revelar a próxima lacuna real.
+Junto vêm periférico mapeado em memória (escrever num endereço faz algo acontecer no
+mundo), arquitetura Harvard, e pinos como fronteira de verdade do chip.
+
+### 7.7 O critério de saída
 
 A prova só conta se for verificável, então ela tem forma de teste, não de intenção:
 
