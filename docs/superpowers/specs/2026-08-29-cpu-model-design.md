@@ -296,6 +296,29 @@ Requisitos duros:
   não tomado, `lw`/`sw` com deslocamento, `jal`/`jalr`, `x0` como destino (que descarta), e
   um laço que termina.
 
+### 7.1 O que entrou no lugar do emulador de terceiro — 2026-08-29
+
+O emulador independente **não entrou**, e o que substituiu a metade que ele cobria está
+declarado aqui em vez de ficar por saber.
+
+O intérprete de referência é nosso e compartilha `isa.ts` com o montador. Isso prova
+**execução** — dado um `add`, os dois somam igual — e não prova **codificação**: com o
+`funct7` do `sub` trocado, os dois erram juntos e o diferencial passa nos dez programas. Foi
+medido, não suposto.
+
+A metade que faltava está em `encoding.test.ts`: uma tabela de palavras escritas à mão a
+partir do layout de campos do RV32I, cobrindo as vinte e sete instruções do subconjunto, com
+a conta de cada uma no comentário. É a única coisa na pasta que não sai do nosso código, e
+ela pega exatamente o que o diferencial não pega. Um teste de cobertura recusa instrução
+nova que entre no `isa.ts` sem passar por ela.
+
+O que continua descoberto, e é o que o emulador daria: **comportamento** de canto que a spec
+descreve em prosa e que nós dois podemos ter lido errado do mesmo jeito — estouro em
+deslocamento, sinal em `slt`, `jalr` zerando o bit baixo. A tabela prova a palavra, não a
+semântica dela.
+
+---
+
 `x0` merece nota: escrever nele é legal e não tem efeito. É a única instrução do subconjunto
 cujo comportamento correto **é** não fazer nada, e por isso o primeiro lugar onde um modelo
 apressado erra.

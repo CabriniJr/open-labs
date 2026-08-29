@@ -857,3 +857,35 @@ e acabamento). A ULA da CPU segue com portas-folha de propósito — 32 bits em 
 são ~1600 deles, e a fatia desce por **um** caminho.
 
 Estado: 402 testes unitários, 76 e2e, typecheck, boundaries e build verdes.
+
+---
+
+## Acabamento: a caixa recolhida, e a codificação provada contra a spec
+
+**Data:** 2026-08-29. **Código:** `packages/depth-ui/src/Stage.tsx`,
+`packages/cpu-domain/src/encoding.test.ts`.
+
+**A ULA era desenhada parada com um somador de 32 bits girando lá dentro.** Um contêiner não
+emite — quem emite são os filhos —, então o livro-caixa não tinha nada no nome dele e a
+caixa recolhida ficava inerte. Neste desenho, parado quer dizer "não fez nada": era o
+desenho afirmando o contrário do que o modelo dizia. Agora caixa recolhida responde pelo
+interior dela, que é para isso que ela existe. Caixa aberta segue sendo moldura e não se
+mexe — ali o leitor vê os filhos agirem, e animar a moldura contaria a mesma coisa duas
+vezes. Foi achado olhando o lab, não rodando teste; virou e2e, e o e2e falha sem a correção.
+
+**A segunda pendência declarada da §7 fechou, por outro caminho.** O diferencial confere o
+modelo contra o intérprete de referência, e os dois compartilham `isa.ts`: isso prova
+execução e não codificação. **Medido:** trocando o `funct7` do `sub`, o diferencial passa nos
+dez programas e ninguém percebe.
+
+`encoding.test.ts` é a metade que faltava — as vinte e sete instruções do subconjunto, com a
+palavra escrita à mão a partir do layout de campos do RV32I e a conta no comentário. As
+vinte tabelas de `isa.ts` bateram de primeira; os dois mutantes de opcode morrem só aqui. Um
+teste de cobertura recusa instrução nova que entre sem passar pela tabela.
+
+O que continua descoberto está declarado na §7.1 da spec: a tabela prova a **palavra**, não a
+semântica dela. Canto de comportamento que a spec descreve em prosa — estouro em
+deslocamento, sinal em `slt`, `jalr` zerando o bit baixo — nós dois podemos ter lido errado
+do mesmo jeito, e é isso que um emulador de terceiro daria.
+
+Estado: 484 testes unitários, 78 e2e, typecheck, boundaries e build verdes.

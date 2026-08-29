@@ -247,7 +247,7 @@ export function Stage({
   };
 
   /** Trabalhou: recebeu ou emitiu alguma coisa neste tick. */
-  const ativo = (id: string): boolean =>
+  const trabalhou = (id: string): boolean =>
     Object.entries(mudou).some(
       ([chave, quanto]) =>
         quanto > 0 &&
@@ -255,6 +255,31 @@ export function Stage({
           chave === `in:${id}` ||
           chave.startsWith(`sigin:${id}.`)),
     );
+
+  /** Os ids de tudo que está dentro de um objeto, ele inclusive. */
+  const dentroDe = (id: string): readonly string[] => {
+    const achados: string[] = [id];
+    for (const filho of tree.byId.get(id)?.children ?? []) achados.push(...dentroDe(filho.id));
+    return achados;
+  };
+
+  /**
+   * Trabalhou, contando o que está lá dentro quando a caixa está recolhida.
+   *
+   * Um contêiner não emite: quem emite são os filhos. Uma caixa recolhida —
+   * que existe justamente para **valer pelo interior dela** — seria então
+   * desenhada parada enquanto o circuito dentro dela roda, e parada é o que
+   * este desenho usa para dizer "não fez nada". A ULA recolhida com o somador
+   * de trinta e dois bits girando lá dentro era exatamente isso.
+   *
+   * Caixa aberta continua sendo moldura e não se mexe: ali o leitor vê os
+   * filhos agirem, e animar a moldura junto seria contar a mesma coisa duas
+   * vezes.
+   */
+  const ativo = (id: string): boolean => {
+    const recolhida = view.places.find((p) => p.id === id)?.collapsed === true;
+    return recolhida ? dentroDe(id).some(trabalhou) : trabalhou(id);
+  };
 
   /**
    * A saída dele está em alto neste tick.

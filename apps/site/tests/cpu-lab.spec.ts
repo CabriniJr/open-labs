@@ -127,3 +127,14 @@ test("o programa ouve o botão e fala o resultado", async ({ page }) => {
   await relogio.fill("1600");
   await expect(page.locator(".cpu-lab__falou")).toHaveText("6", { timeout: 20_000 });
 });
+
+test("caixa recolhida com circuito dentro não é desenhada parada", async ({ page }) => {
+  await page.goto("labs/cpu/");
+  await expect(page.locator(".dui-stage")).toBeVisible({ timeout: 15_000 });
+
+  // A ULA está recolhida e tem um somador de 32 bits rodando lá dentro. Uma
+  // caixa parada, neste desenho, quer dizer "não fez nada" — então desenhá-la
+  // parada seria afirmar o contrário do que o modelo diz.
+  const ula = page.locator('.dui-stage__objeto[aria-label^="ULA"]').first();
+  await expect(ula).toHaveAttribute("data-ativo", "true", { timeout: 15_000 });
+});
