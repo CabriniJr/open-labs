@@ -246,8 +246,13 @@ export function stepWorld(
   };
 
   // FASE 1 — acomodação. Propaga dentro do tick e não escreve estado.
-  const acomodado = settle(fiado, inbox, sinais, entradas, (id, cargo, sinaisDele, entradasDele) =>
-    rodar(id, "settle", cargo, sinaisDele, entradasDele),
+  const acomodado = settle(
+    fiado,
+    inbox,
+    sinais,
+    entradas,
+    (id, cargo, sinaisDele, entradasDele) => rodar(id, "settle", cargo, sinaisDele, entradasDele),
+    (id) => porId.get(id)?.drives === true,
   );
   for (const [chave, quanto] of acomodado.ledger) bump(chave, quanto);
 

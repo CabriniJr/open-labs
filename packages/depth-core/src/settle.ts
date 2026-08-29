@@ -56,6 +56,8 @@ export function settle(
     signals: Readonly<Record<PortId, readonly Message[]>>,
     inlets: Readonly<Record<PortId, readonly Message[]>>,
   ) => readonly Emission[],
+  /** Quem dirige a linha sem receber nada — o trilho de alimentação. */
+  dirigeSempre: (id: string) => boolean = () => false,
 ): SettleResult {
   const ordem = settleOrder(spec.wires);
   const caixas = new Map<string, Caixa>();
@@ -91,8 +93,11 @@ export function settle(
       inlets[porta] = [...(inlets[porta] ?? []), ...msgs];
     }
 
-    // Nada chegou: não há o que propagar a partir daqui.
-    if (cargo.length === 0 && Object.keys(signals).length === 0) continue;
+    // Nada chegou: não há o que propagar a partir daqui — a não ser que este
+    // objeto seja um trilho, cujo trabalho é dirigir a linha sem depender de
+    // entrada nenhuma. Sem esta ressalva, o trilho nunca agiria, e o circuito
+    // ligado nele ficaria morto sem ninguém dizer por quê.
+    if (!dirigeSempre(id) && cargo.length === 0 && Object.keys(signals).length === 0) continue;
 
     // Conta o nível de quem RECEBEU, e não o de quem emitiu: o último elo de um
     // caminho combinacional costuma ser um elemento de memória, que na

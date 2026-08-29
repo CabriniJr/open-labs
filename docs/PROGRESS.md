@@ -750,3 +750,52 @@ tick anterior). O diferencial da CPU passou **sem tocar em nada**: o somador de 
 feito de portas continua conferindo instrução a instrução contra a referência.
 
 Estado: 379 testes unitários, 74 e2e, typecheck, boundaries e build verdes.
+
+---
+
+## O transistor: a porta lógica aberta até o silício
+
+**Data:** 2026-08-29. **Código:** `packages/cpu-domain/src/transistors.ts`,
+`packages/depth-core/src/{model,settle,validate,scheduler}.ts`.
+
+NOT, NAND e NOR agora existem como **rede de transistores**, com a tabela-verdade como
+atalho provado. Cada uma é o par complementar de sempre: PMOS puxa para 1 em cima, NMOS
+puxa para 0 embaixo, e o que separa NAND de NOR é só quem está em série e quem está em
+paralelo.
+
+**Duas espécies de linha, e é isso que faz o nível caber sem primitiva nova.** `bit` é
+valor lógico e chega no terminal de porta — o terminal que decide e **não conduz**, o que
+é verdade no silício. `corrente` é o que atravessa o canal, e carrega o nível junto com um
+`conduz`.
+
+**`conduz` é campo, e não ausência de mensagem — de propósito.** Seria mais curto um
+transistor cortado não emitir nada. Mas então um nó de saída **flutuando** (rede mal
+montada, ninguém puxando) também não rodaria, e o defeito passaria calado: a porta não
+emitiria, e o de baixo leria isso como zero. Com o campo, o nó sempre roda e sempre pode
+recusar — flutuação e curto, os dois com o nome do nó e o que fazer. É a regra de sempre:
+mover a validação para onde a violação vira impossível.
+
+E há um teste que mostra por que isso importa: um NAND com a rede de baixo solta do nó
+responde **certo** para três das quatro entradas, e para a quarta ele acertaria zero por
+acaso sob a codificação antiga. Acertar por acaso, calado, é o defeito.
+
+**Lacuna do motor que o trilho achou — a quarta desta fase.** Um Vdd não recebe nada e
+precisa dirigir a linha **dentro do tick**. A acomodação pulava quem não recebeu, então o
+trilho nunca agiria e o circuito ligado nele ficaria morto em silêncio. `ObjectSpec.drives`
+é o conceito que faltava: fonte constante da acomodação. Não é a `source` de sempre —
+aquela emite no confronto e custa uma borda de relógio. `validateWorld` recusa as duas
+maneiras de a promessa ser falsa: declarar `drives` em quem tem entrada acomodada (não
+seria constante) e em quem não tem saída acomodada (não dirigiria nada).
+
+Um detalhe que só a fatia acha: um transistor **sem comando nenhum** não é um transistor
+cortado, é um que ainda não tem opinião — é o circuito antes da primeira entrada chegar.
+Confundir os dois faz o nó acusar flutuação numa porta que está certa.
+
+Três mutantes mortos: ignorar `drives` na acomodação, trocar as redes de NAND e NOR, e o nó
+deixar de recusar flutuação.
+
+**O que falta da fatia:** ligar as portas do somador nas redes de transistores (hoje as
+duas coisas existem e se provam, mas o somador ainda usa a porta folha), a view do nível de
+transistor, e a unidade lógica aberta.
+
+Estado: 390 testes unitários, 74 e2e, typecheck, boundaries e build verdes.

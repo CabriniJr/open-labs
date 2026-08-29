@@ -163,6 +163,23 @@ export interface ObjectSpec<S = unknown> {
   /** Folha mesmo tendo filhos: a válvula da regra de abertura. */
   readonly leaf?: true;
   /**
+   * **Fonte constante da acomodação**: roda todo tick mesmo sem receber nada.
+   *
+   * A acomodação normalmente pula quem não recebeu — não chegou nada, não há o
+   * que propagar. Mas há objeto cujo trabalho é justamente não depender de
+   * entrada nenhuma: um trilho de alimentação, um resistor de pull-up, um valor
+   * amarrado em zero. Ele nunca recebe, então sob a regra normal ele nunca
+   * agiria, e a linha que ele deveria manter viva ficaria morta em silêncio.
+   *
+   * Não é o mesmo que uma `source` de sempre: aquela emite no confronto, e o que
+   * ela manda custa uma borda de relógio para chegar. Esta dirige **dentro do
+   * tick**, que é o que "estar sempre ligado" quer dizer num circuito.
+   *
+   * `validateWorld` recusa declará-la em quem tem entrada acomodada (não seria
+   * constante) e em quem não tem saída acomodada (não dirigiria nada).
+   */
+  readonly drives?: true;
+  /**
    * As **entradas nomeadas** deste contêiner: nome da porta -> quem, lá dentro,
    * recebe o que chega por ela.
    *

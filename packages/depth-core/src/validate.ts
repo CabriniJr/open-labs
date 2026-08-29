@@ -1,5 +1,5 @@
 import { DROP } from "./model.js";
-import type { WireTiming, WorldSpec } from "./model.js";
+import type { Wire, WireTiming, WorldSpec } from "./model.js";
 import { familyOf } from "./model.js";
 import { findCombinationalCycle } from "./settle-graph.js";
 import { entryLeaf, visibleChild } from "./tree.js";
@@ -327,6 +327,30 @@ export function validateWorld(spec: WorldSpec, tree: TreeIndex): void {
         `voltar a si mesmo dentro do mesmo tick. Ponha um fio com timing ` +
         `"clocked" em algum ponto da volta — é o que um elemento de memória faz`,
     );
+  }
+
+  // Trilho de alimentação: quem declara `drives` promete dirigir a linha sem
+  // depender de entrada nenhuma. As duas maneiras de a promessa ser falsa são
+  // recusadas aqui, na construção, e não descobertas por um circuito que roda
+  // dando resposta errada.
+  for (const [id, node] of tree.byId) {
+    if (node.drives !== true) continue;
+    const acomoda = (w: Wire): boolean => (w.timing ?? "clocked") === "settle";
+    const recebe = spec.wires.some((w) => acomoda(w) && w.to === id);
+    const dirige = spec.wires.some((w) => acomoda(w) && w.from === id && w.to !== DROP);
+    if (recebe) {
+      erros.push(
+        `"${id}" declara drives e tem entrada acomodada — um trilho não depende ` +
+          `de entrada. Ou tire o drives, ou tire o fio que acomoda até ele`,
+      );
+    }
+    if (!dirige) {
+      erros.push(
+        `"${id}" declara drives e não tem saída acomodada: ele rodaria todo tick ` +
+          `sem alimentar nada. Ligue uma saída dele por um fio com timing "settle", ` +
+          `ou tire o drives`,
+      );
+    }
   }
 
   if (erros.length > 0) {

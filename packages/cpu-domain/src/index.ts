@@ -8,4 +8,13 @@ export { cpuWorld, ENDERECO_ENTRADA, ENDERECO_SAIDA } from "./datapath.js";
 export type { EstadoBanco, EstadoMemoria, EstadoPc, EstadoSaida } from "./datapath.js";
 export { CPU_VIEWS, VIEW_PROCESSADOR, VIEW_SISTEMA, viewSomador } from "./views.js";
 export { decide, porta, portasAltas, somadorCompleto, somadorWorld } from "./gates.js";
+export {
+  fiosDaPortaCmos,
+  noDeSaida,
+  portaCmos,
+  portaCmosWorld,
+  transistor,
+  trilho,
+} from "./transistors.js";
+export type { Canal, PortaCmos } from "./transistors.js";
 export type { PortaLogica } from "./gates.js";
