@@ -48,3 +48,10 @@ and the official documentation, linked inline. The teaching order follows
 from the book is reproduced here.
 
 Built with Claude.
+
+## License
+
+Code is [Apache-2.0](LICENSE). Editorial content — everything under `docs/`, plus lab
+prose, labels and `teaches` fields — is [CC BY-SA 4.0](LICENSE-content). Two licences
+because the engine is meant to be reused as a library and the teaching material is meant
+to be reused as teaching material.

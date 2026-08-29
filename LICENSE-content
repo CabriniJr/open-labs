@@ -1,0 +1,29 @@
+# Licença do conteúdo
+
+O código deste repositório é Apache-2.0 (veja `LICENSE`). **O conteúdo editorial é
+CC BY-SA 4.0** — licenças diferentes para coisas diferentes, porque o motor existe para ser
+reusado como biblioteca e o material didático existe para ser reusado como material didático.
+
+## O que está sob CC BY-SA 4.0
+
+- `docs/**` — a documentação de projeto, visão, decisões e specs
+- O texto, as ilustrações e os roteiros dos labs: prosa, rótulos, legendas e o campo
+  `teaches` dos modelos
+- Qualquer arquivo de conteúdo de um handbook (`*.model.yaml` na parte descritiva)
+
+## O que está sob Apache-2.0
+
+- `packages/**` e `apps/**` — o motor, os componentes e o site
+- `scripts/**` e a configuração de build
+
+## Os termos
+
+Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0).
+
+- Resumo legível: https://creativecommons.org/licenses/by-sa/4.0/deed.pt
+- Texto legal completo: https://creativecommons.org/licenses/by-sa/4.0/legalcode.pt
+
+Em resumo: você pode copiar, redistribuir, adaptar e usar comercialmente, desde que dê
+crédito e distribua o resultado sob a mesma licença.
+
+Copyright 2026 Luigi Cabrini.
