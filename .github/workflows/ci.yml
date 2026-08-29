@@ -1,8 +1,10 @@
 name: CI
 
+# O CI só rodava em `main`, e o trabalho vive em branch: os oitenta e um commits
+# desta entrega nunca passaram por ele. Rodar em toda branch é o que faz a
+# verificação valer no momento em que ela ainda é barata de consertar.
 on:
   push:
-    branches: [main]
   pull_request:
 
 jobs:

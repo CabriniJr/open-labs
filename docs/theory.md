@@ -402,7 +402,34 @@ Que `mux`/`demux` e `arbiter` tenham entrado no catálogo pensando em gRPC e em 
 e sirvam intactos aqui, é o segundo indício de que o catálogo não é OpenTelemetry
 disfarçado.
 
-### 7.5 O que falta, nomeado
+### 7.5 As lacunas, e o que elas viraram
+
+**Fechadas em 29/08/2026.** A análise abaixo previu três; a construção achou mais três. O
+que segue é a previsão como ela foi escrita, com o resultado ao lado — vale mais guardada
+assim do que reescrita como se sempre tivéssemos sabido.
+
+| Lacuna | Prevista? | O que virou |
+|---|---|---|
+| L1 · linha de controle sem semântica | sim | `sigin:`, `ctx.signals`, `toPort` obrigatório, leque nativo |
+| L2 · ler sem consumir | sim | o banco é ator que responde a pedido; a escrita do tick já vale para a leitura dele |
+| L3 · combinacional × registrado | sim | `Wire.timing` (`settle` \| `clocked`), fases do tick, ordem topológica |
+| L4 · a acomodação era invisível de fora | **não** | `WorldState.settled` — o que saiu de cada porta neste tick |
+| L5 · não havia fonte constante da acomodação | **não** | `ObjectSpec.drives` — o trilho de alimentação |
+| L6 · bornes não compunham | **não** | expansão recursiva, e `Borne` podendo nomear a porta do filho |
+
+**As três que não foram previstas são da mesma espécie, e isso é o achado.** Nenhuma é um
+comportamento que faltava: são coisas que o motor **já calculava e jogava fora** (L4), ou que
+ele **não tinha como dizer** (L5, L6). Análise de mesa acha o que falta fazer; ela não acha o
+que o motor deixa de contar sobre si mesmo. Para isso é preciso um domínio que pergunte — e
+foi o transistor que perguntou as três.
+
+E uma quarta observação, que não é lacuna e sim confirmação: **nenhuma das seis se resolvia
+com um `kind` novo.** Todas mexeram no contrato. É o sinal de que a pressão era real e não
+decoração.
+
+---
+
+O texto original da previsão, preservado:
 
 Três lacunas reais. Nenhuma é "adicionar um `kind`".
 
@@ -506,6 +533,17 @@ registrador.
 Se passar, a fronteira motor↔domínio deixa de ser uma regra que um script defende e
 passa a ser um fato demonstrado — e o handbook de OpenTelemetry vira o primeiro
 instanciamento de um motor, em vez de um motor que só sabe uma coisa.
+
+**Passou, em 29/08/2026.** `cpu-domain` importa só `depth-core` e `depth-ui`, executa RV32I
+conferido instrução a instrução, e abre os oito níveis da §7.2 até o transistor. A guarda de
+fronteira está verde em sessenta arquivos, e nenhuma das seis mudanças do motor usa
+vocabulário de CPU. A fronteira deixou de ser disciplina e virou fato.
+
+O que **não** foi provado, e está dito para não ser confundido com o que foi: o diferencial
+usa um intérprete nosso, que compartilha `isa.ts` com o montador — ele prova execução, não
+codificação. A codificação tem prova própria, contra a tabela de campos do RV32I
+(`encoding.test.ts`), e mesmo ela prova a **palavra** e não a semântica dela. A §7.1 da spec
+do modelo diz o que fica de fora.
 
 ---
 
