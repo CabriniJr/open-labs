@@ -100,9 +100,9 @@ test("descer da CPU até a porta lógica, e achar o somador vivo lá embaixo", a
   // o somador de 32 bits tem 32 somadores completos, e eles existem de verdade
   await expect(page.locator(".dui-stage__objeto")).toHaveCount(32);
 
-  await page.locator('.dui-stage__objeto[aria-label^="bit7"]').first().dblclick();
+  await page.locator('.dui-stage__objeto[data-id="bit7"]').first().dblclick();
   await expect(page.locator(".dui-stage__objeto")).toHaveCount(5);
-  await expect(trilha).toContainText("bit7");
+  await expect(trilha).toContainText("full adder 7");
 
   // e volta pela trilha, sem recarregar nada
   await trilha.getByRole("button", { name: "system" }).click();

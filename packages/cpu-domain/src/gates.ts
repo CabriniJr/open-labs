@@ -117,10 +117,14 @@ export function somadorCompleto(id: string, comAtalho: boolean, comTransistores 
         portaAberta(p(sufixo), tipo, saida, false)
       : porta(p(sufixo), tipo, saida);
 
+  // O índice sai do próprio id (`bit12`), que é quem o conhece. Guardá-lo à
+  // parte seria a segunda fonte de sempre; e sem índice nenhum, trinta e duas
+  // caixas iguais chamadas "full adder" não se distinguem.
+  const indice = /(\d+)$/.exec(id)?.[1];
   const base: AnyObject = {
     id,
     kind: "composite",
-    label: id,
+    label: indice === undefined ? ROTULOS.somadorCompletoSemIndice : ROTULOS.somadorCompleto(Number(indice)),
     // Os três bornes. `a` e `b` alimentam duas portas cada — é o leque de
     // dentro do bloco, o pontinho que o esquemático desenha na linha que entra.
     inlets: {

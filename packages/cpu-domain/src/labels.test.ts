@@ -138,3 +138,21 @@ describe("os sinais de controle têm o nome do livro", () => {
     }
   });
 });
+
+/**
+ * Rótulo igual ao id não é rótulo.
+ *
+ * Os trinta e dois somadores completos se chamavam `bit0`…`bit31` na tela:
+ * nome de variável, não nome de peça. Quem abria o somador de 32 bits via
+ * trinta e duas caixas identificadas e nenhuma dizendo o que é. Não é um
+ * descuido de digitação — é o que acontece quando o campo existe e ninguém
+ * preenche, e a única forma de isso não voltar é a coincidência ser proibida.
+ */
+describe("todo objeto tem nome de peça, e não de variável", () => {
+  it.each(Object.entries(arvores))("nenhum rótulo é o próprio id em %s", (_qual, arvore) => {
+    const crus = [...arvore.byId.values()]
+      .filter((node) => node.label === node.id)
+      .map((node) => node.id);
+    expect(crus).toEqual([]);
+  });
+});

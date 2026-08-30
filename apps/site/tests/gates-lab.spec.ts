@@ -70,11 +70,11 @@ test("dois cliques entram no somador, e a trilha mostra onde você está", async
   await page.goto("labs/gates/");
   await expect(page.locator(".dui-stage")).toBeVisible({ timeout: 15_000 });
 
-  await page.locator('.dui-stage__objeto[aria-label^="bit1"]').first().dblclick();
+  await page.locator('.dui-stage__objeto[data-id="bit1"]').first().dblclick();
 
   const trilha = page.locator(".explorer__trilha");
   await expect(trilha).toContainText("circuit");
-  await expect(trilha).toContainText("bit1");
+  await expect(trilha).toContainText("full adder 1");
 
   // lá dentro estão as cinco portas, e elas continuam vivas
   await expect(page.locator(".dui-stage__objeto")).toHaveCount(5);
@@ -84,7 +84,7 @@ test("dois cliques entram no somador, e a trilha mostra onde você está", async
 
   // e a trilha volta
   await trilha.getByRole("button", { name: "circuit" }).click();
-  await expect(page.locator('.dui-stage__objeto[aria-label^="bit1"]')).toBeVisible();
+  await expect(page.locator('.dui-stage__objeto[data-id="bit1"]')).toBeVisible();
 });
 
 
@@ -95,7 +95,7 @@ test("descer da porta lógica até o transistor, e achar silício vivo lá embai
   await expect(page.locator(".dui-stage")).toBeVisible({ timeout: 15_000 });
 
   const trilha = page.locator(".explorer__trilha");
-  await page.locator('.dui-stage__objeto[aria-label^="bit0"]').first().dblclick();
+  await page.locator('.dui-stage__objeto[data-id="bit0"]').first().dblclick();
   await page.locator('.dui-stage__objeto[aria-label^="XOR"]').first().dblclick();
   await expect(trilha).toContainText("XOR");
 
@@ -115,7 +115,7 @@ test("descer da porta lógica até o transistor, e achar silício vivo lá embai
   });
 
   await trilha.getByRole("button", { name: "circuit" }).click();
-  await expect(page.locator('.dui-stage__objeto[aria-label^="bit0"]')).toBeVisible();
+  await expect(page.locator('.dui-stage__objeto[data-id="bit0"]')).toBeVisible();
 });
 
 /**

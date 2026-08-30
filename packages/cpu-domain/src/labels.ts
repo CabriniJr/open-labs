@@ -43,6 +43,11 @@ export const ROTULOS = {
   unidadeLogica: "logic unit",
   muxOperacao: "operation mux",
   somadorDe: (bits: number): string => `${bits}-bit adder`,
+  // O somador completo de um bit. O rótulo era o id cru (`bit0`), que é nome
+  // de variável e não de peça: quem abre o somador de 32 bits vê trinta e duas
+  // caixas chamadas por um identificador e nenhuma dizendo o que é.
+  somadorCompleto: (i: number): string => `full adder ${i}`,
+  somadorCompletoSemIndice: "full adder",
   peso: (i: number): string => `2^${i}`,
 
   // o circuito

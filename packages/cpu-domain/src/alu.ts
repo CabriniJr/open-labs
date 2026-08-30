@@ -97,6 +97,20 @@ const coletor: ObjectSpec = {
  * O que não é soma. Continua sendo folha, e isso está declarado: abrir a lógica
  * bit a bit é o mesmo trabalho que abrir o somador, e a fatia desce por um
  * caminho só.
+ *
+ * **E `sub` passa por aqui, não pelo somador.** Isto é uma segunda
+ * simplificação, distinta da primeira, e ela precisa ser dita: a de cima fala
+ * da lógica bit a bit, e quem lê só ela conclui que o resto desce pelo
+ * silício. Não desce. `a - b` é resolvido como número neste bloco, sem visitar
+ * o somador de 32 bits e sem acionar a cascata de vai-um.
+ *
+ * O que isso esconde do aluno é a lição clássica: **um somador binário também
+ * subtrai**, invertendo `b` e ligando o vem-de-trás em 1, e é por isso que uma
+ * ULA não tem um subtrator separado. Hoje, quem roda `add` vê setenta e cinco
+ * subpassos no silício e quem roda `sub` não vê nada acender — e sai com a
+ * impressão de que soma e subtração são caminhos independentes de hardware.
+ *
+ * Meia declaração é meia mentira, e é por isso que esta metade está escrita.
  */
 const unidadeLogica: ObjectSpec = {
   id: "unidade-logica",
