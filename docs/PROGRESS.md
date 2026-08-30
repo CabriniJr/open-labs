@@ -1044,3 +1044,63 @@ então quem olha lê como desordem. Fica para a entrega do desenho. Vale como m�
 de agente é evidência, não veredito.
 
 Estado: 668 testes unitários, 145 e2e, typecheck, boundaries (74 arquivos) e build verdes.
+
+---
+
+## Entrega 2 e a arrumação: a cor diz o que a coisa é, e o espaguete vira número
+
+**Data:** 2026-08-30. **Desenho:** `docs/superpowers/specs/2026-08-30-refino-grafico-e-pedagogico-design.md`.
+
+**O catálogo da linguagem visual.** Cor e forma passam a morar num lugar só, lidos por
+**sentido** e nunca por valor, com `scripts/check-catalogo.mjs` reprovando tinta escrita fora
+dele. A disciplina já funcionava — os três labs escolheram bem, cada um por sua conta — mas
+disciplina não é sistema: nada impedia o quarto lab de escolher diferente, e no dia em que
+escolhesse ninguém seria avisado.
+
+Duas tintas, dois registros: no diagrama de blocos preta é dado e vermelha é controle; no
+esquemático vermelha é alimentação e preta é terra. Não é ambiguidade — são duas linguagens
+de desenho, nunca aparecem no mesmo quadro, e a trilha diz em qual o leitor está. O que era
+ambíguo era o sentido ficar implícito. A vista **declara** o registro; adivinhar pelo conteúdo
+erraria calado no dia em que um esquemático não tivesse chave nenhuma.
+
+**A guarda achou o que ninguém procurava.** O CSS do MOTOR tinha seletores
+`data-kind="instrucao"`, `"escrita"`, `"guardar"` e `"pulso"`. A guarda de fronteira não via
+porque só varria TypeScript — uma fronteira que vigia meia linguagem vigia meia fronteira. E a
+correção não foi pôr as palavras na lista: **a regra certa é sobre o substantivo.** O `kind` de
+uma *mensagem* é palavra do domínio pela definição do próprio motor, então a guarda passou a
+perguntar o inverso — *está no vocabulário do motor?* —, lendo a lista do `model.ts` na hora,
+porque copiada ela envelheceria em silêncio.
+
+**Um defeito que só a tela pegou.** Separei os trilhos por `source` contra `sink`, e no modelo
+os DOIS são `source`: saíram os dois vermelhos. Passou em typecheck, fronteira, catálogo e 149
+e2e. O que de fato os separa é o nível que cada um dirige, que é a física da coisa.
+
+**A leitura do somador estava invertida**, e discordava de três coisas ao mesmo tempo: do texto
+do lab ("watch the carry climb"), do número escrito — de cima para baixo dava `1011` onde a
+caixa dizia `1101` — e do próprio desenho, com o vem-de-trás saltando a figura inteira. Nada
+disso quebrava teste.
+
+**Espaguete virou número**, medido nos `path` que a página pintou. Achou 21 sobreposições no
+lab da CPU e 56 no das portas, todas com ponta em comum: leque e convergência desenhados como
+N linhas empilhadas, que se leem como uma linha só. Daí saíram o **pontinho de junção** (o T
+ganha, o X não — e a ausência dele é que diz que dois fios não se falam) e a **memória do
+roteador**, que desviava de caixas e ignorava fios.
+
+E os pesos do roteador passaram a ser a hierarquia dos defeitos escrita como número:
+atravessar caixa é **mentira** e custa cem, repetir reta é **ambiguidade** e custa um, sair do
+centro é **estética** e custa um décimo de milésimo. Na mesma ordem de grandeza, bastavam duas
+retas repetidas para ele preferir cortar uma caixa.
+
+**A dívida que a medida expôs se fechou com uma regra.** O somador cruzava 28 contra 16 do
+caminho de dados inteiro. Doze eram um leque sem ordem. Agora **a saída mira o destino e a
+entrada mira a origem** — regra local com efeito global: duas pontas ordenadas pelo que está do
+outro lado não se cruzam, e o feixe abre como pente. Cruzamentos: somador 28 → **4**, caminho
+de dados 16 → 15, pilha 4.
+
+**Regra de método que saiu daqui:** teste que varre dois casos prova, no fim, que os dois
+aconteceram. Dois testes meus fingiam cobrir dois temas e cobriam um; um terceiro comparava
+`.first()` de um conjunto que muda, que não é um elemento — passava sozinho e reprovava na
+suíte cheia.
+
+Estado: 687 testes unitários, 155 e2e, typecheck, boundaries (80 arquivos), catálogo e build
+verdes.
