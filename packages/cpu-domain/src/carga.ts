@@ -31,6 +31,10 @@ export function leituraDaCarga(mensagem: Message): string | undefined {
 
     case "endereco":
       return hex(d.pc);
+    case "selecao":
+      // A linha escolhida, e não o endereço: é o que sai de um decodificador
+      // de endereço, e ver o número mudar de um para o outro é ver o passo.
+      return `#${String(d.linha)}`;
     case "instrucao":
       return hex(d.word);
     case "proximo":

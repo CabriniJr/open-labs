@@ -42,7 +42,7 @@ export const VIEW_SISTEMA: View = {
   focus: "sistema",
   title: "The system: CPU, memories, and the buses between them",
   width: 1260,
-  height: 740,
+  height: 800,
   /**
    * A figura canônica de uma máquina Harvard, e não um arranjo inventado.
    *
@@ -104,26 +104,38 @@ export const VIEW_SISTEMA: View = {
     { id: "logica", x: 790, y: 165, w: 190, h: 130, collapsed: true },
 
     /*
-      Os dois barramentos, deitados sob a CPU. Fechados: de longe cada um é uma
-      esteira só; abrindo, são as vias que ele agrega.
+      Os dois barramentos, deitados sob a CPU — e **abertos**, com as vias à
+      vista.
 
-      A altura não é gosto: o interior de uma esteira são as vias **empilhadas**,
-      e uma esteira de vinte e seis unidades num quadro de setecentas só abriria
-      com um zoom absurdo. Quem decide o nível de detalhe é o lado que aperta, e
-      numa esteira o lado que aperta é sempre a altura.
+      Fechados eles eram uma barra verde no meio da figura: o leitor via que
+      havia um barramento e não via o que ele é. Um barramento é uma
+      **auto-estrada**: pistas paralelas, cada uma com a sua carga, e sentidos
+      que não se misturam. Desenhar as pistas é o que transforma "barramento"
+      de palavra em coisa — e é o que faz o leitor entender por que endereço,
+      dado e controle não podem andar na mesma linha.
+
+      A ordem das pistas é a do diagrama de referência: endereço em cima (sai
+      da CPU), dado no meio (vai e volta), controle embaixo (sai da CPU e diz o
+      que fazer com os outros dois).
     */
-    { id: "barramento-instrucao", x: 210, y: 462, w: 330, h: 44, collapsed: true },
-    { id: "barramento", x: 600, y: 462, w: 610, h: 44, collapsed: true },
+    { id: "barramento-instrucao", x: 210, y: 452, w: 330, h: 104 },
+    { id: "via-pc", x: 226, y: 492, w: 298, h: 20 },
+    { id: "via-instrucao", x: 226, y: 524, w: 298, h: 20 },
+
+    { id: "barramento", x: 600, y: 452, w: 610, h: 104 },
+    { id: "via-endereco", x: 620, y: 484, w: 570, h: 18 },
+    { id: "via-dado", x: 620, y: 510, w: 570, h: 18 },
+    { id: "via-acesso", x: 620, y: 536, w: 570, h: 18 },
 
     // Embaixo, o que está fora da CPU, cada um pendurado no seu barramento.
-    { id: "imem", x: 210, y: 540, w: 330, h: 165 },
+    { id: "imem", x: 210, y: 596, w: 330, h: 176, collapsed: true },
 
     // A ordem aqui é a do caminho: ouve à esquerda, guarda no meio, fala à
     // direita. Entrada e saída são endereços que não são memória, e por isso
     // moram coladas nela — mapear em memória é estar no espaço dela.
-    { id: "entrada", x: 600, y: 585, w: 130, h: 76 },
-    { id: "memoria", x: 770, y: 540, w: 280, h: 165 },
-    { id: "saida", x: 1080, y: 585, w: 130, h: 76 },
+    { id: "entrada", x: 600, y: 646, w: 130, h: 76 },
+    { id: "memoria", x: 770, y: 596, w: 280, h: 176 },
+    { id: "saida", x: 1080, y: 646, w: 130, h: 76 },
   ],
 };
 
@@ -183,7 +195,36 @@ export const VIEW_ULA: View = {
   ],
 };
 
-export const CPU_VIEWS: readonly View[] = [VIEW_SISTEMA, VIEW_PROCESSADOR, VIEW_ULA];
+/**
+ * Dentro de uma memória endereçada: o decodificador e o banco de células.
+ *
+ * São as duas peças de qualquer memória, em qualquer livro. Fechada, a caixa
+ * recebe um número e devolve outro, e o passo que interessa acontece em lugar
+ * nenhum. Aberta, dá para ver o que "endereçar" quer dizer: **de um número,
+ * uma única linha escolhida** — e é o decodificador que faz isso, não a
+ * memória inteira.
+ *
+ * O decodificador é estreito e o banco é largo de propósito: um transforma, o
+ * outro guarda, e o tamanho na tela é a proporção honesta entre os dois.
+ */
+export const VIEW_IMEM: View = {
+  id: "imem",
+  focus: "imem",
+  title: "Inside a memory: the address decoder and the cells",
+  width: 800,
+  height: 340,
+  places: [
+    { id: "imem-decodificador", x: 40, y: 110, w: 200, h: 120 },
+    { id: "imem-celulas", x: 360, y: 30, w: 400, h: 280 },
+  ],
+};
+
+export const CPU_VIEWS: readonly View[] = [
+  VIEW_SISTEMA,
+  VIEW_PROCESSADOR,
+  VIEW_ULA,
+  VIEW_IMEM,
+];
 
 /**
  * Uma porta CMOS desenhada como esquemático, e não como fluxo.

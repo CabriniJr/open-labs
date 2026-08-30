@@ -15,8 +15,16 @@ import { expect, test } from "@playwright/test";
  * tela, e uma segunda cópia da conta poderia concordar consigo mesma enquanto
  * as duas erram.
  *
- * A exceção é uma só, e é da própria gramática: **contêiner é moldura**, e
- * atravessar uma moldura é exatamente o que faz uma ligação que vem de fora.
+ * As duas exceções são da própria gramática, e não conveniências:
+ *
+ * - **contêiner é moldura**, e atravessar uma moldura é exatamente o que faz
+ *   uma ligação que vem de fora;
+ * - **conduíte é linha**, não coisa. Um fio que cruza uma pista de barramento
+ *   sem dot não afirma ligação nenhuma — é notação universal de esquemático, e
+ *   é como um barramento de verdade é desenhado: a derivação desce cortando as
+ *   pistas vizinhas, e ninguém lê aquilo como conexão.
+ *
+ * O que um fio nunca pode atravessar é uma **coisa**: quem age, quem guarda.
  */
 
 /** Os segmentos retos de um caminho em cotovelos. */
@@ -41,7 +49,10 @@ async function atravessamentos(page: import("@playwright/test").Page): Promise<s
     const naCamadaDeCima = (el) => el.closest(".dui-stage__interior") === null;
     const caixas = [...document.querySelectorAll(".dui-stage__objeto[data-id]")]
       .filter(naCamadaDeCima)
-      .filter((g) => g.getAttribute("data-familia") !== "container")
+      .filter((g) => {
+        const fam = g.getAttribute("data-familia");
+        return fam !== "container" && fam !== "conduit";
+      })
       .map((g) => ({ id: g.getAttribute("data-id") || "", r: g.getBBox() }));
 
     const problemas = [];

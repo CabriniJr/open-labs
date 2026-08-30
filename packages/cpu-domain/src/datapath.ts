@@ -96,30 +96,86 @@ const pc: ObjectSpec<EstadoPc> = {
   },
 };
 
-/** Memória de instruções: só lê, e é o que a torna diferente da principal. */
-function memoriaDeInstrucoes(image: readonly number[]): ObjectSpec<Record<string, never>> {
+/**
+ * Memória de instruções: só lê, e é o que a torna diferente da principal.
+ *
+ * Ela é **composta**, e não uma caixa preta: um endereço não vira uma palavra
+ * por mágica. Quem transforma endereço em "esta linha, e não as outras" é o
+ * decodificador de endereço, e quem guarda as palavras é o banco de células.
+ * São as duas peças de qualquer memória endereçada, em qualquer livro — e
+ * abrir a caixa é ver as duas, rodando.
+ *
+ * Sem essa divisão, "endereçar" continuava sendo uma palavra: a caixa recebia
+ * um número e devolvia outro, e o passo que interessa acontecia em lugar
+ * nenhum.
+ */
+function decodificadorDeEndereco(id: string): ObjectSpec<Record<string, never>> {
   return {
-    id: "imem",
-    kind: "store",
-    label: ROTULOS.imem,
+    id,
+    kind: "router",
+    label: ROTULOS.decodificadorDeEndereco,
     leaf: true,
     behavior: (state, inbox, ctx) => {
       if (ctx.phase !== "settle") return { state, out: [] };
       const pedido = achar(inbox, "endereco");
       if (pedido === undefined) return { state, out: [] };
       const endereco = dado(pedido, "pc");
-      const word = image[endereco / PALAVRA];
-      // Endereço fora do programa não emite nada: a cadeia morre aqui, e o
-      // mundo fica parado em vez de executar lixo como se fosse instrução.
-      if (word === undefined) return { state, out: [] };
       return {
         state,
-        out: [{ port: "out", message: ctx.emit("instrucao", 1, { pc: endereco, word }) }],
+        out: [
+          {
+            port: "out",
+            // A linha, e não o endereço: é exatamente isso que decodificar um
+            // endereço quer dizer — de um número, uma única célula escolhida.
+            message: ctx.emit("selecao", 1, { linha: endereco / PALAVRA, pc: endereco }),
+          },
+        ],
       };
     },
   };
 }
 
+function bancoDeCelulas(id: string, image: readonly number[]): ObjectSpec<Record<string, never>> {
+  return {
+    id,
+    kind: "store",
+    label: ROTULOS.celulas,
+    leaf: true,
+    behavior: (state, inbox, ctx) => {
+      if (ctx.phase !== "settle") return { state, out: [] };
+      const selecao = achar(inbox, "selecao");
+      if (selecao === undefined) return { state, out: [] };
+      const word = image[dado(selecao, "linha")];
+      // Linha fora do programa não emite nada: a cadeia morre aqui, e o mundo
+      // fica parado em vez de executar lixo como se fosse instrução.
+      if (word === undefined) return { state, out: [] };
+      return {
+        state,
+        out: [
+          {
+            port: "out",
+            message: ctx.emit("instrucao", 1, { pc: dado(selecao, "pc"), word }),
+          },
+        ],
+      };
+    },
+  };
+}
+
+function memoriaDeInstrucoes(image: readonly number[]): AnyObject {
+  return {
+    id: "imem",
+    kind: "store",
+    label: ROTULOS.imem,
+    children: [decodificadorDeEndereco("imem-decodificador"), bancoDeCelulas("imem-celulas", image)],
+    // Entrada nomeada, como qualquer contêiner com bornes: quem entrega aqui
+    // dentro entrega ao decodificador, e é ele que transforma o endereço em
+    // linha. Sem o borne, o motor escolheria a primeira folha por acidente de
+    // ordem — e acidente de ordem é a espécie de acerto que quebra calado.
+    inlets: { in: ["imem-decodificador"] },
+    outlets: { out: ["imem-celulas"] },
+  };
+}
 /** O que a decodificação extrai da palavra, sem decidir nada. */
 const decodificador: ObjectSpec<Record<string, never>> = {
   id: "decodificador",
@@ -648,7 +704,10 @@ export function cpuWorld(
       // enfeite: a linha é um feixe de 32 vias, e é isso que faz somar dois
       // números custar 32 vezes um somador de um bit
       { from: "pc", port: "out", to: "via-pc", timing: "settle", width: 32 },
-      { from: "via-pc", port: "out", to: "imem", timing: "settle", width: 32 },
+      { from: "via-pc", port: "out", to: "imem", toPort: "in", timing: "settle", width: 32 },
+      // Dentro da memória de instruções: o endereço vira linha, a linha vira
+      // palavra. Duas peças, e é o que "endereçar" quer dizer.
+      { from: "imem-decodificador", port: "out", to: "imem-celulas", timing: "settle" },
       { from: "imem", port: "out", to: "via-instrucao", timing: "settle", width: 32 },
       { from: "via-instrucao", port: "out", to: "decodificador", timing: "settle", width: 32 },
       { from: "via-instrucao", port: "out", to: "controle", timing: "settle", width: 32 },

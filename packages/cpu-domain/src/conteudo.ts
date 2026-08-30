@@ -31,7 +31,7 @@ export function conteudoDaCaixa(
   return (id) => {
     if (id === "memoria") return daMemoria(state);
     if (id === "banco") return doBanco(state);
-    if (id === "imem") return daImem(state, programa);
+    if (id === "imem" || id === "imem-celulas") return daImem(state, programa);
     if (id === "saida") return daSaida(state);
     return undefined;
   };
@@ -47,7 +47,7 @@ export function conteudoDaCaixa(
  */
 function daImem(state: WorldState, programa: readonly number[]): readonly Linha[] | undefined {
   if (programa.length === 0) return undefined;
-  const buscado = (state.settled["imem.out"] ?? [])[0]?.data.pc;
+  const buscado = (state.settled["imem-celulas.out"] ?? [])[0]?.data.pc;
   const tocado = typeof buscado === "number" ? buscado : undefined;
   return programa.map((word, i) => {
     const instr = decode(word);

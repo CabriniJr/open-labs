@@ -20,6 +20,8 @@ export const ROTULOS = {
   logica: "combinational logic",
   relogio: "clock",
   imem: "instruction memory",
+  decodificadorDeEndereco: "address decoder",
+  celulas: "cells",
   memoria: "main memory",
   entrada: "input",
   saida: "output",

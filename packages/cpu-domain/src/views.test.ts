@@ -42,9 +42,23 @@ describe("as views do caminho de dados", () => {
   it("nenhuma caixa desenhada por cima de outra irmã", () => {
     // Não é regra do motor, é regra deste desenho: irmãs sobrepostas seriam um
     // objeto escondendo o outro, e o leitor não teria como saber.
-    const irmas = VIEW_SISTEMA.places.filter(
-      (p) => !["cpu", "processador", "logica"].includes(p.id),
-    );
+    //
+    // Quem é moldura sai da conta, e **quem é moldura sai da árvore**: uma
+    // caixa que contém outra caixa desenhada está por baixo dela por
+    // definição. A lista escrita à mão que morava aqui envelhecia calada — o
+    // dia em que um barramento passou a mostrar as vias dele, ela reprovou um
+    // desenho correto.
+    const contemAlguem = (id: string): boolean =>
+      VIEW_SISTEMA.places.some((outro) => {
+        if (outro.id === id) return false;
+        let cursor = tree.parent.get(outro.id);
+        while (cursor !== undefined) {
+          if (cursor === id) return true;
+          cursor = tree.parent.get(cursor);
+        }
+        return false;
+      });
+    const irmas = VIEW_SISTEMA.places.filter((p) => !contemAlguem(p.id));
     for (const a of irmas) {
       for (const b of irmas) {
         if (a.id >= b.id) continue;

@@ -748,3 +748,56 @@
   fill: var(--ink-faint);
   letter-spacing: 0.06em;
 }
+
+/*
+ * A pista de um conduíte: leito largo e apagado, trilho fino por cima.
+ *
+ * É a mesma linguagem do fio, e é de propósito — um conduíte e um fio são a
+ * mesma coisa, transporte. Desenhada como retângulo, a pista virava uma barra
+ * chapada: o leitor via um lugar onde precisava ver um caminho, e um
+ * barramento aberto ficava parecendo uma prateleira de barras vazias.
+ */
+.dui-stage__pista-leito {
+  stroke: color-mix(in oklab, var(--dui-conduit) 20%, transparent);
+  stroke-width: 11;
+  stroke-linecap: round;
+  fill: none;
+}
+
+.dui-stage__pista {
+  stroke: color-mix(in oklab, var(--dui-conduit) 60%, var(--rule));
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  fill: none;
+  vector-effect: non-scaling-stroke;
+  transition: stroke 160ms ease;
+}
+
+.dui-stage__objeto[data-ativo="true"] .dui-stage__pista {
+  stroke: var(--dui-conduit);
+  stroke-width: 2.6;
+}
+
+.dui-stage__objeto[data-ativo="true"] .dui-stage__pista-leito {
+  stroke: color-mix(in oklab, var(--dui-conduit) 38%, transparent);
+}
+
+/*
+ * Moldura: contorno e nada mais. O que ela guarda está desenhado por cima, e um
+ * preenchimento forte aqui apagaria justamente isso.
+ */
+.dui-stage__caixa.dui-stage__moldura {
+  fill: color-mix(in oklab, currentColor 0%, transparent);
+  fill-opacity: 0;
+  stroke-dasharray: 4 6;
+}
+
+/* A ponta da pista: diz o sentido, e não disputa atenção com o que anda nela. */
+.dui-stage__ponta {
+  fill: color-mix(in oklab, var(--dui-conduit) 70%, var(--rule));
+  stroke: none;
+}
+
+.dui-stage__objeto[data-ativo="true"] .dui-stage__ponta {
+  fill: var(--dui-conduit);
+}

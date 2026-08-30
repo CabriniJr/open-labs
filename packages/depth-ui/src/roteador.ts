@@ -64,14 +64,6 @@ function melhorEntre<T>(candidatos: readonly T[], custo: (c: T) => number): T {
   return melhor;
 }
 
-/** O primeiro candidato que não passa por cima de ninguém, ou o primeiro. */
-function escolher(
-  candidatos: readonly number[],
-  livre: (valor: number) => boolean,
-): number {
-  return candidatos.find(livre) ?? candidatos[0] ?? 0;
-}
-
 /**
  * O caminho de um fio, em cotovelos retos — é assim que esquemático se desenha,
  * e a diagonal esconderia por onde a linha passa.
@@ -201,10 +193,28 @@ export function caminho(
   // Sobrepostos na vertical: a linha precisa PARECER uma volta. Sai pela
   // direita, contorna por baixo dos dois e entra pela borda de baixo.
   const base = Math.max(de.y + de.h, para.y + para.h);
-  const lane = escolher(
-    [base + faixa, base + faixa + 14, base + faixa + 28, base + faixa - 10],
-    (c) => outros.every((r) => !cruzaHorizontal(c, saida.x + 14, b.x, r)),
+  const coluna = saida.x + 14;
+  // A volta corre por baixo de TODO MUNDO que estiver no caminho, e não só por
+  // baixo das duas pontas: entre a origem e o destino costuma haver uma
+  // terceira caixa mais alta, e a faixa calculada só pelas pontas passava por
+  // dentro dela. As faixas candidatas saem dos obstáculos, que é de onde a
+  // resposta certa pode vir.
+  const faixas = [
+    base + faixa,
+    base + faixa + 14,
+    base + faixa + 28,
+    base + faixa - 10,
+    ...outros.map((r) => r.y + r.h + 16),
+  ].filter((c) => c > base - 12);
+  const entradas = [b.x, para.x + para.w * 0.3, para.x + para.w * 0.7, para.x + 8, para.x + para.w - 8];
+  const volta = melhorEntre(
+    faixas.flatMap((lane) => entradas.map((x2) => ({ lane, x2 }))),
+    ({ lane, x2 }) =>
+      outros.filter((r) => cruzaVertical(coluna, saida.y, lane, r)).length +
+      outros.filter((r) => cruzaHorizontal(lane, coluna, x2, r)).length +
+      outros.filter((r) => cruzaVertical(x2, lane, para.y + para.h, r)).length +
+      (Math.abs(x2 - b.x) + Math.abs(lane - base) / 8) / 10_000,
   );
-  return `M ${saida.x} ${saida.y} H ${saida.x + 14} V ${lane} H ${b.x} V ${para.y + para.h}`;
+  return `M ${saida.x} ${saida.y} H ${coluna} V ${volta.lane} H ${volta.x2} V ${para.y + para.h}`;
 }
 

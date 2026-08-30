@@ -410,6 +410,50 @@ function Camada({
     altura: (unidadesPorQuadro * view.height) / view.width,
   };
 
+  /**
+   * As caixas que contêm outra caixa desenhada: **elas são moldura**.
+   *
+   * Não é o `kind` que decide, é o desenho. Um barramento com as pistas à
+   * vista é a moldura das pistas, e desenhá-lo como esteira o transformava
+   * numa barra verde chapada com as pistas boiando dentro. A regra é a mesma
+   * que separa contêiner de peça: quem tem gente dentro é moldura.
+   */
+  const molduras = new Set<string>(
+    view.places
+      .filter((place) =>
+        view.places.some((outro) => {
+          if (outro.id === place.id) return false;
+          let cursor = tree.parent.get(outro.id);
+          while (cursor !== undefined) {
+            if (cursor === place.id) return true;
+            cursor = tree.parent.get(cursor);
+          }
+          return false;
+        }),
+      )
+      .map((place) => place.id),
+  );
+
+  /**
+   * Para que lado uma pista anda.
+   *
+   * Sai da geometria do próprio modelo: se quem recebe daquela pista está à
+   * **esquerda** de quem a alimenta, ela anda para a esquerda. Num barramento
+   * é o que separa a pista de ida da de volta — e sem isso as duas apontavam
+   * para o mesmo lado, que é o contrário do que um barramento é.
+   */
+  const sentidoDaPista = (id: string): 1 | -1 => {
+    const meu = lugares.get(id);
+    if (meu === undefined) return 1;
+    const alvos = wires
+      .filter((w) => w.from === id && typeof w.to === "string")
+      .map((w) => ondeCai(String(w.to)))
+      .filter((p): p is NodePlacement => p !== undefined && p !== FORA);
+    if (alvos.length === 0) return 1;
+    const media = alvos.reduce((t, p) => t + p.x + p.w / 2, 0) / alvos.length;
+    return media < meu.x + meu.w / 2 ? -1 : 1;
+  };
+
   const dentroDe2 = new Map<string, { readonly interior: View; readonly aparece: number }>();
   for (const place of view.places) {
     if (place.collapsed !== true || profundidade >= PROFUNDIDADE_MAXIMA) continue;
@@ -869,7 +913,67 @@ function Camada({
                 entre transportar e transformar é a primeira coisa que este
                 desenho precisa deixar clara.
               */}
-              {node?.kind === "store" ? (
+              {molduras.has(place.id) ? (
+                // Moldura: contorno e nada mais. O que ela guarda está
+                // desenhado por cima dela, e um preenchimento forte aqui
+                // apagaria justamente isso.
+                <rect
+                  className="dui-stage__caixa dui-stage__moldura"
+                  x={place.x}
+                  y={place.y}
+                  width={place.w}
+                  height={place.h}
+                  rx={14}
+                />
+              ) : fam === "conduit" ? (
+                /*
+                  Um conduíte é uma **pista**, não uma caixa.
+
+                  Desenhado como retângulo vazado ele virava uma barra chapada:
+                  o leitor via um lugar, e o que ele precisa ver é um caminho. A
+                  pista é o leito largo e apagado com o trilho fino por cima —
+                  a mesma linguagem do fio, porque é a mesma coisa: transporte.
+                  E é o que faz um barramento aberto parecer o que é, uma
+                  auto-estrada de pistas paralelas.
+                */
+                (() => {
+                  const meio = place.y + place.h / 2;
+                  const paraDireita = sentidoDaPista(place.id) === 1;
+                  const inicio = paraDireita ? place.x : place.x + place.w;
+                  const fim = paraDireita ? place.x + place.w : place.x;
+                  return (
+                    <>
+                      <line
+                        className="dui-stage__pista-leito"
+                        x1={place.x}
+                        y1={meio}
+                        x2={place.x + place.w}
+                        y2={meio}
+                      />
+                      <line
+                        className="dui-stage__pista"
+                        x1={inicio}
+                        y1={meio}
+                        x2={fim}
+                        y2={meio}
+                      />
+                      {/*
+                        A ponta da pista é desenhada aqui, e não com o marcador
+                        do fio: o marcador é dimensionado para um traço de
+                        espessura fixa, e sobre uma pista ele vinha do tamanho
+                        de uma peça — uma seta preta gigante no meio do
+                        barramento, gritando mais alto que o barramento.
+                      */}
+                      <path
+                        className="dui-stage__ponta"
+                        d={`M ${fim} ${meio} L ${fim - (paraDireita ? 9 : -9)} ${meio - 5} L ${
+                          fim - (paraDireita ? 9 : -9)
+                        } ${meio + 5} Z`}
+                      />
+                    </>
+                  );
+                })()
+              ) : node?.kind === "store" ? (
                 // Um banco não é uma caixa: é uma **estante**. A faixa de topo
                 // é a etiqueta da prateleira, e o que vem abaixo dela são as
                 // linhas do estado. Desenhado como retângulo liso ele fica
@@ -914,7 +1018,7 @@ function Camada({
                   y={place.y}
                   width={place.w}
                   height={place.h}
-                  rx={fam === "container" ? 14 : fam === "conduit" ? place.h / 2 : 8}
+                  rx={fam === "container" ? 14 : 8}
                 />
               )}
               {cheio !== undefined ? (
@@ -1102,19 +1206,20 @@ function Camada({
                 o campo livre.
               */}
               <g className="dui-stage__rosto" opacity={Math.max(0, 1 - aparece * 2)}>
-              {fam === "container" ? (
+              {fam === "container" || molduras.has(place.id) ? (
                 <text className="dui-stage__titulo" x={place.x + 12} y={place.y + 18}>
                   {rotulo}
                 </text>
               ) : fam === "conduit" ? (
-                // O nome de uma esteira vai **acima** dela: dentro, ele disputa
-                // espaço com a carga que passa, que é o que se quer olhar.
+                // O nome de uma pista vai na **ponta de onde ela sai**, rente à
+                // linha, como a placa de uma estrada. Centralizado acima, ele
+                // caía entre duas pistas e o leitor não sabia de qual era.
                 <>
                   <text
                     className="dui-stage__titulo"
-                    x={place.x + place.w / 2}
-                    y={place.y - 6}
-                    textAnchor="middle"
+                    x={sentidoDaPista(place.id) === 1 ? place.x + 4 : place.x + place.w - 4}
+                    y={place.y + place.h / 2 - 6}
+                    textAnchor={sentidoDaPista(place.id) === 1 ? "start" : "end"}
                   >
                     {rotulo}
                   </text>

@@ -9,6 +9,7 @@ export { LARGURA } from "./alu.js";
 export type { EstadoBanco, EstadoMemoria, EstadoPc, EstadoSaida } from "./datapath.js";
 export {
   CPU_VIEWS,
+  VIEW_IMEM,
   VIEW_PROCESSADOR,
   VIEW_SISTEMA,
   VIEW_ULA,

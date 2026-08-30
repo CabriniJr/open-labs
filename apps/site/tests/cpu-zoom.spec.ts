@@ -81,32 +81,27 @@ test("a ULA só desce até o transistor quando o leitor pede", async ({ page }) 
  * quando não há nada que agregue. De longe o barramento é uma esteira só; de
  * perto, são as vias, cada uma com a sua carga.
  */
-test("o barramento é uma esteira, e abre nas vias que ele agrega", async ({ page }) => {
+test("o barramento é uma auto-estrada, e as pistas dele estão à vista", async ({ page }) => {
   await page.goto("labs/cpu/");
   await page.waitForSelector("g.dui-stage__objeto");
 
   const barramento = page.locator('[data-id="barramento"]');
   await expect(barramento).toHaveAttribute("data-familia", "conduit");
-  await expect(barramento).toHaveAttribute("data-fechado", "true");
 
-  const caixa = await barramento.boundingBox();
-  const janela = page.viewportSize();
-  if (caixa === null || janela === null) throw new Error("o barramento não está na tela");
-  const x = Math.min(janela.width - 5, Math.max(5, caixa.x + caixa.width / 2));
-  const y = Math.min(janela.height - 5, Math.max(5, caixa.y + caixa.height / 2));
-  // Mais voltas de roda do que parece necessário, e é o barramento que cobra:
-  // o interior dele são as vias empilhadas, então quem manda no detalhe é a
-  // altura — e uma esteira é baixa por definição.
-  for (let i = 0; i < 26; i++) {
-    await page.mouse.move(x, y);
-    await page.mouse.wheel(0, -120);
-    await page.waitForTimeout(45);
+  // Fechado, ele era uma barra verde no meio da figura: o leitor via que havia
+  // um barramento e não via o que ele é. As três pistas do diagrama de sempre
+  // — endereço, dado, controle — estão desenhadas, e cada uma é um conduíte de
+  // verdade, que transporta e não altera.
+  for (const via of ["via-endereco", "via-dado", "via-acesso"]) {
+    const pista = page.locator(`[data-id="${via}"]`);
+    await expect(pista).toHaveCount(1);
+    await expect(pista).toHaveAttribute("data-familia", "conduit");
   }
-  await page.waitForTimeout(600);
 
-  // As vias existem de verdade e transportam: não é ilustração do barramento.
-  await expect(page.locator('.dui-stage__interior [data-id="via-endereco"]')).toHaveCount(1);
-  await expect(page.locator('.dui-stage__interior [data-id="via-dado"]')).toHaveCount(1);
+  // E elas rodam: o endereço que a CPU pôs na pista chega na memória por ela.
+  await expect(page.locator('[data-id="via-endereco"][data-ativo="true"]')).toHaveCount(1, {
+    timeout: 15_000,
+  });
 });
 
 /**
@@ -135,4 +130,25 @@ test("um seletor é um trapézio, e o que não é seletor não é", async ({ pag
   const banco = page.locator('[data-id="banco"]');
   await expect(banco.locator("rect.dui-stage__caixa")).toHaveCount(1);
   await expect(banco.locator("path.dui-stage__caixa")).toHaveCount(0);
+});
+
+test("a memória abre, e lá dentro está o que endereçar quer dizer", async ({ page }) => {
+  await page.goto("labs/cpu/");
+  await page.waitForSelector("g.dui-stage__objeto");
+
+  // Fechada, a memória recebe um número e devolve outro: o passo que interessa
+  // acontece em lugar nenhum. Aberta, ele tem peça, e a peça roda.
+  await page.locator('.dui-stage__objeto[data-id="imem"]').first().dblclick();
+  await expect(page.locator(".explorer__trilha")).toContainText("instruction memory");
+
+  const decodificador = page.locator('.dui-stage__objeto[data-id="imem-decodificador"]');
+  const celulas = page.locator('.dui-stage__objeto[data-id="imem-celulas"]');
+  await expect(decodificador).toHaveCount(1);
+  await expect(celulas).toHaveCount(1);
+
+  // O decodificador é quem transforma: um endereço entra, uma linha sai.
+  await expect(decodificador).toHaveAttribute("data-familia", "processor");
+  // E o banco de células guarda de verdade: o programa está ali, linha a linha.
+  await expect(celulas.locator(".dui-stage__linha-chave").first()).toBeVisible();
+  await expect(celulas.locator(".dui-stage__prateleira")).toHaveCount(1);
 });
