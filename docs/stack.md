@@ -346,3 +346,18 @@ convivem — verificado com a suíte inteira rodando com o serviço de pé.
 |---|---|---|
 | **dev** | `localhost:4321`, serviço do usuário | você, o tempo todo |
 | **prod** | Vercel | a `main`, quando a release sobe |
+
+### O GitHub Pages foi aposentado
+
+Removido em 29/08/2026, com a Vercel apontando para `main`.
+
+Dois publicadores para o mesmo site é uma armadilha silenciosa, e ela é pior do
+que parece: os dois serviam **caminhos-base diferentes** — o Pages em
+`/otel-visual-handbook/`, a Vercel na raiz. Um link testado num deles quebra no
+outro, e quem reporta o defeito e quem investiga costumam não estar olhando para
+o mesmo endereço. Some-se a isso que o Pages publicava a cada push em `main`, e o
+projeto passa a ter duas verdades sobre o que está no ar.
+
+Prod é a Vercel, e é ela que segue a `main`. O `PUBLIC_BASE_PATH` continua no
+`astro.config.mjs` porque a decisão de quem serve onde é de quem chama o build —
+só não há mais ninguém chamando com subdiretório.
