@@ -169,7 +169,9 @@ test("bateu a dúvida do que é a peça, a resposta está ali", async ({ page })
 
   // O hover responde sem tirar ninguém da tela...
   const mux = page.locator('.dui-stage__objeto[aria-label^="operand mux"]').first();
-  await expect(mux.locator("title")).toContainText("router");
+  // `> title` e não `title`: as portas da caixa também se nomeiam, e um
+  // seletor solto passou a pegar as quatro.
+  await expect(mux.locator("> title")).toContainText("router");
 
   // ...e a ficha responde por extenso, com o que a peça é e o que ela está
   // fazendo agora. Sem isso, quem não sabe o que é um mux precisa sair da

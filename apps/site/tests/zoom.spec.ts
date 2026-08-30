@@ -172,3 +172,30 @@ test("com a caixa aberta, o canal atravessa a fronteira", async ({ page }) => {
   expect(d).toMatch(/^M /);
   expect(d).toMatch(/ L /);
 });
+
+/**
+ * A porta da caixa.
+ *
+ * Sem ela a caixa é um retângulo com linhas encostando em algum lugar da borda,
+ * e ao descer um nível o interior aparece sem nenhuma pista de qual pedaço da
+ * margem era a entrada. A porta é o que dá direção à leitura — de onde veio,
+ * para onde vai — e por isso ela **não** some quando o interior aparece.
+ */
+test("as caixas mostram por onde entra e por onde sai", async ({ page }) => {
+  await page.goto("labs/gates/");
+  await page.waitForSelector("g.dui-stage__objeto");
+
+  const portas = page.locator(".dui-stage__porta");
+  expect(await portas.count()).toBeGreaterThan(4);
+  expect(await page.locator('.dui-stage__porta[data-lado="entrada"]').count()).toBeGreaterThan(0);
+  expect(await page.locator('.dui-stage__porta[data-lado="saida"]').count()).toBeGreaterThan(0);
+
+  // Cada porta se nomeia: bateu a dúvida de qual entrada é aquela, está ali.
+  expect(await portas.first().locator("title").textContent()).toMatch(/^(in|out) · /);
+
+  const antes = await portas.count();
+  await aproximar(page, 12);
+  // Com o interior aberto elas continuam — é aí que servem mais, porque a
+  // borda da caixa virou a margem do desenho de dentro.
+  expect(await portas.count()).toBeGreaterThan(antes);
+});

@@ -12,6 +12,8 @@ import type { NodePlacement, View } from "./view.js";
 import { resumoDoKind } from "./kinds.js";
 import { PROFUNDIDADE_MAXIMA, ZOOM_MAXIMO, encaixar, quantoAparece } from "./lod.js";
 import { travessia } from "./travessia.js";
+import { portasDaCaixa, posicaoDaPorta } from "./portas.js";
+import { dilatarPara, relogioDaCamada } from "./tempo.js";
 
 /**
  * O palco: uma view desenhada, com o estado do mundo por cima.
@@ -94,6 +96,14 @@ interface CamadaProps extends StageProps {
    */
   readonly unidadesPorQuadro: number;
   readonly profundidade: number;
+  /**
+   * Quanto o tempo desta camada está esticado em relação ao da superfície.
+   *
+   * Uma dimensão fraciona o tempo: o que aqui é uma sequência, um nível acima
+   * coube num instante. A dilatação é a lente que torna essa sequência
+   * observável, e o fator vem da geometria — não é gosto.
+   */
+  readonly dilatacao: number;
   /**
    * O que cada porta emitiu, já com os bornes de saída resolvidos.
    *
@@ -321,6 +331,7 @@ function Camada({
   leituraDaCarga,
   unidadesPorQuadro,
   profundidade,
+  dilatacao,
   emissoes,
 }: CamadaProps) {
   const reduzido = usaMovimentoReduzido();
@@ -575,23 +586,13 @@ function Camada({
   ].sort((a, b) => a - b);
 
   const etapas = Math.max(1, subpassosVisiveis.length);
-  const duracaoDaEtapa = tickMs / etapas;
+  const { etapaMs: duracaoDaEtapa, travessiaMs: duracaoDaCarga } = relogioDaCamada(
+    tickMs,
+    etapas,
+    dilatacao,
+  );
 
-  /**
-   * Quanto tempo uma carga leva para atravessar o fio dela.
-   *
-   * Era a duração de uma etapa, e isso apagou a esteira. Num circuito com
-   * quarenta e três subpassos por tick, cada etapa dura vinte milissegundos: a
-   * carga nascia e morria antes de o olho pegar, e a tela mostrava um piscar
-   * sem direção. O item na esteira — a coisa que se quer seguir — tinha sumido.
-   *
-   * Agora a partida continua sendo a do modelo (`substepOf`, e não se inventa),
-   * e só a **travessia** ganha um piso legível. As cargas passam a se
-   * sobrepor, e é assim mesmo: numa acomodação real muitos fios carregam ao
-   * mesmo tempo. O que se vê é a onda varrendo o circuito, que é o fato.
-   */
-  const TRAVESSIA_MINIMA = 220;
-  const duracaoDaCarga = Math.max(TRAVESSIA_MINIMA, duracaoDaEtapa);
+
 
   /** Quando esta emissão parte, em milissegundos dentro do tick. */
   const partidaDe = (from: string, port: string): number => {
@@ -622,12 +623,24 @@ function Camada({
             data-timing={aresta.timing}
             data-acesa={aresta.acesa ? "true" : undefined}
           >
+            {/*
+              O canal é uma esteira, e não um risco.
+
+              O leito largo e apagado é o corpo dela; o trilho fino e forte por
+              cima é por onde o item anda. Um traço só some no meio de um
+              circuito denso — e era o que estava acontecendo dentro do somador,
+              onde o fluxo interno existia e não dava para acompanhar.
+            */}
+            <path className="dui-stage__leito" d={aresta.traco} />
             <path
               id={identificador(aresta.chave)}
               className="dui-stage__trilho"
               d={aresta.traco}
               markerEnd="url(#dui-seta)"
             />
+            {/* As marcas de direção: dizem para que lado a esteira anda mesmo
+                quando nada está passando nela. */}
+            <path className="dui-stage__marcha" d={aresta.traco} />
             {aresta.acesa && !reduzido ? (
               <path key={`p${state.tick}`} className="dui-stage__pulso" d={aresta.traco}>
                 <animate
@@ -683,6 +696,7 @@ function Camada({
           // proporção é informação — uma rede em paralelo esticada deixa de
           // parecer paralela.
           const dentro = interior === undefined ? undefined : encaixar(place, interior);
+          const portas = portasDaCaixa(tree, wires, place.id);
           return (
             <g
               key={place.id}
@@ -800,11 +814,44 @@ function Camada({
                       emissoes={emissoes}
                       unidadesPorQuadro={unidadesPorQuadro / (dentro?.escala ?? 1)}
                       profundidade={profundidade + 1}
+                      dilatacao={dilatarPara(dilatacao, dentro?.escala ?? 1)}
                     />
                   </g>
                   </g>
                 </>
               ) : null}
+
+              {/*
+                As portas da caixa: por onde entra, por onde sai.
+
+                Elas **não** somem quando o interior aparece — pelo contrário,
+                é aí que servem mais. Com o interior aberto, a borda da caixa
+                vira a margem do desenho de dentro, e a porta é a única pista
+                de qual pedaço daquela margem era a entrada. Sem ela o leitor vê
+                um circuito flutuando, sem saber de onde a coisa veio.
+              */}
+              <g className="dui-stage__portas" aria-hidden="true">
+                {portas.entradas.map((porta, i) => (
+                  <g key={`e${porta}`} className="dui-stage__porta" data-lado="entrada">
+                    <title>{`in · ${porta}`}</title>
+                    <circle
+                      cx={place.x}
+                      cy={place.y + place.h * posicaoDaPorta(i, portas.entradas.length)}
+                      r={3.5}
+                    />
+                  </g>
+                ))}
+                {portas.saidas.map((porta, i) => (
+                  <g key={`s${porta}`} className="dui-stage__porta" data-lado="saida">
+                    <title>{`out · ${porta}`}</title>
+                    <circle
+                      cx={place.x + place.w}
+                      cy={place.y + place.h * posicaoDaPorta(i, portas.saidas.length)}
+                      r={3.5}
+                    />
+                  </g>
+                ))}
+              </g>
 
               {/*
                 O rosto da caixa cede lugar ao interior, e cede **antes** de o
@@ -1099,6 +1146,7 @@ export function Stage(props: StageProps) {
         emissoes={emissoes}
         unidadesPorQuadro={larguraDoQuadro}
         profundidade={0}
+        dilatacao={1}
       />
     </svg>
   );

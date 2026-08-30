@@ -487,3 +487,131 @@
   vector-effect: non-scaling-stroke;
   pointer-events: none;
 }
+
+/*
+ * As portas da caixa.
+ *
+ * Um ponto na borda, do lado por onde a coisa passa: entrada à esquerda, saída
+ * à direita. Pequeno de propósito — ela orienta a leitura e não disputa com o
+ * conteúdo —, e com o miolo do fundo da página, que é o que faz ela parecer um
+ * furo na borda em vez de uma bolinha grudada nela.
+ */
+.dui-stage__porta circle {
+  fill: var(--paper);
+  stroke: color-mix(in oklab, var(--dui-dado) 70%, var(--rule));
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+
+.dui-stage__porta[data-lado="saida"] circle {
+  fill: color-mix(in oklab, var(--dui-dado) 70%, var(--paper));
+}
+
+.dui-stage__objeto[data-familia="controller"] .dui-stage__porta circle,
+.dui-stage__objeto[data-familia="controller"] .dui-stage__porta[data-lado="saida"] circle {
+  stroke: color-mix(in oklab, var(--dui-sinal) 70%, var(--rule));
+}
+
+.dui-stage__objeto[data-familia="controller"] .dui-stage__porta[data-lado="saida"] circle {
+  fill: color-mix(in oklab, var(--dui-sinal) 70%, var(--paper));
+}
+
+.dui-stage__objeto[data-alto="true"] .dui-stage__porta[data-lado="saida"] circle {
+  fill: var(--dui-dado);
+}
+
+/*
+ * A esteira: leito, trilho e marcha.
+ *
+ * Um traço de 1,5px com 45% de cor some no meio de um circuito denso — era o
+ * que acontecia dentro do somador, onde o fluxo interno existia e não dava para
+ * seguir. Três camadas resolvem sem gritar: um leito largo e quase transparente
+ * que dá corpo ao canal, o trilho por cima com contraste de verdade, e marcas
+ * de direção que dizem para que lado aquilo anda mesmo parado.
+ */
+.dui-stage__leito {
+  fill: none;
+  stroke: color-mix(in oklab, var(--dui-dado) 14%, transparent);
+  stroke-width: 7;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  pointer-events: none;
+}
+
+.dui-stage__fio[data-linha="control"] .dui-stage__leito {
+  stroke: color-mix(in oklab, var(--dui-sinal) 14%, transparent);
+}
+
+.dui-stage__trilho {
+  stroke: color-mix(in oklab, var(--dui-dado) 70%, var(--rule));
+}
+
+.dui-stage__fio[data-linha="control"] .dui-stage__trilho {
+  stroke: color-mix(in oklab, var(--dui-sinal) 70%, var(--rule));
+}
+
+.dui-stage__marcha {
+  fill: none;
+  stroke: var(--paper);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-dasharray: 0.5 14;
+  opacity: 0.75;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+
+/* Acesa, a esteira ganha corpo: é a linha que carregou alguma coisa neste tick. */
+.dui-stage__fio[data-acesa="true"] .dui-stage__leito {
+  stroke: color-mix(in oklab, var(--dui-dado) 30%, transparent);
+}
+
+.dui-stage__fio[data-linha="control"][data-acesa="true"] .dui-stage__leito {
+  stroke: color-mix(in oklab, var(--dui-sinal) 30%, transparent);
+}
+
+/* A carga cresce um pouco e ganha halo: ela é o item, e o item é o assunto. */
+.dui-stage__carga {
+  stroke-width: 1.5;
+}
+
+.dui-stage__carga-grupo--acomodada .dui-stage__carga {
+  filter: drop-shadow(0 0 4px color-mix(in oklab, var(--dui-dado) 55%, transparent));
+}
+
+/*
+ * Um contêiner aceso não se enche — ele se contorna.
+ *
+ * O preenchimento forte de "acesa" foi feito para uma peça, onde ele diz "o
+ * valor que saiu daqui é 1". Aplicado a um contêiner, ele pinta justamente a
+ * área onde os filhos moram: dentro do somador de quatro bits, cada bit aceso
+ * virava um bloco azul e o circuito interno — os fios, as cargas, a direção —
+ * sumia debaixo dele. O leitor via um retângulo colorido no lugar do fluxo.
+ *
+ * A moldura acende, o miolo continua sendo o desenho.
+ */
+.dui-stage__objeto[data-familia="container"][data-alto="true"] > .dui-stage__caixa {
+  fill: color-mix(in oklab, var(--dui-dado) 5%, transparent);
+  stroke: var(--dui-dado);
+  stroke-width: 2;
+  filter: none;
+  animation: none;
+}
+
+/* E o canal ganha contraste de verdade: ele é a estrutura, não o fundo. */
+.dui-stage__trilho {
+  stroke: color-mix(in oklab, var(--dui-dado) 85%, var(--ink));
+  stroke-width: 1.6;
+}
+
+.dui-stage__fio[data-linha="control"] .dui-stage__trilho {
+  stroke: color-mix(in oklab, var(--dui-sinal) 85%, var(--ink));
+}
+
+.dui-stage__fio[data-timing="settle"] .dui-stage__trilho {
+  stroke-width: 1.4;
+}
+
+.dui-stage__leito {
+  stroke: color-mix(in oklab, var(--dui-dado) 20%, transparent);
+}
