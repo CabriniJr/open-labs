@@ -1,4 +1,12 @@
-import type { AnyObject, BorneInterno, Message, ObjectSpec, Wire, WorldSpec } from "@ovh/depth-core";
+import type {
+  AnyObject,
+  BorneInterno,
+  Message,
+  ObjectSpec,
+  Wire,
+  WorldSpec,
+  WorldState,
+} from "@ovh/depth-core";
 import { decide } from "./gates.js";
 import type { PortaLogica } from "./gates.js";
 import { ROTULOS } from "./labels.js";
@@ -564,3 +572,29 @@ export const DESENHO_CMOS: Readonly<
   nand: [["vdd"], ["p1", "p2"], ["no"], ["n2"], ["n1"], ["gnd"]],
   nor: [["vdd"], ["p1"], ["p2"], ["no"], ["n1", "n2"], ["gnd"]],
 };
+
+/**
+ * Quem, neste tick, está deixando a corrente passar.
+ *
+ * O nível do transistor era sete objetos do mesmo azul: não dava para separar
+ * a rede que puxa da que não puxa, e a pergunta que aquele nível existe para
+ * responder — *por que esta porta deu 1?* — só se respondia lendo número
+ * pequeno. Conduzir é estado, e estado se lê de relance.
+ *
+ * Isto vive no domínio pela mesma razão que `portasAltas`: só ele sabe que
+ * `data.conduz` quer dizer alguma coisa. O motor guarda o que saiu de cada
+ * porta e não olha dentro.
+ *
+ * Note que **cortado não é ausência**: um transistor cortado relata todo tick,
+ * dizendo que não conduz. Se ele calasse, um nó flutuando por rede mal montada
+ * seria indistinguível de um transistor em repouso, e o defeito passaria calado
+ * — que é exatamente o motivo de `conduz` ser campo.
+ */
+export function chavesConduzindo(state: WorldState): ReadonlySet<string> {
+  const passando = new Set<string>();
+  for (const [chave, mensagens] of Object.entries(state.settled)) {
+    if (!mensagens.some((m) => m.kind === CORRENTE && m.data.conduz === true)) continue;
+    passando.add(chave.slice(0, chave.lastIndexOf(".")));
+  }
+  return passando;
+}

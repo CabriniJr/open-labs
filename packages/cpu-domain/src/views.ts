@@ -278,6 +278,9 @@ export function viewPortaCmos(id: string, tipo: PortaCmos): View {
     title: `${tipo.toUpperCase()}: two complementary networks`,
     width: 860,
     height: 30 + andares.length * alturaAndar + 24,
+    // Daqui para baixo o desenho é esquemático, e as duas tintas trocam de
+    // sentido: vermelha passa a ser alimentação e preta, terra.
+    registro: "esquematico" as const,
     places,
   };
 }

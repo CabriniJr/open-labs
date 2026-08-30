@@ -10,6 +10,7 @@ import {
   decode,
   LARGURA,
   NOMES,
+  chavesConduzindo,
   conteudoDaCaixa,
   portasAltas,
   leituraDaCarga,
@@ -224,6 +225,7 @@ export function CpuLab() {
             fills={fills}
             readouts={readouts}
             altos={portasAltas(estado, arvore)}
+            conduzindo={chavesConduzindo(estado)}
             leituraDaCarga={leituraDaCarga}
             especieDaCarga={especieDaCarga}
             conteudo={conteudoDaCaixa(estado, montado?.words ?? [])}

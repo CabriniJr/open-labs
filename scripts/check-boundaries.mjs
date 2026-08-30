@@ -10,6 +10,25 @@ import { glob } from "node:fs/promises";
  * outra tecnologia seria escrito; no dia em que ele souber o que é um exportador
  * de telemetria, deixa de servir para o segundo alvo.
  */
+/**
+ * Os `kind` que o motor declara, lidos do motor. Uma cópia aqui envelheceria em
+ * silêncio na primeira vez que o catálogo crescesse.
+ */
+const KINDS_DO_MOTOR = (() => {
+  const fonte = readFileSync("packages/depth-core/src/model.ts", "utf8");
+  const bloco = /export type Kind =([\s\S]*?);/.exec(fonte);
+  if (bloco === null) {
+    console.error("Não achei `export type Kind` em depth-core/src/model.ts.");
+    process.exit(1);
+  }
+  const nomes = [...bloco[1].matchAll(/"([a-z]+)"/g)].map((m) => m[1]);
+  if (nomes.length === 0) {
+    console.error("O tipo Kind do motor veio vazio — a leitura da guarda quebrou.");
+    process.exit(1);
+  }
+  return new Set(nomes);
+})();
+
 const AGNOSTIC = [
   "packages/depth-core/",
   "packages/depth-ui/",
@@ -77,19 +96,28 @@ export function findViolations(filePath, source) {
   /*
    * Regra sobre o substantivo, e não sobre uma lista de palavras.
    *
-   * O `kind` de uma mensagem é, por definição do próprio motor, "uma string
-   * escolhida pelo domínio" (`model.ts`). Então o palco selecionar por ele é
-   * violação **qualquer que seja a palavra** — e era assim que `instrucao`,
-   * `escrita` e `guardar` moravam no CSS do motor sem acusar nada: nenhuma
-   * delas estava na lista, e nenhuma lista teria todas. Quem quiser desenhar
-   * diferente por espécie de carga pergunta ao domínio qual é a espécie.
+   * Um objeto tem `kind` do motor (`source`, `router`, `switch`…); uma
+   * MENSAGEM tem `kind` escolhido pelo domínio — está escrito no `model.ts`.
+   * O palco pode selecionar pelo vocabulário dele e nunca pelo do domínio, e
+   * a diferença entre os dois é justamente a lista que o motor declara.
+   *
+   * Era assim que `instrucao`, `escrita`, `guardar` e `pulso` moravam no CSS
+   * do motor sem acusar nada: nenhuma estava na lista de palavras proibidas, e
+   * nenhuma lista de palavras proibidas teria todas. Esta pergunta é a
+   * inversa, e por isso fecha: **está no vocabulário do motor?**
+   *
+   * A lista vem do `model.ts`, lida na hora. Copiada para cá, ela envelheceria
+   * na primeira vez que o catálogo crescesse — e envelheceria em silêncio,
+   * recusando um kind legítimo ou deixando passar um que não é.
    */
-  if (/\[data-kind/.test(source)) {
+  for (const achado of source.matchAll(/\[data-kind="([^"]*)"\]/g)) {
+    if (KINDS_DO_MOTOR.has(achado[1])) continue;
     violations.push({
       filePath,
       reason:
-        'seleciona por `data-kind` — o kind de uma mensagem é palavra do domínio. ' +
-        "Peça a espécie ao domínio (`especieDaCarga`) e selecione por ela",
+        `seleciona por \`data-kind="${achado[1]}"\`, que não é kind do motor — ` +
+        "o kind de uma MENSAGEM é palavra do domínio. Peça a espécie ao domínio " +
+        "(`especieDaCarga`) e selecione por ela",
     });
   }
 

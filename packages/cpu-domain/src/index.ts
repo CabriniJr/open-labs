@@ -24,6 +24,7 @@ export { especieDaCarga, leituraDaCarga } from "./carga.js";
 export { conteudoDaCaixa } from "./conteudo.js";
 export { ABI, NOMES } from "./assembler.js";
 export {
+  chavesConduzindo,
   fiosDaPortaCmos,
   noDeSaida,
   portaCmos,

@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { isOpenable } from "@ovh/depth-core";
 import type { Message, TreeIndex, Wire, WorldState } from "@ovh/depth-core";
-import { Stage, autoView, pathTo } from "@ovh/depth-ui";
+import { Legenda, Stage, autoView, pathTo } from "@ovh/depth-ui";
 import type { NodePlacement, View } from "@ovh/depth-ui";
 import { Ficha } from "./Ficha.js";
 
@@ -28,6 +28,7 @@ export interface ExplorerProps {
   readonly readouts?: Readonly<Record<string, string>> | undefined;
   /** Quem está com a saída em alto. Só o domínio sabe ler o valor que saiu. */
   readonly altos?: ReadonlySet<string> | undefined;
+  readonly conduzindo?: ReadonlySet<string> | undefined;
   /** O valor que a carga leva. Quem sabe ler o dado é o domínio. */
   readonly leituraDaCarga?: ((mensagem: Message) => string | undefined) | undefined;
   readonly especieDaCarga?: ((mensagem: Message) => number | undefined) | undefined;
@@ -51,6 +52,7 @@ export function Explorer({
   fills,
   readouts,
   altos,
+  conduzindo,
   leituraDaCarga,
   especieDaCarga,
   conteudo,
@@ -196,6 +198,7 @@ export function Explorer({
           fills={fills}
           readouts={readouts}
           altos={altos}
+          conduzindo={conduzindo}
           selected={selecionado}
           onSelect={selecionar}
           onOpen={abrir}
@@ -209,6 +212,14 @@ export function Explorer({
         />
         {comFicha ? <Ficha tree={tree} wires={wires} state={state} id={selecionado} /> : null}
       </div>
+
+      {/*
+        Em que língua o desenho está falando aqui. A trilha diz ONDE o leitor
+        está; isto diz o que as tintas querem dizer neste nível, porque as
+        mesmas duas trocam de sentido entre o diagrama de blocos e o
+        esquemático.
+      */}
+      <Legenda registro={view.registro ?? "blocos"} />
     </div>
   );
 }

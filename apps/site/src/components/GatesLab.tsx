@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { World, indexTree } from "@ovh/depth-core";
 import {
+  chavesConduzindo,
   especieDaCarga,
   leituraDaCarga,
   portasAltas,
@@ -90,6 +91,7 @@ export function GatesLab() {
           views={views}
           readouts={readouts}
           altos={portasAltas(estado, arvore)}
+          conduzindo={chavesConduzindo(estado)}
           leituraDaCarga={leituraDaCarga}
           especieDaCarga={especieDaCarga}
           comFicha

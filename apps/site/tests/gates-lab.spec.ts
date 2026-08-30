@@ -185,9 +185,33 @@ test("a porta acesa é desenhada acesa, e continua acesa", async ({ page }) => {
     timeout: 10_000,
   });
 
-  const ALTA = '.dui-stage__objeto[data-familia="processor"][data-alto="true"]';
-  const BAIXA = '.dui-stage__objeto[data-familia="processor"]:not([data-alto="true"])';
-  await expect(page.locator(BAIXA).first()).toBeVisible();
+  /*
+   * Por id, e não pelo primeiro que casar.
+   *
+   * `.first()` de um conjunto que muda não é um elemento: entre duas medidas o
+   * primeiro pode ser outro objeto, e a checagem de permanência passa a
+   * comparar duas peças diferentes. Passava sozinho e reprovava na suíte
+   * cheia, que é a assinatura desse erro.
+   *
+   * Com as entradas fixas o circuito é combinacional e o valor de cada porta
+   * não muda de tick para tick — então fixar o id mantém a prova de
+   * permanência atravessando muitos ticks, que é justamente o que o defeito
+   * original precisava para aparecer.
+   */
+  await page.getByLabel("First addend").fill("6");
+  await page.getByLabel("Second addend").fill("7");
+
+  const escolher = async (aceso: boolean): Promise<string> => {
+    const seletor = aceso
+      ? '.dui-stage__objeto[data-familia="processor"][data-alto="true"]'
+      : '.dui-stage__objeto[data-familia="processor"]:not([data-alto="true"])';
+    const id = await page.locator(seletor).first().getAttribute("data-id");
+    if (id === null) throw new Error(`nenhuma porta ${aceso ? "acesa" : "apagada"} na tela`);
+    return id;
+  };
+  const ALTA = `.dui-stage__objeto[data-id="${await escolher(true)}"]`;
+  const BAIXA = `.dui-stage__objeto[data-id="${await escolher(false)}"]`;
+  await expect(page.locator(BAIXA)).toBeVisible();
 
   const alta = await tinta(page, ALTA);
   const baixa = await tinta(page, BAIXA);
@@ -291,4 +315,123 @@ test("o transistor é desenhado como chave, e não como seletor", async ({ page 
   await transistor.click();
   await expect(page.locator(".ficha")).toContainText("switch", { timeout: 10_000 });
   await expect(page.locator(".ficha")).not.toContainText("A mux is a router");
+});
+
+/**
+ * A legenda não pode discordar do desenho, e o registro tem de trocar.
+ *
+ * A mesma tinta quer dizer coisas diferentes em níveis diferentes — vermelha é
+ * controle no diagrama de blocos e alimentação no esquemático. Isso só não é
+ * ambiguidade porque as duas linguagens nunca aparecem no mesmo quadro e o
+ * leitor sabe em qual está; e ele só sabe se a legenda mudar junto.
+ *
+ * A amostra é conferida contra o token que o desenho usa, e não contra um valor
+ * escrito no teste: uma legenda com cor própria é uma segunda fonte, e o leitor
+ * recorre a ela justamente quando não entendeu a figura.
+ */
+test("a legenda troca de registro ao descer, e concorda com o desenho", async ({ page }) => {
+  await page.goto("labs/gates/");
+  await expect(page.locator(".dui-stage")).toBeVisible({ timeout: 15_000 });
+
+  const legenda = page.locator(".dui-legenda");
+  await expect(legenda).toHaveAttribute("data-registro", "blocos");
+  await expect(legenda).toContainText("control");
+  await expect(legenda).not.toContainText("supply");
+
+  // circuito › bit0 › XOR › NAND: o último degrau é esquemático
+  await page.locator('.dui-stage__objeto[data-id="bit0"]').first().dblclick();
+  await page.locator('.dui-stage__objeto[data-id="bit0-xor1"]').first().dblclick();
+  await page.locator('.dui-stage__objeto[data-fechado="true"]').first().dblclick();
+
+  await expect(legenda).toHaveAttribute("data-registro", "esquematico", { timeout: 10_000 });
+  await expect(legenda).toContainText("supply");
+  await expect(legenda).toContainText("ground");
+  await expect(legenda).not.toContainText("control");
+
+  // A amostra pinta com o token, e o trilho de alimentação usa o mesmo.
+  const amostra = (token: string) =>
+    legenda
+      .locator(`.dui-legenda__amostra[data-token="${token}"]`)
+      .evaluate((el) => getComputedStyle(el).backgroundColor);
+  const trilho = (alto: boolean) =>
+    page
+      .locator(
+        `.dui-stage__objeto[data-kind="source"]${alto ? '[data-alto="true"]' : ':not([data-alto="true"])'}`,
+      )
+      .first()
+      .evaluate((el) => {
+        const caixa = el.querySelector(":scope > .dui-stage__caixa");
+        if (caixa === null) throw new Error("trilho sem caixa");
+        return getComputedStyle(caixa).stroke;
+      });
+
+  expect(await amostra("--dui-alimentacao")).toBe(await trilho(true));
+  expect(await amostra("--dui-terra")).toBe(await trilho(false));
+
+  /*
+   * E os dois trilhos não podem ser a mesma tinta.
+   *
+   * A primeira versão da regra separava por `source` contra `sink`, e no
+   * modelo os DOIS trilhos são `source` — então os dois saíam vermelhos. O
+   * desenho ficou bonito e errado, e nenhum teste disse nada: foi preciso
+   * olhar a tela. Esta linha é o que faz esse caminho não voltar.
+   */
+  expect(await trilho(true)).not.toBe(await trilho(false));
+});
+
+/**
+ * Conduzir é estado, e o desenho tem de mostrá-lo.
+ *
+ * Aquele nível eram sete objetos do mesmo azul: a pergunta que ele existe para
+ * responder — *por que esta porta deu 1?* — só se respondia lendo número
+ * pequeno. E cortado não pode sumir: sumir confundiria "não está passando" com
+ * "não está aqui".
+ */
+test("a chave que conduz é desenhada diferente da cortada", async ({ page }) => {
+  await page.goto("labs/gates/");
+  await expect(page.locator(".dui-stage")).toBeVisible({ timeout: 15_000 });
+
+  await page.locator('.dui-stage__objeto[data-id="bit0"]').first().dblclick();
+  await page.locator('.dui-stage__objeto[data-id="bit0-xor1"]').first().dblclick();
+  await page.locator('.dui-stage__objeto[data-fechado="true"]').first().dblclick();
+
+  // Por id, pelo mesmo motivo do teste da porta acesa: `.first()` de um
+  // conjunto que muda não é um elemento.
+  await expect(page.locator('.dui-stage__objeto[data-conduz="true"]').first()).toBeVisible({
+    timeout: 10_000,
+  });
+  const idDe = async (estado: string): Promise<string> => {
+    const id = await page
+      .locator(`.dui-stage__objeto[data-conduz="${estado}"]`)
+      .first()
+      .getAttribute("data-id");
+    if (id === null) throw new Error(`nenhuma chave com data-conduz=${estado}`);
+    return id;
+  };
+  // A complementaridade da porta CMOS garante que sempre há dos dois na tela.
+  const conduz = page.locator(`.dui-stage__objeto[data-id="${await idDe("true")}"]`);
+  const cortada = page.locator(`.dui-stage__objeto[data-id="${await idDe("false")}"]`);
+  await expect(cortada).toBeVisible();
+
+  const tinta = (loc: ReturnType<typeof page.locator>) =>
+    loc.evaluate((el) => {
+      const via = el.querySelector(".dui-stage__chave-via");
+      const lamina = el.querySelector(".dui-stage__chave-lamina");
+      if (via === null || lamina === null) throw new Error("chave sem símbolo");
+      return {
+        stroke: getComputedStyle(via).stroke,
+        opacidade: getComputedStyle(via).opacity,
+        // A lâmina fechada deita; aberta, ela sobe.
+        deitada: lamina.getAttribute("y2") === "0",
+      };
+    });
+
+  const passando = await tinta(conduz);
+  const parada = await tinta(cortada);
+
+  expect(passando.stroke).not.toBe(parada.stroke);
+  expect(passando.deitada).toBe(true);
+  expect(parada.deitada).toBe(false);
+  // Cortada continua desenhada: apagada não é ausente.
+  expect(Number(parada.opacidade)).toBeGreaterThan(0);
 });

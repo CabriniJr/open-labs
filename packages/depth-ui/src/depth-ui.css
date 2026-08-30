@@ -178,3 +178,33 @@
     transition: none;
   }
 }
+
+
+/*
+ * A legenda do registro. Sem cor própria de propósito: cada amostra pinta com
+ * o token do catálogo, e por isso não tem como discordar do desenho.
+ */
+.dui-legenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--ink-muted);
+}
+
+.dui-legenda__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.dui-legenda__amostra {
+  display: inline-block;
+  width: 0.9rem;
+  height: 0.28rem;
+  border-radius: 999px;
+}

@@ -72,6 +72,19 @@ export interface StageProps {
    * lê `WorldState.settled` e entrega o conjunto pronto.
    */
   readonly altos?: ReadonlySet<string> | undefined;
+  /**
+   * Quem, neste tick, está **deixando passar**.
+   *
+   * É o par de `altos` para o registro esquemático: `altos` diz que valor saiu,
+   * isto diz se o caminho está aberto. As duas coisas são diferentes e o
+   * desenho as confundia — sete objetos do mesmo azul, e a pergunta que aquele
+   * nível existe para responder (*por que esta porta deu 1?*) só se respondia
+   * lendo número pequeno.
+   *
+   * Quem responde é o domínio: só ele sabe ler o que passou. Sem isto, nada
+   * conduz — e não conduzir é a resposta honesta para "não me disseram".
+   */
+  readonly conduzindo?: ReadonlySet<string> | undefined;
   readonly selected?: string | undefined;
   readonly onSelect?: (id: string) => void;
   readonly onOpen?: (id: string) => void;
@@ -217,12 +230,25 @@ function usaMovimentoReduzido(): boolean {
  * A lâmina está aberta, e por enquanto sempre: fechá-la quando a chave conduz é
  * a entrega da cor, onde conduzir e cortar ganham leitura de relance.
  */
-function Chave({ x, y, r }: { x: number; y: number; r: number }) {
+function Chave({ x, y, r, fechada }: { x: number; y: number; r: number; fechada: boolean }) {
   return (
-    <g className="dui-stage__chave" transform={`translate(${x} ${y})`}>
+    <g
+      className="dui-stage__chave"
+      data-fechada={fechada ? "true" : "false"}
+      transform={`translate(${x} ${y})`}
+    >
       <line className="dui-stage__chave-via" x1={-r * 1.4} y1={0} x2={-r * 0.5} y2={0} />
       <line className="dui-stage__chave-via" x1={r * 0.5} y1={0} x2={r * 1.4} y2={0} />
-      <line className="dui-stage__chave-lamina" x1={-r * 0.5} y1={0} x2={r * 0.45} y2={-r * 0.9} />
+      {/* Fechada, a lâmina deita e encosta no outro terminal: o caminho está
+          inteiro. Aberta, ela levanta e o caminho tem um buraco. É o mesmo
+          desenho que um esquemático usa, e ele se lê sem legenda. */}
+      <line
+        className="dui-stage__chave-lamina"
+        x1={-r * 0.5}
+        y1={0}
+        x2={fechada ? r * 0.5 : r * 0.45}
+        y2={fechada ? 0 : -r * 0.9}
+      />
       <line className="dui-stage__chave-comando" x1={0} y1={r * 1.3} x2={0} y2={r * 0.3} />
       <circle className="dui-stage__chave-eixo" cx={-r * 0.5} cy={0} r={r * 0.18} />
     </g>
@@ -320,6 +346,7 @@ function Camada({
   fills,
   readouts,
   altos,
+  conduzindo,
   selected,
   onSelect,
   onOpen,
@@ -436,6 +463,7 @@ function Camada({
    * disseram", que é diferente de acender tudo por causa de uma contagem.
    */
   const alto = (id: string): boolean => altos?.has(id) === true;
+  const passa = (id: string): boolean => conduzindo?.has(id) === true;
 
   // Contêineres são moldura: uma linha atravessando um deles é normal, e
   // desviar dela empurraria todo fio para fora do desenho.
@@ -904,8 +932,15 @@ function Camada({
               className="dui-stage__objeto"
               data-id={place.id}
               data-familia={fam}
+              data-kind={node?.kind}
+              // O registro é da VISTA, e vai no objeto porque uma camada de
+              // dentro pode estar noutro registro que a de fora: descendo, o
+              // diagrama de blocos vira esquemático em algum degrau, e os dois
+              // aparecem no mesmo SVG durante a transição.
+              data-registro={view.registro ?? "blocos"}
               data-ativo={agindo ? "true" : undefined}
               data-alto={aceso ? "true" : undefined}
+              data-conduz={node?.kind === "switch" ? (passa(place.id) ? "true" : "false") : undefined}
               style={{ ["--dui-atraso" as string]: `${atraso}ms` }}
               data-fechado={place.collapsed === true ? "true" : undefined}
               data-selecionado={place.id === selected ? "true" : undefined}
@@ -1118,6 +1153,7 @@ function Camada({
                       fills={fills}
                       readouts={readouts}
                       altos={altos}
+                      conduzindo={conduzindo}
                       selected={selected}
                       interiores={interiores}
                       leituraDaCarga={leituraDaCarga}
@@ -1286,7 +1322,12 @@ function Camada({
                     // Uma chave não processa: ela deixa passar. Engrenagem nela
                     // seria o mesmo gesto para duas coisas diferentes.
                     node?.kind === "switch" ? (
-                      <Chave x={place.x + place.w - 18} y={place.y + 16} r={7} />
+                      <Chave
+                        x={place.x + place.w - 18}
+                        y={place.y + 16}
+                        r={7}
+                        fechada={passa(place.id)}
+                      />
                     ) : (
                       <Engrenagem x={place.x + place.w - 16} y={place.y + 16} r={6} />
                     )

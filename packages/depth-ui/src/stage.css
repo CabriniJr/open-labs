@@ -39,9 +39,15 @@
  * "Preta" é o `--ink` do site, e por isso ela é clara no tema escuro. A
  * convenção é a leitura, não o hexadecimal.
  */
-.dui-stage {
-  --dui-tick: 700ms;
-
+/*
+ * O catálogo mora na raiz, e não no palco.
+ *
+ * Ele morava em `.dui-stage`, e a legenda — que vive fora do SVG — não
+ * enxergava token nenhum: a amostra saía transparente. Um catálogo que só
+ * existe dentro do desenho não é catálogo, é estilo local. Na raiz, qualquer
+ * coisa que precise falar a língua do desenho pode lê-la pelo nome.
+ */
+:root {
   /* ── as duas tintas ── */
   --dui-tinta: var(--ink);
   --dui-viva: #d94b4b;
@@ -73,6 +79,11 @@
    * controlador toma a tinta viva porque peça de controle e linha de controle
    * são a mesma espécie, e no diagrama do livro elas são o mesmo vermelho.
    */
+  --dui-processor: #1f6feb;
+  --dui-container: #8b93a7;
+  --dui-controller: var(--dui-viva);
+  --dui-conduit: #3fb950;
+
   /*
    * ── as espécies de carga ──
    *
@@ -92,11 +103,11 @@
   --dui-especie-3: #db61a2;
   --dui-especie-4: #e3b341;
   --dui-especie-5: var(--ink-faint);
+}
 
-  --dui-processor: #1f6feb;
-  --dui-container: #8b93a7;
-  --dui-controller: var(--dui-viva);
-  --dui-conduit: #3fb950;
+/* O compasso é de cada palco, e vem escrito na instância. */
+.dui-stage {
+  --dui-tick: 700ms;
 
   --dui-superficie: color-mix(in oklab, var(--paper-raised) 88%, var(--paper));
   --dui-borda: var(--rule);
@@ -120,12 +131,12 @@
  * um tema sobre o papel do outro.
  */
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .dui-stage {
+  :root:not([data-theme="light"]) {
     --dui-viva: #ff7070;
   }
 }
 
-:root[data-theme="dark"] .dui-stage {
+:root[data-theme="dark"] {
   --dui-viva: #ff7070;
 }
 
@@ -417,6 +428,44 @@
 }
 
 /*
+ * ---------- o registro esquemático ----------
+ *
+ * Aqui vermelha é alimentação e preta é terra: a convenção mais universal que
+ * existe em eletrônica. Quem é quem **sai do modelo**, e não de uma lista que
+ * alguém escreveu — os dois trilhos são a mesma espécie de objeto, uma fonte
+ * que dirige, e o que os separa é o nível que cada um dirige. Alimentação é a
+ * fonte que dirige alto; terra é a que dirige baixo. O palco não sabe o que é
+ * um Vdd, e não precisa saber.
+ *
+ * A primeira versão disto separava por `source` contra `sink` e pintava os
+ * DOIS trilhos de vermelho, porque no modelo os dois são `source`. Estava
+ * bonito e errado, e nenhum teste teria dito — foi preciso olhar a tela.
+ *
+ * E o trilho troca a tinta de aceso pela do registro: um trilho de alimentação
+ * está sempre em alto, então acendê-lo não informa nada e gasta a única tinta
+ * que o leitor precisa reservar para o que muda. As duas redes da porta se
+ * distinguem pelo que elas tocam — a de cima nasce no vermelho, a de baixo
+ * termina na preta —, que é como um esquemático de verdade as separa, e não
+ * por uma cor inventada para cada tipo de transistor.
+ */
+.dui-stage__objeto[data-registro="esquematico"][data-kind="source"][data-alto="true"]
+  > .dui-stage__caixa {
+  fill: color-mix(in oklab, var(--dui-alimentacao) 22%, var(--paper-raised));
+  stroke: var(--dui-alimentacao);
+  stroke-width: 2;
+  filter: none;
+  animation: none;
+}
+
+.dui-stage__objeto[data-registro="esquematico"][data-kind="source"]:not([data-alto="true"])
+  > .dui-stage__caixa {
+  fill: color-mix(in oklab, var(--dui-terra) 14%, var(--paper-raised));
+  stroke: var(--dui-terra);
+  stroke-width: 2;
+  filter: none;
+}
+
+/*
  * ---------- a chave ----------
  *
  * Os dois terminais e a lâmina são o caminho, e por isso falam a cor do dado.
@@ -428,6 +477,34 @@
   stroke: color-mix(in oklab, var(--dui-dado) 70%, var(--ink));
   stroke-width: 1.4;
   stroke-linecap: round;
+  transition: stroke 160ms ease, opacity 160ms ease;
+}
+
+/*
+ * Conduzir é estado, e estado se lê de relance.
+ *
+ * Cortada, a chave não some — some seria confundir "não está passando" com
+ * "não está aqui", e é a mesma conflação que fez o somador nunca acionar o
+ * vai-um do primeiro bit. Ela fica ali, apagada, com a lâmina no ar.
+ */
+.dui-stage__chave[data-fechada="true"] .dui-stage__chave-via,
+.dui-stage__chave[data-fechada="true"] .dui-stage__chave-lamina {
+  stroke: var(--dui-alto);
+  stroke-width: 1.8;
+}
+
+.dui-stage__chave[data-fechada="false"] .dui-stage__chave-via,
+.dui-stage__chave[data-fechada="false"] .dui-stage__chave-lamina {
+  opacity: 0.45;
+}
+
+/*
+ * A caixa de uma chave cortada acompanha, senão o corpo continua dizendo
+ * "estou trabalhando" enquanto o símbolo diz que não passa nada.
+ */
+.dui-stage__objeto[data-conduz="false"] > .dui-stage__caixa {
+  fill: color-mix(in oklab, var(--dui-processor) 5%, var(--paper-raised));
+  stroke: color-mix(in oklab, var(--dui-processor) 30%, var(--rule));
 }
 
 .dui-stage__chave-comando {

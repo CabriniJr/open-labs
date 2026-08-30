@@ -46,6 +46,23 @@ export interface View {
   readonly width: number;
   readonly height: number;
   readonly places: readonly NodePlacement[];
+  /**
+   * Em que **registro de desenho** esta vista está.
+   *
+   * O desenho técnico tem duas tintas — a preta e a vermelha — e o que elas
+   * querem dizer depende do registro: no diagrama de blocos, preta é dado e
+   * vermelha é controle; no esquemático, vermelha é alimentação e preta é
+   * terra. Ninguém confunde as duas linguagens porque elas nunca aparecem no
+   * mesmo quadro.
+   *
+   * Declarado e não inferido. Dava para adivinhar pelo que a vista contém —
+   * tem chave e trilho, logo é esquemático —, e adivinhar erraria calado no
+   * dia em que um esquemático não tivesse chave nenhuma. Quem desenhou a
+   * vista sabe em que linguagem desenhou.
+   *
+   * O padrão é `blocos`: nenhuma vista escrita antes disto muda de leitura.
+   */
+  readonly registro?: "blocos" | "esquematico";
 }
 
 /**
