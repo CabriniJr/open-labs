@@ -1,6 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { World, indexTree } from "@ovh/depth-core";
-import { leituraDaCarga, portasAltas, somadorWorld, viewsDoSomador } from "@ovh/cpu-domain";
+import {
+  especieDaCarga,
+  leituraDaCarga,
+  portasAltas,
+  somadorWorld,
+  viewsDoSomador,
+} from "@ovh/cpu-domain";
 import { Explorer } from "./Explorer.js";
 
 /**
@@ -85,6 +91,7 @@ export function GatesLab() {
           readouts={readouts}
           altos={portasAltas(estado, arvore)}
           leituraDaCarga={leituraDaCarga}
+          especieDaCarga={especieDaCarga}
           comFicha
         />
         <p className="gates-lab__legenda">

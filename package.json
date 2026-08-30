@@ -11,6 +11,7 @@
     "typecheck": "tsc -b --pretty false",
     "test": "vitest run",
     "boundaries": "node scripts/check-boundaries.mjs",
+    "catalogo": "node scripts/check-catalogo.mjs",
     "build": "pnpm --filter @ovh/site build",
     "dev": "pnpm --filter @ovh/site dev"
   },

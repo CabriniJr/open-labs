@@ -30,6 +30,7 @@ export interface ExplorerProps {
   readonly altos?: ReadonlySet<string> | undefined;
   /** O valor que a carga leva. Quem sabe ler o dado é o domínio. */
   readonly leituraDaCarga?: ((mensagem: Message) => string | undefined) | undefined;
+  readonly especieDaCarga?: ((mensagem: Message) => number | undefined) | undefined;
   /** O que cada caixa guarda agora. Quem lê o estado é o domínio. */
   readonly conteudo?:
     | ((id: string) => readonly { readonly chave: string; readonly valor: string; readonly ativo?: boolean }[] | undefined)
@@ -51,6 +52,7 @@ export function Explorer({
   readouts,
   altos,
   leituraDaCarga,
+  especieDaCarga,
   conteudo,
   comFicha = false,
 }: ExplorerProps) {
@@ -202,6 +204,7 @@ export function Explorer({
           partirDe={partirDe}
           onEnquadrado={chegou}
           leituraDaCarga={leituraDaCarga}
+          especieDaCarga={especieDaCarga}
           conteudo={conteudo}
         />
         {comFicha ? <Ficha tree={tree} wires={wires} state={state} id={selecionado} /> : null}

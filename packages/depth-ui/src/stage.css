@@ -9,26 +9,93 @@
  * por uma diferença no livro-caixa, e por isso um objeto parado na tela é um
  * objeto que de fato não fez nada naquele tick.
  */
+/*
+ * ═══════════════ O CATÁLOGO DA LINGUAGEM VISUAL ═══════════════
+ *
+ * Cor e forma moram aqui, e em nenhum outro lugar. Nenhum lab escreve tinta
+ * própria: um quarto lab escolhendo bem por disciplina é sorte, e sorte não é
+ * sistema. `scripts/check-catalogo.mjs` reprova cor escrita fora daqui.
+ *
+ * **Lê-se por sentido, nunca por valor.** O CSS abaixo diz `var(--dui-dado)`,
+ * não diz azul — é isso que faz a mesma leitura funcionar nos dois temas sem
+ * virar dois desenhos, e é isso que permite trocar a tinta de um sentido sem
+ * caçar hexadecimal em vinte arquivos.
+ *
+ * **Duas tintas, dois registros.** O desenho técnico tem duas tintas — a preta
+ * e a vermelha — e o que elas querem dizer depende do registro:
+ *
+ * - no **diagrama de blocos**, preta é dado e vermelha é controle. É a figura
+ *   canônica de qualquer livro de arquitetura, e metade dela é vermelha, que é
+ *   a medida real de quanto a linha de controle importa;
+ * - no **esquemático**, vermelha é alimentação e preta é terra. É a convenção
+ *   mais universal que existe em eletrônica.
+ *
+ * Isso não é ambiguidade: um diagrama de blocos e um esquemático são duas
+ * linguagens de desenho, ninguém as confunde porque nunca aparecem no mesmo
+ * quadro, e a trilha diz em qual o leitor está. O que era ambíguo era o
+ * sentido ficar implícito — agora cada registro está declarado, e a legenda do
+ * palco é lida daqui em vez de escrita à mão.
+ *
+ * "Preta" é o `--ink` do site, e por isso ela é clara no tema escuro. A
+ * convenção é a leitura, não o hexadecimal.
+ */
 .dui-stage {
   --dui-tick: 700ms;
 
-  /* dado e sinal: as duas espécies de linha, e nunca a mesma cor */
-  --dui-dado: #2f81f7;
-  --dui-sinal: #f0883e;
+  /* ── as duas tintas ── */
+  --dui-tinta: var(--ink);
+  --dui-viva: #d94b4b;
+
+  /* ── registro: diagrama de blocos ── */
+  --dui-dado: var(--dui-tinta);
+  --dui-sinal: var(--dui-viva);
+
+  /* ── registro: esquemático ── */
+  --dui-terra: var(--dui-tinta);
+  --dui-alimentacao: var(--dui-viva);
 
   /*
-   * Nível lógico alto. Não é família nem espécie de linha: é o VALOR que saiu
-   * da peça, e por isso tem cor própria. Misturado na cor do dado, "acesa"
-   * caía na mesma tinta de "isto é uma linha de dado" — e, pior, a mistura
-   * saía mais escura que a superfície nos DOIS temas, de modo que a porta em 1
-   * era desenhada mais apagada que a porta em 0.
+   * ── nível lógico ──
+   *
+   * Não é família nem espécie de linha: é o VALOR que saiu da peça, e por isso
+   * tem tinta própria. Misturado na cor do dado, "acesa" caía na mesma tinta
+   * de "isto é uma linha de dado" — e, pior, a mistura saía mais escura que a
+   * superfície nos DOIS temas, de modo que a porta em 1 era desenhada mais
+   * apagada que a porta em 0.
    */
   --dui-alto: #ffd23f;
 
-  /* as famílias */
+  /*
+   * ── as famílias ──
+   *
+   * Identidade da peça, e não sentido de linha: as duas coisas se separaram
+   * aqui de propósito. A caixa diz o que ela é; a linha diz o que ela leva. O
+   * controlador toma a tinta viva porque peça de controle e linha de controle
+   * são a mesma espécie, e no diagrama do livro elas são o mesmo vermelho.
+   */
+  /*
+   * ── as espécies de carga ──
+   *
+   * Quem diz qual carga é de qual espécie é o domínio, porque só ele sabe que
+   * uma palavra de 32 bits e um par de operandos são coisas diferentes. O
+   * palco só precisa conseguir desenhá-las diferentes.
+   *
+   * O número não nomeia uma cor — nomeia **proeminência**, da mais forte para
+   * a mais discreta. Sem isso o domínio escolheria tinta por acidente de
+   * numeração, que é o domínio pintando pela porta dos fundos; com isso ele
+   * escolhe o quanto aquela carga deve puxar o olho, que é decisão dele. A
+   * última é para o que atravessa o desenho o tempo todo e não deve competir
+   * com nada — o pulso do relógio é o caso.
+   */
+  --dui-especie-1: #a371f7;
+  --dui-especie-2: #3fb950;
+  --dui-especie-3: #db61a2;
+  --dui-especie-4: #e3b341;
+  --dui-especie-5: var(--ink-faint);
+
   --dui-processor: #1f6feb;
   --dui-container: #8b93a7;
-  --dui-controller: #f0883e;
+  --dui-controller: var(--dui-viva);
   --dui-conduit: #3fb950;
 
   --dui-superficie: color-mix(in oklab, var(--paper-raised) 88%, var(--paper));
@@ -44,6 +111,22 @@
   border: 1px solid var(--rule);
   border-radius: var(--radius-3);
   font-family: var(--font-mono);
+}
+
+/*
+ * Três estados, não dois — mesma regra do `tokens.css`: escolha explícita
+ * marca `data-theme`, e a ausência segue a preferência do sistema. Definir a
+ * tinta só dentro do media query deixaria o estado sem marca com a vermelha de
+ * um tema sobre o papel do outro.
+ */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .dui-stage {
+    --dui-viva: #ff7070;
+  }
+}
+
+:root[data-theme="dark"] .dui-stage {
+  --dui-viva: #ff7070;
 }
 
 /* ---------- fios ---------- */
@@ -140,12 +223,19 @@
   filter: none;
 }
 
-/* A carga muda de aparência atravessando quem a transforma. */
-.dui-stage__carga[data-kind="instrucao"] { fill: #a371f7; }
-.dui-stage__carga[data-kind="proximo"] { fill: #3fb950; }
-.dui-stage__carga[data-kind="escrita"] { fill: #db61a2; }
-.dui-stage__carga[data-kind="guardar"] { fill: #e3b341; }
-.dui-stage__carga[data-kind="pulso"] { fill: var(--ink-faint); }
+/*
+ * A carga muda de aparência atravessando quem a transforma.
+ *
+ * Por espécie, e não por `kind`: o `kind` é palavra do domínio, e estes
+ * seletores diziam `instrucao`, `escrita`, `guardar` — vocabulário de CPU
+ * dentro do motor. Quem numera as espécies é o domínio; o palco só sabe que
+ * duas cargas são diferentes, e não o que elas são.
+ */
+.dui-stage__carga[data-especie="1"] { fill: var(--dui-especie-1); }
+.dui-stage__carga[data-especie="2"] { fill: var(--dui-especie-2); }
+.dui-stage__carga[data-especie="3"] { fill: var(--dui-especie-3); }
+.dui-stage__carga[data-especie="4"] { fill: var(--dui-especie-4); }
+.dui-stage__carga[data-especie="5"] { fill: var(--dui-especie-5); }
 
 /* ---------- objetos ---------- */
 

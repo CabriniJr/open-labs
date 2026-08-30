@@ -13,6 +13,7 @@ import {
   conteudoDaCaixa,
   portasAltas,
   leituraDaCarga,
+  especieDaCarga,
   VIEW_SISTEMA,
   viewsDasPortas,
   viewSomadorDaUla,
@@ -224,6 +225,7 @@ export function CpuLab() {
             readouts={readouts}
             altos={portasAltas(estado, arvore)}
             leituraDaCarga={leituraDaCarga}
+            especieDaCarga={especieDaCarga}
             conteudo={conteudoDaCaixa(estado, montado?.words ?? [])}
             comFicha
           />

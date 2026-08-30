@@ -74,6 +74,25 @@ export function findViolations(filePath, source) {
 
   const violations = [];
 
+  /*
+   * Regra sobre o substantivo, e não sobre uma lista de palavras.
+   *
+   * O `kind` de uma mensagem é, por definição do próprio motor, "uma string
+   * escolhida pelo domínio" (`model.ts`). Então o palco selecionar por ele é
+   * violação **qualquer que seja a palavra** — e era assim que `instrucao`,
+   * `escrita` e `guardar` moravam no CSS do motor sem acusar nada: nenhuma
+   * delas estava na lista, e nenhuma lista teria todas. Quem quiser desenhar
+   * diferente por espécie de carga pergunta ao domínio qual é a espécie.
+   */
+  if (/\[data-kind/.test(source)) {
+    violations.push({
+      filePath,
+      reason:
+        'seleciona por `data-kind` — o kind de uma mensagem é palavra do domínio. ' +
+        "Peça a espécie ao domínio (`especieDaCarga`) e selecione por ela",
+    });
+  }
+
   for (const pkg of DOMAIN_PACKAGES) {
     if (source.includes(pkg)) {
       violations.push({ filePath, reason: `importa o pacote de domínio ${pkg}` });
@@ -135,7 +154,11 @@ async function main() {
   const all = [];
   let scanned = 0;
   for (const prefix of AGNOSTIC) {
-    for await (const file of glob(`${prefix}src/**/*.{ts,tsx}`)) {
+    // CSS entra na varredura, e entrou tarde: o palco tinha seletores
+    // `data-kind="instrucao"`, `"escrita"` e `"guardar"` — vocabulário de CPU
+    // dentro do motor, invisível para uma guarda que só olhava TypeScript. Uma
+    // fronteira que vigia meia linguagem vigia meia fronteira.
+    for await (const file of glob(`${prefix}src/**/*.{ts,tsx,css}`)) {
       scanned += 1;
       all.push(...findViolations(file, readFileSync(file, "utf8")));
     }

@@ -101,6 +101,24 @@ export interface StageProps {
    */
   readonly leituraDaCarga?: ((mensagem: Message) => string | undefined) | undefined;
   /**
+   * A **espécie** de uma carga, para o desenho poder distingui-la das outras.
+   *
+   * A carga muda de cara ao atravessar quem a transforma — uma palavra vira
+   * campos, campos viram operandos, operandos viram resultado —, e essa
+   * transformação é a coisa que se está ensinando. Para desenhá-la, o palco
+   * precisa saber que duas cargas são de espécies diferentes; **o que cada
+   * espécie é, ele não pode saber**.
+   *
+   * Isto existia e estava do lado errado da fronteira: o CSS do motor tinha
+   * seletores `data-kind="instrucao"`, `"escrita"`, `"guardar"` — vocabulário
+   * de CPU dentro do palco. A guarda de fronteira não viu porque só varre
+   * TypeScript, e a do catálogo só achou porque a tinta estava escrita ali.
+   *
+   * O número não tem significado nenhum e não deve ter: ele só precisa ser
+   * estável e diferente. Quem lhe dá sentido é o domínio, do lado de lá.
+   */
+  readonly especieDaCarga?: ((mensagem: Message) => number | undefined) | undefined;
+  /**
    * O que um objeto **guarda** agora, linha a linha.
    *
    * Um objeto que acumula, desenhado como caixa lisa, é a caixa fechada do
@@ -307,6 +325,7 @@ function Camada({
   onOpen,
   interiores,
   leituraDaCarga,
+  especieDaCarga,
   conteudo,
   unidadesPorQuadro,
   profundidade,
@@ -1102,6 +1121,7 @@ function Camada({
                       selected={selected}
                       interiores={interiores}
                       leituraDaCarga={leituraDaCarga}
+                      especieDaCarga={especieDaCarga}
                       conteudo={conteudo}
                       emissoes={emissoes}
                       unidadesPorQuadro={unidadesPorQuadro / (dentro?.escala ?? 1)}
@@ -1377,7 +1397,7 @@ function Camada({
                 key={`${aresta.chave}:${state.tick}`}
                 className="dui-stage__carga-grupo dui-stage__carga-grupo--acomodada"
                 data-carga={aresta.chave}
-                data-kind={mensagem.kind}
+                data-especie={especieDaCarga?.(mensagem)}
                 data-linha={aresta.linha}
                 style={{
                   ["--dui-trilho" as string]: `path("${aresta.d}")`,
@@ -1407,7 +1427,7 @@ function Camada({
               key={`${item.id}:${state.tick}`}
               className="dui-stage__carga-grupo dui-stage__carga-grupo--voo"
               data-carga={item.id}
-              data-kind={item.message.kind}
+              data-especie={especieDaCarga?.(item.message)}
               data-sinal={item.signalPort !== undefined ? "true" : undefined}
               style={{
                 ["--dui-trilho" as string]: `path("${trilho}")`,
