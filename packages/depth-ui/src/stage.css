@@ -631,3 +631,24 @@
 .dui-stage__leito {
   stroke: color-mix(in oklab, var(--dui-dado) 20%, transparent);
 }
+
+/*
+ * A âncora da moldura: por onde a ligação sai deste enquadramento.
+ *
+ * Mesma linguagem da porta de uma caixa, e de propósito — é a mesma ideia um
+ * nível acima. A moldura é a caixa em que o leitor está.
+ */
+.dui-stage__ancora rect {
+  fill: color-mix(in oklab, var(--dui-dado) 30%, var(--paper));
+  stroke: color-mix(in oklab, var(--dui-dado) 70%, var(--rule));
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+
+.dui-stage__ancora-nome {
+  fill: var(--ink-faint);
+  font-size: 8px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  pointer-events: none;
+}

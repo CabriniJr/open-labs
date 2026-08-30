@@ -499,12 +499,71 @@ function Camada({
     return (node.children ?? []).length === 0 ? undefined : entryLeaf(tree, destino);
   };
 
-  /** Fios desenháveis: os dois pontos precisam estar na view. */
+  /**
+   * Onde uma ponta de fio cai nesta vista.
+   *
+   * Três respostas, e as três importam:
+   *
+   * - **numa caixa desenhada** — direto, ou porque a caixa contém aquele
+   *   objeto lá no fundo. Sem isso, subir um nível apagava as ligações: o fio
+   *   ia de uma folha para outra, nenhuma das duas estava na vista, e o
+   *   desenho ficava com caixas soltas. Era o "zoom out desconectando os
+   *   diagramas";
+   * - **fora do foco** — o outro lado da ligação acontece longe daqui. O fio
+   *   não some nem flutua: ele nasce (ou morre) **na margem da moldura**, com
+   *   uma âncora de ENTRA ou SAI. É o que amarra um nível ao de cima;
+   * - **em lugar nenhum** — a ponta não existe na árvore, e aí não há o que
+   *   desenhar.
+   */
+  const ANCORA_ENTRA = "__entra";
+  const ANCORA_SAI = "__sai";
+  const FORA = "__fora" as const;
+
+  const ondeCai = (id: string): NodePlacement | typeof FORA | undefined => {
+    const direto = lugares.get(id);
+    if (direto !== undefined) return direto;
+    if (!tree.byId.has(id)) return undefined;
+    const quem = visibleChild(tree, view.focus, id);
+    if (quem.at === "child") {
+      const caixa = lugares.get(quem.id);
+      if (caixa !== undefined) return caixa;
+    }
+    if (quem.at === "self") return undefined;
+    return quem.at === "outside" ? FORA : undefined;
+  };
+
+  /** A margem da moldura, na altura de quem ela serve. */
+  const margem = (lado: "entra" | "sai", vizinho: NodePlacement): NodePlacement => ({
+    id: lado === "entra" ? ANCORA_ENTRA : ANCORA_SAI,
+    x: lado === "entra" ? -1 : view.width + 1,
+    y: vizinho.y + vizinho.h / 2 - 9,
+    w: 1,
+    h: 18,
+  });
+
+  const vistos = new Set<string>();
+
+  /** Fios desenháveis: cada ponta cai numa caixa da vista ou na margem dela. */
   const arestas = wires
     .map((wire, i) => {
-      const de = lugares.get(wire.from);
-      const para = typeof wire.to === "string" ? lugares.get(wire.to) : undefined;
-      if (de === undefined || para === undefined) return null;
+      const a = ondeCai(wire.from);
+      const b = typeof wire.to === "string" ? ondeCai(String(wire.to)) : undefined;
+      if (a === undefined || b === undefined) return null;
+      // Os dois lados fora do foco: a ligação inteira acontece longe daqui, e
+      // desenhá-la seria pôr no palco uma coisa que não é deste palco.
+      if (a === FORA && b === FORA) return null;
+
+      const para = b === FORA ? margem("sai", a as NodePlacement) : b;
+      const de = a === FORA ? margem("entra", para) : a;
+
+      // Duas folhas dentro das mesmas duas caixas produzem a mesma aresta
+      // agregada. Desenhá-la trinta e duas vezes engrossa a linha sem dizer
+      // nada — a multiplicidade quem conta é a marca de réplicas.
+      const chaveVisual = `${de.id}>${para.id}>${wire.line ?? "data"}`;
+      if (de.id !== wire.from || para.id !== String(wire.to)) {
+        if (vistos.has(chaveVisual)) return null;
+        vistos.add(chaveVisual);
+      }
       const linha = wire.line ?? "data";
       const traco = caminho(de, para, 18 + (i % 3) * 12, obstaculos);
 
@@ -528,8 +587,8 @@ function Camada({
       const marca = { x: de.x + de.w + 6, y: de.y + de.h / 2 - 6 };
       return {
         marca,
-        chave: `${wire.from}.${wire.port}->${String(wire.to)}`,
-        to: String(wire.to),
+        chave: `${de.id}.${wire.port}->${para.id}`,
+        to: para.id,
         d,
         // O traço fica na borda; a travessia é desenhada por cima das caixas,
         // senão ela some atrás justamente da caixa que ela atravessa.
@@ -540,7 +599,12 @@ function Camada({
         // Uma emissão na porta acende todos os fios que saem dela: é o leque,
         // e mostrar só o primeiro seria voltar a mentir sobre o percurso.
         acesa: (mudou[`out:${wire.from}.${wire.port}`] ?? 0) > 0,
-        from: wire.from,
+        from: de.id,
+        deLugar: de,
+        paraLugar: para,
+        // A âncora não é objeto: ela é a moldura dizendo que a ligação
+        // continua fora daqui.
+        ancora: de.id === ANCORA_ENTRA ? ("entra" as const) : para.id === ANCORA_SAI ? ("sai" as const) : undefined,
         port: wire.port,
       };
     })
@@ -931,6 +995,44 @@ function Camada({
         cruzava — inclusive a caixa em que ela estava entrando, que é
         exatamente o momento que se quer ver.
       */}
+      {/*
+        As âncoras da moldura.
+
+        Uma ligação que continua fora do foco não some e não flutua: ela nasce
+        (ou morre) na margem, marcada. Sem isso, subir um nível deixava caixas
+        soltas e o leitor sem saber de onde a coisa vinha — era o zoom out
+        desconectando os diagramas.
+      */}
+      <g className="dui-stage__ancoras">
+        {[...new Map(
+          arestas
+            .filter((a) => a.ancora !== undefined)
+            .map((a) => {
+              const ponta = a.ancora === "entra" ? a.deLugar : a.paraLugar;
+              return [`${a.ancora}:${Math.round(ponta.y)}`, { lado: a.ancora!, ponta }] as const;
+            }),
+        ).values()].map(({ lado, ponta }) => (
+          <g key={`${lado}${ponta.y}`} className="dui-stage__ancora" data-lado={lado}>
+            <title>{lado === "entra" ? "comes from outside this frame" : "goes outside this frame"}</title>
+            <rect
+              x={lado === "entra" ? 0 : view.width - 7}
+              y={ponta.y + ponta.h / 2 - 9}
+              width={7}
+              height={18}
+              rx={2}
+            />
+            <text
+              className="dui-stage__ancora-nome"
+              x={lado === "entra" ? 11 : view.width - 11}
+              y={ponta.y + ponta.h / 2 - 14}
+              textAnchor={lado === "entra" ? "start" : "end"}
+            >
+              {lado === "entra" ? "in" : "out"}
+            </text>
+          </g>
+        ))}
+      </g>
+
       <g className="dui-stage__travessias">
         {arestas
           .filter((a) => a.d !== a.traco)
