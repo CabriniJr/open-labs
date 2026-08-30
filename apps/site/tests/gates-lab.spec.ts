@@ -406,8 +406,21 @@ test("a chave que conduz é desenhada diferente da cortada", async ({ page }) =>
   await page.locator('.dui-stage__objeto[data-id="bit0-xor1"]').first().dblclick();
   await page.locator('.dui-stage__objeto[data-fechado="true"]').first().dblclick();
 
-  // Por id, pelo mesmo motivo do teste da porta acesa: `.first()` de um
-  // conjunto que muda não é um elemento.
+  /*
+   * Esperar o enquadramento assentar antes de escolher.
+   *
+   * Entrar numa peça é uma viagem de câmera, e durante ela as duas camadas —
+   * a que sai e a que entra — existem no mesmo SVG. Fixar um id ali dentro
+   * pode fixar um objeto da camada que está indo embora, e a medida seguinte
+   * cai num elemento já removido. Passava sozinho e reprovava na suíte cheia,
+   * onde tudo é mais lento: a assinatura de sempre desse erro.
+   *
+   * A espera é pelo REGISTRO, e não por um tempo: a legenda só diz
+   * "esquemático" quando a vista da porta CMOS é a vista corrente.
+   */
+  await expect(page.locator('.dui-legenda[data-registro="esquematico"]')).toBeVisible({
+    timeout: 10_000,
+  });
   await expect(page.locator('.dui-stage__objeto[data-conduz="true"]').first()).toBeVisible({
     timeout: 10_000,
   });

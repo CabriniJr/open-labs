@@ -297,19 +297,42 @@ function Engrenagem({ x, y, r }: { x: number; y: number; r: number }) {
  * segui-la é entender o sistema: o que entra num bloco com um nome sai com
  * outro, e a linha entre os dois mostra exatamente onde isso aconteceu.
  */
+/**
+ * A largura de uma carga, em unidades de desenho.
+ *
+ * **A forma vem da largura do fio**, que o modelo declara. Um fio de uma via
+ * leva um ponto; um barramento de trinta e duas leva uma barra. É a notação de
+ * qualquer esquemático — o traço grosso com a barra e o `/32` — e é ela que faz
+ * a transformação aparecer: a palavra sai da memória como barra larga, o
+ * decodificador a devolve em campos estreitos, os operandos entram na ULA como
+ * barras e o vai-um de um bit é um ponto. Antes disso tudo era o mesmo círculo,
+ * e a transformação acontecia dentro da caixa, invisível.
+ *
+ * Cresce pelo logaritmo porque a diferença que interessa é de ORDEM: entre 1 e
+ * 8 há uma lição, entre 24 e 32 não há nenhuma, e linear faria a carga de 32
+ * atravessar a tela inteira.
+ */
+export function comprimentoDaCarga(largura: number | undefined, raio: number): number {
+  if (largura === undefined || largura <= 1) return 0;
+  return Math.min(raio * 5, raio * Math.log2(largura));
+}
+
 function Carga({
   mensagem,
   leitura,
   raio,
+  largura,
   de,
   para,
 }: {
   mensagem: Message;
   leitura: string | undefined;
   raio: number;
+  largura?: number | undefined;
   de: string;
   para: string;
 }) {
+  const comprimento = comprimentoDaCarga(largura, raio);
   return (
     <>
       {/* O hover é o mesmo gesto que já responde "o que é esta peça?": bateu a
@@ -319,7 +342,18 @@ function Carga({
           mensagem.weight > 1 ? `\n${mensagem.weight} itens` : ""
         }`}
       </title>
-      <circle className="dui-stage__carga" r={raio} />
+      {comprimento > 0 ? (
+        <rect
+          className="dui-stage__carga"
+          x={-comprimento}
+          y={-raio}
+          width={comprimento * 2}
+          height={raio * 2}
+          rx={raio}
+        />
+      ) : (
+        <circle className="dui-stage__carga" r={raio} />
+      )}
       {leitura === undefined ? null : (
         // Ao lado, e não em cima: por cima do ponto o valor fica ilegível
         // justamente quando a linha está acesa, que é quando se quer lê-lo.
@@ -792,9 +826,14 @@ function Camada({
   // primeiro que liga os dois. Com leque, as cópias são itens distintos, cada
   // uma com o seu destino, então nenhuma some no caminho de outra.
   const trilhoEntre = new Map<string, string>();
+  // A largura declarada do fio, para a carga em voo poder tomar a forma dele.
+  const larguraEntre = new Map<string, number>();
   for (const aresta of arestas) {
     const chave = `${aresta.from}->${aresta.to}`;
     if (!trilhoEntre.has(chave)) trilhoEntre.set(chave, aresta.d);
+    if (aresta.width !== undefined && !larguraEntre.has(chave)) {
+      larguraEntre.set(chave, aresta.width);
+    }
   }
 
   const identificador = (chave: string): string =>
@@ -1491,6 +1530,7 @@ function Camada({
                   mensagem={mensagem}
                   leitura={leituraDaCarga?.(mensagem)}
                   raio={4}
+                  largura={aresta.width}
                   de={aresta.from}
                   para={aresta.to}
                 />
@@ -1522,6 +1562,7 @@ function Camada({
                 mensagem={item.message}
                 leitura={leituraDaCarga?.(item.message)}
                 raio={5}
+                largura={larguraEntre.get(`${item.from}->${String(item.to)}`)}
                 de={item.from}
                 para={String(item.to)}
               />

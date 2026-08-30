@@ -268,3 +268,36 @@ test("a ficha não sobrevive à saída do enquadramento", async ({ page }) => {
   await expect(page.locator(".ficha__id")).toHaveCount(0, { timeout: 10_000 });
   await expect(page.locator(".ficha--vazia")).toBeVisible();
 });
+
+/**
+ * A carga muda de forma no caminho, e a forma vem do modelo.
+ *
+ * Ela era sempre o mesmo círculo: entre uma palavra de 32 bits e um vai-um de
+ * um bit a única diferença era a tinta. A transformação — que é o que este lab
+ * existe para mostrar — acontecia dentro da caixa, invisível.
+ *
+ * A forma vem da largura declarada do fio, que é a notação de qualquer
+ * esquemático: o traço grosso com a barra e o `/32`. Não é enfeite escolhido
+ * pelo desenho; é o mesmo número que já aparece escrito ao lado da linha.
+ */
+test("uma palavra viaja como barra e um bit como ponto", async ({ page }) => {
+  await page.goto("labs/cpu/");
+  await expect(page.locator(".dui-stage")).toBeVisible({ timeout: 15_000 });
+
+  // As duas formas convivem na mesma tela: é isso que faz a diferença
+  // significar alguma coisa. Só barras, ou só pontos, não diriam nada.
+  await expect
+    .poll(async () => page.locator("rect.dui-stage__carga").count(), { timeout: 10_000 })
+    .toBeGreaterThan(0);
+  await expect
+    .poll(async () => page.locator("circle.dui-stage__carga").count(), { timeout: 10_000 })
+    .toBeGreaterThan(0);
+
+  // E a barra está onde o modelo diz que o fio é largo: a instrução sai da
+  // memória por trinta e duas vias.
+  const naInstrucao = page
+    .locator('.dui-stage__carga-grupo[data-carga*="via-instrucao"] .dui-stage__carga')
+    .first();
+  await expect(naInstrucao).toHaveCount(1, { timeout: 10_000 });
+  expect(await naInstrucao.evaluate((el) => el.tagName.toLowerCase())).toBe("rect");
+});
