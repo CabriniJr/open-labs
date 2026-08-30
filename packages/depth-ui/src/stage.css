@@ -16,6 +16,15 @@
   --dui-dado: #2f81f7;
   --dui-sinal: #f0883e;
 
+  /*
+   * Nível lógico alto. Não é família nem espécie de linha: é o VALOR que saiu
+   * da peça, e por isso tem cor própria. Misturado na cor do dado, "acesa"
+   * caía na mesma tinta de "isto é uma linha de dado" — e, pior, a mistura
+   * saía mais escura que a superfície nos DOIS temas, de modo que a porta em 1
+   * era desenhada mais apagada que a porta em 0.
+   */
+  --dui-alto: #ffd23f;
+
   /* as famílias */
   --dui-processor: #1f6feb;
   --dui-container: #8b93a7;
@@ -193,28 +202,38 @@
 }
 
 /*
- * Saída alta. Onde a presença da mensagem É o bit em alto — porta lógica —,
- * isto é literalmente a porta acesa, lida do livro-caixa. O atraso vem do
- * subpasso em que ela rodou, então a onda atravessa o desenho na ordem em que
- * o sinal atravessa o circuito.
+ * Saída alta: o VALOR que saiu da peça. É estado, e era desenhado como
+ * acontecimento — que é a razão de ele não existir.
+ *
+ * O aceso vinha inteiro de uma transição cujo primeiro quadro era
+ * `fill: var(--dui-superficie)`, a tinta do apagado. Com a simulação rodando,
+ * a peça reiniciava a transição a cada tick e vivia perto do quadro zero.
+ * Medido no navegador: a porta em 1 saía mais ESCURA que a porta em 0, nos
+ * dois temas, e sem brilho nenhum — enquanto o brilho que o olho lia como
+ * "acesa" pertencia a `data-ativo`, isto é, a quem RODOU e não a quem DISSE
+ * UM. São justamente as duas coisas que a troca de codificação foi feita para
+ * separar, e o desenho as tinha juntado de volta.
+ *
+ * Agora o repouso já é aceso e a animação só pulsa por cima: ela parte de
+ * MAIS aceso e assenta no aceso. Nenhum quadro dela é mais apagado que o
+ * repouso, então não existe instante em que a porta minta sobre o seu valor.
+ * O atraso continua vindo do subpasso, e a onda continua atravessando o
+ * desenho na ordem em que o sinal atravessa o circuito.
  */
 .dui-stage__objeto[data-alto="true"] > .dui-stage__caixa {
-  fill: color-mix(in oklab, var(--dui-dado) 30%, var(--paper-raised));
-  stroke: var(--dui-dado);
+  fill: color-mix(in oklab, var(--dui-alto) 42%, var(--paper-raised));
+  stroke: var(--dui-alto);
+  filter: drop-shadow(0 0 6px color-mix(in oklab, var(--dui-alto) 45%, transparent));
   animation: dui-acender calc(var(--dui-tick) * 0.5) ease-out both;
   animation-delay: var(--dui-atraso, 0ms);
 }
 
 @keyframes dui-acender {
   from {
-    fill: var(--dui-superficie);
-    filter: none;
-  }
-  40% {
-    filter: drop-shadow(0 0 10px color-mix(in oklab, var(--dui-dado) 75%, transparent));
+    filter: drop-shadow(0 0 12px color-mix(in oklab, var(--dui-alto) 85%, transparent));
   }
   to {
-    filter: drop-shadow(0 0 6px color-mix(in oklab, var(--dui-dado) 45%, transparent));
+    filter: drop-shadow(0 0 6px color-mix(in oklab, var(--dui-alto) 45%, transparent));
   }
 }
 
@@ -617,10 +636,19 @@
  * A moldura acende, o miolo continua sendo o desenho.
  */
 .dui-stage__objeto[data-familia="container"][data-alto="true"] > .dui-stage__caixa {
-  fill: color-mix(in oklab, var(--dui-dado) 5%, transparent);
-  stroke: var(--dui-dado);
+  fill: color-mix(in oklab, var(--dui-alto) 5%, transparent);
+  stroke: var(--dui-alto);
   stroke-width: 2;
-  filter: none;
+  /*
+   * `fill-opacity: 0` da moldura está certo e fica: preencher a área onde os
+   * filhos moram apaga o circuito que interessa. Mas ele anulava o
+   * preenchimento de acesa sem pôr nada no lugar, e o contorno de acesa usava
+   * a MESMA cor do contorno de apagada — sobrava meio pixel de espessura, e
+   * uma moldura acesa era indistinguível de uma apagada. O que resta para
+   * dizer é o traço, e ele basta: apagada é tracejada, acesa é contínua.
+   */
+  stroke-dasharray: none;
+  filter: drop-shadow(0 0 5px color-mix(in oklab, var(--dui-alto) 40%, transparent));
   animation: none;
 }
 
