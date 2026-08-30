@@ -376,4 +376,39 @@ describe("World valida na construção", () => {
       }),
     ).not.toThrow();
   });
+
+  it("recusa sequencer com aresta de dado na saída", () => {
+    const spec: WorldSpec = {
+      ...base,
+      root: {
+        id: "root",
+        kind: "composite",
+        label: "root",
+        children: [
+          { id: "uc", kind: "sequencer", label: "uc", leaf: true, behavior: (state) => ({ state, out: [] }) },
+          leaf("alvo"),
+        ],
+      },
+      // sem `line: "control"`, esta é uma linha de dado
+      wires: [{ from: "uc", port: "out", to: "alvo" }],
+    };
+    expect(() => validar(spec)).toThrow(/sequencer/);
+  });
+
+  it("aceita sequencer que só emite por linha de controle", () => {
+    const spec: WorldSpec = {
+      ...base,
+      root: {
+        id: "root",
+        kind: "composite",
+        label: "root",
+        children: [
+          { id: "uc", kind: "sequencer", label: "uc", leaf: true, behavior: (state) => ({ state, out: [] }) },
+          leaf("alvo"),
+        ],
+      },
+      wires: [{ from: "uc", port: "op", to: "alvo", line: "control", toPort: "op" }],
+    };
+    expect(() => validar(spec)).not.toThrow();
+  });
 });
