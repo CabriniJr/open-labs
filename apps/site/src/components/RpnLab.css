@@ -1,0 +1,171 @@
+.rpn-lab {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 20rem);
+  gap: var(--space-2);
+  align-items: start;
+}
+
+@media (max-width: 68rem) {
+  .rpn-lab {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.rpn-lab__palco {
+  min-width: 0;
+}
+
+.rpn-lab__legenda {
+  max-width: 62ch;
+  margin-block: var(--space-1) 0;
+  color: var(--ink-muted);
+  font-size: var(--size-step--1);
+  line-height: 1.5;
+}
+
+.rpn-lab__painel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.rpn-lab__painel h3 {
+  margin: 0 0 0.4rem;
+  color: var(--ink-faint);
+  font-family: var(--font-mono);
+  font-size: var(--size-step--1);
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.rpn-lab__campo {
+  display: block;
+  margin-block-end: 0.5rem;
+}
+
+.rpn-lab__campo input {
+  width: 100%;
+  padding: 0.4rem 0.5rem;
+  background: var(--paper-raised);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-2);
+  color: var(--ink);
+  font-size: var(--size-step-0);
+}
+
+.rpn-lab__campo input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.rpn-lab__painel > section > button {
+  padding: 0.35rem 0.8rem;
+  background: var(--paper-raised);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-2);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: var(--size-step--1);
+  cursor: pointer;
+}
+
+.rpn-lab__painel > section > button:hover {
+  border-color: var(--accent);
+}
+
+.rpn-lab__erros {
+  margin: 0.5rem 0 0;
+  padding-inline-start: 1.1rem;
+  color: var(--sig-drop);
+  font-size: var(--size-step--1);
+  line-height: 1.45;
+}
+
+/*
+ * A pilha do painel, com o topo em cima e marcado.
+ *
+ * Ela repete o que a caixa no palco mostra, e repetir é de propósito: o palco
+ * responde "onde", o painel responde "quanto", e quem está aprendendo precisa
+ * das duas ao mesmo tempo sem tirar os olhos de uma para achar a outra.
+ */
+.rpn-lab__pilha {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rpn-lab__pilha li {
+  padding: 0.2rem 0.5rem;
+  background: var(--paper-raised);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-2);
+  color: var(--ink-muted);
+  font-size: var(--size-step--1);
+}
+
+.rpn-lab__pilha li[data-topo="true"] {
+  border-color: var(--accent);
+  color: var(--ink);
+}
+
+.rpn-lab__resultado {
+  margin: 0;
+  padding: var(--space-1);
+  background: var(--paper-raised);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-2);
+  color: var(--ink);
+  font-size: var(--size-step-0);
+  letter-spacing: 0.08em;
+}
+
+.rpn-lab__nota {
+  margin: 0.4rem 0 0;
+  color: var(--ink-muted);
+  font-size: var(--size-step--1);
+  line-height: 1.45;
+}
+
+.rpn-lab__controles {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.rpn-lab__controles button {
+  padding: 0.35rem 0.8rem;
+  background: var(--paper-raised);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-2);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: var(--size-step--1);
+  cursor: pointer;
+}
+
+.rpn-lab__controles button:hover {
+  border-color: var(--accent);
+}
+
+.rpn-lab__compasso {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--ink-muted);
+  font-size: var(--size-step--1);
+}
+
+.rpn-lab__compasso input {
+  width: 6rem;
+  accent-color: var(--accent);
+}
+
+.rpn-lab__tick {
+  color: var(--ink-faint);
+  font-size: var(--size-step--1);
+}

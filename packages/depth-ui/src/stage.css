@@ -173,6 +173,16 @@
 }
 
 /*
+ * A prateleira do banco: a linha que separa a etiqueta do que está guardado.
+ * É o que faz um `store` ser lido como estante e não como mais uma máquina.
+ */
+.dui-stage__prateleira {
+  stroke: color-mix(in oklab, var(--dui-processor) 45%, var(--rule));
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+/*
  * A pilha da réplica: N objetos idênticos, um desenhado. As folhas atrás não
  * têm preenchimento — elas são o contorno dos outros N-1, não outra caixa.
  */

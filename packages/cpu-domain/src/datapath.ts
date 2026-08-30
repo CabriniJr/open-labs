@@ -100,7 +100,7 @@ const pc: ObjectSpec<EstadoPc> = {
 function memoriaDeInstrucoes(image: readonly number[]): ObjectSpec<Record<string, never>> {
   return {
     id: "imem",
-    kind: "buffer",
+    kind: "store",
     label: ROTULOS.imem,
     leaf: true,
     behavior: (state, inbox, ctx) => {
@@ -225,7 +225,7 @@ const controle: ObjectSpec<Record<string, never>> = {
  */
 const banco: ObjectSpec<EstadoBanco> = {
   id: "banco",
-  kind: "buffer",
+  kind: "store",
   label: ROTULOS.banco,
   leaf: true,
   init: (): EstadoBanco => ({ regs: new Array<number>(32).fill(0) }),
@@ -364,7 +364,7 @@ const barramentoDeMemoria: ObjectSpec = {
 function memoriaPrincipal(image: readonly number[]): ObjectSpec<EstadoMemoria> {
   return {
     id: "memoria",
-    kind: "buffer",
+    kind: "store",
     label: ROTULOS.memoria,
     leaf: true,
     init: (): EstadoMemoria => {

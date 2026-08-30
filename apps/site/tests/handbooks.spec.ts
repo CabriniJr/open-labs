@@ -1,4 +1,8 @@
 import { expect, test } from "@playwright/test";
+import { HANDBOOKS } from "../src/data/handbooks.js";
+
+/** Só quem tem mapa é cobrado por mapa. Quem não tem diz isso em voz alta. */
+const comMapa = HANDBOOKS.filter((h) => h.map !== undefined);
 
 /**
  * O catálogo é a promessa da capa: se a landing anuncia um handbook e a página
@@ -7,8 +11,11 @@ import { expect, test } from "@playwright/test";
 test("the landing lists the handbooks and each one opens", async ({ page }) => {
   await page.goto("");
 
+  // Contado a partir do catálogo, e não de um número escrito à mão: um
+  // handbook novo que não chegasse à capa passaria despercebido por um número
+  // fixo, e a capa é justamente a promessa que este teste anda.
   const cartoes = page.locator(".handbooks .hb-card");
-  await expect(cartoes).toHaveCount(2);
+  await expect(cartoes).toHaveCount(HANDBOOKS.length);
 
   await cartoes.filter({ hasText: "RISC-V" }).click();
   await expect(page.locator("h1")).toContainText("RISC-V");
@@ -51,7 +58,7 @@ test("both handbooks draw their own interactive map", async ({ page }) => {
 
 test("nothing on a map promises a link that goes nowhere", async ({ page }) => {
   // O defeito que originou este teste: um nó marcado como pronto com href "#".
-  for (const rota of ["handbooks/otel/", "handbooks/riscv/"]) {
+  for (const rota of comMapa.map((h) => `handbooks/${h.id}/`)) {
     await page.goto(rota);
     await expect(page.locator('.roadmap__node a[href="#"]')).toHaveCount(0);
   }
@@ -60,13 +67,13 @@ test("nothing on a map promises a link that goes nowhere", async ({ page }) => {
 test("the handbooks index links back into each handbook", async ({ page }) => {
   await page.goto("handbooks/");
 
-  await expect(page.locator(".hb-card")).toHaveCount(2);
+  await expect(page.locator(".hb-card")).toHaveCount(HANDBOOKS.length);
   await page.locator(".hb-card").first().click();
   await expect(page.locator("h1")).toContainText("OpenTelemetry");
 });
 
 test("handbook pages do not scroll horizontally", async ({ page }) => {
-  for (const rota of ["handbooks/", "handbooks/otel/", "handbooks/riscv/"]) {
+  for (const rota of ["handbooks/", ...HANDBOOKS.map((h) => `handbooks/${h.id}/`)]) {
     await page.goto(rota);
     const overflow = await page.evaluate(
       () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
@@ -82,7 +89,7 @@ test("o desenho do mapa e as coordenadas dos nós escalam juntos", async ({ page
   //
   // As linhas vivem no SVG e as caixas são posicionadas em % sobre o contêiner,
   // então os dois só concordam enquanto ocuparem exatamente a mesma caixa.
-  for (const rota of ["handbooks/otel/", "handbooks/riscv/"]) {
+  for (const rota of comMapa.map((h) => `handbooks/${h.id}/`)) {
     await page.goto(rota);
     const fios = page.locator(".roadmap__wires");
 
@@ -124,4 +131,16 @@ test("os links do mapa levam para onde dizem", async ({ page }) => {
 
   await expect(page).toHaveURL(/\/labs\/(cpu|gates)\/?$/);
   await expect(page.locator(".dui-stage")).toBeVisible({ timeout: 15_000 });
+});
+
+test("um handbook sem mapa diz que não tem, em vez de mostrar vazio", async ({ page }) => {
+  const semMapa = HANDBOOKS.find((h) => h.map === undefined);
+  test.skip(semMapa === undefined, "todo handbook tem mapa");
+  await page.goto(`handbooks/${semMapa!.id}/`);
+
+  // Desenhar o caminho antes de andá-lo seria prometer; esconder que ele não
+  // foi desenhado seria pior, porque o leitor não saberia o que está faltando.
+  await expect(page.locator(".roadmap")).toHaveCount(0);
+  await expect(page.locator("#roadmap .hb-section__lede")).toContainText("not drawn yet");
+  await expect(page.locator(".hb-phase").first()).toBeVisible();
 });

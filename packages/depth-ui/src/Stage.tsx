@@ -916,7 +916,30 @@ function Camada({
                 entre transportar e transformar é a primeira coisa que este
                 desenho precisa deixar clara.
               */}
-              {node?.kind === "router" ? (
+              {node?.kind === "store" ? (
+                // Um banco não é uma caixa: é uma **estante**. A faixa de topo
+                // é a etiqueta da prateleira, e o que vem abaixo dela são as
+                // linhas do estado. Desenhado como retângulo liso ele fica
+                // igual a quem processa — e a diferença entre "guarda" e
+                // "transforma" é justamente a que este desenho precisa dizer.
+                <>
+                  <rect
+                    className="dui-stage__caixa"
+                    x={place.x}
+                    y={place.y}
+                    width={place.w}
+                    height={place.h}
+                    rx={4}
+                  />
+                  <line
+                    className="dui-stage__prateleira"
+                    x1={place.x}
+                    y1={place.y + 18}
+                    x2={place.x + place.w}
+                    y2={place.y + 18}
+                  />
+                </>
+              ) : node?.kind === "router" ? (
                 // O trapézio é a notação de um seletor, e ela é universal:
                 // largo do lado das entradas, estreito do lado da saída. A
                 // forma **é** a explicação — muitas entram, uma sai —, e um

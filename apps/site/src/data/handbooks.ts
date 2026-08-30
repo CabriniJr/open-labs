@@ -160,7 +160,60 @@ const RISCV: Handbook = {
   labs: RISCV_LABS,
 };
 
-export const HANDBOOKS: readonly Handbook[] = [OTEL, RISCV];
+/**
+ * O terceiro handbook: algoritmos como sistemas de peças.
+ *
+ * Ele existe porque a pergunta que este motor responde não é sobre hardware. É
+ * sobre **coisas que se movem entre peças** — e um algoritmo é isso, visto de
+ * perto: uma pilha é uma caixa que guarda, uma fila é uma esteira com política,
+ * uma ordenação é carga trocando de lugar. Modelar assim não é analogia: é o
+ * mesmo motor, com outro domínio, e o desenho sai do que rodou.
+ *
+ * As fases sobem pela mesma escada de sempre — primeiro a estrutura que guarda,
+ * depois o algoritmo que a usa, depois o algoritmo que decide.
+ */
+const ALGORITHMS: Handbook = {
+  id: "algorithms",
+  name: "Algorithms Visual Handbook",
+  subject: "algorithms",
+  tagline: "An algorithm is a system of parts. Watch the items move.",
+  blurb:
+    "A stack is a box with things in it; a queue is a belt with a policy; a " +
+    "sort is a load changing places. Every model here runs, and the answer " +
+    "comes out of parts moving — never out of a script.",
+  model: "algo.model",
+  stage: "building",
+  phases: [
+    { number: 1, title: "What holds the data", line: "Stack, queue, table: the boxes everything else is built on." },
+    { number: 2, title: "One pass at a time", line: "Evaluation and traversal, as items travelling between parts." },
+    { number: 3, title: "Sorting", line: "The same load, changing places — and what each swap costs." },
+    { number: 4, title: "Greedy", line: "Deciding with what is in front of you, and when that is enough." },
+    { number: 5, title: "Dynamic programming", line: "A table that remembers, so the same work is never done twice." },
+  ],
+  articles: [
+    { id: "a-stack-is-a-box", title: "A stack is a box", status: "coming", phase: 1 },
+    { id: "fifo-and-backpressure", title: "FIFO, and what happens when it is full", status: "coming", phase: 1 },
+    { id: "postfix-needs-no-parentheses", title: "Postfix needs no parentheses", status: "coming", phase: 2 },
+    { id: "what-a-swap-costs", title: "What a swap costs", status: "coming", phase: 3 },
+    { id: "when-greedy-is-right", title: "When greedy is right", status: "coming", phase: 4 },
+    { id: "the-table-that-remembers", title: "The table that remembers", status: "coming", phase: 5 },
+  ],
+  labs: [
+    {
+      id: "rpn",
+      title: "A stack machine, running",
+      status: "available",
+      phase: 2,
+      href: "labs/rpn",
+    },
+    { id: "fifo", title: "A queue, and what fills it", status: "coming", phase: 1 },
+    { id: "sorting", title: "Sorting, swap by swap", status: "coming", phase: 3 },
+    { id: "greedy", title: "Greedy, and the case it misses", status: "coming", phase: 4 },
+    { id: "dynamic", title: "The table that remembers", status: "coming", phase: 5 },
+  ],
+};
+
+export const HANDBOOKS: readonly Handbook[] = [OTEL, RISCV, ALGORITHMS];
 
 export function handbookOf(id: string): Handbook | undefined {
   return HANDBOOKS.find((handbook) => handbook.id === id);

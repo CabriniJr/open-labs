@@ -280,6 +280,16 @@ Retém com consulta e expiração.
 Diferença de `buffer` e de `log`: buffer é consumido, log é percorrido, store é
 **consultado**. Três verbos, três arquétipos.
 
+> **Antecipado para hoje (30/08/2026).** `store` saiu da onda 3 e entrou no motor
+> antes do resto dela, e a razão foi de desenho e não de aplicação: memória, banco
+> de registradores e pilha eram todos `buffer`, e um `buffer` é desenhado como
+> quem processa. A pergunta "o que tem aí dentro agora?" não tinha forma, e sem
+> forma a caixa fica lisa exatamente na vista em que se quer ver o que ela guarda.
+> A parte que **não** veio junto é a porta de consulta como requisição e resposta:
+> hoje quem quer um valor manda carga e o store responde, que é o que o caminho
+> de dados já fazia. Expiração e medidores de acerto continuam na onda 3.
+> Lacuna declarada, e não esquecimento.
+
 ### `probe`
 
 Controlador. Requisita e correlaciona a resposta — o modelo pull.
@@ -320,10 +330,10 @@ custo.
 
 | Onda | Arquétipos | Total acumulado |
 |---|---|---|
-| Hoje | `channel` `source` `sink` `router` `buffer` `pipeline` `composite` `static` | 8 |
+| Hoje | `channel` `source` `sink` `router` `buffer` `store` `pipeline` `composite` `static` | 9 |
 | Onda 1 (v0) | `transform` `merge` `batch` `clock` `arbiter` | 13 |
 | Onda 2 (Kafka) | `log` `deliver` `supervisor` | 16 |
-| Onda 3 (Prometheus) | `store` `probe` | 18 |
+| Onda 3 (Prometheus) | ~~`store`~~ (antecipado) `probe` | 18 |
 
 Mais três mudanças em arquétipo existente, todas consequência do que está acima:
 
@@ -484,7 +494,7 @@ ensinar por que Kafka ordena dentro da partição e não entre partições.
 | Hoje | os 8 | 8 |
 | Onda 1 (v0) | `transform` `merge` `batch` `clock` `arbiter` | 13 |
 | Onda 2 (Kafka) | `log` `deliver` `supervisor` | 16 |
-| Onda 3 (Prometheus) | `store` `probe` | 18 |
+| Onda 3 (Prometheus) | ~~`store`~~ (antecipado) `probe` | 18 |
 | **Onda 4 (L2/L3 e métrica)** | `fragment` `reassemble` `mux` `demux` `enrich` `aggregate` `correlate` `partition` | **26** |
 
 ### 9.8 O que muda nas ondas anteriores

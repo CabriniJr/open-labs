@@ -1,0 +1,33 @@
+/*
+ * Tema de domínio: algoritmos.
+ *
+ * Mesma regra dos irmãos: pinta acento e sinais, nunca fundo, nunca tipografia.
+ * O leitor precisa saber em qual handbook está sem ler o cabeçalho, e sem que
+ * a página vire banner.
+ *
+ * Aqui o acento é violeta, que é a cor que sobrou entre o azul do rastro e o
+ * verde do silício — e a distância entre elas é o que faz os três handbooks se
+ * distinguirem numa aba só.
+ */
+:root[data-domain="algorithms"] {
+  --accent: #6d28d9;
+
+  --sig-flow: #6d28d9;
+  --sig-drop: #b8442a;
+  --sig-ok: #3f7a52;
+  --sig-mutation: #c2410c;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-domain="algorithms"]:not([data-theme="light"]) {
+    --accent: #c4b5fd;
+    --sig-flow: #c4b5fd;
+    --sig-mutation: #fb923c;
+  }
+}
+
+:root[data-domain="algorithms"][data-theme="dark"] {
+  --accent: #c4b5fd;
+  --sig-flow: #c4b5fd;
+  --sig-mutation: #fb923c;
+}

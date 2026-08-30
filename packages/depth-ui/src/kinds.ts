@@ -99,6 +99,14 @@ export const KINDS: Readonly<Record<Kind, Descricao>> = {
       "it refuses — and that refusal is what makes backpressure exist in the model instead of " +
       "vanishing.",
   },
+  store: {
+    resumo: "Holds many values at once, and answers by key.",
+    detalhe:
+      "A buffer holds the load on its way through; a store keeps it and hands it back when " +
+      "asked. It is the only processor whose whole point is what it is holding right now — " +
+      "which is why it is drawn as a bank of rows, and why the rows are the state itself and " +
+      "not an illustration of it.",
+  },
   channel: {
     resumo: "The pipe: it carries without altering.",
     detalhe:

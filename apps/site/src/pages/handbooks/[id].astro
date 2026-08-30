@@ -86,8 +86,11 @@ if (orfaos.length > 0) {
     <section class="hb-section" id="roadmap">
       <h2>Roadmap</h2>
       <p class="hb-section__lede">
-        The order in which the concepts hold each other up. Not a queue — later
-        phases reach back, and the map shows it.
+        {
+          handbook.map
+            ? "The order in which the concepts hold each other up. Not a queue — later phases reach back, and the map shows it."
+            : "The order in which the concepts hold each other up. The interactive map is not drawn yet — drawing the path before walking it would be a promise, so the phases are listed plainly instead."
+        }
       </p>
       {handbook.map && <Roadmap mapa={handbook.map} client:visible />}
       <ol class="hb-phases">
