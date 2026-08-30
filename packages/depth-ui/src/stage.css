@@ -496,27 +496,43 @@
  * conteúdo —, e com o miolo do fundo da página, que é o que faz ela parecer um
  * furo na borda em vez de uma bolinha grudada nela.
  */
-.dui-stage__porta circle {
+/*
+ * A porta é uma aba montada **na** borda, metade dentro e metade fora — e não
+ * uma bolinha encostada nela. A diferença não é estética: a aba pertence às
+ * duas coisas ao mesmo tempo, que é exatamente o que uma porta é, e é o que faz
+ * a borda da caixa continuar significando alguma coisa quando o interior está
+ * aberto e ela virou a margem do desenho de dentro.
+ */
+.dui-stage__porta rect {
   fill: var(--paper);
   stroke: color-mix(in oklab, var(--dui-dado) 70%, var(--rule));
   stroke-width: 1.5;
   vector-effect: non-scaling-stroke;
 }
 
-.dui-stage__porta[data-lado="saida"] circle {
-  fill: color-mix(in oklab, var(--dui-dado) 70%, var(--paper));
+.dui-stage__porta[data-lado="saida"] rect {
+  fill: color-mix(in oklab, var(--dui-dado) 55%, var(--paper));
 }
 
-.dui-stage__objeto[data-familia="controller"] .dui-stage__porta circle,
-.dui-stage__objeto[data-familia="controller"] .dui-stage__porta[data-lado="saida"] circle {
+/* O nome só aparece quando há espaço para ele: com o interior aberto, saber
+   qual entrada é qual é a diferença entre orientar-se e adivinhar. */
+.dui-stage__porta-nome {
+  fill: var(--ink-muted);
+  font-size: 8px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
+.dui-stage__objeto[data-familia="controller"] .dui-stage__porta rect {
   stroke: color-mix(in oklab, var(--dui-sinal) 70%, var(--rule));
 }
 
-.dui-stage__objeto[data-familia="controller"] .dui-stage__porta[data-lado="saida"] circle {
-  fill: color-mix(in oklab, var(--dui-sinal) 70%, var(--paper));
+.dui-stage__objeto[data-familia="controller"] .dui-stage__porta[data-lado="saida"] rect {
+  fill: color-mix(in oklab, var(--dui-sinal) 55%, var(--paper));
 }
 
-.dui-stage__objeto[data-alto="true"] .dui-stage__porta[data-lado="saida"] circle {
+.dui-stage__objeto[data-alto="true"] .dui-stage__porta[data-lado="saida"] rect {
   fill: var(--dui-dado);
 }
 

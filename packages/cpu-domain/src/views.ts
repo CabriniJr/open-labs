@@ -16,62 +16,92 @@ import type { PortaLogica } from "./gates.js";
  * a diferença é que esta anda.
  */
 
+/**
+ * As faixas do caminho de dados.
+ *
+ * O desenho não é livre: ele segue a figura canônica do caminho de dados de
+ * ciclo único, a mesma de Patterson & Hennessy. Ela existe porque resolveu, há
+ * décadas, exatamente o problema que um layout inventado cria — o caminho de
+ * volta cruzando o de ida e virando sopa.
+ *
+ * Três faixas, e cada uma diz uma coisa:
+ *
+ * - **controle**, em cima: quem decide. As linhas dele descem sobre o caminho,
+ *   e por isso nunca se confundem com dado.
+ * - **fluxo**, no meio: da esquerda para a direita, na ordem dos estágios —
+ *   buscar, decodificar, executar, acessar, escrever. Ler o desenho da esquerda
+ *   para a direita **é** ler a execução de uma instrução.
+ * - **retorno**, embaixo: o que volta. O próximo PC e o valor que vai ser
+ *   escrito no banco andam da direita para a esquerda, numa faixa só deles.
+ *   Reservar essa faixa é o que impede a volta de atravessar a ida.
+ */
+const FAIXA = { controle: 60, fluxo: 190, retorno: 470 } as const;
+
 export const VIEW_SISTEMA: View = {
   id: "sistema",
   focus: "sistema",
   title: "The system: CPU, memories, and the clock that moves it",
-  width: 1180,
-  height: 640,
+  width: 1240,
+  height: 700,
   places: [
-    { id: "relogio", x: 16, y: 500, w: 110, h: 64 },
+    // O relógio fica fora e embaixo: ele não participa do caminho, ele o move.
+    { id: "relogio", x: 20, y: FAIXA.retorno + 130, w: 110, h: 64 },
 
-    { id: "cpu", x: 150, y: 30, w: 1000, h: 430 },
-    { id: "controle", x: 190, y: 70, w: 230, h: 50 },
-    { id: "decodificador", x: 460, y: 70, w: 200, h: 50 },
+    { id: "cpu", x: 160, y: 24, w: 1050, h: 540 },
 
-    { id: "processador", x: 180, y: 150, w: 940, h: 280 },
-    { id: "pc", x: 210, y: 200, w: 100, h: 50 },
-    { id: "banco", x: 210, y: 300, w: 160, h: 80 },
+    // Faixa de controle, em cima de tudo o que ela comanda.
+    { id: "controle", x: 300, y: FAIXA.controle, w: 240, h: 56 },
+    { id: "decodificador", x: 600, y: FAIXA.controle, w: 220, h: 56 },
 
-    { id: "logica", x: 410, y: 175, w: 680, h: 235 },
-    { id: "mux-operando", x: 440, y: 215, w: 120, h: 50 },
-    // A ULA tem interior agora, e a view diz isso em voz alta em vez de
-    // desenhar uma caixa lisa: dois cliques entram nela.
-    { id: "ula", x: 610, y: 205, w: 140, h: 80, collapsed: true },
-    { id: "desvio", x: 800, y: 215, w: 130, h: 50 },
-    { id: "mux-escrita", x: 800, y: 325, w: 130, h: 50 },
+    { id: "processador", x: 190, y: FAIXA.fluxo - 40, w: 990, h: 470 },
 
-    { id: "imem", x: 200, y: 500, w: 250, h: 70 },
-    { id: "memoria", x: 610, y: 500, w: 250, h: 70 },
+    // Faixa de fluxo: buscar › decodificar › executar › escrever.
+    { id: "pc", x: 220, y: FAIXA.fluxo, w: 110, h: 64 },
+    { id: "banco", x: 380, y: FAIXA.fluxo - 20, w: 170, h: 130 },
 
-    // Os dois lados do mundo de fora. Ficam junto da memória de propósito: a
-    // entrada e a saída são endereços dela, e não instruções novas.
-    { id: "entrada", x: 480, y: 500, w: 110, h: 70 },
-    { id: "saida", x: 880, y: 500, w: 110, h: 70 },
+    { id: "logica", x: 600, y: FAIXA.fluxo - 30, w: 550, h: 330 },
+    { id: "mux-operando", x: 630, y: FAIXA.fluxo, w: 120, h: 64 },
+    // A ULA tem interior, e a view diz isso em voz alta em vez de desenhar uma
+    // caixa lisa: dois cliques entram nela, e o zoom também.
+    { id: "ula", x: 800, y: FAIXA.fluxo - 8, w: 150, h: 80, collapsed: true },
+    { id: "desvio", x: 1000, y: FAIXA.fluxo, w: 130, h: 64 },
+
+    // Faixa de retorno, dentro da lógica: o valor escrito volta para o banco.
+    { id: "mux-escrita", x: 800, y: FAIXA.fluxo + 160, w: 150, h: 64 },
+
+    // Memórias e mundo, embaixo: fora da CPU, e é isso que o desenho diz.
+    { id: "imem", x: 220, y: FAIXA.retorno + 130, w: 240, h: 70 },
+    { id: "memoria", x: 620, y: FAIXA.retorno + 130, w: 240, h: 70 },
+    // Entrada e saída ficam junto da memória de propósito: são endereços dela,
+    // e não instruções novas.
+    { id: "entrada", x: 500, y: FAIXA.retorno + 130, w: 100, h: 70 },
+    { id: "saida", x: 890, y: FAIXA.retorno + 130, w: 100, h: 70 },
   ],
 };
 
 /**
  * O mesmo run, enquadrado no processador. Não é outro desenho: é a mesma coisa
- * vista de mais perto, e é por isso que os números batem entre as duas.
+ * vista de mais perto, com as mesmas faixas — e é por isso que os números batem
+ * entre as duas, e que descer não desorienta.
  */
 export const VIEW_PROCESSADOR: View = {
   id: "processador",
   focus: "processador",
   title: "Inside the processor: PC, register file, and the combinational logic",
-  width: 1000,
-  height: 480,
+  width: 1120,
+  height: 540,
   places: [
-    { id: "pc", x: 40, y: 60, w: 160, h: 80 },
-    { id: "banco", x: 40, y: 220, w: 200, h: 140 },
-    { id: "logica", x: 300, y: 40, w: 660, h: 400 },
-    { id: "mux-operando", x: 340, y: 120, w: 160, h: 80 },
-    { id: "ula", x: 550, y: 100, w: 180, h: 120, collapsed: true },
-    { id: "desvio", x: 780, y: 120, w: 150, h: 80 },
-    { id: "mux-escrita", x: 550, y: 300, w: 180, h: 80 },
+    { id: "pc", x: 40, y: 120, w: 130, h: 76 },
+    { id: "banco", x: 230, y: 100, w: 190, h: 150 },
+
+    { id: "logica", x: 480, y: 60, w: 600, h: 400 },
+    { id: "mux-operando", x: 510, y: 130, w: 140, h: 76 },
+    { id: "ula", x: 700, y: 118, w: 170, h: 100, collapsed: true },
+    { id: "desvio", x: 920, y: 130, w: 140, h: 76 },
+    // A faixa de retorno: o que vai ser escrito desce e volta para o banco.
+    { id: "mux-escrita", x: 700, y: 330, w: 170, h: 76 },
   ],
 };
-
 
 /**
  * Dentro da ULA: o número vira linhas, as linhas viram soma, a soma vira número.

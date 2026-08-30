@@ -830,27 +830,40 @@ function Camada({
                 de qual pedaço daquela margem era a entrada. Sem ela o leitor vê
                 um circuito flutuando, sem saber de onde a coisa veio.
               */}
-              <g className="dui-stage__portas" aria-hidden="true">
-                {portas.entradas.map((porta, i) => (
-                  <g key={`e${porta}`} className="dui-stage__porta" data-lado="entrada">
-                    <title>{`in · ${porta}`}</title>
-                    <circle
-                      cx={place.x}
-                      cy={place.y + place.h * posicaoDaPorta(i, portas.entradas.length)}
-                      r={3.5}
-                    />
-                  </g>
-                ))}
-                {portas.saidas.map((porta, i) => (
-                  <g key={`s${porta}`} className="dui-stage__porta" data-lado="saida">
-                    <title>{`out · ${porta}`}</title>
-                    <circle
-                      cx={place.x + place.w}
-                      cy={place.y + place.h * posicaoDaPorta(i, portas.saidas.length)}
-                      r={3.5}
-                    />
-                  </g>
-                ))}
+              <g className="dui-stage__portas">
+                {portas.entradas.map((porta, i) => {
+                  const cy = place.y + place.h * posicaoDaPorta(i, portas.entradas.length);
+                  return (
+                    <g key={`e${porta}`} className="dui-stage__porta" data-lado="entrada">
+                      <title>{`in · ${porta}`}</title>
+                      <rect x={place.x - 6} y={cy - 8} width={12} height={16} rx={2} />
+                      {aparece > 0.5 ? (
+                        <text className="dui-stage__porta-nome" x={place.x + 10} y={cy + 3}>
+                          {porta}
+                        </text>
+                      ) : null}
+                    </g>
+                  );
+                })}
+                {portas.saidas.map((porta, i) => {
+                  const cy = place.y + place.h * posicaoDaPorta(i, portas.saidas.length);
+                  return (
+                    <g key={`s${porta}`} className="dui-stage__porta" data-lado="saida">
+                      <title>{`out · ${porta}`}</title>
+                      <rect x={place.x + place.w - 6} y={cy - 8} width={12} height={16} rx={2} />
+                      {aparece > 0.5 ? (
+                        <text
+                          className="dui-stage__porta-nome"
+                          x={place.x + place.w - 10}
+                          y={cy + 3}
+                          textAnchor="end"
+                        >
+                          {porta}
+                        </text>
+                      ) : null}
+                    </g>
+                  );
+                })}
               </g>
 
               {/*
