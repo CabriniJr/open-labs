@@ -307,6 +307,60 @@ function ler(mem: ReadonlyMap<number, number>, entrada: number, endereco: number
   return mem.get(endereco) ?? 0;
 }
 
+
+/**
+ * O barramento de memória: as vias que ligam o processador à memória.
+ *
+ * Ele existia como três fios soltos atravessando o desenho — endereço, dado e
+ * controle indo cada um por conta. Isso é fiel ao que acontece e é ilegível no
+ * nível alto: é o espaguete que qualquer diagrama de sistema vira quando não há
+ * nada que agregue. **Um barramento é a coisa que agrega**, e é um conceito de
+ * estrutura de computadores tão fundamental quanto o somador.
+ *
+ * Cada via é uma folha que **transporta e não altera** — que é a definição de
+ * `conduit`. Elas rodam de verdade: de longe o barramento é uma esteira só, de
+ * perto são os trilhos, cada um com a sua carga passando. Não é ilustração do
+ * barramento, é o barramento.
+ */
+function via(id: string, label: string): ObjectSpec {
+  return {
+    id,
+    kind: "channel",
+    label,
+    leaf: true,
+    behavior: (state, inbox, ctx) =>
+      ctx.phase !== "settle" || inbox.length === 0
+        ? { state, out: [] }
+        : // Repassa exatamente o que recebeu: um canal que mexesse na carga
+          // deixaria de ser canal, e o desenho estaria mentindo sobre o que
+          // acontece entre as duas pontas.
+          { state, out: inbox.map((m) => ({ port: "out", message: m })) },
+  };
+}
+
+const barramentoDeMemoria: ObjectSpec = {
+  id: "barramento",
+  kind: "channel",
+  label: ROTULOS.barramento,
+  /*
+    Sem bornes, e é de propósito: linha de dado **não nomeia porta** — o motor
+    acha a folha de entrada —, então um borne por via faria o endereço e o dado
+    de volta caírem os dois na primeira. Os fios falam com a via que lhes cabe,
+    e o barramento é a caixa que as agrega. Visto de longe é uma esteira só;
+    aberto, são os trilhos, cada um com a sua carga.
+
+    Duas vias, e não três: a linha de controle continua indo direto. Ela carrega
+    **sinal**, e sinal tem destinatário nomeado — uma via que só repassa carga
+    engoliria o modo de acesso, e a memória pararia de escrever. Um barramento
+    de verdade carrega controle também; modelar isso exige um canal que repasse
+    sinal, e é lacuna declarada, não esquecimento.
+  */
+  children: [
+    via("via-endereco", ROTULOS.viaEndereco),
+    via("via-dado", ROTULOS.viaDado),
+  ],
+};
+
 function memoriaPrincipal(image: readonly number[]): ObjectSpec<EstadoMemoria> {
   return {
     id: "memoria",
@@ -518,6 +572,7 @@ export function cpuWorld(
       entrada,
       cpu,
       memoriaDeInstrucoes(image),
+      barramentoDeMemoria,
       memoriaPrincipal(image),
       saida,
     ],
@@ -546,9 +601,12 @@ export function cpuWorld(
       { from: "decodificador", port: "out", to: "banco", timing: "settle" },
       { from: "banco", port: "out", to: "mux-operando", timing: "settle", width: 32 },
       { from: "mux-operando", port: "out", to: "ula", toPort: "in", timing: "settle", width: 32 },
-      { from: "ula", port: "out", to: "memoria", timing: "settle", width: 32 },
+      // O caminho até a memória passa pelo barramento, que é o que ele é.
+      { from: "ula", port: "out", to: "via-endereco", timing: "settle", width: 32 },
+      { from: "via-endereco", port: "out", to: "memoria", timing: "settle", width: 32 },
       { from: "ula", port: "out", to: "desvio", timing: "settle", width: 32 },
-      { from: "memoria", port: "out", to: "mux-escrita", timing: "settle", width: 32 },
+      { from: "memoria", port: "out", to: "via-dado", timing: "settle", width: 32 },
+      { from: "via-dado", port: "out", to: "mux-escrita", timing: "settle", width: 32 },
 
       // as linhas de controle: metade do diagrama, e nenhuma carrega carga
       { from: "controle", port: "op", to: "ula", line: "control", toPort: "op", timing: "settle" },

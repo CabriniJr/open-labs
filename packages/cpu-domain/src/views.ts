@@ -77,6 +77,10 @@ export const VIEW_SISTEMA: View = {
     { id: "entrada", x: 40, y: 190, w: 130, h: 70 },
     { id: "saida", x: 1010, y: 190, w: 130, h: 70 },
 
+    // O barramento, entre a CPU e a memória — que é onde ele vive. Fechado:
+    // de longe é uma esteira só; abrindo, são as vias que ele agrega.
+    { id: "barramento", x: 330, y: 410, w: 560, h: 26, collapsed: true },
+
     // As memórias, embaixo: fora da CPU, e é isso que o desenho diz.
     { id: "imem", x: 330, y: 470, w: 250, h: 70 },
     { id: "memoria", x: 640, y: 470, w: 250, h: 70 },

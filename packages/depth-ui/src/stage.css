@@ -652,3 +652,39 @@
   text-transform: uppercase;
   pointer-events: none;
 }
+
+/*
+ * A família `conduit`: uma esteira, e não uma caixa.
+ *
+ * Transportar e transformar são coisas diferentes, e é a primeira distinção que
+ * este desenho precisa deixar clara. Um retângulo com nome dentro parece uma
+ * peça que processa; um corpo baixo de pontas arredondadas, com o nome fora e a
+ * carga andando por dentro, parece o que é.
+ *
+ * O barramento é a instância que isto existe para desenhar: de longe, uma
+ * esteira larga com um nome; de perto, os trilhos que ele agrega.
+ */
+.dui-stage__objeto[data-familia="conduit"] > .dui-stage__caixa {
+  fill: color-mix(in oklab, var(--dui-conduit) 12%, var(--paper-raised));
+  stroke: color-mix(in oklab, var(--dui-conduit) 60%, var(--rule));
+  stroke-width: 1.5;
+}
+
+.dui-stage__objeto[data-familia="conduit"][data-alto="true"] > .dui-stage__caixa {
+  fill: color-mix(in oklab, var(--dui-conduit) 30%, var(--paper-raised));
+  stroke: var(--dui-conduit);
+}
+
+.dui-stage__objeto[data-familia="conduit"] .dui-stage__titulo {
+  fill: var(--ink-muted);
+  text-transform: none;
+  letter-spacing: 0.04em;
+}
+
+.dui-stage__objeto[data-familia="conduit"] .dui-stage__porta rect {
+  stroke: color-mix(in oklab, var(--dui-conduit) 70%, var(--rule));
+}
+
+.dui-stage__objeto[data-familia="conduit"] .dui-stage__porta[data-lado="saida"] rect {
+  fill: color-mix(in oklab, var(--dui-conduit) 55%, var(--paper));
+}

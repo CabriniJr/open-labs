@@ -72,3 +72,36 @@ test("a ULA só desce até o transistor quando o leitor pede", async ({ page }) 
   // A mesma conta, muito mais fundo: o atraso de propagação cresce porque o
   // caminho cresceu, e é isso que o número diz.
 });
+
+/**
+ * O barramento: a coisa que agrega.
+ *
+ * Endereço e dado eram dois fios soltos atravessando o desenho. É fiel e é
+ * ilegível no nível alto — é o espaguete que qualquer diagrama de sistema vira
+ * quando não há nada que agregue. De longe o barramento é uma esteira só; de
+ * perto, são as vias, cada uma com a sua carga.
+ */
+test("o barramento é uma esteira, e abre nas vias que ele agrega", async ({ page }) => {
+  await page.goto("labs/cpu/");
+  await page.waitForSelector("g.dui-stage__objeto");
+
+  const barramento = page.locator('[data-id="barramento"]');
+  await expect(barramento).toHaveAttribute("data-familia", "conduit");
+  await expect(barramento).toHaveAttribute("data-fechado", "true");
+
+  const caixa = await barramento.boundingBox();
+  const janela = page.viewportSize();
+  if (caixa === null || janela === null) throw new Error("o barramento não está na tela");
+  const x = Math.min(janela.width - 5, Math.max(5, caixa.x + caixa.width / 2));
+  const y = Math.min(janela.height - 5, Math.max(5, caixa.y + caixa.height / 2));
+  for (let i = 0; i < 14; i++) {
+    await page.mouse.move(x, y);
+    await page.mouse.wheel(0, -120);
+    await page.waitForTimeout(45);
+  }
+  await page.waitForTimeout(600);
+
+  // As vias existem de verdade e transportam: não é ilustração do barramento.
+  await expect(page.locator('.dui-stage__interior [data-id="via-endereco"]')).toHaveCount(1);
+  await expect(page.locator('.dui-stage__interior [data-id="via-dado"]')).toHaveCount(1);
+});

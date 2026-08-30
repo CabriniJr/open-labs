@@ -884,13 +884,22 @@ function Camada({
                   />
                 </>
               ) : null}
+              {/*
+                A forma vem da família, e a família vem do kind.
+
+                Um `conduit` é uma **esteira**, não uma caixa: pontas
+                arredondadas, corpo baixo, e o nome fora dele. Desenhá-lo como
+                retângulo o faz parecer uma peça que processa, e a diferença
+                entre transportar e transformar é a primeira coisa que este
+                desenho precisa deixar clara.
+              */}
               <rect
                 className="dui-stage__caixa"
                 x={place.x}
                 y={place.y}
                 width={place.w}
                 height={place.h}
-                rx={fam === "container" ? 14 : 8}
+                rx={fam === "container" ? 14 : fam === "conduit" ? place.h / 2 : 8}
               />
               {cheio !== undefined ? (
                 <rect
@@ -1014,6 +1023,29 @@ function Camada({
                 <text className="dui-stage__titulo" x={place.x + 12} y={place.y + 18}>
                   {rotulo}
                 </text>
+              ) : fam === "conduit" ? (
+                // O nome de uma esteira vai **acima** dela: dentro, ele disputa
+                // espaço com a carga que passa, que é o que se quer olhar.
+                <>
+                  <text
+                    className="dui-stage__titulo"
+                    x={place.x + place.w / 2}
+                    y={place.y - 6}
+                    textAnchor="middle"
+                  >
+                    {rotulo}
+                  </text>
+                  {leitura === undefined ? null : (
+                    <text
+                      className="dui-stage__leitura"
+                      x={place.x + place.w / 2}
+                      y={place.y + place.h / 2 + 4}
+                      textAnchor="middle"
+                    >
+                      {leitura}
+                    </text>
+                  )}
+                </>
               ) : (
                 <>
                   {fam === "processor" && place.h >= 34 ? (
