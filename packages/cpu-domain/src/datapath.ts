@@ -19,9 +19,11 @@ import { ROTULOS } from "./labels.js";
  * `pc -> ... -> pc` não é um laço combinacional: ele passa por um registrador,
  * e o motor recusaria se não passasse.
  *
- * Compromisso declarado: a unidade de controle é `router` porque o catálogo de
- * hoje não tem `kind` da família `controller` — `clock` e `arbiter` são onda 1.
- * A família está certa no papel; o `kind` chega com ela.
+ * A unidade de controle é `sequencer` — família `controller`. Ela era `router`
+ * enquanto o catálogo não tinha um `kind` dessa família; o `micro` precisou de
+ * uma UC com estado e o `kind` nasceu lá. Aqui ela não guarda estado (num
+ * caminho de ciclo único não há o que guardar), mas a família está certa: ela
+ * decide e não está no caminho da carga.
  */
 
 export const PALAVRA = 4;
@@ -254,7 +256,7 @@ export function controlar(instr: Instruction): {
  */
 const controle: ObjectSpec<Record<string, never>> = {
   id: "controle",
-  kind: "router",
+  kind: "sequencer",
   label: ROTULOS.controle,
   leaf: true,
   behavior: (state, inbox, ctx) => {
