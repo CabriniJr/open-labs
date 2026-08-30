@@ -258,3 +258,37 @@ test("a moldura acesa se distingue da apagada, nos dois temas", async ({ page })
   // A prova de que o laço acima trocou mesmo de tema.
   expect(fundoPorTema[0], "o tema mudou de verdade").not.toBe(fundoPorTema[1]);
 });
+
+/**
+ * O transistor não é um seletor, e o desenho não pode dizer que é.
+ *
+ * Ele era `kind: "router"`, e com isso herdava o trapézio do mux e a ficha o
+ * descrevia com o texto do mux — "a mux is a router: it picks which of its
+ * inputs answers". No nível mais didático do modelo, o desenho empurrava o
+ * modelo mental errado: um transistor não escolhe entre entradas, ele deixa
+ * passar ou não, e quem manda é o terminal de porta.
+ */
+test("o transistor é desenhado como chave, e não como seletor", async ({ page }) => {
+  await page.goto("labs/gates/");
+  await expect(page.locator(".dui-stage")).toBeVisible({ timeout: 15_000 });
+
+  // circuito › bit0 › a porta XOR › o NAND dentro dela › o silício
+  await page.locator('.dui-stage__objeto[data-id="bit0"]').first().dblclick();
+  await page.locator('.dui-stage__objeto[data-id="bit0-xor1"]').first().dblclick();
+  await page.locator('.dui-stage__objeto[data-fechado="true"]').first().dblclick();
+
+  const transistor = page.locator('.dui-stage__objeto[data-id$="-p1"]').first();
+  await expect(transistor).toBeVisible({ timeout: 10_000 });
+
+  // A chave, e nunca a engrenagem: deixar passar não é processar.
+  await expect(transistor.locator(".dui-stage__chave")).toHaveCount(1);
+  await expect(transistor.locator(".dui-stage__engrenagem")).toHaveCount(0);
+
+  // E a caixa é caixa, não o trapézio que significa "escolha".
+  await expect(transistor.locator("path.dui-stage__caixa")).toHaveCount(0);
+
+  // A ficha deixa de explicá-lo como um mux.
+  await transistor.click();
+  await expect(page.locator(".ficha")).toContainText("switch", { timeout: 10_000 });
+  await expect(page.locator(".ficha")).not.toContainText("A mux is a router");
+});

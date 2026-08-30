@@ -75,6 +75,7 @@ O que já existe em `packages/depth-core/src/model.ts`, relido sob a gramática 
 | `source` | Processador | Mantém. Ganha regime "limitada" quando o backpressure chega |
 | `sink` | Processador | **Precisa encolher**: hoje "consome e opcionalmente transforma". Transformar sai para `transform` |
 | `router` | Processador | Mantém |
+| `switch` | Processador | **Novo (30/08/2026)**: deixa o caminho passar ou não, sob comando. Não é escolha entre entradas — é uma quebra em UM caminho. Entrou porque o transistor era `router` e herdava o trapézio do seletor com a descrição do mux, no nível mais didático do modelo. Vale igual para válvula e relé |
 | `buffer` | Processador | **Precisa dividir**: hoje acumula *e* agrupa. Agrupar sai para `batch` |
 | `pipeline` | Composição | Mantém |
 | `composite` | Composição | Mantém |

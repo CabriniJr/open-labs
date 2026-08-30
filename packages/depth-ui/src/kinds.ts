@@ -92,6 +92,13 @@ export const KINDS: Readonly<Record<Kind, Descricao>> = {
       "The most common processor. A mux is a router: it picks which of its inputs answers, " +
       "and what commands the choice is usually a control line.",
   },
+  switch: {
+    resumo: "Lets the path through, or does not.",
+    detalhe:
+      "Not a choice between inputs — a break in one path, and something else commands the " +
+      "break. A valve is one; so is a relay. What it decides is whether anything gets through " +
+      "at all, not which of several does.",
+  },
   buffer: {
     resumo: "Holds the load between two points.",
     detalhe:

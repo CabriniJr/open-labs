@@ -82,7 +82,12 @@ export function trilho(id: string, bit: 0 | 1): ObjectSpec {
 export function transistor(id: string, canal: Canal): ObjectSpec {
   return {
     id,
-    kind: "router",
+    // Chave, e não roteador. Um roteador escolhe qual das entradas responde; um
+    // transistor não escolhe nada — ele deixa passar ou não, e quem manda é o
+    // terminal de porta. Com `router` ele herdava o trapézio do seletor e a
+    // ficha o descrevia como "a mux is a router": símbolo errado e explicação
+    // errada, no nível mais didático do modelo.
+    kind: "switch",
     label: canal.toUpperCase(),
     leaf: true,
     behavior: (state, inbox, ctx) => {

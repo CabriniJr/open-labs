@@ -10,6 +10,7 @@ export type Kind =
   | "composite"
   | "source"
   | "router"
+  | "switch"
   | "pipeline"
   | "buffer"
   | "store"
@@ -46,6 +47,7 @@ const FAMILY: Record<Kind, Family> = {
   pipeline: "container",
   source: "processor",
   router: "processor",
+  switch: "processor",
   buffer: "processor",
   store: "processor",
   sink: "processor",

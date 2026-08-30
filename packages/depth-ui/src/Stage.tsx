@@ -185,6 +185,32 @@ function usaMovimentoReduzido(): boolean {
   return reduzido;
 }
 
+/**
+ * A chave: um caminho com uma quebra, e algo comandando a quebra.
+ *
+ * É o símbolo que separa "deixar passar ou não" de "escolher qual entrada
+ * responde". Uma chave desenhada com o trapézio do seletor — que é a notação de
+ * uma escolha — empurra o modelo mental errado, e empurra justamente onde o
+ * leitor está mais fundo e menos seguro. Aqui os dois terminais são o caminho,
+ * a lâmina é a quebra, e o traço que chega de baixo é quem comanda: desenhado
+ * na linguagem da linha de controle porque **é** uma linha de controle, e não
+ * parte do caminho.
+ *
+ * A lâmina está aberta, e por enquanto sempre: fechá-la quando a chave conduz é
+ * a entrega da cor, onde conduzir e cortar ganham leitura de relance.
+ */
+function Chave({ x, y, r }: { x: number; y: number; r: number }) {
+  return (
+    <g className="dui-stage__chave" transform={`translate(${x} ${y})`}>
+      <line className="dui-stage__chave-via" x1={-r * 1.4} y1={0} x2={-r * 0.5} y2={0} />
+      <line className="dui-stage__chave-via" x1={r * 0.5} y1={0} x2={r * 1.4} y2={0} />
+      <line className="dui-stage__chave-lamina" x1={-r * 0.5} y1={0} x2={r * 0.45} y2={-r * 0.9} />
+      <line className="dui-stage__chave-comando" x1={0} y1={r * 1.3} x2={0} y2={r * 0.3} />
+      <circle className="dui-stage__chave-eixo" cx={-r * 0.5} cy={0} r={r * 0.18} />
+    </g>
+  );
+}
+
 /** A engrenagem: oito dentes, e só gira quando o objeto agiu neste tick. */
 function Engrenagem({ x, y, r }: { x: number; y: number; r: number }) {
   const dentes = Array.from({ length: 8 }, (_, i) => {
@@ -1237,7 +1263,13 @@ function Camada({
               ) : (
                 <>
                   {fam === "processor" && place.h >= 34 ? (
-                    <Engrenagem x={place.x + place.w - 16} y={place.y + 16} r={6} />
+                    // Uma chave não processa: ela deixa passar. Engrenagem nela
+                    // seria o mesmo gesto para duas coisas diferentes.
+                    node?.kind === "switch" ? (
+                      <Chave x={place.x + place.w - 18} y={place.y + 16} r={7} />
+                    ) : (
+                      <Engrenagem x={place.x + place.w - 16} y={place.y + 16} r={6} />
+                    )
                   ) : null}
                   <text
                     className="dui-stage__rotulo"

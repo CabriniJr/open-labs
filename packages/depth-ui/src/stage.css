@@ -326,6 +326,31 @@
   stroke-dasharray: 8 4;
 }
 
+/*
+ * ---------- a chave ----------
+ *
+ * Os dois terminais e a lâmina são o caminho, e por isso falam a cor do dado.
+ * O comando chega tracejado, na cor do sinal: é uma linha de controle, e o
+ * desenho não pode deixar isso por conta do leitor adivinhar.
+ */
+.dui-stage__chave-via,
+.dui-stage__chave-lamina {
+  stroke: color-mix(in oklab, var(--dui-dado) 70%, var(--ink));
+  stroke-width: 1.4;
+  stroke-linecap: round;
+}
+
+.dui-stage__chave-comando {
+  stroke: var(--dui-sinal);
+  stroke-width: 1.2;
+  stroke-dasharray: 2 2;
+  stroke-linecap: round;
+}
+
+.dui-stage__chave-eixo {
+  fill: color-mix(in oklab, var(--dui-dado) 70%, var(--ink));
+}
+
 /* ---------- a engrenagem ---------- */
 
 .dui-stage__engrenagem circle {
