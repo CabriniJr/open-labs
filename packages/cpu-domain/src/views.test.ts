@@ -31,9 +31,12 @@ describe("as views do caminho de dados", () => {
     // A prova de que o teste acima tem dente: tirar uma peça reprova.
     const capenga = {
       ...VIEW_SISTEMA,
-      places: VIEW_SISTEMA.places.filter((p) => p.id !== "ula"),
+      // `banco` e não `ula`: a ULA não é mais desenhada no primeiro nível — ela
+      // mora dentro da lógica combinacional, que vem fechada. Tirar dali não é
+      // esquecer, é o que `collapsed` autoriza.
+      places: VIEW_SISTEMA.places.filter((p) => p.id !== "banco"),
     };
-    expect(viewDisagreement(tree, capenga)).toMatch(/"ula" existe dentro de "logica"/);
+    expect(viewDisagreement(tree, capenga)).toMatch(/"banco" existe dentro de "processador"/);
   });
 
   it("nenhuma caixa desenhada por cima de outra irmã", () => {

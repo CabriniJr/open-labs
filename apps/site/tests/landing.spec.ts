@@ -107,6 +107,11 @@ test.describe.serial("progresso do mapa", () => {
     await page.goto("handbooks/riscv/");
     await page.evaluate(() => window.localStorage.clear());
     await page.reload();
+    // Esperar o contador zerar antes de clicar não é folga: ele só existe
+    // depois de a ilha hidratar e ler o armazenamento. Clicar antes disso
+    // marca no estado inicial e o clique se perde na hidratação — falha
+    // intermitente, e só sob carga.
+    await expect(page.locator(".roadmap__progress-count")).toHaveText("0 of 6");
     const marcar = page.getByRole("button", { name: /Mark The single-cycle datapath as done/i });
     await marcar.scrollIntoViewIfNeeded();
     await marcar.click();

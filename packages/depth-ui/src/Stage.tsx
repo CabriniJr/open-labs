@@ -1,5 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { borneNode, emissoesPorPorta, entryLeaf, familyOf, visibleChild } from "@ovh/depth-core";
+import {
+  borneNode,
+  bornePort,
+  emissoesPorPorta,
+  entryLeaf,
+  familyOf,
+  visibleChild,
+} from "@ovh/depth-core";
 import type {
   EmissaoDaPorta,
   Family,
@@ -83,6 +90,19 @@ export interface StageProps {
    * transformação, que é a coisa toda.
    */
   readonly leituraDaCarga?: ((mensagem: Message) => string | undefined) | undefined;
+  /**
+   * O retângulo que a câmera deve enquadrar, animando até lá.
+   *
+   * É o zoom como **transição**, e não como habilidade: entrar num objeto
+   * deixa de ser um corte e vira a câmera indo até ele, com o interior já
+   * aparecendo pela aproximação. Quando ela chega, `onEnquadrado` avisa e quem
+   * chamou troca a vista — na escala em que o leitor já está olhando, então a
+   * troca não se vê.
+   */
+  readonly alvoDeCamera?: { readonly x: number; readonly y: number; readonly w: number; readonly h: number } | undefined;
+  /** De onde a câmera parte ao entrar nesta vista. É o zoom de saída. */
+  readonly partirDe?: { readonly x: number; readonly y: number; readonly w: number; readonly h: number } | undefined;
+  readonly onEnquadrado?: (() => void) | undefined;
 }
 
 interface CamadaProps extends StageProps {
@@ -528,8 +548,48 @@ function Camada({
       const caixa = lugares.get(quem.id);
       if (caixa !== undefined) return caixa;
     }
-    if (quem.at === "self") return undefined;
-    return quem.at === "outside" ? FORA : undefined;
+    // O próprio foco: a ligação atravessa a moldura. Quem responde por ela lá
+    // dentro é resolvido logo abaixo — aqui só se diz que ela vem de fora.
+    return quem.at === "self" || quem.at === "outside" ? FORA : undefined;
+  };
+
+  /** A caixa desta vista que contém aquele objeto, se alguma contiver. */
+  const dentroDoFoco = (id: string): NodePlacement | undefined => {
+    const quem = visibleChild(tree, view.focus, id);
+    return quem.at === "child" ? lugares.get(quem.id) : undefined;
+  };
+
+  /**
+   * Quem, **nesta vista**, responde por uma ligação que atravessa a moldura.
+   *
+   * É o que faltava para a granularidade fina fazer sentido. Dentro de uma
+   * NAND, `a` e `b` chegam num fio cujo destino declarado é a porta lá em cima,
+   * três níveis acima: nenhuma das duas pontas era caixa desenhada, o fio
+   * sumia, e o leitor via um esquemático flutuando — sem saber por onde o dado
+   * entra nem para onde a resposta vai.
+   *
+   * O caminho é o mesmo que o motor percorre para entregar: seguir os bornes de
+   * entrada até cair dentro desta vista. Se nenhum cair, a ligação de fato
+   * acontece longe daqui, e a margem é a resposta honesta.
+   */
+  const entradaNoFoco = (destino: string, porta: string | undefined): NodePlacement | undefined => {
+    const visitados = new Set<string>();
+    const anda = (id: string, p: string | undefined): NodePlacement | undefined => {
+      const aqui = dentroDoFoco(id);
+      if (aqui !== undefined) return aqui;
+      const chave = `${id}.${p ?? "*"}`;
+      if (visitados.has(chave)) return undefined;
+      visitados.add(chave);
+      const inlets = tree.byId.get(id)?.inlets;
+      if (inlets === undefined) return undefined;
+      const bornes = p === undefined ? Object.values(inlets).flat() : (inlets[p] ?? []);
+      for (const borne of bornes) {
+        const achou = anda(borneNode(borne), bornePort(borne) ?? p);
+        if (achou !== undefined) return achou;
+      }
+      return undefined;
+    };
+    return anda(destino, porta);
   };
 
   /** A margem da moldura, na altura de quem ela serve. */
@@ -546,8 +606,20 @@ function Camada({
   /** Fios desenháveis: cada ponta cai numa caixa da vista ou na margem dela. */
   const arestas = wires
     .map((wire, i) => {
-      const a = ondeCai(wire.from);
-      const b = typeof wire.to === "string" ? ondeCai(String(wire.to)) : undefined;
+      const destino = typeof wire.to === "string" ? String(wire.to) : undefined;
+
+      // Fora do foco, ainda pode ser desta vista: quem emitiu de verdade pode
+      // morar aqui dentro, e quem vai receber também.
+      const bruto = ondeCai(wire.from);
+      const fonte = emissoes[`${wire.from}.${wire.port}`]?.fonte;
+      const a =
+        bruto === FORA && fonte !== undefined ? (dentroDoFoco(fonte) ?? FORA) : bruto;
+
+      const brutoDestino = destino === undefined ? undefined : ondeCai(destino);
+      const b =
+        brutoDestino === FORA && destino !== undefined
+          ? (entradaNoFoco(destino, wire.toPort) ?? FORA)
+          : brutoDestino;
       if (a === undefined || b === undefined) return null;
       // Os dois lados fora do foco: a ligação inteira acontece longe daqui, e
       // desenhá-la seria pôr no palco uma coisa que não é deste palco.
@@ -1120,8 +1192,11 @@ function Camada({
  * enquadrado ou não — se dependesse do foco, duas pessoas com o mesmo link
  * veriam execuções diferentes, que é a otimização recusada em `depth.md` §5.1.
  */
+/** Quanto dura a viagem da câmera. Curta o bastante para não cansar. */
+const DURACAO_DA_TRANSICAO = 420;
+
 export function Stage(props: StageProps) {
-  const { view, tickMs = 700, state, tree } = props;
+  const { view, tickMs = 700, state, tree, alvoDeCamera, partirDe, onEnquadrado } = props;
 
   // Uma vez por tick, e não uma vez por camada aberta: a resolução percorre a
   // árvore até o ponto fixo, e um modelo aberto até o fundo tem milhares de
@@ -1132,13 +1207,58 @@ export function Stage(props: StageProps) {
     escala: 1,
     x: view.width / 2,
     y: view.height / 2,
+    vista: view.id,
   });
 
-  // Trocar de view é trocar de assunto: manter o enquadramento anterior
-  // deixaria o leitor num canto vazio do desenho novo.
+  /**
+   * O enquadramento que põe um retângulo na tela inteira.
+   *
+   * Uniforme, pelo lado que aperta — o mesmo critério do encaixe de um
+   * interior. Esticar para preencher distorceria, e a proporção é informação.
+   */
+  const enquadramentoDe = (r: { x: number; y: number; w: number; h: number }) => {
+    const escala = Math.max(
+      1,
+      Math.min(ZOOM_MAXIMO, Math.min(view.width / Math.max(1, r.w), view.height / Math.max(1, r.h))),
+    );
+    const lq = view.width / escala;
+    const aq = view.height / escala;
+    return {
+      escala,
+      x: Math.min(view.width - lq / 2, Math.max(lq / 2, r.x + r.w / 2)),
+      y: Math.min(view.height - aq / 2, Math.max(aq / 2, r.y + r.h / 2)),
+    };
+  };
+
+  const inteira = () => ({ escala: 1, x: view.width / 2, y: view.height / 2 });
+
+  /**
+   * Trocar de vista é trocar de assunto, e a câmera acompanha.
+   *
+   * O enquadramento é **derivado do render**, e não corrigido por efeito: a
+   * câmera carrega de qual vista ela é, e uma câmera de outra vista simplesmente
+   * não vale. Por efeito, o quadro final da viagem chegava depois da troca e a
+   * vista nova nascia enquadrada nas coordenadas da antiga — um desenho aberto
+   * num pedaço aleatório de si mesmo.
+   *
+   * Sem `partirDe`, a vista nova entra inteira. Com ele, ela começa enquadrando
+   * de onde o leitor veio e se afasta — que é o zoom de saída, e é o que impede
+   * subir um nível de parecer um corte para outro lugar.
+   */
+  const daVista =
+    camera.vista === view.id
+      ? camera
+      : { ...(partirDe === undefined ? inteira() : enquadramentoDe(partirDe)), vista: view.id };
+
   useEffect(() => {
-    setCamera({ escala: 1, x: view.width / 2, y: view.height / 2 });
-  }, [view.id, view.width, view.height]);
+    if (camera.vista === view.id) return;
+    const entrada = partirDe === undefined ? inteira() : enquadramentoDe(partirDe);
+    setCamera({ ...entrada, vista: view.id });
+    if (partirDe === undefined) return;
+    const solta = requestAnimationFrame(() => setCamera({ ...inteira(), vista: view.id }));
+    return () => cancelAnimationFrame(solta);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view.id, partirDe]);
 
   /**
    * A roda, num ouvinte nativo e **não passivo**.
@@ -1165,6 +1285,7 @@ export function Stage(props: StageProps) {
           const l = view.width / esc;
           const a = view.height / esc;
           return {
+            vista: view.id,
             escala: esc,
             x: Math.min(view.width - l / 2, Math.max(l / 2, x)),
             y: Math.min(view.height - a / 2, Math.max(a / 2, y)),
@@ -1181,10 +1302,49 @@ export function Stage(props: StageProps) {
     };
     alvo.addEventListener("wheel", rodou, { passive: false });
     return () => alvo.removeEventListener("wheel", rodou);
-  }, [view.width, view.height]);
+    // `view.id` entra porque a câmera carimba de qual vista ela é: sem ele, a
+    // roda de uma vista nova gravaria o nome da anterior, e o enquadramento
+    // seria descartado a cada quadro.
+  }, [view.id, view.width, view.height]);
 
-  const larguraDoQuadro = view.width / camera.escala;
-  const alturaDoQuadro = view.height / camera.escala;
+  /**
+   * A viagem até o alvo, quadro a quadro.
+   *
+   * Interpolar a **escala em logaritmo** e não linearmente: zoom é
+   * multiplicativo, e uma rampa linear passa quase toda a animação perto do
+   * fim, dando a impressão de que travou e depois pulou.
+   */
+  useEffect(() => {
+    if (alvoDeCamera === undefined) return;
+    const de = daVista;
+    const para = enquadramentoDe(alvoDeCamera);
+    const inicio = performance.now();
+    let vivo = true;
+    const passo = (agora: number) => {
+      if (!vivo) return;
+      const t = Math.min(1, (agora - inicio) / DURACAO_DA_TRANSICAO);
+      const suave = t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2;
+      setCamera({
+        escala: Math.exp(Math.log(de.escala) + (Math.log(para.escala) - Math.log(de.escala)) * suave),
+        x: de.x + (para.x - de.x) * suave,
+        y: de.y + (para.y - de.y) * suave,
+        vista: view.id,
+      });
+      if (t < 1) requestAnimationFrame(passo);
+      else onEnquadrado?.();
+    };
+    const id = requestAnimationFrame(passo);
+    return () => {
+      vivo = false;
+      cancelAnimationFrame(id);
+    };
+    // A câmera de partida é lida uma vez, no começo da viagem: relê-la a cada
+    // quadro faria a animação perseguir a si mesma e nunca chegar.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [alvoDeCamera]);
+
+  const larguraDoQuadro = view.width / daVista.escala;
+  const alturaDoQuadro = view.height / daVista.escala;
 
   /** O quadro nunca sai do desenho: fora dele não há nada para ver. */
   const enquadrar = (escala: number, x: number, y: number) => {
@@ -1203,8 +1363,8 @@ export function Stage(props: StageProps) {
     const caixa = svgRef.current?.getBoundingClientRect();
     if (caixa === undefined || caixa.width === 0 || caixa.height === 0) return undefined;
     return {
-      x: camera.x - larguraDoQuadro / 2 + ((clientX - caixa.left) / caixa.width) * larguraDoQuadro,
-      y: camera.y - alturaDoQuadro / 2 + ((clientY - caixa.top) / caixa.height) * alturaDoQuadro,
+      x: daVista.x - larguraDoQuadro / 2 + ((clientX - caixa.left) / caixa.width) * larguraDoQuadro,
+      y: daVista.y - alturaDoQuadro / 2 + ((clientY - caixa.top) / caixa.height) * alturaDoQuadro,
     };
   };
 
@@ -1212,22 +1372,25 @@ export function Stage(props: StageProps) {
     <svg
       ref={svgRef}
       className="dui-stage"
-      data-zoom={camera.escala > 1 ? "true" : undefined}
-      viewBox={`${camera.x - larguraDoQuadro / 2} ${camera.y - alturaDoQuadro / 2} ${larguraDoQuadro} ${alturaDoQuadro}`}
+      data-zoom={daVista.escala > 1 ? "true" : undefined}
+      viewBox={`${daVista.x - larguraDoQuadro / 2} ${daVista.y - alturaDoQuadro / 2} ${larguraDoQuadro} ${alturaDoQuadro}`}
       role="img"
       aria-label={view.title}
       style={{ ["--dui-tick" as string]: `${tickMs}ms` }}
       onPointerDown={(e) => {
-        if (e.button !== 0 || camera.escala <= 1) return;
+        if (e.button !== 0 || daVista.escala <= 1) return;
         const alvo = e.currentTarget;
         alvo.setPointerCapture(e.pointerId);
-        const partiu = { x: e.clientX, y: e.clientY, camera };
+        const partiu = { x: e.clientX, y: e.clientY, camera: daVista };
         const arrastar = (ev: PointerEvent) => {
           const caixa = alvo.getBoundingClientRect();
           if (caixa.width === 0) return;
           const dx = ((ev.clientX - partiu.x) / caixa.width) * (view.width / partiu.camera.escala);
           const dy = ((ev.clientY - partiu.y) / caixa.height) * (view.height / partiu.camera.escala);
-          setCamera(enquadrar(partiu.camera.escala, partiu.camera.x - dx, partiu.camera.y - dy));
+          setCamera({
+            ...enquadrar(partiu.camera.escala, partiu.camera.x - dx, partiu.camera.y - dy),
+            vista: view.id,
+          });
         };
         const soltar = () => {
           alvo.removeEventListener("pointermove", arrastar);
@@ -1239,7 +1402,9 @@ export function Stage(props: StageProps) {
       onDoubleClick={(e) => {
         // O duplo clique continua abrindo — quem quiser trocar de vista ainda
         // troca —, mas no vazio ele volta a câmera para o desenho inteiro.
-        if (e.target === e.currentTarget) setCamera(enquadrar(1, view.width / 2, view.height / 2));
+        if (e.target === e.currentTarget) {
+          setCamera({ ...enquadrar(1, view.width / 2, view.height / 2), vista: view.id });
+        }
       }}
     >
       <defs>

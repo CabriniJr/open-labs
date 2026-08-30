@@ -41,41 +41,45 @@ export const VIEW_SISTEMA: View = {
   id: "sistema",
   focus: "sistema",
   title: "The system: CPU, memories, and the clock that moves it",
-  width: 1240,
-  height: 700,
+  width: 1180,
+  height: 620,
+  /**
+   * A vista de cima mostra **poucas caixas, com profundidade** — e não muitas
+   * caixas rasas.
+   *
+   * Ela chegou a desenhar PC, banco, mux de operando, ULA, unidade de desvio e
+   * mux de escrita todos no primeiro nível. Isso é o interior do processador
+   * vazando para a vista do sistema: dezessete peças lado a lado, nenhuma delas
+   * com um dentro para abrir, e a pergunta "o que é um computador" respondida
+   * com uma lista. É o contrário do que este motor existe para fazer.
+   *
+   * O diagrama de blocos clássico responde com cinco: entrada, saída, memória,
+   * e uma CPU que contém a unidade de controle e o processador. Tudo o mais é
+   * um nível abaixo — e agora **é** um nível abaixo, atrás de `collapsed`, que
+   * é a forma de dizer em voz alta "há mais aqui dentro".
+   */
   places: [
     // O relógio fica fora e embaixo: ele não participa do caminho, ele o move.
-    { id: "relogio", x: 20, y: FAIXA.retorno + 130, w: 110, h: 64 },
+    { id: "relogio", x: 30, y: 470, w: 120, h: 70 },
 
-    { id: "cpu", x: 160, y: 24, w: 1050, h: 540 },
+    { id: "cpu", x: 320, y: 40, w: 560, h: 340 },
+    { id: "controle", x: 360, y: 80, w: 200, h: 60 },
+    { id: "decodificador", x: 620, y: 80, w: 200, h: 60 },
 
-    // Faixa de controle, em cima de tudo o que ela comanda.
-    { id: "controle", x: 300, y: FAIXA.controle, w: 240, h: 56 },
-    { id: "decodificador", x: 600, y: FAIXA.controle, w: 220, h: 56 },
+    { id: "processador", x: 360, y: 170, w: 460, h: 180 },
+    { id: "pc", x: 390, y: 205, w: 110, h: 55 },
+    { id: "banco", x: 390, y: 275, w: 180, h: 55 },
+    // A lógica combinacional vem fechada: dentro dela estão o mux de operando,
+    // a ULA, a unidade de desvio e o mux de escrita. Abrir é descer um nível.
+    { id: "logica", x: 600, y: 205, w: 190, h: 125, collapsed: true },
 
-    { id: "processador", x: 190, y: FAIXA.fluxo - 40, w: 990, h: 470 },
+    // Entrada e saída, nas pontas — é por onde o mundo fala com a máquina.
+    { id: "entrada", x: 40, y: 190, w: 130, h: 70 },
+    { id: "saida", x: 1010, y: 190, w: 130, h: 70 },
 
-    // Faixa de fluxo: buscar › decodificar › executar › escrever.
-    { id: "pc", x: 220, y: FAIXA.fluxo, w: 110, h: 64 },
-    { id: "banco", x: 380, y: FAIXA.fluxo - 20, w: 170, h: 130 },
-
-    { id: "logica", x: 600, y: FAIXA.fluxo - 30, w: 550, h: 330 },
-    { id: "mux-operando", x: 630, y: FAIXA.fluxo, w: 120, h: 64 },
-    // A ULA tem interior, e a view diz isso em voz alta em vez de desenhar uma
-    // caixa lisa: dois cliques entram nela, e o zoom também.
-    { id: "ula", x: 800, y: FAIXA.fluxo - 8, w: 150, h: 80, collapsed: true },
-    { id: "desvio", x: 1000, y: FAIXA.fluxo, w: 130, h: 64 },
-
-    // Faixa de retorno, dentro da lógica: o valor escrito volta para o banco.
-    { id: "mux-escrita", x: 800, y: FAIXA.fluxo + 160, w: 150, h: 64 },
-
-    // Memórias e mundo, embaixo: fora da CPU, e é isso que o desenho diz.
-    { id: "imem", x: 220, y: FAIXA.retorno + 130, w: 240, h: 70 },
-    { id: "memoria", x: 620, y: FAIXA.retorno + 130, w: 240, h: 70 },
-    // Entrada e saída ficam junto da memória de propósito: são endereços dela,
-    // e não instruções novas.
-    { id: "entrada", x: 500, y: FAIXA.retorno + 130, w: 100, h: 70 },
-    { id: "saida", x: 890, y: FAIXA.retorno + 130, w: 100, h: 70 },
+    // As memórias, embaixo: fora da CPU, e é isso que o desenho diz.
+    { id: "imem", x: 330, y: 470, w: 250, h: 70 },
+    { id: "memoria", x: 640, y: 470, w: 250, h: 70 },
   ],
 };
 

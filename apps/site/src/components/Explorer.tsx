@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { isOpenable } from "@ovh/depth-core";
 import type { Message, TreeIndex, Wire, WorldState } from "@ovh/depth-core";
 import { Stage, autoView, pathTo } from "@ovh/depth-ui";
-import type { View } from "@ovh/depth-ui";
+import type { NodePlacement, View } from "@ovh/depth-ui";
 import { Ficha } from "./Ficha.js";
 
 /**
@@ -82,9 +82,56 @@ export function Explorer({
     };
   }, [views, tree, wires]);
 
+  /**
+   * Entrar num objeto é uma **viagem da câmera**, e não um corte.
+   *
+   * A vista só troca quando a câmera já enquadrou a caixa — e nessa escala o
+   * interior dela já está desenhado, então a troca acontece sem o leitor ver.
+   * Cortar direto era perder a relação entre os dois níveis: o leitor via o
+   * interior e não via mais de que ele era o interior.
+   */
+  const [viagem, setViagem] = useState<{ readonly para: string } | undefined>(undefined);
+  const [partirDe, setPartirDe] = useState<NodePlacement | undefined>(undefined);
+
   const abrir = (id: string): void => {
-    if (id !== foco && isOpenable(tree, id)) setFoco(id);
+    if (id === foco || !isOpenable(tree, id)) return;
+    const caixa = view.places.find((p) => p.id === id);
+    if (caixa === undefined) {
+      setFoco(id);
+      return;
+    }
+    setViagem({ para: id });
   };
+
+  const chegou = (): void => {
+    if (viagem === undefined) return;
+    setFoco(viagem.para);
+    setPartirDe(undefined);
+    setViagem(undefined);
+  };
+
+  /**
+   * Sair é a mesma viagem ao contrário: a vista de cima entra já enquadrada em
+   * quem o leitor estava vendo, e se afasta até caber inteira.
+   */
+  const subirPara = (id: string): void => {
+    if (id === foco) return;
+    const acima = views.find((v) => v.focus === id) ?? autoView(tree, id, wires);
+    setPartirDe(acima.places.find((p) => p.id === foco));
+    setFoco(id);
+  };
+
+  /**
+   * O alvo precisa ser **estável** entre quadros.
+   *
+   * Recalculado a cada render, ele muda de identidade sessenta vezes por
+   * segundo, e a viagem reinicia em cada uma: a câmera se aproxima do alvo por
+   * uma exponencial que nunca chega, e a transição fica com cara de travamento.
+   */
+  const alvoDeCamera = useMemo(
+    () => (viagem === undefined ? undefined : view.places.find((p) => p.id === viagem.para)),
+    [viagem, view],
+  );
 
   return (
     <div className="explorer">
@@ -94,7 +141,7 @@ export function Explorer({
             {i > 0 ? <span aria-hidden="true"> › </span> : null}
             <button
               type="button"
-              onClick={() => setFoco(id)}
+              onClick={() => subirPara(id)}
               aria-current={id === foco ? "true" : undefined}
               disabled={id === foco}
             >
@@ -125,6 +172,9 @@ export function Explorer({
           onSelect={setSelecionado}
           onOpen={abrir}
           interiores={interiores}
+          alvoDeCamera={alvoDeCamera}
+          partirDe={partirDe}
+          onEnquadrado={chegou}
           leituraDaCarga={leituraDaCarga}
         />
         {comFicha ? <Ficha tree={tree} wires={wires} state={state} id={selecionado} /> : null}

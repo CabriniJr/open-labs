@@ -10,10 +10,15 @@ test("o caminho de dados desenha e executa", async ({ page }) => {
   const palco = page.locator(".dui-stage");
   await expect(palco).toBeVisible({ timeout: 15_000 });
 
-  // A view não esconde nada: as peças do modelo estão todas desenhadas.
-  for (const peca of ["ALU", "register file", "control unit", "PC"]) {
+  // A vista de cima mostra poucas caixas com profundidade, e não muitas caixas
+  // rasas: é a anatomia do diagrama de blocos clássico. O que ela não desenha
+  // está atrás de `collapsed`, que diz em voz alta que há mais lá dentro.
+  for (const peca of ["combinational logic", "register file", "control unit", "PC"]) {
     await expect(palco.getByText(peca, { exact: true })).toBeVisible();
   }
+  await expect(
+    palco.locator('.dui-stage__objeto[data-id="logica"][data-fechado="true"]'),
+  ).toHaveCount(1);
 
   // O relógio anda sozinho, e o registrador que o programa usa sai do zero.
   await expect(page.locator(".cpu-lab__tick").first()).not.toHaveText("tick 0");
@@ -84,7 +89,11 @@ test("descer da CPU até a porta lógica, e achar o somador vivo lá embaixo", a
   await expect(page.locator(".dui-stage")).toBeVisible({ timeout: 15_000 });
 
   const trilha = page.locator(".explorer__trilha");
-  await page.locator('.dui-stage__objeto[aria-label^="ALU"]').first().dblclick();
+  // A ULA agora mora dentro da lógica combinacional: a descida ganhou um
+  // degrau, e é ele que tira dezessete caixas rasas da vista de cima.
+  await page.locator('.dui-stage__objeto[data-id="logica"]').first().dblclick();
+  await expect(trilha).toContainText("combinational logic");
+  await page.locator('.dui-stage__objeto[data-id="ula"]').first().dblclick();
   await expect(trilha).toContainText("ALU");
 
   await page.locator('.dui-stage__objeto[aria-label^="32-bit adder"]').first().dblclick();
@@ -97,7 +106,9 @@ test("descer da CPU até a porta lógica, e achar o somador vivo lá embaixo", a
 
   // e volta pela trilha, sem recarregar nada
   await trilha.getByRole("button", { name: "system" }).click();
-  await expect(page.locator('.dui-stage__objeto[aria-label^="ALU"]')).toBeVisible();
+  // De volta ao topo, a vista é a de blocos: a ULA não aparece aqui, ela mora
+  // dentro da lógica combinacional — e é essa a anatomia que se quer ensinar.
+  await expect(page.locator('.dui-stage__objeto[data-id="logica"]')).toBeVisible();
 });
 
 test("a profundidade do tick conta a cascata do vai-um de 32 bits", async ({ page }) => {
@@ -135,7 +146,9 @@ test("caixa recolhida com circuito dentro não é desenhada parada", async ({ pa
   // A ULA está recolhida e tem um somador de 32 bits rodando lá dentro. Uma
   // caixa parada, neste desenho, quer dizer "não fez nada" — então desenhá-la
   // parada seria afirmar o contrário do que o modelo diz.
-  const ula = page.locator('.dui-stage__objeto[aria-label^="ALU"]').first();
+  // A lógica combinacional está recolhida e guarda a ULA, com um somador de 32
+  // bits rodando dentro dela.
+  const ula = page.locator('.dui-stage__objeto[data-id="logica"]').first();
   await expect(ula).toHaveAttribute("data-ativo", "true", { timeout: 15_000 });
 
   // E ela precisa ser DESENHADA como o que ela guarda: contêiner é moldura, e
@@ -168,7 +181,10 @@ test("bateu a dúvida do que é a peça, a resposta está ali", async ({ page })
   await expect(page.locator(".dui-stage")).toBeVisible({ timeout: 15_000 });
 
   // O hover responde sem tirar ninguém da tela...
-  const mux = page.locator('.dui-stage__objeto[aria-label^="operand mux"]').first();
+  // O mux mora dentro da lógica combinacional: descer até ele é parte da
+  // pergunta "o que é isso?".
+  await page.locator('.dui-stage__objeto[data-id="logica"]').first().dblclick();
+  const mux = page.locator('.dui-stage__objeto[data-id="mux-operando"]').first();
   // `> title` e não `title`: as portas da caixa também se nomeiam, e um
   // seletor solto passou a pegar as quatro.
   await expect(mux.locator("> title")).toContainText("router");
@@ -192,7 +208,8 @@ test("a ficha de um contêiner mostra o interior dele em grafo", async ({ page }
   await page.goto("labs/cpu/");
   await expect(page.locator(".dui-stage")).toBeVisible({ timeout: 15_000 });
 
-  await page.locator('.dui-stage__objeto[aria-label^="ALU"]').first().click();
+  await page.locator('.dui-stage__objeto[data-id="logica"]').first().dblclick();
+  await page.locator('.dui-stage__objeto[data-id="ula"]').first().click();
   await expect(page.locator(".ficha")).toContainText("composite");
   await page.locator(".ficha__dot-botao").click();
   const dot = page.locator(".ficha__dot");
