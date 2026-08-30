@@ -41,7 +41,19 @@ export default defineConfig({
    * você precisar de outra porta, use `--port` sabendo que a **primeira** subida
    * depois da troca vem sem os docs: reinicie uma vez e passa.
    */
-  server: { port: 4321 },
+  server: {
+    port: 4321,
+    /**
+     * E se a porta estiver ocupada, **falhe**.
+     *
+     * Sem isto o Astro escorrega para a porta seguinte em silêncio — e como o
+     * digest de configuração inclui a porta, a subida seguinte nasce com o
+     * armazém de conteúdo limpo e todo `/docs/*` em 500. O sintoma aparece
+     * longe da causa. Falhar alto é o comportamento certo: o serviço reinicia
+     * até a porta liberar, e a mensagem diz o que houve.
+     */
+    strictPort: true,
+  },
   integrations: [react(), pagefind()],
   markdown: { rehypePlugins: [removerTituloDuplicado, drillDown] },
   build: { inlineStylesheets: "auto" },

@@ -19,7 +19,17 @@ const playwright = readFileSync(new URL("../../playwright.config.ts", import.met
 
 describe("o servidor de dev sobe sempre igual", () => {
   it("a porta do dev está fixa na config", () => {
-    expect(config).toMatch(/server:\s*\{\s*port:\s*4321\s*\}/);
+    expect(config).toMatch(/port:\s*4321/);
+  });
+
+  /**
+   * Escorregar para a porta seguinte é pior que não subir: o digest de
+   * configuração inclui a porta, então a subida seguinte nasce com o armazém de
+   * conteúdo limpo e todo `/docs/*` em 500 — longe da causa. Falhar alto é o
+   * comportamento certo.
+   */
+  it("a porta ocupada faz o dev falhar, e não escorregar para outra", () => {
+    expect(config).toMatch(/strictPort:\s*true/);
   });
 
   it("o e2e não divide a porta com o dev", () => {

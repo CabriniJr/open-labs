@@ -145,3 +145,30 @@ test("a carga anda na linha com o valor que leva", async ({ page }) => {
   expect(legenda).toMatch(/→/);
   expect(legenda).toMatch(/·/);
 });
+
+/**
+ * O item pulando de dimensão.
+ *
+ * Um canal que morre na borda da caixa conta uma meia-verdade: o dado entrou
+ * ali e o leitor não vê onde. Com o interior aberto, o caminho segue até a peça
+ * de dentro que de fato recebe — e é isso que dá sentido lógico a descer por
+ * zoom, em vez de a descida ser só uma câmera se aproximando.
+ */
+test("com a caixa aberta, o canal atravessa a fronteira", async ({ page }) => {
+  await page.goto("labs/gates/");
+  await page.waitForSelector("g.dui-stage__objeto");
+
+  // De longe não há travessia: não há interior para atravessar até.
+  await expect(page.locator(".dui-stage__travessia")).toHaveCount(0);
+
+  await aproximar(page, 12);
+
+  const travessias = page.locator(".dui-stage__travessia");
+  expect(await travessias.count(), "nenhum canal entra nas caixas abertas").toBeGreaterThan(0);
+
+  // E ela é a mesma ligação, um nível abaixo: começa no traço de fora e
+  // termina dentro da caixa que o interior desenha.
+  const d = await travessias.first().getAttribute("d");
+  expect(d).toMatch(/^M /);
+  expect(d).toMatch(/ L /);
+});

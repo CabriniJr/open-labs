@@ -126,8 +126,11 @@ que desenho sempre fez.
    meio do interior dele. Proposta: o rótulo migra para a borda quando o interior aparece
 3. **Profundidade máxima de aninhamento por quadro.** Três níveis simultâneos já foram
    testados; um limite explícito ainda não foi necessário e não foi escrito
-4. **O que acontece com os fios que cruzam a fronteira** entre um nível e o de dentro. Hoje
-   eles param na borda da caixa, que é honesto e não é contínuo
+4. ~~**O que acontece com os fios que cruzam a fronteira.**~~ **Fechada em 29/08/2026.** O
+   canal atravessa: com o interior aberto, o caminho segue até a peça de dentro que de fato
+   recebe, e começa na que de fato emitiu. Quem recebe é dito pelos bornes de entrada; quem
+   emite, pela resolução das emissões (`emissoesPorPorta`). O desenho não escolhe nenhuma das
+   duas pontas — se escolhesse, estaria afirmando ligações que ninguém declarou
 5. **O gesto de toque.** A roda é o gesto do desktop; num aparelho de toque o equivalente é
    a pinça, e ela não existe. O e2e do zoom é declaradamente só de desktop por isso — não
    porque o teste seja frouxo. Enquanto não houver pinça, num telefone o drill-down continua
@@ -144,6 +147,16 @@ sem transformação, e a transformação num grupo por dentro.
 **`onWheel` do React é ouvinte passivo.** `preventDefault` não faz nada, e aproximar rola a
 página. O sintoma manda procurar no lugar errado, porque o desenho fica parado e quem se
 mexe é a página. O ouvinte é nativo e declaradamente não passivo, e há teste para isso.
+
+**A carga desenhada antes das caixas some atrás delas.** A esteira ia por baixo dos objetos,
+e a carga desaparecia em toda caixa que cruzava — inclusive na caixa em que estava entrando,
+que é exatamente o momento que se quer ver. Ela vai por cima.
+
+**Animação SMIL não dispara em elemento recém-inserido.** O `begin` de um `<animate>` conta a
+partir do início da linha do tempo do documento, e não de quando o elemento entrou nela. Como
+cada tick cria elementos novos, o intervalo deles já nascia no passado, e a carga aparecia
+congelada no valor final — opacidade zero. A esteira foi para animação CSS (`offset-path`),
+que começa quando o elemento entra.
 
 **Traço não é escala.** Sem `vector-effect: non-scaling-stroke`, a 20× uma borda de 1px vira
 uma faixa de 20 e o desenho some debaixo do próprio contorno. Traço é notação, e notação tem

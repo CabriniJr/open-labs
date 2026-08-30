@@ -471,3 +471,19 @@
     offset-distance: 50%;
   }
 }
+
+/*
+ * O canal atravessando a fronteira.
+ *
+ * Mais fino e mais apagado que o trilho de fora, de propósito: ele não é uma
+ * ligação nova, é a **mesma** ligação vista um nível abaixo. Desenhá-lo com o
+ * mesmo peso sugeriria dois canais onde há um.
+ */
+.dui-stage__travessia {
+  fill: none;
+  stroke: color-mix(in oklab, var(--dui-dado) 35%, transparent);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}

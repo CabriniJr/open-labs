@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { emissoesPorPorta, familyOf } from "@ovh/depth-core";
+import { borneNode, emissoesPorPorta, entryLeaf, familyOf, visibleChild } from "@ovh/depth-core";
 import type {
   EmissaoDaPorta,
   Family,
@@ -11,6 +11,7 @@ import type {
 import type { NodePlacement, View } from "./view.js";
 import { resumoDoKind } from "./kinds.js";
 import { PROFUNDIDADE_MAXIMA, ZOOM_MAXIMO, encaixar, quantoAparece } from "./lod.js";
+import { travessia } from "./travessia.js";
 
 /**
  * O palco: uma view desenhada, com o estado do mundo por cima.
@@ -431,6 +432,62 @@ function Camada({
   // desviar dela empurraria todo fio para fora do desenho.
   const obstaculos = view.places.filter((p) => familia(p.id) !== "container");
 
+  /**
+   * O interior visível de cada caixa, e o quanto dele está na tela.
+   *
+   * Calculado antes dos fios porque é ele que decide se um fio **entra** na
+   * caixa ou para na borda dela.
+   */
+  const dentroDe2 = new Map<string, { readonly interior: View; readonly aparece: number }>();
+  for (const place of view.places) {
+    if (place.collapsed !== true || profundidade >= PROFUNDIDADE_MAXIMA) continue;
+    const interior = interiores?.(place.id);
+    if (interior === undefined) continue;
+    const aparece = quantoAparece(place.w / unidadesPorQuadro);
+    if (aparece > 0) dentroDe2.set(place.id, { interior, aparece });
+  }
+
+  /**
+   * O ponto, nas coordenadas desta camada, de um objeto que mora dentro de uma
+   * caixa aberta.
+   *
+   * É o que permite ao canal atravessar a fronteira em vez de morrer na borda.
+   * O alvo pode estar vários níveis abaixo — `visibleChild` diz qual filho
+   * direto o contém, que é quem a vista de dentro desenha.
+   */
+  const pontoDentro = (place: NodePlacement, alvo: string): Ponto | undefined => {
+    const aberto = dentroDe2.get(place.id);
+    if (aberto === undefined) return undefined;
+    const quem = visibleChild(tree, place.id, alvo);
+    const id = quem.at === "child" ? quem.id : undefined;
+    if (id === undefined) return undefined;
+    const lugar = aberto.interior.places.find((p) => p.id === id);
+    if (lugar === undefined) return undefined;
+    const encaixe = encaixar(place, aberto.interior);
+    return {
+      x: place.x + encaixe.dx + encaixe.escala * (lugar.x + lugar.w / 2),
+      y: place.y + encaixe.dy + encaixe.escala * (lugar.y + lugar.h / 2),
+    };
+  };
+
+  /**
+   * Em quem, lá dentro, um fio entrega.
+   *
+   * Sinal tem destinatário nomeado, e o borne de entrada diz qual peça de
+   * dentro atende aquela porta. Carga não nomeia porta: o motor acha a folha de
+   * entrada, e é ela que o desenho segue — a mesma regra, não uma escolha nova.
+   */
+  const borneDeEntrada = (destino: string, porta: string | undefined): string | undefined => {
+    const node = tree.byId.get(destino);
+    if (node === undefined) return undefined;
+    if (porta !== undefined) {
+      const bornes = node.inlets?.[porta];
+      const primeiro = bornes?.[0];
+      return primeiro === undefined ? undefined : borneNode(primeiro);
+    }
+    return (node.children ?? []).length === 0 ? undefined : entryLeaf(tree, destino);
+  };
+
   /** Fios desenháveis: os dois pontos precisam estar na view. */
   const arestas = wires
     .map((wire, i) => {
@@ -438,13 +495,34 @@ function Camada({
       const para = typeof wire.to === "string" ? lugares.get(wire.to) : undefined;
       if (de === undefined || para === undefined) return null;
       const linha = wire.line ?? "data";
-      const d = caminho(de, para, 18 + (i % 3) * 12, obstaculos);
+      const traco = caminho(de, para, 18 + (i % 3) * 12, obstaculos);
+
+      /*
+        A travessia da fronteira.
+
+        Um canal que morre na borda da caixa conta uma meia-verdade: o dado
+        entrou ali e o leitor não vê onde. Com o interior aberto, o caminho
+        segue **até a peça de dentro que de fato recebe** — e sai de dentro da
+        peça que de fato emitiu. É o item pulando de dimensão, que é o que faz
+        a descida por zoom ter sentido lógico em vez de ser só uma câmera.
+
+        Quem recebe é dito pelos bornes de entrada; quem emite, pela resolução
+        das emissões. Nada é escolhido pelo desenho.
+      */
+      const emissao = emissoes[`${wire.from}.${wire.port}`];
+      const saiDe = emissao === undefined ? undefined : pontoDentro(de, emissao.fonte);
+      const alvo = borneDeEntrada(String(wire.to), wire.toPort);
+      const chegaEm = alvo === undefined ? undefined : pontoDentro(para, alvo);
+      const d = travessia(traco, saiDe, chegaEm);
       const marca = { x: de.x + de.w + 6, y: de.y + de.h / 2 - 6 };
       return {
         marca,
         chave: `${wire.from}.${wire.port}->${String(wire.to)}`,
         to: String(wire.to),
         d,
+        // O traço fica na borda; a travessia é desenhada por cima das caixas,
+        // senão ela some atrás justamente da caixa que ela atravessa.
+        traco,
         linha,
         timing: wire.timing ?? "clocked",
         width: wire.width,
@@ -547,11 +625,11 @@ function Camada({
             <path
               id={identificador(aresta.chave)}
               className="dui-stage__trilho"
-              d={aresta.d}
+              d={aresta.traco}
               markerEnd="url(#dui-seta)"
             />
             {aresta.acesa && !reduzido ? (
-              <path key={`p${state.tick}`} className="dui-stage__pulso" d={aresta.d}>
+              <path key={`p${state.tick}`} className="dui-stage__pulso" d={aresta.traco}>
                 <animate
                   attributeName="stroke-dashoffset"
                   from="120"
@@ -571,69 +649,6 @@ function Camada({
             ) : null}
           </g>
         ))}
-      </g>
-
-      {/*
-        A acomodação andando: o que se propaga dentro deste tick, na ordem em
-        que o modelo diz que se propagou.
-      */}
-      <g className="dui-stage__onda">
-        {reduzido
-          ? null
-          : ondaAcomodada.map(({ aresta, mensagem, comeca }) => (
-              <g
-                key={`${aresta.chave}:${state.tick}`}
-                className="dui-stage__carga-grupo dui-stage__carga-grupo--acomodada"
-                data-carga={aresta.chave}
-                data-kind={mensagem.kind}
-                data-linha={aresta.linha}
-                style={{
-                  ["--dui-trilho" as string]: `path("${aresta.d}")`,
-                  ["--dui-atraso" as string]: `${comeca}ms`,
-                  ["--dui-travessia" as string]: `${duracaoDaCarga}ms`,
-                }}
-              >
-                <Carga
-                  mensagem={mensagem}
-                  leitura={leituraDaCarga?.(mensagem)}
-                  raio={4}
-                  de={aresta.from}
-                  para={aresta.to}
-                />
-              </g>
-            ))}
-      </g>
-
-      {/* a carga em voo: cada item é uma coisa, e viaja pelo fio que o leva */}
-      <g className="dui-stage__cargas">
-        {state.flight.map((item) => {
-          const trilho = trilhoEntre.get(`${item.from}->${String(item.to)}`);
-          if (trilho === undefined) return null;
-          const andou = (state.tick - item.sent) / edgeTicks;
-          return (
-            <g
-              key={`${item.id}:${state.tick}`}
-              className="dui-stage__carga-grupo dui-stage__carga-grupo--voo"
-              data-carga={item.id}
-              data-kind={item.message.kind}
-              data-sinal={item.signalPort !== undefined ? "true" : undefined}
-              style={{
-                ["--dui-trilho" as string]: `path("${trilho}")`,
-                ["--dui-travessia" as string]: `${tickMs}ms`,
-                ["--dui-de" as string]: `${andou * 100}%`,
-                ["--dui-ate" as string]: `${Math.min(1, andou + 1 / edgeTicks) * 100}%`,
-              }}
-            >
-              <Carga
-                mensagem={item.message}
-                leitura={leituraDaCarga?.(item.message)}
-                raio={5}
-                de={item.from}
-                para={String(item.to)}
-              />
-            </g>
-          );
-        })}
       </g>
 
       <g className="dui-stage__objetos">
@@ -845,6 +860,83 @@ function Camada({
                 </text>
               ) : null}
               </g>
+            </g>
+          );
+        })}
+      </g>
+
+      {/*
+        A esteira vai por cima das caixas, e não por baixo.
+        Desenhada antes dos objetos, a carga sumia atrás de toda caixa que ela
+        cruzava — inclusive a caixa em que ela estava entrando, que é
+        exatamente o momento que se quer ver.
+      */}
+      <g className="dui-stage__travessias">
+        {arestas
+          .filter((a) => a.d !== a.traco)
+          .map((a) => (
+            <path key={`t${a.chave}`} className="dui-stage__travessia" d={a.d} />
+          ))}
+      </g>
+
+      {/*
+        A acomodação andando: o que se propaga dentro deste tick, na ordem em
+        que o modelo diz que se propagou.
+      */}
+      <g className="dui-stage__onda">
+        {reduzido
+          ? null
+          : ondaAcomodada.map(({ aresta, mensagem, comeca }) => (
+              <g
+                key={`${aresta.chave}:${state.tick}`}
+                className="dui-stage__carga-grupo dui-stage__carga-grupo--acomodada"
+                data-carga={aresta.chave}
+                data-kind={mensagem.kind}
+                data-linha={aresta.linha}
+                style={{
+                  ["--dui-trilho" as string]: `path("${aresta.d}")`,
+                  ["--dui-atraso" as string]: `${comeca}ms`,
+                  ["--dui-travessia" as string]: `${duracaoDaCarga}ms`,
+                }}
+              >
+                <Carga
+                  mensagem={mensagem}
+                  leitura={leituraDaCarga?.(mensagem)}
+                  raio={4}
+                  de={aresta.from}
+                  para={aresta.to}
+                />
+              </g>
+            ))}
+      </g>
+
+      {/* a carga em voo: cada item é uma coisa, e viaja pelo fio que o leva */}
+      <g className="dui-stage__cargas">
+        {state.flight.map((item) => {
+          const trilho = trilhoEntre.get(`${item.from}->${String(item.to)}`);
+          if (trilho === undefined) return null;
+          const andou = (state.tick - item.sent) / edgeTicks;
+          return (
+            <g
+              key={`${item.id}:${state.tick}`}
+              className="dui-stage__carga-grupo dui-stage__carga-grupo--voo"
+              data-carga={item.id}
+              data-kind={item.message.kind}
+              data-sinal={item.signalPort !== undefined ? "true" : undefined}
+              style={{
+                ["--dui-trilho" as string]: `path("${trilho}")`,
+                ["--dui-travessia" as string]: `${tickMs}ms`,
+                ["--dui-de" as string]: `${andou * 100}%`,
+                ["--dui-ate" as string]: `${Math.min(1, andou + 1 / edgeTicks) * 100}%`,
+              }}
+            >
+              <Carga
+                mensagem={item.message}
+                leitura={leituraDaCarga?.(item.message)}
+                raio={5}
+                de={item.from}
+                para={String(item.to)}
+              />
             </g>
           );
         })}
