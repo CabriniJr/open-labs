@@ -150,8 +150,30 @@ export function caminho(
     // As três alturas de saída e de entrada: pelo meio, e um pouco acima ou
     // abaixo dentro da própria caixa. Sair pelo meio é a leitura natural; sair
     // um pouco fora do meio é o preço de não atravessar quem está no caminho.
-    const alturasDe = alturasEm(de);
-    const alturasPara = alturasEm(para);
+    /*
+      A saída MIRA o destino, e é isso que impede o leque de embaraçar.
+
+      Doze dos vinte e oito cruzamentos do lab das portas eram um leque só:
+      oito fios saindo da mesma caixa de entradas para quatro somadores, cada
+      um escolhendo a altura de saída por conta própria — e o que ia para o
+      somador de baixo saía por cima do que ia para o de cima. Nenhum deles
+      estava errado sozinho; errado era não haver ordem.
+
+      Mirar é uma regra local com efeito global: o fio que vai mais para cima
+      sai mais para cima, sem o roteador precisar saber que existem irmãos.
+      Duas saídas ordenadas pelo destino não têm como se cruzar, e o leque abre
+      como um pente.
+
+      A mira é a PRIMEIRA tentativa, e não a única: honestidade vem antes de
+      ordem, e um caminho mirado que atravesse uma caixa perde para um caminho
+      torto que não atravesse nada. Só aí as cinco alturas voltam.
+    */
+    const mira = Math.max(de.y + 6, Math.min(de.y + de.h - 6, b.y));
+    // E a entrada mira a origem, pelo mesmo motivo e com a mesma consequência:
+    // vários fios chegando na mesma caixa entram ordenados por de onde vieram,
+    // e ordem preservada nas duas pontas é o que faz o feixe inteiro não
+    // trançar. O leque e a convergência são a mesma figura, invertida.
+    const miraEntrada = Math.max(para.y + 6, Math.min(para.y + para.h - 6, a.y));
     const custoDe = ({ x, y1, y2 }: { x: number; y1: number; y2: number }): number =>
       outros.filter((r) => cruzaHorizontal(y1, saida.x, x, r)).length * MENTIRA +
       outros.filter((r) => cruzaVertical(x, y1, y2, r)).length * MENTIRA +
@@ -160,12 +182,13 @@ export function caminho(
       repetido(`h:${y1}`) +
       repetido(`h:${y2}`) +
       (Math.abs(y1 - a.y) + Math.abs(y2 - b.y)) / 10_000;
-    const melhor = melhorEntre(
-      colunas.flatMap((x) =>
-        alturasDe.flatMap((y1) => alturasPara.map((y2) => ({ x, y1, y2 }))),
-      ),
-      custoDe,
-    );
+    const candidatos = (alturasDe: readonly number[], alturasPara: readonly number[]) =>
+      colunas.flatMap((x) => alturasDe.flatMap((y1) => alturasPara.map((y2) => ({ x, y1, y2 }))));
+    const mirado = melhorEntre(candidatos([mira], [miraEntrada]), custoDe);
+    const melhor =
+      custoDe(mirado) < MENTIRA
+        ? mirado
+        : melhorEntre(candidatos(alturasEm(de), alturasEm(para)), custoDe);
     // "Sem mentira" — e não "sem custo nenhum". Com a repetição de reta
     // pesando um, este limiar em um passou a recusar caminhos honestos que só
     // dividiam uma reta com outro fio, mandando-os para o corredor caro.
@@ -189,8 +212,10 @@ export function caminho(
     ];
     const desvio = melhorEntre(
       corredores.flatMap((lane) =>
-        alturasDe.flatMap((y1) =>
-          alturasPara.map((y2) => ({ lane, y1, y2, x0: saida.x + 14, x1: para.x - 14 })),
+        // O corredor já é o caminho torto: aqui a mira não se sustenta, e as
+        // cinco alturas voltam porque o que importa é não atravessar ninguém.
+        alturasEm(de).flatMap((y1) =>
+          alturasEm(para).map((y2) => ({ lane, y1, y2, x0: saida.x + 14, x1: para.x - 14 })),
         ),
       ),
       ({ lane, y1, y2, x0, x1 }) =>

@@ -57,14 +57,14 @@ function cegas(medidos: readonly { de: string; para: string; d: string }[]): num
  * Folga é onde a próxima piora se esconde: com ela, o desenho degrada até o
  * teto sem ninguém ver, e o teto vira a descrição do estrago.
  *
- * A dívida está à vista: o somador de quatro bits cruza quase o dobro do
- * caminho de dados inteiro, que é uma figura muito maior. São quatro somadores
- * completos empilhados, cada um com cinco portas e o vai-um atravessando — e é
- * o candidato óbvio da próxima rodada de arrumação.
+ * Eles já foram 16, 28 e 4. O somador de quatro bits cruzava quase o dobro do
+ * caminho de dados inteiro, que é uma figura muito maior — e a dívida inteira
+ * era uma regra faltando, não um layout ruim: as pontas dos fios não miravam
+ * nada, e um leque sem ordem tranca sozinho.
  */
 const TETOS = [
-  { lab: "labs/cpu/", nome: "o caminho de dados inteiro", cruzamentos: 16 },
-  { lab: "labs/gates/", nome: "o somador de quatro bits", cruzamentos: 28 },
+  { lab: "labs/cpu/", nome: "o caminho de dados inteiro", cruzamentos: 15 },
+  { lab: "labs/gates/", nome: "o somador de quatro bits", cruzamentos: 4 },
   { lab: "labs/rpn/", nome: "a máquina de pilha", cruzamentos: 4 },
 ] as const;
 
@@ -72,7 +72,13 @@ for (const teto of TETOS) {
   test(`${teto.nome} não vira meada`, async ({ page }) => {
     await page.goto(teto.lab);
     await expect(page.locator(".dui-stage")).toBeVisible({ timeout: 15_000 });
-    await expect(page.locator(".dui-stage__trilho").first()).toBeVisible({ timeout: 10_000 });
+    // Contagem, e não visibilidade: um fio perfeitamente reto é uma linha
+    // horizontal, e a caixa dela tem altura zero — o que a checagem de
+    // visibilidade chama de escondido. Depois que a saída passou a mirar o
+    // destino, fio reto virou o caso comum, que é justamente o que se queria.
+    await expect
+      .poll(async () => page.locator(".dui-stage__trilho").count(), { timeout: 10_000 })
+      .toBeGreaterThan(0);
 
     const medidos = await fios(page);
     const { cruzamentos } = meada(medidos.map((f) => f.d));
@@ -86,7 +92,13 @@ for (const teto of TETOS) {
       medidos.slice(i + 1).some((b) => a.de === b.de && meada([a.d, b.d]).sobreposicoes > 0),
     );
     if (compartilham) {
-      await expect(page.locator(".dui-stage__juncao").first()).toBeVisible();
+      // Existência, e não visibilidade: um `<circle>` de raio 2.6 dentro de um
+      // SVG escalado confunde a checagem de visibilidade, e o que se afirma
+      // aqui é que a marca FOI desenhada onde há tronco compartilhado.
+      expect(
+        await page.locator(".dui-stage__juncao").count(),
+        "tronco compartilhado sem ponto de junção",
+      ).toBeGreaterThan(0);
     }
   });
 }
