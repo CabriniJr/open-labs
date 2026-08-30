@@ -472,6 +472,17 @@
  * O comando chega tracejado, na cor do sinal: é uma linha de controle, e o
  * desenho não pode deixar isso por conta do leitor adivinhar.
  */
+/*
+ * A junção. Pequena e cheia, como num esquemático: ela não é um objeto, é a
+ * afirmação de que ali as duas linhas se falam. E a AUSÊNCIA dela num
+ * cruzamento é o que diz que as outras duas não se falam — por isso ela
+ * precisa ser inconfundível, porque meia marca é pior que marca nenhuma.
+ */
+.dui-stage__juncao {
+  fill: color-mix(in oklab, var(--dui-dado) 85%, var(--ink));
+  stroke: none;
+}
+
 .dui-stage__chave-via,
 .dui-stage__chave-lamina {
   stroke: color-mix(in oklab, var(--dui-dado) 70%, var(--ink));

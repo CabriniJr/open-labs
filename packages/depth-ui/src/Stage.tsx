@@ -26,9 +26,10 @@ import {
   quantoAparece,
   tabelaLegivel,
 } from "./lod.js";
-import { caminho } from "./roteador.js";
+import { caminho, retasDe } from "./roteador.js";
 import type { Ponto } from "./roteador.js";
 import { travessia } from "./travessia.js";
+import { juncoes } from "./espaguete.js";
 import { portasDaCaixa, posicaoDaPorta } from "./portas.js";
 import { dilatarPara, relogioDaCamada } from "./tempo.js";
 
@@ -678,6 +679,9 @@ function Camada({
   });
 
   const vistos = new Set<string>();
+  // As retas já usadas por fios anteriores, para o roteador não empilhar dois
+  // fios na mesma coluna. Acumula na ordem das arestas, que é estável.
+  const ocupadas = new Set<string>();
 
   /** Fios desenháveis: cada ponta cai numa caixa da vista ou na margem dela. */
   const arestas = wires
@@ -726,7 +730,20 @@ function Camada({
         vistos.add(chaveVisual);
       }
       const linha = wire.line ?? "data";
-      const traco = caminho(de, para, 18 + (i % 3) * 12, obstaculos);
+      /*
+        O roteador lembra por onde os fios anteriores passaram.
+
+        Sem isso ele desviava de caixas e ignorava fios: dois sem nada em comum
+        escolhiam a MESMA coluna de cotovelo, porque o desempate era a
+        proximidade do centro e os dois queriam o centro. Desenhados um por
+        cima do outro, eles se leem como um só.
+
+        A ordem importa e é a das arestas, que é estável: o primeiro fio fica
+        com a coluna mais central, e quem vem depois se afasta. Um sorteio aqui
+        faria o desenho mudar entre dois carregamentos da mesma página.
+      */
+      const traco = caminho(de, para, 18 + (i % 3) * 12, obstaculos, ocupadas);
+      for (const reta of retasDe(traco)) ocupadas.add(reta);
 
       /*
         A travessia da fronteira.
@@ -890,6 +907,30 @@ function Camada({
               </text>
             ) : null}
           </g>
+        ))}
+      </g>
+
+      {/*
+        As junções.
+
+        A convenção mais antiga do esquemático, e a mais barata: o T ganha
+        pontinho e o X não ganha. Sem ela não há como saber se duas linhas que
+        se tocam estão ligadas ou só passam uma pela outra — e um leque saindo
+        da mesma porta era desenhado como três linhas empilhadas, que se leem
+        como uma linha só. O leitor via uma ligação onde existem três.
+
+        Sai da geometria do que foi desenhado, e não de saber o que é leque:
+        junção é a ponta de um fio caindo no meio do trecho de outro.
+      */}
+      <g className="dui-stage__juncoes">
+        {juncoes(arestas.map((a) => a.traco)).map((ponto) => (
+          <circle
+            key={`${ponto.x},${ponto.y}`}
+            className="dui-stage__juncao"
+            cx={ponto.x}
+            cy={ponto.y}
+            r={2.6}
+          />
         ))}
       </g>
 

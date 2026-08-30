@@ -6,6 +6,8 @@ export { Inspector, toInspectorLines } from "./Inspector.js";
 export { FAMILIAS, KINDS, resumoDoKind } from "./kinds.js";
 export type { Descricao } from "./kinds.js";
 export { toDot } from "./dot.js";
+export { meada, segmentos } from "./espaguete.js";
+export type { Meada, Segmento } from "./espaguete.js";
 export { Legenda } from "./Legenda.js";
 export type { LegendaProps } from "./Legenda.js";
 export { REGISTROS } from "./catalogo.js";

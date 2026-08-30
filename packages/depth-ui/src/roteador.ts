@@ -72,12 +72,71 @@ function melhorEntre<T>(candidatos: readonly T[], custo: (c: T) => number): T {
  * caixa parece entrar nela, e o leitor passa a ver uma ligação que não existe —
  * é mentira de desenho, e custa o mesmo tanto que mentira de número.
  */
+/**
+ * As retas por onde algum fio já passou.
+ *
+ * O roteador desviava de caixas e não sabia nada de fios: dois fios sem nada em
+ * comum escolhiam a MESMA coluna de cotovelo, porque o desempate era a
+ * proximidade do centro e os dois queriam o centro. Desenhados um por cima do
+ * outro, eles se leem como um só — o leitor vê uma ligação onde existem duas.
+ *
+ * A chave é `"v:375"` ou `"h:220"`.
+ *
+ * **Os pesos são a hierarquia dos defeitos, escrita como número.** São três
+ * espécies, e elas não se equivalem:
+ *
+ * - **atravessar uma caixa é mentira** — a linha parece entrar nela, e o leitor
+ *   passa a ver uma ligação que não existe. Custa cem;
+ * - **repetir a reta de outro fio é ambiguidade** — os dois se leem como um só.
+ *   Custa um, então nenhuma quantidade de repetição paga uma mentira;
+ * - **sair do centro da caixa é estética** — custa um décimo de milésimo, e só
+ *   serve para desempatar entre caminhos igualmente honestos.
+ *
+ * Com os três na mesma ordem de grandeza, a soma decidia por acaso: bastavam
+ * duas retas repetidas para o roteador preferir cortar uma caixa.
+ */
+export type Ocupadas = ReadonlySet<string>;
+
+const MENTIRA = 100;
+const REPETIR = 1;
+
+/** Onde este caminho passa, para o próximo fio saber. */
+export function retasDe(d: string): readonly string[] {
+  const partes = d.trim().split(/\s+/);
+  const retas: string[] = [];
+  let x = 0;
+  let y = 0;
+  let i = 0;
+  while (i < partes.length) {
+    if (partes[i] === "M") {
+      x = Number(partes[i + 1]);
+      y = Number(partes[i + 2]);
+      i += 3;
+    } else if (partes[i] === "H") {
+      const destino = Number(partes[i + 1]);
+      if (destino !== x) retas.push(`h:${y}`);
+      x = destino;
+      i += 2;
+    } else if (partes[i] === "V") {
+      const destino = Number(partes[i + 1]);
+      if (destino !== y) retas.push(`v:${x}`);
+      y = destino;
+      i += 2;
+    } else {
+      i += 1;
+    }
+  }
+  return retas;
+}
+
 export function caminho(
   de: NodePlacement,
   para: NodePlacement,
   faixa: number,
   obstaculos: readonly Retangulo[],
+  ocupadas: Ocupadas = new Set(),
 ): string {
+  const repetido = (chave: string): number => (ocupadas.has(chave) ? REPETIR : 0);
   const a = centro(de);
   const b = centro(para);
   const saida = { x: de.x + de.w, y: a.y };
@@ -94,9 +153,12 @@ export function caminho(
     const alturasDe = alturasEm(de);
     const alturasPara = alturasEm(para);
     const custoDe = ({ x, y1, y2 }: { x: number; y1: number; y2: number }): number =>
-      outros.filter((r) => cruzaHorizontal(y1, saida.x, x, r)).length +
-      outros.filter((r) => cruzaVertical(x, y1, y2, r)).length +
-      outros.filter((r) => cruzaHorizontal(y2, x, para.x, r)).length +
+      outros.filter((r) => cruzaHorizontal(y1, saida.x, x, r)).length * MENTIRA +
+      outros.filter((r) => cruzaVertical(x, y1, y2, r)).length * MENTIRA +
+      outros.filter((r) => cruzaHorizontal(y2, x, para.x, r)).length * MENTIRA +
+      repetido(`v:${x}`) +
+      repetido(`h:${y1}`) +
+      repetido(`h:${y2}`) +
       (Math.abs(y1 - a.y) + Math.abs(y2 - b.y)) / 10_000;
     const melhor = melhorEntre(
       colunas.flatMap((x) =>
@@ -104,7 +166,10 @@ export function caminho(
       ),
       custoDe,
     );
-    if (custoDe(melhor) < 1) {
+    // "Sem mentira" — e não "sem custo nenhum". Com a repetição de reta
+    // pesando um, este limiar em um passou a recusar caminhos honestos que só
+    // dividiam uma reta com outro fio, mandando-os para o corredor caro.
+    if (custoDe(melhor) < MENTIRA) {
       return `M ${saida.x} ${melhor.y1} H ${melhor.x} V ${melhor.y2} H ${para.x}`;
     }
 
@@ -129,11 +194,14 @@ export function caminho(
         ),
       ),
       ({ lane, y1, y2, x0, x1 }) =>
-        outros.filter((r) => cruzaHorizontal(y1, saida.x, x0, r)).length +
-        outros.filter((r) => cruzaVertical(x0, y1, lane, r)).length +
-        outros.filter((r) => cruzaHorizontal(lane, x0, x1, r)).length +
-        outros.filter((r) => cruzaVertical(x1, lane, y2, r)).length +
-        outros.filter((r) => cruzaHorizontal(y2, x1, para.x, r)).length +
+        outros.filter((r) => cruzaHorizontal(y1, saida.x, x0, r)).length * MENTIRA +
+        outros.filter((r) => cruzaVertical(x0, y1, lane, r)).length * MENTIRA +
+        outros.filter((r) => cruzaHorizontal(lane, x0, x1, r)).length * MENTIRA +
+        outros.filter((r) => cruzaVertical(x1, lane, y2, r)).length * MENTIRA +
+        outros.filter((r) => cruzaHorizontal(y2, x1, para.x, r)).length * MENTIRA +
+        repetido(`h:${lane}`) +
+        repetido(`v:${x0}`) +
+        repetido(`v:${x1}`) +
         (Math.abs(y1 - a.y) + Math.abs(y2 - b.y) + Math.abs(lane - a.y) / 8) / 10_000,
     );
     return `M ${saida.x} ${desvio.y1} H ${desvio.x0} V ${desvio.lane} H ${desvio.x1} V ${desvio.y2} H ${para.x}`;
@@ -176,9 +244,12 @@ export function caminho(
       for (const x2 of entradasX) {
         for (const lane of faixas) {
           const custo =
-            outros.filter((r) => cruzaVertical(x1, inicioY, lane, r)).length +
-            outros.filter((r) => cruzaHorizontal(lane, x1, x2, r)).length +
-            outros.filter((r) => cruzaVertical(x2, lane, fimY, r)).length +
+            outros.filter((r) => cruzaVertical(x1, inicioY, lane, r)).length * MENTIRA +
+            outros.filter((r) => cruzaHorizontal(lane, x1, x2, r)).length * MENTIRA +
+            outros.filter((r) => cruzaVertical(x2, lane, fimY, r)).length * MENTIRA +
+            repetido(`v:${x1}`) +
+            repetido(`v:${x2}`) +
+            repetido(`h:${lane}`) +
             // Empate desfeito pelo centro: entre dois caminhos limpos, o que
             // sai e entra pelo meio é o que se lê como "esta caixa, inteira".
             (Math.abs(x1 - a.x) + Math.abs(x2 - b.x)) / 10_000;
@@ -210,9 +281,9 @@ export function caminho(
   const volta = melhorEntre(
     faixas.flatMap((lane) => entradas.map((x2) => ({ lane, x2 }))),
     ({ lane, x2 }) =>
-      outros.filter((r) => cruzaVertical(coluna, saida.y, lane, r)).length +
-      outros.filter((r) => cruzaHorizontal(lane, coluna, x2, r)).length +
-      outros.filter((r) => cruzaVertical(x2, lane, para.y + para.h, r)).length +
+      outros.filter((r) => cruzaVertical(coluna, saida.y, lane, r)).length * MENTIRA +
+      outros.filter((r) => cruzaHorizontal(lane, coluna, x2, r)).length * MENTIRA +
+      outros.filter((r) => cruzaVertical(x2, lane, para.y + para.h, r)).length * MENTIRA +
       (Math.abs(x2 - b.x) + Math.abs(lane - base) / 8) / 10_000,
   );
   return `M ${saida.x} ${saida.y} H ${coluna} V ${volta.lane} H ${volta.x2} V ${para.y + para.h}`;
