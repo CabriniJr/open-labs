@@ -20,6 +20,8 @@ export {
 } from "./views.js";
 export { decide, porta, portasAltas, somadorCompleto, somadorWorld } from "./gates.js";
 export { leituraDaCarga } from "./carga.js";
+export { conteudoDaCaixa } from "./conteudo.js";
+export { ABI, NOMES } from "./assembler.js";
 export {
   fiosDaPortaCmos,
   noDeSaida,

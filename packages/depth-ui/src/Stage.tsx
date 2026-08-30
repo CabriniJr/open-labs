@@ -17,7 +17,14 @@ import type {
 } from "@ovh/depth-core";
 import type { NodePlacement, View } from "./view.js";
 import { resumoDoKind } from "./kinds.js";
-import { PROFUNDIDADE_MAXIMA, ZOOM_MAXIMO, encaixar, quantoAparece } from "./lod.js";
+import {
+  ALTURA_DA_LINHA,
+  PROFUNDIDADE_MAXIMA,
+  ZOOM_MAXIMO,
+  encaixar,
+  quantoAparece,
+  tabelaLegivel,
+} from "./lod.js";
 import { travessia } from "./travessia.js";
 import { portasDaCaixa, posicaoDaPorta } from "./portas.js";
 import { dilatarPara, relogioDaCamada } from "./tempo.js";
@@ -90,6 +97,21 @@ export interface StageProps {
    * transformação, que é a coisa toda.
    */
   readonly leituraDaCarga?: ((mensagem: Message) => string | undefined) | undefined;
+  /**
+   * O que um objeto **guarda** agora, linha a linha.
+   *
+   * Um objeto que acumula, desenhado como caixa lisa, é a caixa fechada do
+   * armazém: o leitor sabe que tem coisa lá dentro e não vê nenhuma. Abrir e
+   * ver as entradas — chave e valor, linha a linha — é o que transforma um
+   * nome em coisa.
+   *
+   * Não é interior inventado: são as linhas do **estado**, entregues pelo
+   * domínio, que é quem sabe ler aquele estado. O desenho só decide quando há
+   * espaço para mostrá-las.
+   */
+  readonly conteudo?:
+    | ((id: string) => readonly { readonly chave: string; readonly valor: string; readonly ativo?: boolean }[] | undefined)
+    | undefined;
   /**
    * O retângulo que a câmera deve enquadrar, animando até lá.
    *
@@ -349,6 +371,7 @@ function Camada({
   onOpen,
   interiores,
   leituraDaCarga,
+  conteudo,
   unidadesPorQuadro,
   profundidade,
   dilatacao,
@@ -969,6 +992,7 @@ function Camada({
                       selected={selected}
                       interiores={interiores}
                       leituraDaCarga={leituraDaCarga}
+                      conteudo={conteudo}
                       emissoes={emissoes}
                       unidadesPorQuadro={unidadesPorQuadro / (dentro?.escala ?? 1)}
                       profundidade={profundidade + 1}
@@ -978,6 +1002,67 @@ function Camada({
                   </g>
                 </>
               ) : null}
+
+              {/*
+                O que a caixa guarda, quando há espaço para mostrar.
+
+                O limiar é o mesmo do interior de um contêiner, e pela mesma
+                razão: de longe, uma tabela de doze linhas é doze borrões. O que
+                muda é que aqui não há um nível abaixo — o conteúdo **é** o
+                objeto, e por isso ele aparece dentro dele, sem moldura nova.
+              */}
+              {(() => {
+                const linhas = conteudo?.(place.id);
+                if (linhas === undefined || linhas.length === 0) return null;
+                if (!tabelaLegivel(unidadesPorQuadro)) return null;
+                const alturaDaLinha = ALTURA_DA_LINHA;
+                const cabem = Math.max(0, Math.floor((place.h - 26) / alturaDaLinha));
+                if (cabem < 1) return null;
+                const mostradas = linhas.slice(0, cabem);
+                return (
+                  <g className="dui-stage__conteudo">
+                    {mostradas.map((linha, i) => (
+                      <g key={linha.chave} data-ativo={linha.ativo === true ? "true" : undefined}>
+                        <rect
+                          className="dui-stage__linha"
+                          x={place.x + 6}
+                          y={place.y + 20 + i * alturaDaLinha}
+                          width={place.w - 12}
+                          height={alturaDaLinha - 2}
+                          rx={2}
+                        />
+                        <text
+                          className="dui-stage__linha-chave"
+                          x={place.x + 11}
+                          y={place.y + 30 + i * alturaDaLinha}
+                        >
+                          {linha.chave}
+                        </text>
+                        <text
+                          className="dui-stage__linha-valor"
+                          x={place.x + place.w - 11}
+                          y={place.y + 30 + i * alturaDaLinha}
+                          textAnchor="end"
+                        >
+                          {linha.valor}
+                        </text>
+                      </g>
+                    ))}
+                    {linhas.length > mostradas.length ? (
+                      // Dizer quantas ficaram de fora é diferente de cortar em
+                      // silêncio: o leitor sabe que a caixa tem mais.
+                      <text
+                        className="dui-stage__linha-resto"
+                        x={place.x + place.w / 2}
+                        y={place.y + place.h - 6}
+                        textAnchor="middle"
+                      >
+                        {`+${linhas.length - mostradas.length}`}
+                      </text>
+                    ) : null}
+                  </g>
+                );
+              })()}
 
               {/*
                 As portas da caixa: por onde entra, por onde sai.

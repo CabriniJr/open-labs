@@ -51,3 +51,22 @@ export function encaixar(
     dy: (caixa.h - moldura.height * escala) / 2,
   };
 }
+
+/** Altura de uma linha de tabela, nas unidades do desenho. */
+export const ALTURA_DA_LINHA = 13;
+
+/**
+ * Fração do quadro que uma linha precisa ocupar para ser lida.
+ *
+ * Uma tabela não segue o mesmo limiar do interior de um contêiner, e a razão é
+ * o que ela é: o interior é um desenho inteiro — de longe vira borrão, e por
+ * isso só aparece quando a caixa já domina o quadro. Uma linha é **uma linha de
+ * texto**, e texto é legível muito antes disso. Cobrar o limiar do interior
+ * aqui mantinha a caixa lisa exatamente na vista em que se quer ver o que ela
+ * guarda: a de cima, onde a memória é uma caixa entre outras.
+ */
+export const FRACAO_LEGIVEL = 0.009;
+
+export function tabelaLegivel(unidadesPorQuadro: number): boolean {
+  return ALTURA_DA_LINHA / unidadesPorQuadro >= FRACAO_LEGIVEL;
+}

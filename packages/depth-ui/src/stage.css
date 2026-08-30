@@ -699,3 +699,42 @@
 .dui-stage__objeto:has(> path.dui-stage__caixa) .dui-stage__rotulo {
   font-size: 10px;
 }
+
+/*
+ * O que a caixa guarda: a tabela do armazém.
+ *
+ * A linha tocada neste tick acende. É a diferença entre ver um monte de
+ * números e ver **o acesso acontecendo** — que é a coisa a entender numa
+ * memória, e a razão de abrir a caixa em vez de listá-la num painel ao lado.
+ */
+.dui-stage__linha {
+  fill: color-mix(in oklab, var(--dui-processor) 6%, transparent);
+}
+
+.dui-stage__conteudo g[data-ativo="true"] .dui-stage__linha {
+  fill: color-mix(in oklab, var(--dui-dado) 28%, transparent);
+}
+
+.dui-stage__linha-chave,
+.dui-stage__linha-valor,
+.dui-stage__linha-resto {
+  font-size: 8px;
+  fill: var(--ink-muted);
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+.dui-stage__linha-valor {
+  fill: var(--ink);
+}
+
+.dui-stage__conteudo g[data-ativo="true"] .dui-stage__linha-chave,
+.dui-stage__conteudo g[data-ativo="true"] .dui-stage__linha-valor {
+  fill: var(--ink);
+  font-weight: 600;
+}
+
+.dui-stage__linha-resto {
+  fill: var(--ink-faint);
+  letter-spacing: 0.06em;
+}

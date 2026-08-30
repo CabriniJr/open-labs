@@ -9,6 +9,8 @@ import {
   CPU_VIEWS,
   decode,
   LARGURA,
+  NOMES,
+  conteudoDaCaixa,
   portasAltas,
   leituraDaCarga,
   VIEW_SISTEMA,
@@ -43,12 +45,6 @@ loop:   add  t0, t0, t1
         sw   t0, 0(t3)      # say the sum
 `;
 
-const NOMES = [
-  "zero", "ra", "sp", "gp", "tp", "t0", "t1", "t2",
-  "s0", "s1", "a0", "a1", "a2", "a3", "a4", "a5",
-  "a6", "a7", "s2", "s3", "s4", "s5", "s6", "s7",
-  "s8", "s9", "s10", "s11", "t3", "t4", "t5", "t6",
-] as const;
 
 /**
  * As vistas do enquadramento, e — quando a ULA abre até o transistor — as
@@ -228,6 +224,7 @@ export function CpuLab() {
             readouts={readouts}
             altos={portasAltas(estado, arvore)}
             leituraDaCarga={leituraDaCarga}
+            conteudo={conteudoDaCaixa(estado, montado?.words ?? [])}
             comFicha
           />
         ) : (

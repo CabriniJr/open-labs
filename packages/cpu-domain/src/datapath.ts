@@ -24,7 +24,7 @@ import { ROTULOS } from "./labels.js";
  * A família está certa no papel; o `kind` chega com ela.
  */
 
-const PALAVRA = 4;
+export const PALAVRA = 4;
 
 /**
  * Entrada e saída mapeadas em memória.

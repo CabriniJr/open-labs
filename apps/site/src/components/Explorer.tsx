@@ -30,6 +30,10 @@ export interface ExplorerProps {
   readonly altos?: ReadonlySet<string> | undefined;
   /** O valor que a carga leva. Quem sabe ler o dado é o domínio. */
   readonly leituraDaCarga?: ((mensagem: Message) => string | undefined) | undefined;
+  /** O que cada caixa guarda agora. Quem lê o estado é o domínio. */
+  readonly conteudo?:
+    | ((id: string) => readonly { readonly chave: string; readonly valor: string; readonly ativo?: boolean }[] | undefined)
+    | undefined;
   /** Mostra a ficha do objeto selecionado ao lado do palco. */
   readonly comFicha?: boolean;
 }
@@ -47,6 +51,7 @@ export function Explorer({
   readouts,
   altos,
   leituraDaCarga,
+  conteudo,
   comFicha = false,
 }: ExplorerProps) {
   const primeiro = inicial ?? views[0]?.focus ?? tree.rootId;
@@ -176,6 +181,7 @@ export function Explorer({
           partirDe={partirDe}
           onEnquadrado={chegou}
           leituraDaCarga={leituraDaCarga}
+          conteudo={conteudo}
         />
         {comFicha ? <Ficha tree={tree} wires={wires} state={state} id={selecionado} /> : null}
       </div>

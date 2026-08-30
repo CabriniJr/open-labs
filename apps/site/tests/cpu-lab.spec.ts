@@ -217,3 +217,22 @@ test("a ficha de um contêiner mostra o interior dele em grafo", async ({ page }
   await expect(dot).toContainText("splitter");
   await expect(dot).toContainText("->");
 });
+
+test("a memória mostra o que guarda, e a linha tocada acende", async ({ page }) => {
+  await page.goto("labs/cpu/");
+  await expect(page.locator(".dui-stage")).toBeVisible({ timeout: 15_000 });
+
+  // Uma memória desenhada como caixa lisa é a caixa fechada do armazém: sabe-se
+  // que tem coisa dentro e não se vê nenhuma. A tabela é o que faz "memória"
+  // deixar de ser palavra — e ela vem do estado, não de uma ilustração.
+  const memoria = page.locator('.dui-stage__objeto[data-id="memoria"]').first();
+  const linhas = memoria.locator(".dui-stage__linha-chave");
+  await expect(linhas.first()).toBeVisible({ timeout: 15_000 });
+  await expect(linhas.first()).toHaveText(/^0x[0-9a-f]{4}/);
+
+  // E o acesso deste tick acende: sem isso a tabela é um inventário parado, e o
+  // que se quer ver é o endereço que ESTA instrução tocou.
+  await expect(
+    memoria.locator('.dui-stage__conteudo g[data-ativo="true"]').first(),
+  ).toBeAttached({ timeout: 20_000 });
+});

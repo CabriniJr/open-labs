@@ -73,17 +73,21 @@ export const VIEW_SISTEMA: View = {
     // a ULA, a unidade de desvio e o mux de escrita. Abrir é descer um nível.
     { id: "logica", x: 600, y: 205, w: 190, h: 125, collapsed: true },
 
-    // Entrada e saída, nas pontas — é por onde o mundo fala com a máquina.
-    { id: "entrada", x: 40, y: 190, w: 130, h: 70 },
-    { id: "saida", x: 1010, y: 190, w: 130, h: 70 },
+    // Entrada e saída, nas pontas — é por onde o mundo fala com a máquina. A
+    // saída é alta porque ela acumula: o que o programa falou fica ali, na
+    // ordem, e é essa fita que mostra o resultado sendo produzido.
+    { id: "entrada", x: 40, y: 190, w: 140, h: 70 },
+    { id: "saida", x: 1000, y: 190, w: 140, h: 145 },
 
     // O barramento, entre a CPU e a memória — que é onde ele vive. Fechado:
     // de longe é uma esteira só; abrindo, são as vias que ele agrega.
     { id: "barramento", x: 330, y: 410, w: 560, h: 26, collapsed: true },
 
-    // As memórias, embaixo: fora da CPU, e é isso que o desenho diz.
-    { id: "imem", x: 330, y: 470, w: 250, h: 70 },
-    { id: "memoria", x: 640, y: 470, w: 250, h: 70 },
+    // As memórias, embaixo: fora da CPU, e é isso que o desenho diz. Elas são
+    // altas de propósito — uma memória é um banco de palavras, e um banco só
+    // ensina alguma coisa se der para ver as palavras dele passando.
+    { id: "imem", x: 330, y: 460, w: 250, h: 145 },
+    { id: "memoria", x: 640, y: 460, w: 250, h: 145 },
   ],
 };
 
