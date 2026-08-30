@@ -968,3 +968,79 @@ guardava `a === 0 && b === 0` e devolvia nada, enquanto a composição entregava
 virou varredura: o espaço é pequeno o bastante para não sobrar sorte.
 
 Estado: 497 testes unitários, 84 e2e, typecheck, boundaries e build verdes.
+
+---
+
+## Entrega 1 do refino: o que a tela afirma passa a ser verdade
+
+**Data:** 2026-08-30. **Desenho:** `docs/superpowers/specs/2026-08-30-refino-grafico-e-pedagogico-design.md`.
+**Código:** `packages/depth-ui/src/{stage.css,Stage.tsx,kinds.ts}`, `packages/depth-core/src/model.ts`,
+`packages/cpu-domain/src/{labels.ts,carga.ts,datapath.ts,gates.ts,alu.ts,transistors.ts}`,
+`apps/site/src/components/Explorer.tsx`.
+
+Isto saiu de uma **auditoria agêntica em três frentes**: um agente nas telas reais pelo
+navegador, um no modelo da CPU, um na ficha do objeto. As três acharam coisas que nenhum
+teste pegava, e a primeira delas é a razão de esta entrega existir.
+
+**A porta acesa não existia.** O lab promete por escrito que "uma porta acesa é uma porta
+cuja saída é 1". O agente mediu `fill` e `stroke` com `a=b=0` e com `a=6,b=7`: o mesmo valor.
+Três causas, e as três da mesma família — **aceso era desenhado como acontecimento, não como
+estado**. (a) O aceso vinha inteiro de uma transição cujo primeiro quadro era a tinta do
+apagado; com a simulação rodando, a peça reiniciava a transição a cada tick e vivia perto do
+quadro zero, saindo mais **escura** que a porta em 0 nos dois temas. (b) O halo que o olho lê
+como "acesa" pertencia a `data-ativo` — a quem *rodou*, não a quem *disse um* —, então a porta
+em 0 brilhava e a em 1 não. São as duas coisas que a troca de codificação foi feita para
+separar, recoladas pelo desenho. (c) Na moldura, `fill-opacity: 0` anulava o preenchimento e o
+contorno de acesa tinha a mesma cor do de apagada: sobrava meio pixel.
+
+Agora o repouso já é aceso e a animação só pulsa por cima — parte de **mais** aceso e assenta
+no aceso, então nenhum quadro dela mente. O nível alto ganhou token próprio: misturado na cor
+do dado, "acesa" caía na mesma tinta de "isto é linha de dado", e a mistura escurecia a
+superfície nos dois temas.
+
+**Duas armadilhas de teste caíram junto, e valem mais que o conserto.** A checagem de
+permanência trocava o tema e esperava 1,2s, e o site restaurava o tema no meio: a segunda
+amostra media outro tema em vez de outro instante. E o laço "nos dois temas" **não trocava
+tema nenhum** — nem escrevendo o atributo, nem emulando a preferência do sistema. Passava
+medindo o mesmo caso duas vezes. Regra que fica: **teste que varre dois casos prova, no fim,
+que os dois casos aconteceram.**
+
+**A ficha sobrevivia ao enquadramento.** Ler a ficha do NAND e voltar ao topo deixava o painel
+explicando peça que não está mais desenhada. A correção não é limpar no clique da trilha —
+isso é regra sobre um botão, e sobraria todo outro caminho de navegação. A seleção passa a
+carregar o enquadramento em que foi feita, e quem lê descarta o que não é dali: não há limpeza
+a esquecer. Conferir contra o que o palco desenhou não serve, porque o interior aparece ou não
+conforme o nível de detalhe, que é conta do palco.
+
+**Os sinais de controle vazavam em português.** `ler`, `escrever`, `nada`, `ula`, `mem`, `pc4`
+iam crus para a linha tracejada de um site em inglês — e nem no idioma certo seriam os nomes
+certos: o aluno procura `MemRead`, `MemWrite`, `ALUSrc`, `MemToReg`. A guarda de idioma não
+pegou, e não por descuido: ela varre acento, e nenhuma daquelas palavras tem. Quem pega agora é
+**cobertura**: todo par campo/valor que a tabela de controle emite, para todo o ISA, tem de ter
+tradução — com a tabela rodada de verdade, porque listar os valores à mão seria a segunda
+fonte. O mapa é por campo **e** valor: `nada` quer dizer "não acessa memória" num sinal e "não
+escreve no banco" noutro. Caiu junto uma duplicação que era a causa de a varredura não fechar:
+a tabela dizia `acesso`/`escrita`/`desvio` e o payload dizia `modo`/`fonte`/`tipo`.
+
+**A chave entrou no catálogo do motor.** O transistor era `router`: herdava o trapézio do mux e
+a ficha o explicava com o texto do mux. Símbolo errado e explicação errada, no nível mais fundo
+do modelo. Uma chave não escolhe entre entradas — deixa passar ou não, e quem manda é o
+terminal de porta. É objeto que faltava no catálogo, não remendo de CPU: válvula e relé são o
+mesmo objeto. Ela não ganha engrenagem, porque deixar passar não é processar. A guarda de
+fronteira pegou a primeira versão, em que eu havia escrito "transistor" nos comentários do
+motor — e estava certa.
+
+**Rótulo igual ao id não é rótulo.** Trinta e dois objetos se chamavam `bit0`…`bit31` na tela.
+Virou guarda geral.
+
+**E a ULA declara a segunda simplificação:** `sub` também não desce pelo somador. Estava
+escrito que a lógica bit a bit fica de fora, e quem lia só isso concluía que o resto desce pelo
+silício. Meia declaração é meia mentira.
+
+**Um achado da auditoria NÃO virou conserto.** A ordem "bit1, bit2, bit3 … bit14, bit13, bit12"
+no somador da ULA foi lida como bagunça e é **serpentina deliberada** — a linha ímpar volta ao
+contrário para o vai-um não pular a largura toda. O defeito ali é outro: a dobra é invisível,
+então quem olha lê como desordem. Fica para a entrega do desenho. Vale como método: relatório
+de agente é evidência, não veredito.
+
+Estado: 668 testes unitários, 145 e2e, typecheck, boundaries (74 arquivos) e build verdes.
