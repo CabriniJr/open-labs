@@ -94,7 +94,10 @@ test("o barramento é uma esteira, e abre nas vias que ele agrega", async ({ pag
   if (caixa === null || janela === null) throw new Error("o barramento não está na tela");
   const x = Math.min(janela.width - 5, Math.max(5, caixa.x + caixa.width / 2));
   const y = Math.min(janela.height - 5, Math.max(5, caixa.y + caixa.height / 2));
-  for (let i = 0; i < 14; i++) {
+  // Mais voltas de roda do que parece necessário, e é o barramento que cobra:
+  // o interior dele são as vias empilhadas, então quem manda no detalhe é a
+  // altura — e uma esteira é baixa por definição.
+  for (let i = 0; i < 26; i++) {
     await page.mouse.move(x, y);
     await page.mouse.wheel(0, -120);
     await page.waitForTimeout(45);

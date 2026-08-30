@@ -338,6 +338,52 @@ function via(id: string, label: string): ObjectSpec {
   };
 }
 
+/**
+ * A via de controle: repassa **sinal**, e repassa pela porta em que ele chegou.
+ *
+ * Era lacuna declarada — "um barramento de verdade carrega controle também" — e
+ * o que a fechava não era motor novo: sinal já é roteado pela porta de emissão,
+ * então basta a via reemitir na mesma porta em que ouviu. O que ela **não** pode
+ * fazer é misturar com carga: um sinal que virasse item apareceria na contagem,
+ * e a contagem é o que diz quanto trabalho o sistema fez.
+ */
+function viaDeSinal(id: string, label: string): ObjectSpec {
+  return {
+    id,
+    kind: "channel",
+    label,
+    leaf: true,
+    behavior: (state, _inbox, ctx) => {
+      if (ctx.phase !== "settle") return { state, out: [] };
+      const out: Emission[] = [];
+      for (const [porta, mensagens] of Object.entries(ctx.signals)) {
+        for (const message of mensagens) out.push({ port: porta, message });
+      }
+      return { state, out };
+    },
+  };
+}
+
+/**
+ * O barramento de instruções.
+ *
+ * Esta máquina é **Harvard**: instrução e dado moram em memórias separadas, e
+ * a figura canônica de uma Harvard tem dois barramentos, não um. Desenhar um só
+ * seria desenhar a figura de von Neumann sobre um modelo que não é von Neumann
+ * — e o leitor sairia com a arquitetura errada na cabeça.
+ *
+ * Ele carrega as duas metades de uma busca: o endereço descendo, a palavra
+ * subindo. É por isso que o PC não fala mais direto com a memória de
+ * instruções: falar direto era o barramento existir no desenho e não servir
+ * para nada.
+ */
+const barramentoDeInstrucoes: ObjectSpec = {
+  id: "barramento-instrucao",
+  kind: "channel",
+  label: ROTULOS.barramentoInstrucao,
+  children: [via("via-pc", ROTULOS.viaPc), via("via-instrucao", ROTULOS.viaInstrucao)],
+};
+
 const barramentoDeMemoria: ObjectSpec = {
   id: "barramento",
   kind: "channel",
@@ -349,15 +395,20 @@ const barramentoDeMemoria: ObjectSpec = {
     e o barramento é a caixa que as agrega. Visto de longe é uma esteira só;
     aberto, são os trilhos, cada um com a sua carga.
 
-    Duas vias, e não três: a linha de controle continua indo direto. Ela carrega
-    **sinal**, e sinal tem destinatário nomeado — uma via que só repassa carga
-    engoliria o modo de acesso, e a memória pararia de escrever. Um barramento
-    de verdade carrega controle também; modelar isso exige um canal que repasse
-    sinal, e é lacuna declarada, não esquecimento.
+    Três vias, que são as três do diagrama de sempre: endereço, dado e controle.
+    A de controle foi a última a chegar porque exigia um canal que repassasse
+    **sinal** — uma via que só repassa carga engolia o modo de acesso, e a
+    memória parava de escrever. Ela repassa pela porta em que ouviu, e é isso
+    que a faz servir a qualquer linha de controle sem conhecer nenhuma.
+
+    Só o controle que **sai da CPU** anda aqui. O que comanda a ULA e os muxes
+    fica dentro da CPU, curto, como no diagrama de referência: um barramento
+    liga a CPU ao que está fora dela, e não uma peça interna à vizinha.
   */
   children: [
     via("via-endereco", ROTULOS.viaEndereco),
     via("via-dado", ROTULOS.viaDado),
+    viaDeSinal("via-acesso", ROTULOS.viaControle),
   ],
 };
 
@@ -571,6 +622,7 @@ export function cpuWorld(
       relogio,
       entrada,
       cpu,
+      barramentoDeInstrucoes,
       memoriaDeInstrucoes(image),
       barramentoDeMemoria,
       memoriaPrincipal(image),
@@ -595,9 +647,11 @@ export function cpuWorld(
       // acomodação: tudo isto fecha dentro do mesmo tick. `width: 32` não é
       // enfeite: a linha é um feixe de 32 vias, e é isso que faz somar dois
       // números custar 32 vezes um somador de um bit
-      { from: "pc", port: "out", to: "imem", timing: "settle", width: 32 },
-      { from: "imem", port: "out", to: "decodificador", timing: "settle", width: 32 },
-      { from: "imem", port: "out", to: "controle", timing: "settle", width: 32 },
+      { from: "pc", port: "out", to: "via-pc", timing: "settle", width: 32 },
+      { from: "via-pc", port: "out", to: "imem", timing: "settle", width: 32 },
+      { from: "imem", port: "out", to: "via-instrucao", timing: "settle", width: 32 },
+      { from: "via-instrucao", port: "out", to: "decodificador", timing: "settle", width: 32 },
+      { from: "via-instrucao", port: "out", to: "controle", timing: "settle", width: 32 },
       { from: "decodificador", port: "out", to: "banco", timing: "settle" },
       { from: "banco", port: "out", to: "mux-operando", timing: "settle", width: 32 },
       { from: "mux-operando", port: "out", to: "ula", toPort: "in", timing: "settle", width: 32 },
@@ -611,7 +665,8 @@ export function cpuWorld(
       // as linhas de controle: metade do diagrama, e nenhuma carrega carga
       { from: "controle", port: "op", to: "ula", line: "control", toPort: "op", timing: "settle" },
       { from: "controle", port: "selb", to: "mux-operando", line: "control", toPort: "selb", timing: "settle" },
-      { from: "controle", port: "acesso", to: "memoria", line: "control", toPort: "acesso", timing: "settle" },
+      { from: "controle", port: "acesso", to: "via-acesso", line: "control", toPort: "acesso", timing: "settle" },
+      { from: "via-acesso", port: "acesso", to: "memoria", line: "control", toPort: "acesso", timing: "settle" },
       { from: "controle", port: "selwb", to: "mux-escrita", line: "control", toPort: "selwb", timing: "settle" },
       { from: "controle", port: "cond", to: "desvio", line: "control", toPort: "cond", timing: "settle" },
 

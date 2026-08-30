@@ -25,6 +25,25 @@ export const ZOOM_MAXIMO = 40;
 /** Fundo do aninhamento: mais que isto por quadro é sopa, não é leitura. */
 export const PROFUNDIDADE_MAXIMA = 3;
 
+/**
+ * Quanto do quadro uma caixa ocupa — pelo lado que **aperta**.
+ *
+ * Só a largura não serve, e o barramento é a prova: uma esteira de 610 por 26
+ * ocupa metade da largura do quadro e três por cento da altura dele. Pela
+ * largura, o interior dela apareceria quase inteiro; na tela, três vias
+ * espremidas em vinte e seis unidades são um borrão. O mesmo vale ao contrário
+ * para uma caixa alta e estreita.
+ *
+ * Pelo lado que aperta, a conta responde à pergunta que importa — "cabe ler o
+ * que tem aí dentro?" — e continua não dependendo do tamanho do monitor.
+ */
+export function fracaoDoQuadro(
+  caixa: { readonly w: number; readonly h: number },
+  quadro: { readonly largura: number; readonly altura: number },
+): number {
+  return Math.min(caixa.w / quadro.largura, caixa.h / quadro.altura);
+}
+
 export function quantoAparece(fracaoDoQuadro: number): number {
   // NaN é "não deu para medir" — a caixa ainda não foi desenhada, e o honesto
   // é não mostrar interior. Infinito é o caso oposto e cai na regra normal.

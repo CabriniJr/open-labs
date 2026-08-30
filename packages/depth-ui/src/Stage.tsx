@@ -22,9 +22,12 @@ import {
   PROFUNDIDADE_MAXIMA,
   ZOOM_MAXIMO,
   encaixar,
+  fracaoDoQuadro,
   quantoAparece,
   tabelaLegivel,
 } from "./lod.js";
+import { caminho } from "./roteador.js";
+import type { Ponto } from "./roteador.js";
 import { travessia } from "./travessia.js";
 import { portasDaCaixa, posicaoDaPorta } from "./portas.js";
 import { dilatarPara, relogioDaCamada } from "./tempo.js";
@@ -154,99 +157,6 @@ interface CamadaProps extends StageProps {
    * a cada quadro.
    */
   readonly emissoes: Readonly<Record<string, EmissaoDaPorta>>;
-}
-
-interface Ponto {
-  readonly x: number;
-  readonly y: number;
-}
-
-const centro = (p: NodePlacement): Ponto => ({ x: p.x + p.w / 2, y: p.y + p.h / 2 });
-
-/**
- * O caminho de um fio, em cotovelos retos — é assim que esquemático se desenha,
- * e a diagonal esconderia por onde a linha passa.
- *
- * Quando o destino está atrás da origem, a linha desce para uma faixa livre e
- * volta por baixo: é a realimentação, e ela precisa **parecer** uma volta.
- */
-interface Retangulo {
-  readonly x: number;
-  readonly y: number;
-  readonly w: number;
-  readonly h: number;
-}
-
-const cruzaVertical = (x: number, y1: number, y2: number, r: Retangulo): boolean =>
-  x > r.x - 6 && x < r.x + r.w + 6 && Math.max(y1, y2) > r.y - 6 && Math.min(y1, y2) < r.y + r.h + 6;
-
-const cruzaHorizontal = (y: number, x1: number, x2: number, r: Retangulo): boolean =>
-  y > r.y - 6 && y < r.y + r.h + 6 && Math.max(x1, x2) > r.x - 6 && Math.min(x1, x2) < r.x + r.w + 6;
-
-/** O primeiro candidato que não passa por cima de ninguém, ou o primeiro. */
-function escolher(
-  candidatos: readonly number[],
-  livre: (valor: number) => boolean,
-): number {
-  return candidatos.find(livre) ?? candidatos[0] ?? 0;
-}
-
-/**
- * O caminho de um fio, em cotovelos retos — é assim que esquemático se desenha,
- * e a diagonal esconderia por onde a linha passa.
- *
- * O cotovelo **desvia de quem estiver no caminho**. Uma linha que atravessa uma
- * caixa parece entrar nela, e o leitor passa a ver uma ligação que não existe —
- * é mentira de desenho, e custa o mesmo tanto que mentira de número.
- */
-function caminho(
-  de: NodePlacement,
-  para: NodePlacement,
-  faixa: number,
-  obstaculos: readonly Retangulo[],
-): string {
-  const a = centro(de);
-  const b = centro(para);
-  const saida = { x: de.x + de.w, y: a.y };
-  const outros = obstaculos.filter((r) => r !== de && r !== para);
-
-  // Para a frente: sai pela direita, entra pela esquerda, com um cotovelo no
-  // meio. É a leitura natural, e é a maioria dos fios.
-  if (para.x >= saida.x + 16) {
-    const meio = (saida.x + para.x) / 2;
-    const candidatos = [meio, meio - 14, meio + 14, saida.x + 12, para.x - 12];
-    const x = escolher(candidatos, (c) =>
-      outros.every((r) => !cruzaVertical(c, saida.y, b.y, r)),
-    );
-    return `M ${saida.x} ${saida.y} H ${x} V ${b.y} H ${para.x}`;
-  }
-
-  // Destino claramente abaixo ou acima: **desce (ou sobe) pela borda**, em vez
-  // de sair de lado e cruzar tudo na altura do meio. É o barramento indo até a
-  // memória, e é assim que a figura de livro desenha.
-  const abaixo = para.y > de.y + de.h + 8;
-  const acima = para.y + para.h + 8 < de.y;
-  if (abaixo || acima) {
-    const entre = abaixo
-      ? [(de.y + de.h + para.y) / 2, para.y - 16, de.y + de.h + 16]
-      : [(para.y + para.h + de.y) / 2, para.y + para.h + 16, de.y - 16];
-    const candidatos = entre.flatMap((c) => [c, c - 12, c + 12, c - 24, c + 24]);
-    const lane = escolher(candidatos, (c) =>
-      outros.every((r) => !cruzaHorizontal(c, a.x, b.x, r)),
-    );
-    const inicioY = abaixo ? de.y + de.h : de.y;
-    const fimY = abaixo ? para.y : para.y + para.h;
-    return `M ${a.x} ${inicioY} V ${lane} H ${b.x} V ${fimY}`;
-  }
-
-  // Sobrepostos na vertical: a linha precisa PARECER uma volta. Sai pela
-  // direita, contorna por baixo dos dois e entra pela borda de baixo.
-  const base = Math.max(de.y + de.h, para.y + para.h);
-  const lane = escolher(
-    [base + faixa, base + faixa + 14, base + faixa + 28, base + faixa - 10],
-    (c) => outros.every((r) => !cruzaHorizontal(c, saida.x + 14, b.x, r)),
-  );
-  return `M ${saida.x} ${saida.y} H ${saida.x + 14} V ${lane} H ${b.x} V ${para.y + para.h}`;
 }
 
 /** O que mudou no livro-caixa entre dois estados. É a fonte de todo movimento. */
@@ -492,12 +402,20 @@ function Camada({
    * Calculado antes dos fios porque é ele que decide se um fio **entra** na
    * caixa ou para na borda dela.
    */
+  // O quadro em unidades da vista: a largura vem da câmera, e a altura sai da
+  // proporção da própria vista — a câmera enquadra sem distorcer, então a
+  // proporção do quadro é a da vista.
+  const quadro = {
+    largura: unidadesPorQuadro,
+    altura: (unidadesPorQuadro * view.height) / view.width,
+  };
+
   const dentroDe2 = new Map<string, { readonly interior: View; readonly aparece: number }>();
   for (const place of view.places) {
     if (place.collapsed !== true || profundidade >= PROFUNDIDADE_MAXIMA) continue;
     const interior = interiores?.(place.id);
     if (interior === undefined) continue;
-    const aparece = quantoAparece(place.w / unidadesPorQuadro);
+    const aparece = quantoAparece(fracaoDoQuadro(place, quadro));
     if (aparece > 0) dentroDe2.set(place.id, { interior, aparece });
   }
 
@@ -562,25 +480,43 @@ function Camada({
   const ANCORA_SAI = "__sai";
   const FORA = "__fora" as const;
 
+  /**
+   * A caixa desenhada **mais funda** que contém este objeto.
+   *
+   * Subir pela árvore até achar quem está na vista, e não perguntar qual filho
+   * do foco o contém. A diferença parece de detalhe e é a causa da bagunça: uma
+   * vista desenha caixas aninhadas — a moldura de fora, a de dentro, e a peça
+   * fechada dentro dela — e nenhuma das duas últimas é filha direta do foco.
+   * Perguntando pelo filho do foco, TODO fio que nascia lá no fundo era
+   * desenhado saindo da moldura de fora: a linha atravessava a máquina inteira
+   * para chegar na caixa vizinha, e o desenho dizia que a peça está ligada a
+   * quem ela não está.
+   */
+  const caixaQueContem = (id: string): NodePlacement | undefined => {
+    let cursor = tree.parent.get(id);
+    while (cursor !== undefined) {
+      const caixa = lugares.get(cursor);
+      if (caixa !== undefined) return caixa;
+      cursor = tree.parent.get(cursor);
+    }
+    return undefined;
+  };
+
   const ondeCai = (id: string): NodePlacement | typeof FORA | undefined => {
     const direto = lugares.get(id);
     if (direto !== undefined) return direto;
     if (!tree.byId.has(id)) return undefined;
-    const quem = visibleChild(tree, view.focus, id);
-    if (quem.at === "child") {
-      const caixa = lugares.get(quem.id);
-      if (caixa !== undefined) return caixa;
-    }
+    const dentro = caixaQueContem(id);
+    if (dentro !== undefined) return dentro;
     // O próprio foco: a ligação atravessa a moldura. Quem responde por ela lá
     // dentro é resolvido logo abaixo — aqui só se diz que ela vem de fora.
+    const quem = visibleChild(tree, view.focus, id);
     return quem.at === "self" || quem.at === "outside" ? FORA : undefined;
   };
 
   /** A caixa desta vista que contém aquele objeto, se alguma contiver. */
-  const dentroDoFoco = (id: string): NodePlacement | undefined => {
-    const quem = visibleChild(tree, view.focus, id);
-    return quem.at === "child" ? lugares.get(quem.id) : undefined;
-  };
+  const dentroDoFoco = (id: string): NodePlacement | undefined =>
+    lugares.get(id) ?? caixaQueContem(id);
 
   /**
    * Quem, **nesta vista**, responde por uma ligação que atravessa a moldura.
@@ -650,6 +586,19 @@ function Camada({
 
       const para = b === FORA ? margem("sai", a as NodePlacement) : b;
       const de = a === FORA ? margem("entra", para) : a;
+
+      /*
+        Ligação que começa e termina na mesma caixa desenhada, sem ser um
+        laço de verdade: é **interior**, e desenhá-la é desenhar por fora o que
+        acontece por dentro. A ULA falando com a unidade de desvio virava uma
+        alça saindo da lógica combinacional e voltando nela — uma volta que o
+        leitor lê como realimentação e que não é nenhuma.
+
+        Um laço de verdade — o objeto que escreve nele mesmo — continua sendo
+        desenhado, porque ali as duas pontas do fio SÃO o mesmo objeto, e é isso
+        que a alça diz.
+      */
+      if (de.id === para.id && wire.from !== String(wire.to)) return null;
 
       // Duas folhas dentro das mesmas duas caixas produzem a mesma aresta
       // agregada. Desenhá-la trinta e duas vezes engrossa a linha sem dizer
@@ -778,6 +727,10 @@ function Camada({
           <g
             key={aresta.chave}
             className="dui-stage__fio"
+            /* As duas pontas, nomeadas: é o que permite conferir de fora que
+               nenhum fio atravessa uma caixa que não é ponta dele. */
+            data-de={aresta.from}
+            data-para={aresta.to}
             data-linha={aresta.linha}
             data-timing={aresta.timing}
             data-acesa={aresta.acesa ? "true" : undefined}
@@ -849,7 +802,7 @@ function Camada({
               ? interiores?.(place.id)
               : undefined;
           const aparece =
-            interior === undefined ? 0 : quantoAparece(place.w / unidadesPorQuadro);
+            interior === undefined ? 0 : quantoAparece(fracaoDoQuadro(place, quadro));
           // Escala uniforme, pelo lado que aperta: esticar o interior para
           // preencher a caixa distorceria o esquemático, e num esquemático a
           // proporção é informação — uma rede em paralelo esticada deixa de
@@ -939,10 +892,14 @@ function Camada({
                     y2={place.y + 18}
                   />
                 </>
-              ) : node?.kind === "router" ? (
+              ) : node?.kind === "router" && fam !== "controller" ? (
                 // O trapézio é a notação de um seletor, e ela é universal:
-                // largo do lado das entradas, estreito do lado da saída. A
-                // forma **é** a explicação — muitas entram, uma sai —, e um
+                // largo do lado das entradas, estreito do lado da saída. Só
+                // vale para quem está NO caminho: quem só manda sinal não
+                // seleciona nada, e um trapézio deitado sobre a largura do
+                // desenho vira uma seta gigante apontando para lugar nenhum.
+                //
+                // A forma **é** a explicação — muitas entram, uma sai —, e um
                 // retângulo a esconde atrás de um rótulo que ninguém lê.
                 <path
                   className="dui-stage__caixa"

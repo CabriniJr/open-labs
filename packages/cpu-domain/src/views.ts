@@ -40,54 +40,90 @@ const FAIXA = { controle: 60, fluxo: 190, retorno: 470 } as const;
 export const VIEW_SISTEMA: View = {
   id: "sistema",
   focus: "sistema",
-  title: "The system: CPU, memories, and the clock that moves it",
-  width: 1180,
-  height: 620,
+  title: "The system: CPU, memories, and the buses between them",
+  width: 1260,
+  height: 740,
   /**
-   * A vista de cima mostra **poucas caixas, com profundidade** — e não muitas
-   * caixas rasas.
+   * A figura canônica de uma máquina Harvard, e não um arranjo inventado.
    *
-   * Ela chegou a desenhar PC, banco, mux de operando, ULA, unidade de desvio e
-   * mux de escrita todos no primeiro nível. Isso é o interior do processador
-   * vazando para a vista do sistema: dezessete peças lado a lado, nenhuma delas
-   * com um dentro para abrir, e a pergunta "o que é um computador" respondida
-   * com uma lista. É o contrário do que este motor existe para fazer.
+   * Três andares, e cada um responde uma pergunta:
    *
-   * O diagrama de blocos clássico responde com cinco: entrada, saída, memória,
-   * e uma CPU que contém a unidade de controle e o processador. Tudo o mais é
-   * um nível abaixo — e agora **é** um nível abaixo, atrás de `collapsed`, que
-   * é a forma de dizer em voz alta "há mais aqui dentro".
+   * - **em cima**, a CPU, numa moldura só. Quem decide e quem calcula moram
+   *   dentro dela, e o que está dentro não conversa com o mundo por fora dela.
+   * - **no meio**, os barramentos, deitados e paralelos. São dois porque esta
+   *   máquina tem duas memórias — desenhar um barramento só seria desenhar a
+   *   figura de von Neumann sobre um modelo que não é von Neumann.
+   * - **embaixo**, o que está fora da CPU, pendurado no barramento que lhe
+   *   cabe por um toco curto. Nenhuma linha atravessa o desenho.
+   *
+   * A regra que arruma tudo é uma: **quem está fora da CPU fala pelo
+   * barramento**. Antes, a entrada falava com a memória por uma linha que
+   * cruzava a máquina inteira, o PC falava com a memória de instruções por
+   * fora do barramento, e o barramento aparecia no desenho sem servir para
+   * nada. Um barramento que não é o caminho não é um barramento: é um enfeite
+   * deitado no meio da figura.
+   *
+   * A vista de cima mostra **poucas caixas, com profundidade**. Tudo o que é
+   * interior do processador está atrás de `collapsed`, que é a forma de dizer
+   * em voz alta "há mais aqui dentro".
    */
   places: [
-    // O relógio fica fora e embaixo: ele não participa do caminho, ele o move.
-    { id: "relogio", x: 30, y: 470, w: 120, h: 70 },
+    // O relógio fica fora e à esquerda: ele não participa do caminho, ele o
+    // move. A linha dele entra pela borda da CPU, curta, e não cruza nada.
+    { id: "relogio", x: 30, y: 170, w: 120, h: 64 },
 
-    { id: "cpu", x: 320, y: 40, w: 560, h: 340 },
-    { id: "controle", x: 360, y: 80, w: 200, h: 60 },
-    { id: "decodificador", x: 620, y: 80, w: 200, h: 60 },
+    // A CPU é alta o bastante para caber a faixa de retorno DENTRO dela — e
+    // isso não é folga de desenho, é onde a volta acontece: o valor que vai ser
+    // escrito e o próximo PC nunca saem da CPU. Reservada essa faixa, a volta
+    // deixa de cruzar a ida, que é o que transforma o desenho em espaguete.
+    /*
+      A CPU, com o controle deitado no topo.
 
-    { id: "processador", x: 360, y: 170, w: 460, h: 180 },
-    { id: "pc", x: 390, y: 205, w: 110, h: 55 },
-    { id: "banco", x: 390, y: 275, w: 180, h: 55 },
+      É a figura de referência, e não um arranjo novo: a unidade de controle
+      atravessa a largura do caminho e **desce** sobre cada peça que ela
+      comanda. Posta num canto, ela obriga cada linha de controle a cruzar o
+      caminho de dados na diagonal — e uma linha que cruza uma caixa parece
+      entrar nela. Deitada no topo, toda linha de controle é uma queda reta, e
+      o leitor lê "quem manda está acima" sem que ninguém escreva isso.
+
+      A CPU é alta o bastante para caber a faixa de retorno DENTRO dela, e isso
+      não é folga de desenho: o valor que vai ser escrito e o próximo PC nunca
+      saem da CPU. Reservada a faixa, a volta deixa de cruzar a ida.
+    */
+    { id: "cpu", x: 210, y: 30, w: 830, h: 390 },
+    { id: "controle", x: 250, y: 58, w: 750, h: 46 },
+
+    // O caminho, da esquerda para a direita, na ordem dos estágios: buscar,
+    // decodificar, ler, calcular.
+    { id: "processador", x: 250, y: 145, w: 750, h: 175 },
+    { id: "pc", x: 268, y: 190, w: 110, h: 56 },
+    { id: "decodificador", x: 410, y: 190, w: 150, h: 56 },
+    { id: "banco", x: 590, y: 175, w: 170, h: 100 },
     // A lógica combinacional vem fechada: dentro dela estão o mux de operando,
     // a ULA, a unidade de desvio e o mux de escrita. Abrir é descer um nível.
-    { id: "logica", x: 600, y: 205, w: 190, h: 125, collapsed: true },
+    { id: "logica", x: 790, y: 165, w: 190, h: 130, collapsed: true },
 
-    // Entrada e saída, nas pontas — é por onde o mundo fala com a máquina. A
-    // saída é alta porque ela acumula: o que o programa falou fica ali, na
-    // ordem, e é essa fita que mostra o resultado sendo produzido.
-    { id: "entrada", x: 40, y: 190, w: 140, h: 70 },
-    { id: "saida", x: 1000, y: 190, w: 140, h: 145 },
+    /*
+      Os dois barramentos, deitados sob a CPU. Fechados: de longe cada um é uma
+      esteira só; abrindo, são as vias que ele agrega.
 
-    // O barramento, entre a CPU e a memória — que é onde ele vive. Fechado:
-    // de longe é uma esteira só; abrindo, são as vias que ele agrega.
-    { id: "barramento", x: 330, y: 410, w: 560, h: 26, collapsed: true },
+      A altura não é gosto: o interior de uma esteira são as vias **empilhadas**,
+      e uma esteira de vinte e seis unidades num quadro de setecentas só abriria
+      com um zoom absurdo. Quem decide o nível de detalhe é o lado que aperta, e
+      numa esteira o lado que aperta é sempre a altura.
+    */
+    { id: "barramento-instrucao", x: 210, y: 462, w: 330, h: 44, collapsed: true },
+    { id: "barramento", x: 600, y: 462, w: 610, h: 44, collapsed: true },
 
-    // As memórias, embaixo: fora da CPU, e é isso que o desenho diz. Elas são
-    // altas de propósito — uma memória é um banco de palavras, e um banco só
-    // ensina alguma coisa se der para ver as palavras dele passando.
-    { id: "imem", x: 330, y: 460, w: 250, h: 145 },
-    { id: "memoria", x: 640, y: 460, w: 250, h: 145 },
+    // Embaixo, o que está fora da CPU, cada um pendurado no seu barramento.
+    { id: "imem", x: 210, y: 540, w: 330, h: 165 },
+
+    // A ordem aqui é a do caminho: ouve à esquerda, guarda no meio, fala à
+    // direita. Entrada e saída são endereços que não são memória, e por isso
+    // moram coladas nela — mapear em memória é estar no espaço dela.
+    { id: "entrada", x: 600, y: 585, w: 130, h: 76 },
+    { id: "memoria", x: 770, y: 540, w: 280, h: 165 },
+    { id: "saida", x: 1080, y: 585, w: 130, h: 76 },
   ],
 };
 
