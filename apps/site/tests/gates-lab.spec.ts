@@ -224,14 +224,25 @@ test("a porta acesa é desenhada acesa, e continua acesa", async ({ page }) => {
   expect(alta.filter).not.toBe("none");
   expect(alta.filter).not.toMatch(/0px 0px 0px/);
 
-  // Estado, não acontecimento: a animação de acender dura 0.45s. Isto roda no
-  // tema em que a página nasceu, e de propósito — o site restaura o tema dele
-  // sozinho, e uma troca de tema no meio da espera faria a segunda amostra
-  // medir outro tema em vez de outro instante.
-  await page.waitForTimeout(1200);
-  const depois = await tinta(page, ALTA);
-  expect(depois.fill).toBe(alta.fill);
-  expect(depois.cor).toBeGreaterThan(baixa.cor + 0.02);
+  /*
+   * Estado, e não acontecimento — provado por amostragem.
+   *
+   * Cobrar igualdade exata do preenchimento em dois instantes era um proxy
+   * frágil: ele pega qualquer quadro de transição e reprova por uma diferença
+   * que ninguém enxerga. O que o defeito original fazia era a porta acesa
+   * **cair na tinta do apagado** durante quase todo o tick, e o que prova o
+   * contrário é olhar muitas vezes e nunca encontrá-la apagada.
+   *
+   * Isto roda no tema em que a página nasceu, de propósito: o site restaura o
+   * tema dele sozinho, e uma troca no meio da amostragem faria as medidas
+   * compararem temas em vez de instantes.
+   */
+  const piso = baixa.cor + 0.02;
+  for (let amostra = 0; amostra < 12; amostra += 1) {
+    await page.waitForTimeout(140);
+    const agora = await tinta(page, ALTA);
+    expect(agora.cor, `amostra ${amostra}: a porta acesa apagou`).toBeGreaterThan(piso);
+  }
 
   // E a cor tem de dizer "aceso" nos dois temas, cada um medido na hora.
   const porTema: Record<string, { alta: number; baixaFill: string }> = {};

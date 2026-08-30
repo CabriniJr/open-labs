@@ -305,7 +305,19 @@ export function viewSomador(bits: number, comTransistores = false): View {
     { id: "cin0", x: 30, y: topo + bits * alturaBit - 10, w: 130, h: 46 },
     { id: "somador", x: 220, y: topo, w: 680, h: bits * alturaBit + 10 },
     ...Array.from({ length: bits }, (_, i) => {
-      const y = topo + 20 + i * alturaBit;
+      // O bit menos significativo embaixo, e o vai-um SOBE.
+      //
+      // Estava ao contrário, e discordava de três coisas ao mesmo tempo: do
+      // texto do lab, que manda "watch the carry climb from the low bit to the
+      // high one"; do número escrito, porque ler as somas de cima para baixo
+      // dava `1011` onde a caixa de resultado dizia `1101`; e do próprio
+      // desenho, porque o vem-de-trás nascia embaixo, saltava a figura inteira
+      // até o bit zero lá em cima, e o vai-um descia de volta.
+      //
+      // É a orientação de qualquer figura de somador com propagação: o menos
+      // significativo na ponta em que o número termina, e o transporte
+      // caminhando para o mais significativo.
+      const y = topo + 20 + (bits - 1 - i) * alturaBit;
       const p = (s: string): string => `bit${i}-${s}`;
       // Com transistores a porta deixa de ser folha: a view diz isso em voz
       // alta em vez de desenhar uma caixa lisa, e dois cliques entram nela.
@@ -326,14 +338,17 @@ export function viewSomador(bits: number, comTransistores = false): View {
         porta(p("or1"), 600, 88),
       ];
     }).flat(),
+    // As somas acompanham os bits: a de cima é a mais significativa, e a
+    // coluna de saída se lê como o número se escreve.
     ...Array.from({ length: bits }, (_, i) => ({
       id: `soma${i}`,
       x: 960,
-      y: topo + 42 + i * alturaBit,
+      y: topo + 42 + (bits - 1 - i) * alturaBit,
       w: 110,
       h: 46,
     })),
-    { id: "vaium", x: 960, y: topo + 108 + (bits - 1) * alturaBit, w: 110, h: 46 },
+    // O vai-um é o bit seguinte ao mais significativo, então ele sai por cima.
+    { id: "vaium", x: 960, y: topo - 20, w: 110, h: 46 },
   ];
 
   return {
@@ -425,7 +440,11 @@ export function viewSomadorDaUla(bits: number, porLinha = 8): View {
       return {
         id: `bit${i}`,
         x: folga + x * (largura + folga),
-        y: folga + linha * (altura + folga),
+        // A serpentina SOBE, como a do somador de quatro bits: o menos
+        // significativo embaixo e o transporte caminhando para o mais
+        // significativo. As duas figuras do mesmo circuito liam em sentidos
+        // opostos, e quem descesse de uma para a outra teria de virar a cabeça.
+        y: folga + (linhas - 1 - linha) * (altura + folga),
         w: largura,
         h: altura,
         collapsed: true as const,

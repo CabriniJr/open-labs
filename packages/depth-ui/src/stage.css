@@ -446,7 +446,7 @@
  * que o leitor precisa reservar para o que muda. As duas redes da porta se
  * distinguem pelo que elas tocam — a de cima nasce no vermelho, a de baixo
  * termina na preta —, que é como um esquemático de verdade as separa, e não
- * por uma cor inventada para cada tipo de transistor.
+ * por uma cor inventada para cada tipo de chave.
  */
 .dui-stage__objeto[data-registro="esquematico"][data-kind="source"][data-alto="true"]
   > .dui-stage__caixa {

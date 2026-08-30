@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { indexTree } from "@ovh/depth-core";
 import { viewDisagreement } from "@ovh/depth-ui";
+import type { View } from "@ovh/depth-ui";
 import { assemble } from "./assembler.js";
 import { cpuWorld } from "./datapath.js";
 import { somadorWorld } from "./gates.js";
@@ -148,8 +149,78 @@ describe("a escada da ULA aberta até o transistor", () => {
         expect(distancia, `bit${i - 1} e bit${i}`).toBe(antes.w + 26);
       } else {
         expect(distancia, `bit${i - 1} e bit${i} na dobra`).toBe(0);
-        expect(agora.y - antes.y).toBe(antes.h + 26);
+        // A dobra SOBE. Era o contrário, e a serpentina de 32 bits lia ao
+        // avesso da figura de quatro bits do mesmo circuito: quem descesse de
+        // uma para a outra teria de virar a cabeça no meio do caminho, sem ter
+        // como saber que precisava. O sinal aqui é a direção, e é ele que se
+        // está cobrando — `Math.abs` a esconderia.
+        expect(agora.y - antes.y, `a dobra entre bit${i - 1} e bit${i} sobe`).toBe(
+          -(antes.h + 26),
+        );
       }
     }
+  });
+});
+
+/**
+ * A direção da leitura do somador, travada.
+ *
+ * Estava invertida, e discordava de três coisas ao mesmo tempo: do texto do
+ * lab ("watch the carry climb from the low bit to the high one"), do número
+ * escrito — ler as somas de cima para baixo dava `1011` onde a caixa de
+ * resultado dizia `1101` — e do próprio desenho, porque o vem-de-trás nascia
+ * embaixo, saltava a figura inteira até o bit zero lá em cima, e o vai-um
+ * descia de volta.
+ *
+ * Nada disso quebrava teste: o circuito somava certo, a view concordava com a
+ * árvore, e a suíte inteira passava. Só a leitura estava de cabeça para baixo,
+ * e leitura é a coisa que este lab existe para dar. Por isso o invariante é
+ * geométrico e não de conteúdo.
+ */
+describe("o somador se lê como o número se escreve", () => {
+  const y = (view: View, id: string): number => {
+    const place = view.places.find((p) => p.id === id);
+    if (place === undefined) throw new Error(`a view não desenha "${id}"`);
+    return place.y;
+  };
+
+  it.each([4, 8])("com %i bits, o mais significativo fica por cima", (bits) => {
+    const view = viewSomador(bits);
+    for (let i = 1; i < bits; i += 1) {
+      expect(y(view, `bit${i}`), `bit${i} tem de estar acima de bit${i - 1}`).toBeLessThan(
+        y(view, `bit${i - 1}`),
+      );
+      expect(y(view, `soma${i}`)).toBeLessThan(y(view, `soma${i - 1}`));
+    }
+  });
+
+  it("o transporte sobe: entra por baixo do bit zero e sai por cima do último", () => {
+    const view = viewSomador(4);
+    // O vem-de-trás nasce abaixo do primeiro somador...
+    expect(y(view, "cin0")).toBeGreaterThan(y(view, "bit0"));
+    // ...e o vai-um sai acima do último, porque ele é o bit seguinte a ele.
+    expect(y(view, "vaium")).toBeLessThan(y(view, "bit3"));
+  });
+});
+
+/**
+ * E a serpentina de 32 bits lê no mesmo sentido da de quatro.
+ *
+ * São duas figuras do MESMO circuito, uma dentro da CPU e a outra no lab das
+ * portas. Lendo em sentidos opostos, quem descesse de uma para a outra teria
+ * de virar a cabeça no meio do caminho — e não teria como saber que precisava.
+ */
+describe("as duas figuras do somador leem no mesmo sentido", () => {
+  it("na serpentina, a fileira do bit zero fica abaixo da fileira seguinte", () => {
+    const view = viewSomadorDaUla(32, 8);
+    const y = (id: string): number => {
+      const place = view.places.find((p) => p.id === id);
+      if (place === undefined) throw new Error(`a view não desenha "${id}"`);
+      return place.y;
+    };
+    // bit0 e bit7 estão na mesma fileira; bit8 abre a de cima.
+    expect(y("bit0")).toBe(y("bit7"));
+    expect(y("bit8")).toBeLessThan(y("bit0"));
+    expect(y("bit31")).toBeLessThan(y("bit8"));
   });
 });
