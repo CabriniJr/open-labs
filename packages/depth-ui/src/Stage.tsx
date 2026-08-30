@@ -893,14 +893,27 @@ function Camada({
                 entre transportar e transformar é a primeira coisa que este
                 desenho precisa deixar clara.
               */}
-              <rect
-                className="dui-stage__caixa"
-                x={place.x}
-                y={place.y}
-                width={place.w}
-                height={place.h}
-                rx={fam === "container" ? 14 : fam === "conduit" ? place.h / 2 : 8}
-              />
+              {node?.kind === "router" ? (
+                // O trapézio é a notação de um seletor, e ela é universal:
+                // largo do lado das entradas, estreito do lado da saída. A
+                // forma **é** a explicação — muitas entram, uma sai —, e um
+                // retângulo a esconde atrás de um rótulo que ninguém lê.
+                <path
+                  className="dui-stage__caixa"
+                  d={`M ${place.x} ${place.y} L ${place.x + place.w} ${place.y + place.h * 0.2} L ${
+                    place.x + place.w
+                  } ${place.y + place.h * 0.8} L ${place.x} ${place.y + place.h} Z`}
+                />
+              ) : (
+                <rect
+                  className="dui-stage__caixa"
+                  x={place.x}
+                  y={place.y}
+                  width={place.w}
+                  height={place.h}
+                  rx={fam === "container" ? 14 : fam === "conduit" ? place.h / 2 : 8}
+                />
+              )}
               {cheio !== undefined ? (
                 <rect
                   className="dui-stage__nivel"
@@ -991,7 +1004,12 @@ function Camada({
                   );
                 })}
                 {portas.saidas.map((porta, i) => {
-                  const cy = place.y + place.h * posicaoDaPorta(i, portas.saidas.length);
+                  // No trapézio a saída fica no bico, e não espalhada pela
+                  // borda: é ali que a linha realmente sai.
+                  const cy =
+                    node?.kind === "router"
+                      ? place.y + place.h / 2
+                      : place.y + place.h * posicaoDaPorta(i, portas.saidas.length);
                   return (
                     <g key={`s${porta}`} className="dui-stage__porta" data-lado="saida">
                       <title>{`out · ${porta}`}</title>

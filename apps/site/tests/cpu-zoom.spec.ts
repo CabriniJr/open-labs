@@ -105,3 +105,31 @@ test("o barramento é uma esteira, e abre nas vias que ele agrega", async ({ pag
   await expect(page.locator('.dui-stage__interior [data-id="via-endereco"]')).toHaveCount(1);
   await expect(page.locator('.dui-stage__interior [data-id="via-dado"]')).toHaveCount(1);
 });
+
+/**
+ * A forma vem do kind, e ela é a explicação.
+ *
+ * Um seletor desenhado como retângulo exige que o leitor já saiba o que é um
+ * mux — o rótulo é a única pista, e rótulo se ignora. O trapézio conta antes:
+ * largo do lado das entradas, estreito do lado da saída. Muitas entram, uma
+ * sai. É a notação universal, e ela não custa nada.
+ */
+test("um seletor é um trapézio, e o que não é seletor não é", async ({ page }) => {
+  await page.goto("labs/cpu/");
+  await page.waitForSelector("g.dui-stage__objeto");
+  await page.getByRole("group", { name: "Framing" }).getByRole("button", { name: "processor" }).click();
+  await page.waitForSelector('[data-id="mux-operando"]');
+
+  const mux = page.locator('[data-id="mux-operando"]');
+  await expect(mux.locator("path.dui-stage__caixa")).toHaveCount(1);
+  await expect(mux.locator("rect.dui-stage__caixa")).toHaveCount(0);
+
+  // E a saída sai pelo bico, e não espalhada pela borda: é ali que a linha
+  // realmente sai.
+  await expect(mux.locator('.dui-stage__porta[data-lado="saida"]')).toHaveCount(1);
+
+  // O banco de registradores guarda, não seleciona: continua sendo caixa.
+  const banco = page.locator('[data-id="banco"]');
+  await expect(banco.locator("rect.dui-stage__caixa")).toHaveCount(1);
+  await expect(banco.locator("path.dui-stage__caixa")).toHaveCount(0);
+});

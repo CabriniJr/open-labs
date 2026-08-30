@@ -688,3 +688,14 @@
 .dui-stage__objeto[data-familia="conduit"] .dui-stage__porta[data-lado="saida"] rect {
   fill: color-mix(in oklab, var(--dui-conduit) 55%, var(--paper));
 }
+
+/*
+ * O seletor é um trapézio, e o rótulo dele cabe onde há espaço.
+ *
+ * A forma é a explicação: largo do lado das entradas, estreito do lado da
+ * saída — muitas entram, uma sai. Escrever "mux" dentro de um retângulo exige
+ * que o leitor já saiba o que é um mux; o trapézio conta antes de ele ler.
+ */
+.dui-stage__objeto:has(> path.dui-stage__caixa) .dui-stage__rotulo {
+  font-size: 10px;
+}
