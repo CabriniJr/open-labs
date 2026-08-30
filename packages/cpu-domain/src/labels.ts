@@ -66,6 +66,22 @@ export const ROTULOS = {
   no: "node",
   vdd: "Vdd",
   gnd: "GND",
+
+  // o microprocessador genérico do deck. O que já existe acima é reaproveitado
+  // — `cpu`, `processador`, `relogio`, `memoria`, `pc`, `ula`, `controle` e
+  // `barramento` são as mesmas peças, com o mesmo nome, noutra máquina.
+  ir: "IR",
+  mar: "MAR",
+  mbr: "MBR",
+  ac: "AC",
+  temporario: "T",
+  alto: "H",
+  baixo: "L",
+  ponteiroDePilha: "SP",
+  status: "status flags",
+  barramentoEndereco: "address bus",
+  viaLeitura: "read",
+  viaEscrita: "write",
 } as const;
 
 /**
