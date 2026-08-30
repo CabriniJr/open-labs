@@ -38,6 +38,7 @@ export const THEMES: readonly Theme[] = [
       { id: "theory", title: "Teoria: de que formalismos o motor é instância", status: "stable" },
       { id: "kinds", title: "Catálogo de arquétipos", status: "proposal" },
       { id: "depth", title: "Profundidade e níveis", status: "proposal" },
+      { id: "zoom", title: "O zoom contínuo", status: "stable" },
       {
         id: "superpowers/specs/2026-08-28-motor-composicional-design",
         title: "Spec do motor composicional",

@@ -1,5 +1,5 @@
 import type { AnyObject, Emission, Message, ObjectSpec, Wire } from "@ovh/depth-core";
-import { somadorCompleto, fiosDoSomador } from "./gates.js";
+import { somadorCompleto, fiosDoSomador, nivelFixo } from "./gates.js";
 import type { Mnemonic } from "./isa.js";
 import { ROTULOS } from "./labels.js";
 
@@ -172,11 +172,26 @@ const muxOperacao: ObjectSpec = {
 };
 
 /** O somador de 32 bits, e os fios que fazem a cascata do vai-um. */
-function somador(): { objeto: AnyObject; wires: readonly Wire[] } {
-  const bits = Array.from({ length: LARGURA }, (_, i) => somadorCompleto(`bit${i}`, false));
+/**
+ * O vai-um que entra no bit zero, amarrado em zero.
+ *
+ * Ele sempre existiu no circuito e estava **implícito**: nada acionava
+ * `bit0.cin`, e a porta lógica modelada como folha tratava "não me acionaram"
+ * como zero. Deu certo por coincidência, e a coincidência apareceu no primeiro
+ * teste de refinamento: aberta até o transistor, a mesma porta não tem como
+ * inventar um comando que não chegou — o nó lá embaixo se recusa a responder, e
+ * a ULA inteira devolvia zero.
+ *
+ * É exatamente o resultado que `docs/depth.md` §3 chama de precioso: descer um
+ * nível mostrou que o de cima estava mentindo.
+ */
+function somador(comTransistores: boolean): { objeto: AnyObject; wires: readonly Wire[] } {
+  const bits = Array.from({ length: LARGURA }, (_, i) =>
+    somadorCompleto(`bit${i}`, false, comTransistores),
+  );
   const wires: Wire[] = [];
   for (let i = 0; i < LARGURA; i += 1) {
-    wires.push(...fiosDoSomador(`bit${i}`));
+    wires.push(...fiosDoSomador(`bit${i}`, comTransistores));
     for (const via of ["a", "b"] as const) {
       wires.push({
         from: "dispersor",
@@ -222,8 +237,18 @@ function somador(): { objeto: AnyObject; wires: readonly Wire[] } {
  * duzentas peças de dentro produzem exatamente o que o mundo de fora enxerga.
  * O lab roda **aberto**, para que descer até a porta lógica mostre coisa viva.
  */
-export function ula(comAtalho: boolean): { objeto: AnyObject; wires: readonly Wire[] } {
-  const somadorDe32 = somador();
+export function ula(
+  comAtalho: boolean,
+  comTransistores = false,
+): { objeto: AnyObject; wires: readonly Wire[] } {
+  const somadorDe32 = somador(comTransistores);
+  const vaiUmInicial: Wire = {
+    from: "cin0",
+    port: "out",
+    to: "bit0",
+    toPort: "cin",
+    timing: "settle",
+  };
   const pesos = Array.from({ length: LARGURA }, (_, i) => peso(i));
 
   const base: AnyObject = {
@@ -239,6 +264,7 @@ export function ula(comAtalho: boolean): { objeto: AnyObject; wires: readonly Wi
     outlets: { out: ["mux-operacao"] },
     children: [
       dispersor,
+      nivelFixo("cin0", 0, ROTULOS.cin),
       somadorDe32.objeto,
       { id: "pesos", kind: "composite", label: ROTULOS.pesos, replicas: LARGURA, children: pesos },
       coletor,
@@ -248,6 +274,7 @@ export function ula(comAtalho: boolean): { objeto: AnyObject; wires: readonly Wi
   };
 
   const wires: Wire[] = [
+    vaiUmInicial,
     ...somadorDe32.wires,
     { from: "dispersor", port: "resto", to: "coletor", timing: "settle" },
     { from: "dispersor", port: "resto", to: "unidade-logica", timing: "settle" },

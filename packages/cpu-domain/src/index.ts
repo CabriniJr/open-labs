@@ -5,6 +5,7 @@ export type { Format, Instruction, Mnemonic } from "./isa.js";
 export { initialCpu, runCpu, stepCpu } from "./reference.js";
 export type { CpuState } from "./reference.js";
 export { cpuWorld, ENDERECO_ENTRADA, ENDERECO_SAIDA } from "./datapath.js";
+export { LARGURA } from "./alu.js";
 export type { EstadoBanco, EstadoMemoria, EstadoPc, EstadoSaida } from "./datapath.js";
 export {
   CPU_VIEWS,
@@ -13,9 +14,12 @@ export {
   VIEW_ULA,
   viewPortaCmos,
   viewSomador,
+  viewSomadorDaUla,
+  viewsDasPortas,
   viewsDoSomador,
 } from "./views.js";
 export { decide, porta, portasAltas, somadorCompleto, somadorWorld } from "./gates.js";
+export { leituraDaCarga } from "./carga.js";
 export {
   fiosDaPortaCmos,
   noDeSaida,

@@ -1,6 +1,7 @@
 ---
 import "../styles/tokens.css";
 import "../styles/themes/otel.css";
+import "../styles/themes/riscv.css";
 import "../styles/base.css";
 import "@ovh/depth-ui/src/depth-ui.css";
 
@@ -9,13 +10,21 @@ interface Props {
   description: string;
   /** A língua da página. O handbook é em inglês; a documentação, em português. */
   lang?: "en" | "pt-BR" | undefined;
+  /**
+   * O handbook a que a página pertence, que é quem escolhe o tema.
+   *
+   * Estava fixo em "otel" em toda página do site, inclusive nas do RISC-V —
+   * um handbook de CPU pintado com a cor de outro assunto. O padrão continua
+   * "otel" porque é a cor da casa; quem pertence a um handbook diz qual.
+   */
+  domain?: string | undefined;
 }
 
-const { title, description, lang = "en" } = Astro.props;
+const { title, description, lang = "en", domain = "otel" } = Astro.props;
 ---
 
 <!doctype html>
-<html lang={lang} data-domain="otel">
+<html lang={lang} data-domain={domain}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />

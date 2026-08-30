@@ -1,0 +1,175 @@
+---
+import SiteFooter from "../../components/SiteFooter.astro";
+import SiteNav from "../../components/SiteNav.astro";
+import Base from "../../layouts/Base.astro";
+import { HANDBOOKS, ITEM_STATUS_LABEL } from "../../data/handbooks";
+import { url } from "../../lib/urls";
+
+/**
+ * Um lab só existe para quem consegue chegar nele.
+ *
+ * Os dois labs que rodam estavam publicados e ligados a partir do mapa do
+ * handbook — no fim da página, depois do roadmap. Quem abria o site não via
+ * lab nenhum, e concluía, com razão, que não havia nenhum. Esta página é o
+ * índice: sai da mesma lista de que sai o handbook, então não pode divergir
+ * dela nem anunciar como pronto o que não abre.
+ */
+const trilhas = HANDBOOKS.map((handbook) => ({
+  handbook,
+  labs: [...handbook.labs].sort((a, b) => a.phase - b.phase),
+}));
+
+const prontos = trilhas.flatMap((t) => t.labs).filter((lab) => lab.href);
+---
+
+<Base
+  title="Labs — OpenLabs"
+  description="Every OpenLabs lab: a model that actually runs, one per phase of a handbook. Open one and take it apart."
+>
+  <SiteNav current="labs" />
+
+  <main id="content">
+    <section class="labs-head editorial">
+      <div class="prose">
+        <h1>Labs</h1>
+        <p>
+          A lab is a model that runs. Nothing on the screen is an animation
+          played back to you: a part lights up because it acted this tick, and
+          if you break the input it goes dark. Double-click a part to go inside
+          it and the same rule holds one level down.
+        </p>
+        <p>
+          Each lab belongs to a phase of a handbook, and reads best in that
+          order — but none of them needs the ones before it to run.
+        </p>
+      </div>
+      <aside class="labs-head__note mono">
+        <p>{prontos.length} running now.</p>
+        <p>The rest are being built.</p>
+      </aside>
+    </section>
+
+    {
+      trilhas.map(({ handbook, labs }) => (
+        <section class="labs-trilha">
+          <header class="labs-trilha__head">
+            <h2>
+              <a href={url(`handbooks/${handbook.id}`)}>{handbook.name}</a>
+            </h2>
+            <p class="mono">{handbook.model}</p>
+          </header>
+          <ul class="labs-grid">
+            {labs.map((lab) => (
+              <li class="labs-card" data-status={lab.status}>
+                <p class="labs-card__phase mono">
+                  phase {String(lab.phase).padStart(2, "0")}
+                </p>
+                <h3>
+                  {lab.href ? (
+                    <a href={url(lab.href)}>{lab.title}</a>
+                  ) : (
+                    <span>{lab.title}</span>
+                  )}
+                </h3>
+                <p class="labs-card__status mono">
+                  {ITEM_STATUS_LABEL[lab.status]}
+                </p>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))
+    }
+  </main>
+
+  <SiteFooter />
+</Base>
+
+<style>
+  .labs-head {
+    padding-block: var(--space-5) var(--space-3);
+  }
+
+  h1 {
+    margin: 0 0 var(--space-2);
+    font-size: var(--size-step-3);
+  }
+
+  .labs-head__note {
+    align-self: end;
+    color: var(--muted);
+    font-size: var(--size-step--1);
+  }
+
+  .labs-head__note p {
+    margin: 0;
+  }
+
+  .labs-trilha {
+    max-width: 92rem;
+    margin-inline: auto;
+    padding: 0 var(--space-3) var(--space-4);
+  }
+
+  .labs-trilha__head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-2);
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: var(--space-1);
+    margin-bottom: var(--space-2);
+  }
+
+  .labs-trilha__head h2 {
+    margin: 0;
+    font-size: var(--size-step-1);
+  }
+
+  .labs-trilha__head p {
+    margin: 0;
+    color: var(--muted);
+    font-size: var(--size-step--1);
+  }
+
+  .labs-grid {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+    gap: var(--space-2);
+  }
+
+  .labs-card {
+    border: 1px solid var(--rule);
+    border-radius: 10px;
+    padding: var(--space-2);
+    background: var(--surface);
+  }
+
+  .labs-card[data-status="coming"] {
+    opacity: 0.62;
+  }
+
+  .labs-card__phase {
+    margin: 0 0 var(--space-1);
+    color: var(--accent);
+    font-size: var(--size-step--2);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .labs-card h3 {
+    margin: 0 0 var(--space-1);
+    font-size: var(--size-step-0);
+  }
+
+  .labs-card__status {
+    margin: 0;
+    color: var(--muted);
+    font-size: var(--size-step--2);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+</style>

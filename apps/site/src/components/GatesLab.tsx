@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { World, indexTree } from "@ovh/depth-core";
-import { portasAltas, somadorWorld, viewsDoSomador } from "@ovh/cpu-domain";
+import { leituraDaCarga, portasAltas, somadorWorld, viewsDoSomador } from "@ovh/cpu-domain";
 import { Explorer } from "./Explorer.js";
 
 /**
@@ -84,6 +84,8 @@ export function GatesLab() {
           views={views}
           readouts={readouts}
           altos={portasAltas(estado, arvore)}
+          leituraDaCarga={leituraDaCarga}
+          comFicha
         />
         <p className="gates-lab__legenda">
           A lit gate is a gate whose output is 1 — and a dark one is a gate that
@@ -159,10 +161,10 @@ export function GatesLab() {
               setTick(mundo.tick);
             }}
           >
-            Um ciclo
+            One cycle
           </button>
           <label className="gates-lab__compasso">
-            compasso
+            speed
             <input
               type="range"
               min={200}

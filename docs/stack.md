@@ -296,3 +296,86 @@ dois em dia juntos.
 `main`. Com o Vercel em produção são dois publicadores para o mesmo repositório, com caminhos
 de base diferentes (`/<repo>/` contra a raiz). A ordem certa é ligar o Vercel, conferir, e só
 então aposentar o Pages — desligar antes deixaria o projeto sem nada no ar.
+
+## O servidor de dev quebrava sozinho — 2026-08-29
+
+**Sintoma:** toda página `/docs/*` respondia 500 no `pnpm dev`, com a mensagem
+`capítulo "DECISIONS" está no índice e não existe na coleção — ids disponíveis:` (a lista
+vazia). O `pnpm build` gerava as dezenove páginas sem reclamar.
+
+**Causa:** o digest de configuração do Astro inclui a **porta do servidor de dev**. Subindo
+numa porta diferente da corrida anterior, ele conclui que a configuração mudou, **limpa o
+armazém de conteúdo** — e não o repopula naquela mesma corrida. A coleção `docs` vem vazia,
+e a página de capítulo morre dizendo que o capítulo não existe.
+
+A mensagem não menciona porta nenhuma, e aponta para o índice e para a coleção. Quem a lê
+vai conferir o manifesto, o loader, o caminho do `base` — tudo lugar errado. Provado com
+duas corridas: porta nova → coleção vazia; mesma porta de novo → duzentos.
+
+**Correção:** a porta do dev é fixa em `astro.config.mjs` (4321), então o digest não muda
+entre corridas e o armazém sobrevive. Precisando de outra porta, a **primeira** subida
+depois da troca vem sem os docs — reinicie uma vez e passa.
+
+E o e2e ganhou porta própria (4399). Ele dividia a 4321 com o dev, e a corrida ou pegava o
+servidor de dev — que serve outra coisa — ou não subia; nos dois casos a falha aparecia
+como asserção estranha, longe da causa. Ele também passou a falar por **IP** e não por
+`localhost`: o Chrome resolve `localhost` para IPv6 primeiro, e qualquer processo em
+`[::1]` naquela porta sequestra a corrida inteira. Foi o que aconteceu aqui, com um
+servidor de dev esquecido — e por um bom tempo eu culpei o lugar errado.
+
+## O dev roda como serviço do usuário
+
+`~/.config/systemd/user/openlabs-dev.service`, ligado com
+`systemctl --user enable --now openlabs-dev`. Log em
+`~/.local/state/openlabs-dev.log`.
+
+Não é conforto: é o que tira do caminho a classe de problema que mais custou tempo aqui.
+O servidor de dev subia à mão, às vezes em outra porta, às vezes duas vezes, e um esbirro
+esquecido segurando a 4321 já sequestrou uma corrida de e2e inteira — que passou a ver as
+páginas de outro aplicativo. Com o serviço, a subida é sempre a mesma, a porta é sempre a
+mesma, e `KillMode=control-group` garante que parar significa parar.
+
+O `PATH` é declarado no arquivo porque o serviço não lê o perfil do shell: sem ele o
+`ExecStart` não acha o `pnpm` (que vive em `~/.local/node/bin`) e a unidade fica em
+`activating` para sempre, sem dizer por quê.
+
+O e2e continua na porta dele (4399, `pnpm build && pnpm preview`), então as duas coisas
+convivem — verificado com a suíte inteira rodando com o serviço de pé.
+
+| | Onde | Quem publica |
+|---|---|---|
+| **dev** | `localhost:4321`, serviço do usuário | você, o tempo todo |
+| **prod** | Vercel | a `main`, quando a release sobe |
+
+### O GitHub Pages foi aposentado
+
+Removido em 29/08/2026, com a Vercel apontando para `main`.
+
+Dois publicadores para o mesmo site é uma armadilha silenciosa, e ela é pior do
+que parece: os dois serviam **caminhos-base diferentes** — o Pages em
+`/otel-visual-handbook/`, a Vercel na raiz. Um link testado num deles quebra no
+outro, e quem reporta o defeito e quem investiga costumam não estar olhando para
+o mesmo endereço. Some-se a isso que o Pages publicava a cada push em `main`, e o
+projeto passa a ter duas verdades sobre o que está no ar.
+
+Prod é a Vercel, e é ela que segue a `main`. O `PUBLIC_BASE_PATH` continua no
+`astro.config.mjs` porque a decisão de quem serve onde é de quem chama o build —
+só não há mais ninguém chamando com subdiretório.
+
+### O endereço de produção, e a proteção que escondia o site
+
+**29/08/2026.** O projeto na Vercel é `openlabs`, e o endereço de produção é
+`openlabs-guaxinims-projects.vercel.app`. Dois achados vieram junto, e os dois
+custam tempo se não estiverem escritos:
+
+**`openlabs.vercel.app` não é nosso.** Ele responde e redireciona para `/en` —
+é de outra conta. Testar ali e concluir "o deploy está quebrado" é o erro fácil.
+
+**A proteção de deploy estava ligada.** Toda visita — inclusive à produção —
+era redirecionada para o SSO da Vercel (`302` para `vercel.com/sso-api`). O site
+existia, construía, e ninguém de fora conseguia vê-lo; de dentro, logado, tudo
+parecia normal. É o tipo de defeito que só aparece quando alguém que não é do
+time tenta abrir. Desligar fica em **Settings › Deployment Protection**.
+
+E `main` é protegida por regra de repositório: mudanças só entram por pull
+request. O fast-forward direto é recusado com `GH013`.

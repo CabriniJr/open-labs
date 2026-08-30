@@ -21,7 +21,15 @@ test("a handbook page shows roadmap, articles and labs", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Articles and labs" })).toBeVisible();
   await expect(page.locator(".hb-phase")).toHaveCount(6);
   await expect(page.locator(".hb-group")).toHaveCount(6);
-  await expect(page.locator(".hb-item").first()).toContainText("coming");
+  // Um item pronto é um link; um item por escrever é texto. A página não pode
+  // anunciar como pronto o que não abre, nem esconder o que já está escrito.
+  const prontos = page.locator(".hb-item").filter({ has: page.locator(".status--available") });
+  expect(await prontos.count()).toBeGreaterThan(0);
+  for (let i = 0; i < (await prontos.count()); i++) {
+    await expect(prontos.nth(i).locator("a")).toHaveCount(1);
+  }
+  const porEscrever = page.locator(".hb-item").filter({ has: page.locator(".status--coming") });
+  await expect(porEscrever.first().locator("a")).toHaveCount(0);
 });
 
 test("both handbooks draw their own interactive map", async ({ page }) => {
@@ -37,8 +45,8 @@ test("both handbooks draw their own interactive map", async ({ page }) => {
   // dois nós abrem, e eles levam aos labs que estão no ar
   const abertos = page.locator('.roadmap__node:not([data-status="coming"]) a');
   await expect(abertos).toHaveCount(3);
-  await expect(page.locator('.roadmap__node a[href$="labs/cpu"]').first()).toBeVisible();
-  await expect(page.locator('.roadmap__node a[href$="labs/gates"]').first()).toBeVisible();
+  await expect(page.locator('.roadmap__node a[href*="labs/cpu"]').first()).toBeVisible();
+  await expect(page.locator('.roadmap__node a[href*="labs/gates"]').first()).toBeVisible();
 });
 
 test("nothing on a map promises a link that goes nowhere", async ({ page }) => {
@@ -100,4 +108,20 @@ test("o desenho do mapa e as coordenadas dos nós escalam juntos", async ({ page
     const doDesenho = vbH! / vbW!;
     expect(Math.abs(daCaixa - doDesenho), `${rota} proporção`).toBeLessThan(0.02);
   }
+});
+
+test("os links do mapa levam para onde dizem", async ({ page }) => {
+  // O defeito: o mapa escrevia o href cru, e o navegador resolvia relativo à
+  // página — de dentro de /handbooks/riscv/ o link "labs/cpu" virava
+  // /handbooks/riscv/labs/cpu, que é 404. A página do handbook já passava pelo
+  // helper de base; o mapa, não, e ninguém percebeu porque no OTel todo href
+  // era "#".
+  await page.goto("handbooks/riscv/");
+
+  const link = page.locator('.roadmap__node a').first();
+  await link.scrollIntoViewIfNeeded();
+  await link.click();
+
+  await expect(page).toHaveURL(/\/labs\/(cpu|gates)\/?$/);
+  await expect(page.locator(".dui-stage")).toBeVisible({ timeout: 15_000 });
 });

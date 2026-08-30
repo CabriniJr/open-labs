@@ -119,6 +119,18 @@
   filter: drop-shadow(0 0 6px color-mix(in oklab, var(--dui-sinal) 70%, transparent));
 }
 
+/*
+ * A carga da acomodação: o que anda DENTRO do tick.
+ *
+ * Menor e sem o halo pesado da carga cronometrada, porque são muitas ao mesmo
+ * tempo e elas contam outra coisa — não é uma coisa atravessando uma borda, é
+ * um valor se propagando por um caminho combinacional.
+ */
+.dui-stage__carga-grupo--acomodada .dui-stage__carga {
+  stroke-width: 1;
+  filter: none;
+}
+
 /* A carga muda de aparência atravessando quem a transforma. */
 .dui-stage__carga[data-kind="instrucao"] { fill: #a371f7; }
 .dui-stage__carga[data-kind="proximo"] { fill: #3fb950; }
@@ -318,4 +330,325 @@
   .dui-stage__gira {
     animation: none !important;
   }
+}
+
+/*
+ * O zoom contínuo.
+ *
+ * O interior de uma caixa é desenhado dentro dela, e some por transparência
+ * quando ela fica pequena no quadro. A transição é curta de propósito: longa,
+ * ela vira efeito; curta, ela é a continuidade que evita o corte.
+ */
+.dui-stage {
+  touch-action: none;
+}
+
+.dui-stage[data-zoom="true"] {
+  cursor: grab;
+}
+
+.dui-stage[data-zoom="true"]:active {
+  cursor: grabbing;
+}
+
+.dui-stage__interior,
+.dui-stage__rosto {
+  transition: opacity 160ms ease;
+}
+
+/*
+ * Traço de espessura constante, em toda a árvore.
+ *
+ * Sem isto o zoom engorda a borda junto com a caixa: a 20× uma linha de 1px
+ * vira uma faixa de 20, o desenho some debaixo do próprio contorno, e o
+ * interior aparece atrás de uma moldura maior que ele. Traço não é escala — é
+ * notação, e notação tem tamanho fixo.
+ */
+.dui-stage__caixa,
+.dui-stage__trilho,
+.dui-stage__pulso,
+.dui-stage__pilha,
+.dui-stage__nivel {
+  vector-effect: non-scaling-stroke;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dui-stage__interior,
+  .dui-stage__rosto {
+    transition: none;
+  }
+}
+
+/*
+ * O item na esteira, com identidade.
+ *
+ * O valor que a carga leva fica ao lado do ponto, não em cima: sobre o ponto
+ * aceso ele some justamente quando se quer lê-lo. E não recebe fundo — a linha
+ * é fina, e uma caixinha atrás de cada valor viraria uma fileira de etiquetas
+ * escondendo o circuito.
+ */
+.dui-stage__carga-valor,
+.dui-stage__carga-peso {
+  font-size: 9px;
+  font-weight: 600;
+  fill: var(--ink);
+  /* O contorno é o fundo da página: o valor anda por cima de linhas e caixas,
+     e sem essa borda ele fica ilegível justamente onde o circuito é denso. */
+  paint-order: stroke fill;
+  stroke: var(--paper);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+.dui-stage__carga-peso {
+  fill: var(--ink-faint);
+}
+
+.dui-stage__carga-grupo {
+  cursor: help;
+}
+
+/*
+ * A esteira anda por animação CSS, e não por SMIL.
+ *
+ * O `begin` de um `<animate>` conta a partir do início da linha do tempo do
+ * documento, e não de quando o elemento entrou nela. Como cada tick cria
+ * elementos novos, o intervalo deles já estava no passado no instante do
+ * nascimento: a carga aparecia congelada no valor final — opacidade zero — e a
+ * esteira ficava invisível. O desenho tinha as linhas, tinha os valores, e não
+ * mostrava nada andando. Animação CSS começa quando o elemento entra, que é o
+ * que este caso precisa.
+ */
+.dui-stage__carga-grupo {
+  cursor: help;
+  offset-path: var(--dui-trilho);
+  offset-rotate: 0deg;
+  opacity: 0;
+}
+
+.dui-stage__carga-grupo--acomodada {
+  animation: dui-esteira var(--dui-travessia, 220ms) linear var(--dui-atraso, 0ms) both;
+}
+
+.dui-stage__carga-grupo--voo {
+  animation: dui-voo var(--dui-travessia, 700ms) linear both;
+}
+
+@keyframes dui-esteira {
+  0% {
+    offset-distance: 0%;
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  88% {
+    opacity: 1;
+  }
+  100% {
+    offset-distance: 100%;
+    opacity: 0;
+  }
+}
+
+@keyframes dui-voo {
+  from {
+    offset-distance: var(--dui-de, 0%);
+    opacity: 1;
+  }
+  to {
+    offset-distance: var(--dui-ate, 100%);
+    opacity: 1;
+  }
+}
+
+/* Sem movimento, a carga fica parada onde nasceu — visível, e sem viajar. */
+@media (prefers-reduced-motion: reduce) {
+  .dui-stage__carga-grupo {
+    animation: none;
+    opacity: 1;
+    offset-distance: 50%;
+  }
+}
+
+/*
+ * O canal atravessando a fronteira.
+ *
+ * Mais fino e mais apagado que o trilho de fora, de propósito: ele não é uma
+ * ligação nova, é a **mesma** ligação vista um nível abaixo. Desenhá-lo com o
+ * mesmo peso sugeriria dois canais onde há um.
+ */
+.dui-stage__travessia {
+  fill: none;
+  stroke: color-mix(in oklab, var(--dui-dado) 35%, transparent);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+
+/*
+ * As portas da caixa.
+ *
+ * Um ponto na borda, do lado por onde a coisa passa: entrada à esquerda, saída
+ * à direita. Pequeno de propósito — ela orienta a leitura e não disputa com o
+ * conteúdo —, e com o miolo do fundo da página, que é o que faz ela parecer um
+ * furo na borda em vez de uma bolinha grudada nela.
+ */
+/*
+ * A porta é uma aba montada **na** borda, metade dentro e metade fora — e não
+ * uma bolinha encostada nela. A diferença não é estética: a aba pertence às
+ * duas coisas ao mesmo tempo, que é exatamente o que uma porta é, e é o que faz
+ * a borda da caixa continuar significando alguma coisa quando o interior está
+ * aberto e ela virou a margem do desenho de dentro.
+ */
+.dui-stage__porta rect {
+  fill: var(--paper);
+  stroke: color-mix(in oklab, var(--dui-dado) 70%, var(--rule));
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+
+.dui-stage__porta[data-lado="saida"] rect {
+  fill: color-mix(in oklab, var(--dui-dado) 55%, var(--paper));
+}
+
+/* O nome só aparece quando há espaço para ele: com o interior aberto, saber
+   qual entrada é qual é a diferença entre orientar-se e adivinhar. */
+.dui-stage__porta-nome {
+  fill: var(--ink-muted);
+  font-size: 8px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
+.dui-stage__objeto[data-familia="controller"] .dui-stage__porta rect {
+  stroke: color-mix(in oklab, var(--dui-sinal) 70%, var(--rule));
+}
+
+.dui-stage__objeto[data-familia="controller"] .dui-stage__porta[data-lado="saida"] rect {
+  fill: color-mix(in oklab, var(--dui-sinal) 55%, var(--paper));
+}
+
+.dui-stage__objeto[data-alto="true"] .dui-stage__porta[data-lado="saida"] rect {
+  fill: var(--dui-dado);
+}
+
+/*
+ * A esteira: leito, trilho e marcha.
+ *
+ * Um traço de 1,5px com 45% de cor some no meio de um circuito denso — era o
+ * que acontecia dentro do somador, onde o fluxo interno existia e não dava para
+ * seguir. Três camadas resolvem sem gritar: um leito largo e quase transparente
+ * que dá corpo ao canal, o trilho por cima com contraste de verdade, e marcas
+ * de direção que dizem para que lado aquilo anda mesmo parado.
+ */
+.dui-stage__leito {
+  fill: none;
+  stroke: color-mix(in oklab, var(--dui-dado) 14%, transparent);
+  stroke-width: 7;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  pointer-events: none;
+}
+
+.dui-stage__fio[data-linha="control"] .dui-stage__leito {
+  stroke: color-mix(in oklab, var(--dui-sinal) 14%, transparent);
+}
+
+.dui-stage__trilho {
+  stroke: color-mix(in oklab, var(--dui-dado) 70%, var(--rule));
+}
+
+.dui-stage__fio[data-linha="control"] .dui-stage__trilho {
+  stroke: color-mix(in oklab, var(--dui-sinal) 70%, var(--rule));
+}
+
+.dui-stage__marcha {
+  fill: none;
+  stroke: var(--paper);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-dasharray: 0.5 14;
+  opacity: 0.75;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+
+/* Acesa, a esteira ganha corpo: é a linha que carregou alguma coisa neste tick. */
+.dui-stage__fio[data-acesa="true"] .dui-stage__leito {
+  stroke: color-mix(in oklab, var(--dui-dado) 30%, transparent);
+}
+
+.dui-stage__fio[data-linha="control"][data-acesa="true"] .dui-stage__leito {
+  stroke: color-mix(in oklab, var(--dui-sinal) 30%, transparent);
+}
+
+/* A carga cresce um pouco e ganha halo: ela é o item, e o item é o assunto. */
+.dui-stage__carga {
+  stroke-width: 1.5;
+}
+
+.dui-stage__carga-grupo--acomodada .dui-stage__carga {
+  filter: drop-shadow(0 0 4px color-mix(in oklab, var(--dui-dado) 55%, transparent));
+}
+
+/*
+ * Um contêiner aceso não se enche — ele se contorna.
+ *
+ * O preenchimento forte de "acesa" foi feito para uma peça, onde ele diz "o
+ * valor que saiu daqui é 1". Aplicado a um contêiner, ele pinta justamente a
+ * área onde os filhos moram: dentro do somador de quatro bits, cada bit aceso
+ * virava um bloco azul e o circuito interno — os fios, as cargas, a direção —
+ * sumia debaixo dele. O leitor via um retângulo colorido no lugar do fluxo.
+ *
+ * A moldura acende, o miolo continua sendo o desenho.
+ */
+.dui-stage__objeto[data-familia="container"][data-alto="true"] > .dui-stage__caixa {
+  fill: color-mix(in oklab, var(--dui-dado) 5%, transparent);
+  stroke: var(--dui-dado);
+  stroke-width: 2;
+  filter: none;
+  animation: none;
+}
+
+/* E o canal ganha contraste de verdade: ele é a estrutura, não o fundo. */
+.dui-stage__trilho {
+  stroke: color-mix(in oklab, var(--dui-dado) 85%, var(--ink));
+  stroke-width: 1.6;
+}
+
+.dui-stage__fio[data-linha="control"] .dui-stage__trilho {
+  stroke: color-mix(in oklab, var(--dui-sinal) 85%, var(--ink));
+}
+
+.dui-stage__fio[data-timing="settle"] .dui-stage__trilho {
+  stroke-width: 1.4;
+}
+
+.dui-stage__leito {
+  stroke: color-mix(in oklab, var(--dui-dado) 20%, transparent);
+}
+
+/*
+ * A âncora da moldura: por onde a ligação sai deste enquadramento.
+ *
+ * Mesma linguagem da porta de uma caixa, e de propósito — é a mesma ideia um
+ * nível acima. A moldura é a caixa em que o leitor está.
+ */
+.dui-stage__ancora rect {
+  fill: color-mix(in oklab, var(--dui-dado) 30%, var(--paper));
+  stroke: color-mix(in oklab, var(--dui-dado) 70%, var(--rule));
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+
+.dui-stage__ancora-nome {
+  fill: var(--ink-faint);
+  font-size: 8px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  pointer-events: none;
 }

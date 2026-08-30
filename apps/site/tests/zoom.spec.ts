@@ -1,0 +1,201 @@
+import { expect, test } from "@playwright/test";
+
+/**
+ * O zoom contínuo: descer deixou de ser uma troca de tela e virou uma
+ * aproximação. Estes testes cobram os três fatos que sustentam isso — o
+ * interior aparece dentro da caixa, ele some ao afastar, e o gesto de
+ * aproximar não rola a página.
+ *
+ * Só no desktop, e isso é uma lacuna declarada e não um teste frouxo: o gesto
+ * de aproximar num aparelho de toque é a pinça, que ainda não existe. Emular
+ * roda de mouse num Pixel 7 mediria uma coisa que ninguém faz — e ela para
+ * sozinha em 2×, porque o Chromium trata a roda como zoom de página ali.
+ */
+test.skip(({ isMobile }) => isMobile === true, "o gesto de toque é a pinça, e ela não existe ainda");
+
+/**
+ * Rola a roda sobre o palco, com ele visível.
+ *
+ * O ponto tem que estar **dentro da janela**: o palco fica no meio de uma
+ * página longa, e apontar para um ponto fora dela faz o clique cair em outro
+ * lugar — o teste então mede um zoom que ninguém pediu.
+ */
+const rolar = async (
+  page: import("@playwright/test").Page,
+  cliques: number,
+  delta: number,
+) => {
+  const palco = page.locator("svg.dui-stage");
+  await palco.scrollIntoViewIfNeeded();
+  await page.waitForTimeout(200);
+  const caixa = await palco.boundingBox();
+  const janela = page.viewportSize();
+  if (caixa === null || janela === null) throw new Error("o palco não está na tela");
+
+  // O ponto tem que estar dentro do palco **e** dentro da janela ao mesmo
+  // tempo: numa tela curta o meio do palco cai fora, o clique vai parar em
+  // outro lugar, e o teste mede um zoom que ninguém pediu.
+  const faixa = (inicio: number, tamanho: number, limite: number) => {
+    const a = Math.max(0, inicio);
+    const b = Math.min(limite, inicio + tamanho);
+    return (a + b) / 2;
+  };
+  const x = faixa(caixa.x, caixa.width, janela.width);
+  const y = faixa(caixa.y, caixa.height, janela.height);
+
+  for (let i = 0; i < cliques; i++) {
+    await page.mouse.move(x, y);
+    await page.mouse.wheel(0, delta);
+    await page.waitForTimeout(40);
+  }
+  await page.waitForTimeout(400);
+};
+
+const aproximar = (page: import("@playwright/test").Page, cliques: number) =>
+  rolar(page, cliques, -120);
+
+const afastar = (page: import("@playwright/test").Page, cliques: number) =>
+  rolar(page, cliques, 120);
+
+const zoom = (page: import("@playwright/test").Page) =>
+  page.evaluate(() => {
+    const svg = document.querySelector("svg.dui-stage");
+    const vb = (svg?.getAttribute("viewBox") ?? "0 0 1 1").split(" ").map(Number);
+    return 1100 / (vb[2] ?? 1);
+  });
+
+test("aproximar uma porta revela o interior dela, dentro dela", async ({ page }) => {
+  await page.goto("labs/gates/");
+  await page.waitForSelector("g.dui-stage__objeto");
+
+  // De longe, o interior não existe no desenho — não está escondido por CSS.
+  await expect(page.locator(".dui-stage__interior")).toHaveCount(0);
+  expect(await zoom(page)).toBeCloseTo(1, 1);
+
+  await aproximar(page, 14);
+
+  expect(await zoom(page)).toBeGreaterThan(3);
+  const interiores = page.locator(".dui-stage__interior");
+  expect(await interiores.count()).toBeGreaterThan(0);
+
+  // E o que apareceu é circuito, não uma miniatura: as portas de dentro do XOR
+  // são NANDs, e elas estão desenhadas.
+  await expect(
+    page.locator(".dui-stage__interior .dui-stage__rotulo").filter({ hasText: "NAND" }).first(),
+  ).toBeVisible();
+});
+
+test("afastar devolve a caixa fechada", async ({ page }) => {
+  await page.goto("labs/gates/");
+  await page.waitForSelector("g.dui-stage__objeto");
+  await aproximar(page, 14);
+  expect(await zoom(page), "a roda não aproximou").toBeGreaterThan(3);
+  expect(await page.locator(".dui-stage__interior").count()).toBeGreaterThan(0);
+
+  await afastar(page, 30);
+
+  expect(await zoom(page)).toBeCloseTo(1, 1);
+  await expect(page.locator(".dui-stage__interior")).toHaveCount(0);
+});
+
+/**
+ * `onWheel` do React vira ouvinte passivo: `preventDefault` não faz nada e o
+ * gesto de aproximar rola a página. O sintoma manda procurar no lugar errado,
+ * porque o desenho fica parado e quem se mexe é a página.
+ */
+test("aproximar não rola a página", async ({ page }) => {
+  await page.goto("labs/gates/");
+  await page.waitForSelector("g.dui-stage__objeto");
+  // O palco entra em cena antes da medida: quem rola aqui é o teste, e medir
+  // com essa rolagem dentro da conta acusaria a roda de uma coisa que ela não
+  // fez.
+  await page.locator("svg.dui-stage").scrollIntoViewIfNeeded();
+  await page.waitForTimeout(300);
+
+  const antes = await page.evaluate(() => window.scrollY);
+  await aproximar(page, 6);
+  expect(await page.evaluate(() => window.scrollY)).toBe(antes);
+  expect(await zoom(page)).toBeGreaterThan(1.2);
+});
+
+/**
+ * A esteira: o item que anda na linha, com o valor que leva.
+ *
+ * Ele tinha sumido dos labs. `settled` registra quem de fato emitiu, e quem
+ * emite é sempre uma folha — mas o desenho liga fios entre compostos, então a
+ * linha existia, o valor existia, e a carga não aparecia em nenhuma das duas
+ * pontas. Sem ela não há transformação para ver, que é a coisa toda.
+ */
+test("a carga anda na linha com o valor que leva", async ({ page }) => {
+  await page.goto("labs/gates/");
+  await page.waitForSelector("g.dui-stage__objeto");
+
+  // A onda varre o circuito, então a contagem sobe e desce dentro do tick: o
+  // que se cobra é que num instante qualquer haja esteira de verdade.
+  let pico = 0;
+  for (let i = 0; i < 20; i++) {
+    pico = Math.max(pico, await page.locator(".dui-stage__carga-valor").count());
+    await page.waitForTimeout(120);
+  }
+  expect(pico, "a esteira está vazia: nenhuma carga com valor na tela").toBeGreaterThan(3);
+
+  // E cada carga se identifica: bateu a dúvida sobre o que está passando, a
+  // resposta está sob o cursor, com origem e destino.
+  const legenda = await page.locator(".dui-stage__carga-grupo title").first().textContent();
+  expect(legenda).toMatch(/→/);
+  expect(legenda).toMatch(/·/);
+});
+
+/**
+ * O item pulando de dimensão.
+ *
+ * Um canal que morre na borda da caixa conta uma meia-verdade: o dado entrou
+ * ali e o leitor não vê onde. Com o interior aberto, o caminho segue até a peça
+ * de dentro que de fato recebe — e é isso que dá sentido lógico a descer por
+ * zoom, em vez de a descida ser só uma câmera se aproximando.
+ */
+test("com a caixa aberta, o canal atravessa a fronteira", async ({ page }) => {
+  await page.goto("labs/gates/");
+  await page.waitForSelector("g.dui-stage__objeto");
+
+  // De longe não há travessia: não há interior para atravessar até.
+  await expect(page.locator(".dui-stage__travessia")).toHaveCount(0);
+
+  await aproximar(page, 12);
+
+  const travessias = page.locator(".dui-stage__travessia");
+  expect(await travessias.count(), "nenhum canal entra nas caixas abertas").toBeGreaterThan(0);
+
+  // E ela é a mesma ligação, um nível abaixo: começa no traço de fora e
+  // termina dentro da caixa que o interior desenha.
+  const d = await travessias.first().getAttribute("d");
+  expect(d).toMatch(/^M /);
+  expect(d).toMatch(/ L /);
+});
+
+/**
+ * A porta da caixa.
+ *
+ * Sem ela a caixa é um retângulo com linhas encostando em algum lugar da borda,
+ * e ao descer um nível o interior aparece sem nenhuma pista de qual pedaço da
+ * margem era a entrada. A porta é o que dá direção à leitura — de onde veio,
+ * para onde vai — e por isso ela **não** some quando o interior aparece.
+ */
+test("as caixas mostram por onde entra e por onde sai", async ({ page }) => {
+  await page.goto("labs/gates/");
+  await page.waitForSelector("g.dui-stage__objeto");
+
+  const portas = page.locator(".dui-stage__porta");
+  expect(await portas.count()).toBeGreaterThan(4);
+  expect(await page.locator('.dui-stage__porta[data-lado="entrada"]').count()).toBeGreaterThan(0);
+  expect(await page.locator('.dui-stage__porta[data-lado="saida"]').count()).toBeGreaterThan(0);
+
+  // Cada porta se nomeia: bateu a dúvida de qual entrada é aquela, está ali.
+  expect(await portas.first().locator("title").textContent()).toMatch(/^(in|out) · /);
+
+  const antes = await portas.count();
+  await aproximar(page, 12);
+  // Com o interior aberto elas continuam — é aí que servem mais, porque a
+  // borda da caixa virou a margem do desenho de dentro.
+  expect(await portas.count()).toBeGreaterThan(antes);
+});

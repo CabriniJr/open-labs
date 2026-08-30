@@ -16,62 +16,96 @@ import type { PortaLogica } from "./gates.js";
  * a diferença é que esta anda.
  */
 
+/**
+ * As faixas do caminho de dados.
+ *
+ * O desenho não é livre: ele segue a figura canônica do caminho de dados de
+ * ciclo único, a mesma de Patterson & Hennessy. Ela existe porque resolveu, há
+ * décadas, exatamente o problema que um layout inventado cria — o caminho de
+ * volta cruzando o de ida e virando sopa.
+ *
+ * Três faixas, e cada uma diz uma coisa:
+ *
+ * - **controle**, em cima: quem decide. As linhas dele descem sobre o caminho,
+ *   e por isso nunca se confundem com dado.
+ * - **fluxo**, no meio: da esquerda para a direita, na ordem dos estágios —
+ *   buscar, decodificar, executar, acessar, escrever. Ler o desenho da esquerda
+ *   para a direita **é** ler a execução de uma instrução.
+ * - **retorno**, embaixo: o que volta. O próximo PC e o valor que vai ser
+ *   escrito no banco andam da direita para a esquerda, numa faixa só deles.
+ *   Reservar essa faixa é o que impede a volta de atravessar a ida.
+ */
+const FAIXA = { controle: 60, fluxo: 190, retorno: 470 } as const;
+
 export const VIEW_SISTEMA: View = {
   id: "sistema",
   focus: "sistema",
   title: "The system: CPU, memories, and the clock that moves it",
   width: 1180,
-  height: 640,
+  height: 620,
+  /**
+   * A vista de cima mostra **poucas caixas, com profundidade** — e não muitas
+   * caixas rasas.
+   *
+   * Ela chegou a desenhar PC, banco, mux de operando, ULA, unidade de desvio e
+   * mux de escrita todos no primeiro nível. Isso é o interior do processador
+   * vazando para a vista do sistema: dezessete peças lado a lado, nenhuma delas
+   * com um dentro para abrir, e a pergunta "o que é um computador" respondida
+   * com uma lista. É o contrário do que este motor existe para fazer.
+   *
+   * O diagrama de blocos clássico responde com cinco: entrada, saída, memória,
+   * e uma CPU que contém a unidade de controle e o processador. Tudo o mais é
+   * um nível abaixo — e agora **é** um nível abaixo, atrás de `collapsed`, que
+   * é a forma de dizer em voz alta "há mais aqui dentro".
+   */
   places: [
-    { id: "relogio", x: 16, y: 500, w: 110, h: 64 },
+    // O relógio fica fora e embaixo: ele não participa do caminho, ele o move.
+    { id: "relogio", x: 30, y: 470, w: 120, h: 70 },
 
-    { id: "cpu", x: 150, y: 30, w: 1000, h: 430 },
-    { id: "controle", x: 190, y: 70, w: 230, h: 50 },
-    { id: "decodificador", x: 460, y: 70, w: 200, h: 50 },
+    { id: "cpu", x: 320, y: 40, w: 560, h: 340 },
+    { id: "controle", x: 360, y: 80, w: 200, h: 60 },
+    { id: "decodificador", x: 620, y: 80, w: 200, h: 60 },
 
-    { id: "processador", x: 180, y: 150, w: 940, h: 280 },
-    { id: "pc", x: 210, y: 200, w: 100, h: 50 },
-    { id: "banco", x: 210, y: 300, w: 160, h: 80 },
+    { id: "processador", x: 360, y: 170, w: 460, h: 180 },
+    { id: "pc", x: 390, y: 205, w: 110, h: 55 },
+    { id: "banco", x: 390, y: 275, w: 180, h: 55 },
+    // A lógica combinacional vem fechada: dentro dela estão o mux de operando,
+    // a ULA, a unidade de desvio e o mux de escrita. Abrir é descer um nível.
+    { id: "logica", x: 600, y: 205, w: 190, h: 125, collapsed: true },
 
-    { id: "logica", x: 410, y: 175, w: 680, h: 235 },
-    { id: "mux-operando", x: 440, y: 215, w: 120, h: 50 },
-    // A ULA tem interior agora, e a view diz isso em voz alta em vez de
-    // desenhar uma caixa lisa: dois cliques entram nela.
-    { id: "ula", x: 610, y: 205, w: 140, h: 80, collapsed: true },
-    { id: "desvio", x: 800, y: 215, w: 130, h: 50 },
-    { id: "mux-escrita", x: 800, y: 325, w: 130, h: 50 },
+    // Entrada e saída, nas pontas — é por onde o mundo fala com a máquina.
+    { id: "entrada", x: 40, y: 190, w: 130, h: 70 },
+    { id: "saida", x: 1010, y: 190, w: 130, h: 70 },
 
-    { id: "imem", x: 200, y: 500, w: 250, h: 70 },
-    { id: "memoria", x: 610, y: 500, w: 250, h: 70 },
-
-    // Os dois lados do mundo de fora. Ficam junto da memória de propósito: a
-    // entrada e a saída são endereços dela, e não instruções novas.
-    { id: "entrada", x: 480, y: 500, w: 110, h: 70 },
-    { id: "saida", x: 880, y: 500, w: 110, h: 70 },
+    // As memórias, embaixo: fora da CPU, e é isso que o desenho diz.
+    { id: "imem", x: 330, y: 470, w: 250, h: 70 },
+    { id: "memoria", x: 640, y: 470, w: 250, h: 70 },
   ],
 };
 
 /**
  * O mesmo run, enquadrado no processador. Não é outro desenho: é a mesma coisa
- * vista de mais perto, e é por isso que os números batem entre as duas.
+ * vista de mais perto, com as mesmas faixas — e é por isso que os números batem
+ * entre as duas, e que descer não desorienta.
  */
 export const VIEW_PROCESSADOR: View = {
   id: "processador",
   focus: "processador",
   title: "Inside the processor: PC, register file, and the combinational logic",
-  width: 1000,
-  height: 480,
+  width: 1120,
+  height: 540,
   places: [
-    { id: "pc", x: 40, y: 60, w: 160, h: 80 },
-    { id: "banco", x: 40, y: 220, w: 200, h: 140 },
-    { id: "logica", x: 300, y: 40, w: 660, h: 400 },
-    { id: "mux-operando", x: 340, y: 120, w: 160, h: 80 },
-    { id: "ula", x: 550, y: 100, w: 180, h: 120, collapsed: true },
-    { id: "desvio", x: 780, y: 120, w: 150, h: 80 },
-    { id: "mux-escrita", x: 550, y: 300, w: 180, h: 80 },
+    { id: "pc", x: 40, y: 120, w: 130, h: 76 },
+    { id: "banco", x: 230, y: 100, w: 190, h: 150 },
+
+    { id: "logica", x: 480, y: 60, w: 600, h: 400 },
+    { id: "mux-operando", x: 510, y: 130, w: 140, h: 76 },
+    { id: "ula", x: 700, y: 118, w: 170, h: 100, collapsed: true },
+    { id: "desvio", x: 920, y: 130, w: 140, h: 76 },
+    // A faixa de retorno: o que vai ser escrito desce e volta para o banco.
+    { id: "mux-escrita", x: 700, y: 330, w: 170, h: 76 },
   ],
 };
-
 
 /**
  * Dentro da ULA: o número vira linhas, as linhas viram soma, a soma vira número.
@@ -90,6 +124,10 @@ export const VIEW_ULA: View = {
   height: 420,
   places: [
     { id: "dispersor", x: 30, y: 130, w: 140, h: 90 },
+    // O vai-um do bit zero, amarrado em zero. Estava implícito no circuito e
+    // virou linha de verdade quando a ULA passou a poder abrir até o
+    // transistor — onde "não me acionaram" deixa de poder valer zero.
+    { id: "cin0", x: 30, y: 250, w: 140, h: 46 },
     // A peça larga é larga porque é cara: são 32 somadores completos em fila.
     { id: "somador", x: 220, y: 40, w: 300, h: 150, collapsed: true },
     { id: "pesos", x: 570, y: 40, w: 180, h: 150, collapsed: true },
@@ -231,7 +269,19 @@ export function viewSomador(bits: number, comTransistores = false): View {
 export function viewsDoSomador(bits: number, comTransistores = false): readonly View[] {
   const somador = viewSomador(bits, comTransistores);
   if (!comTransistores) return [somador];
+  return [somador, ...viewsDasPortas(bits)];
+}
 
+/**
+ * As vistas esquemáticas de toda porta de um somador de `bits` bits.
+ *
+ * Vale para qualquer somador construído com `somadorCompleto`, e é por isso que
+ * mora aqui em vez de dentro do somador do lab: o somador da ULA usa o mesmo
+ * esquema de nomes, e sem isto descer nele encontraria a vista montada na hora
+ * — que enfileira transistor da esquerda para a direita e não mostra que uma
+ * rede está em série e a outra em paralelo, que é a coisa a aprender.
+ */
+export function viewsDasPortas(bits: number): readonly View[] {
   const portas: View[] = [];
   for (let i = 0; i < bits; i += 1) {
     for (const [sufixo, tipo] of PORTAS_DO_SOMADOR) {
@@ -240,7 +290,7 @@ export function viewsDoSomador(bits: number, comTransistores = false): readonly 
       }
     }
   }
-  return [somador, ...portas];
+  return portas;
 }
 
 /** As cinco portas de um somador completo, na ordem em que ele as monta. */
@@ -251,3 +301,47 @@ const PORTAS_DO_SOMADOR: readonly (readonly [string, PortaLogica])[] = [
   ["and2", "and"],
   ["or1", "or"],
 ];
+
+/**
+ * O somador de 32 bits da ULA, em serpentina.
+ *
+ * A vista montada na hora enfileirava os trinta e dois somadores numa linha só:
+ * dentro da caixa da ULA aquilo vira uma fita de mil e poucas unidades de
+ * largura por quarenta de altura, e o encaixe uniforme — que é o certo — a
+ * reduz a um fio de peças ilegíveis. Correta, e inútil.
+ *
+ * A serpentina mantém o que há para aprender: o vai-um **atravessa a largura
+ * inteira do número**, um estágio de cada vez, e é isso que custa profundidade.
+ * Ele continua andando em fila; a fila é que dobra ao chegar na borda, como a
+ * linha de um texto. A volta é desenhada da direita para a esquerda, e por isso
+ * a leitura não se perde na dobra.
+ */
+export function viewSomadorDaUla(bits: number, porLinha = 8): View {
+  const largura = 150;
+  const altura = 92;
+  const folga = 26;
+  const linhas = Math.ceil(bits / porLinha);
+
+  return {
+    id: "somador-da-ula",
+    focus: "somador",
+    title: "The carry walks the whole width of the number, one stage at a time",
+    width: porLinha * (largura + folga) + folga,
+    height: linhas * (altura + folga) + folga,
+    places: Array.from({ length: bits }, (_, i) => {
+      const linha = Math.floor(i / porLinha);
+      const coluna = i % porLinha;
+      // Linha ímpar volta ao contrário: é a dobra da serpentina, e sem ela o
+      // vai-um pularia da borda direita para a esquerda por cima de tudo.
+      const x = linha % 2 === 0 ? coluna : porLinha - 1 - coluna;
+      return {
+        id: `bit${i}`,
+        x: folga + x * (largura + folga),
+        y: folga + linha * (altura + folga),
+        w: largura,
+        h: altura,
+        collapsed: true as const,
+      };
+    }),
+  };
+}
