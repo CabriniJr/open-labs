@@ -56,7 +56,28 @@ export function Explorer({
 }: ExplorerProps) {
   const primeiro = inicial ?? views[0]?.focus ?? tree.rootId;
   const [foco, setFoco] = useState(primeiro);
-  const [selecionado, setSelecionado] = useState<string | undefined>(undefined);
+  /**
+   * A seleção carrega o enquadramento em que foi feita.
+   *
+   * Ela era um id solto, e sobrevivia à navegação: descer até o NAND, ler a
+   * ficha dele e voltar ao topo pela trilha deixava a ficha explicando uma
+   * peça que não está mais na tela. O leitor lia a descrição errada achando
+   * que ela descreve o que está vendo.
+   *
+   * A correção não é limpar quando clicam na trilha. Isso é regra sobre um
+   * botão, e sobraria todo outro caminho de navegação — entrar numa caixa,
+   * subir por outro lado — para alguém lembrar de cobrir depois. **Seleção
+   * fora do enquadramento não é seleção**, e o jeito de isso não ter exceção é
+   * o par carregar o foco junto: quem lê descarta o que não é daqui, e não há
+   * limpeza a esquecer em lugar nenhum.
+   *
+   * Não dá para conferir contra o que o palco desenhou: o interior de uma
+   * caixa aparece ou não conforme o nível de detalhe, que é conta do palco. O
+   * enquadramento, esse, é a mesma coisa dos dois lados.
+   */
+  const [selecao, setSelecao] = useState<{ readonly foco: string; readonly id: string }>();
+  const selecionado = selecao?.foco === foco ? selecao.id : undefined;
+  const selecionar = (id: string): void => setSelecao({ foco, id });
 
   const view = useMemo(
     () => views.find((v) => v.focus === foco) ?? autoView(tree, foco, wires),
@@ -174,7 +195,7 @@ export function Explorer({
           readouts={readouts}
           altos={altos}
           selected={selecionado}
-          onSelect={setSelecionado}
+          onSelect={selecionar}
           onOpen={abrir}
           interiores={interiores}
           alvoDeCamera={alvoDeCamera}

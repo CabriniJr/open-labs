@@ -236,3 +236,35 @@ test("a memória mostra o que guarda, e a linha tocada acende", async ({ page })
     memoria.locator('.dui-stage__conteudo g[data-ativo="true"]').first(),
   ).toBeAttached({ timeout: 20_000 });
 });
+
+/**
+ * A ficha não pode sobreviver ao enquadramento em que ela foi aberta.
+ *
+ * Descer até uma peça funda, ler a ficha dela e voltar ao topo pela trilha
+ * deixava a ficha explicando uma peça que não está mais na tela — e a
+ * descrição errada lida como se descrevesse o que se está vendo. É a mesma
+ * espécie de defeito da porta acesa: a tela afirmando o que não é.
+ */
+test("a ficha não sobrevive à saída do enquadramento", async ({ page }) => {
+  await page.goto("labs/cpu/");
+  await expect(page.locator(".dui-stage")).toBeVisible({ timeout: 15_000 });
+
+  const trilha = page.locator(".explorer__trilha");
+  const topo = await trilha.locator("button, a").first().textContent();
+
+  // Entrar numa peça e escolher alguma coisa lá dentro.
+  const dentro = page.locator(".dui-stage__objeto[data-fechado='true']").first();
+  await dentro.dblclick();
+  await expect(trilha).not.toHaveText(topo ?? "", { timeout: 10_000 });
+
+  // Qual peça o clique pega não importa — molduras e filhos se sobrepõem, e
+  // fixar um id aqui seria o teste afirmando um layout que ele não decide. O
+  // que importa é que alguma coisa foi selecionada.
+  await page.locator(".dui-stage__objeto").first().click();
+  await expect(page.locator(".ficha__id")).toHaveCount(1, { timeout: 10_000 });
+
+  // Voltar ao topo pela trilha: a ficha não pode continuar falando de lá.
+  await trilha.locator("button, a").first().click();
+  await expect(page.locator(".ficha__id")).toHaveCount(0, { timeout: 10_000 });
+  await expect(page.locator(".ficha--vazia")).toBeVisible();
+});

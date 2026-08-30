@@ -211,8 +211,14 @@ type FonteEscrita = "ula" | "mem" | "pc4" | "nada";
 type Acesso = "ler" | "escrever" | "nada";
 type Desvio = "seq" | Mnemonic;
 
-/** O que cada instrução manda cada peça fazer. É a tabela de controle. */
-function controlar(instr: Instruction): {
+/**
+ * O que cada instrução manda cada peça fazer. É a tabela de controle.
+ *
+ * Exportada porque a legenda dos sinais é texto que o leitor lê, e a única
+ * varredura honesta é rodar a tabela de verdade para todo o ISA — inventar uma
+ * lista de valores possíveis no teste seria a segunda fonte de sempre.
+ */
+export function controlar(instr: Instruction): {
   op: Mnemonic;
   fonteB: FonteB;
   acesso: Acesso;
@@ -263,9 +269,9 @@ const controle: ObjectSpec<Record<string, never>> = {
       out: [
         { port: "op", message: ctx.emit("sinal", 1, { op: c.op }) },
         { port: "selb", message: ctx.emit("sinal", 1, { fonteB: c.fonteB }) },
-        { port: "acesso", message: ctx.emit("sinal", 1, { modo: c.acesso }) },
-        { port: "selwb", message: ctx.emit("sinal", 1, { fonte: c.escrita }) },
-        { port: "cond", message: ctx.emit("sinal", 1, { tipo: c.desvio }) },
+        { port: "acesso", message: ctx.emit("sinal", 1, { acesso: c.acesso }) },
+        { port: "selwb", message: ctx.emit("sinal", 1, { escrita: c.escrita }) },
+        { port: "cond", message: ctx.emit("sinal", 1, { desvio: c.desvio }) },
       ],
     };
   },
@@ -491,7 +497,7 @@ function memoriaPrincipal(image: readonly number[]): ObjectSpec<EstadoMemoria> {
       const entrada = doDispositivo === undefined ? state.entrada : dado(doDispositivo, "valor");
 
       const acesso = achar(inbox, "resultado");
-      const modo = sinal(ctx.signals, "acesso")?.data.modo as Acesso | undefined;
+      const modo = sinal(ctx.signals, "acesso")?.data.acesso as Acesso | undefined;
 
       if (ctx.phase === "commit") {
         const out: Emission[] = [];
@@ -536,7 +542,7 @@ const muxEscrita: ObjectSpec<Record<string, never>> = {
     const acessado = achar(inbox, "acessado");
     const sel = sinal(ctx.signals, "selwb");
     if (acessado === undefined || sel === undefined) return { state, out: [] };
-    const fonte = sel.data.fonte as FonteEscrita;
+    const fonte = sel.data.escrita as FonteEscrita;
     if (fonte === "nada") return { state, out: [] };
     const valor =
       fonte === "mem"
@@ -567,7 +573,7 @@ const unidadeDeDesvio: ObjectSpec<Record<string, never>> = {
     const resultado = achar(inbox, "resultado");
     const sel = sinal(ctx.signals, "cond");
     if (resultado === undefined || sel === undefined) return { state, out: [] };
-    const tipo = sel.data.tipo as Desvio;
+    const tipo = sel.data.desvio as Desvio;
     const pcAtual = dado(resultado, "pc");
     const a = dado(resultado, "aReg");
     const b = dado(resultado, "bReg");

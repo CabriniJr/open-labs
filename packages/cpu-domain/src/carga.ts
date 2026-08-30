@@ -1,4 +1,5 @@
 import type { Message } from "@ovh/depth-core";
+import { rotuloDoSinal } from "./labels.js";
 
 /**
  * O que a carga leva, em dois ou três caracteres.
@@ -93,8 +94,10 @@ export function leituraDaCarga(mensagem: Message): string | undefined {
     // O sinal de controle não carrega valor: carrega a decisão, e o nome dela
     // é o que se quer ler na linha tracejada.
     case "sinal": {
-      const decisao = Object.values(d).find((v) => typeof v === "string" || typeof v === "number");
-      return decisao === undefined ? undefined : String(decisao);
+      const entrada = Object.entries(d).find(
+        ([, v]) => typeof v === "string" || typeof v === "number",
+      );
+      return entrada === undefined ? undefined : rotuloDoSinal(entrada[0], String(entrada[1]));
     }
 
     default:
