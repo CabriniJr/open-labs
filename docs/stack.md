@@ -361,3 +361,21 @@ projeto passa a ter duas verdades sobre o que está no ar.
 Prod é a Vercel, e é ela que segue a `main`. O `PUBLIC_BASE_PATH` continua no
 `astro.config.mjs` porque a decisão de quem serve onde é de quem chama o build —
 só não há mais ninguém chamando com subdiretório.
+
+### O endereço de produção, e a proteção que escondia o site
+
+**29/08/2026.** O projeto na Vercel é `openlabs`, e o endereço de produção é
+`openlabs-guaxinims-projects.vercel.app`. Dois achados vieram junto, e os dois
+custam tempo se não estiverem escritos:
+
+**`openlabs.vercel.app` não é nosso.** Ele responde e redireciona para `/en` —
+é de outra conta. Testar ali e concluir "o deploy está quebrado" é o erro fácil.
+
+**A proteção de deploy estava ligada.** Toda visita — inclusive à produção —
+era redirecionada para o SSO da Vercel (`302` para `vercel.com/sso-api`). O site
+existia, construía, e ninguém de fora conseguia vê-lo; de dentro, logado, tudo
+parecia normal. É o tipo de defeito que só aparece quando alguém que não é do
+time tenta abrir. Desligar fica em **Settings › Deployment Protection**.
+
+E `main` é protegida por regra de repositório: mudanças só entram por pull
+request. O fast-forward direto é recusado com `GH013`.

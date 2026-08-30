@@ -6,7 +6,17 @@ import { drillDown } from "./src/lib/drill.ts";
 // O GitHub Pages serve em /<repo>/; a Vercel serve na raiz. Quem chama o build
 // declara onde vai servir, em vez de o código adivinhar.
 const base = process.env.PUBLIC_BASE_PATH ?? "/";
-const site = process.env.PUBLIC_SITE_URL ?? "https://otel-visual-handbook.vercel.app";
+/**
+ * O endereço público, e ele precisa ser o de verdade.
+ *
+ * O padrão apontava para um domínio que **não existe** — respondia 404, e era o
+ * nome antigo do projeto. Enquanto nada gera URL canônica nem sitemap, um errado
+ * não aparece em lugar nenhum; no dia em que gerar, ele publica endereço morto
+ * em toda página, e a descoberta vem de fora, tarde.
+ *
+ * Quem serve em outro lugar declara `PUBLIC_SITE_URL`.
+ */
+const site = process.env.PUBLIC_SITE_URL ?? "https://openlabs-guaxinims-projects.vercel.app";
 
 /**
  * Todo documento em `docs/` abre com `# Título`, porque também é lido no

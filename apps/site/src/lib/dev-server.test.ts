@@ -28,6 +28,15 @@ describe("o servidor de dev sobe sempre igual", () => {
    * conteúdo limpo e todo `/docs/*` em 500 — longe da causa. Falhar alto é o
    * comportamento certo.
    */
+  /**
+   * Um `site` que não resolve é endereço morto em toda página no dia em que
+   * alguém gerar canônica ou sitemap — e a descoberta vem de fora, tarde.
+   */
+  it("o endereço público não é o domínio morto de antes", () => {
+    expect(config).not.toContain("otel-visual-handbook.vercel.app");
+    expect(config).toMatch(/PUBLIC_SITE_URL \?\? "https:\/\//);
+  });
+
   it("a porta ocupada faz o dev falhar, e não escorregar para outra", () => {
     expect(config).toMatch(/strictPort:\s*true/);
   });
