@@ -86,6 +86,14 @@ export const KINDS: Readonly<Record<Kind, Descricao>> = {
       "It consumes and does not emit. The other edge: what leaves the system. It keeps state, " +
       "which is why the result of a run is usually read off a sink.",
   },
+  sequencer: {
+    resumo: "Keeps a phase, and lights the lines that phase calls for.",
+    detalhe:
+      "It remembers where in a sequence the machine is, which is what separates it from a " +
+      "part that only picks a path: the same inputs get a different answer at a different " +
+      "step. It speaks only through control lines — an edge carrying a load out of one is " +
+      "refused when the world is built.",
+  },
   router: {
     resumo: "Takes in, decides, emits on an outlet.",
     detalhe:
