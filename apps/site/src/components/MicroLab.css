@@ -194,3 +194,12 @@
 .micro-lab__regs li span:first-child {
   color: var(--ink-muted);
 }
+
+/* A tabela cresce com o programa; o painel, não — ela rola dentro de si. */
+.micro-lab__tabela {
+  max-height: 14rem;
+  margin-block-start: var(--space-1);
+  overflow: auto;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-2);
+}

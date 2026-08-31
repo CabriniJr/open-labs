@@ -63,4 +63,21 @@ describe("a tabela de tempo", () => {
     const marcadas = t.filter((l) => l.instrucao !== undefined);
     expect(marcadas.map((l) => l.instrucao)).toEqual(["LOAD 0A", "ADD 05"]);
   });
+
+  it("um run ainda em andamento não inventa o operando de uma instrução de dois bytes", () => {
+    // STORE é formato 2: opcode e dois bytes de endereço. Parar bem depois do
+    // opcode e antes do segundo byte do endereço é o instante em que o lab
+    // pede a tabela no meio de uma transação de duas — e "0000" no operando
+    // seria a mentira silenciosa, não a leitura honesta de que ele ainda não
+    // chegou.
+    const estados = rodar(microWorld(bytesDe("LOAD 0A\nSTORE 2000")), 9);
+    const linhas = tabelaDeTempo(estados);
+    const comStore = linhas.filter((l) => l.instrucao?.startsWith("STORE"));
+    expect(comStore).toHaveLength(0);
+
+    // E assim que os dois bytes do endereço aparecem, ela se corrige sozinha —
+    // sem que ninguém tenha reescrito a linha à mão.
+    const completa = tabelaDeTempo(rodar(microWorld(bytesDe("LOAD 0A\nSTORE 2000")), 40));
+    expect(completa.filter((l) => l.instrucao === "STORE 2000")).toHaveLength(1);
+  });
 });

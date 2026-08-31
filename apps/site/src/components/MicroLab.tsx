@@ -12,10 +12,12 @@ import {
   montarMicro,
   portasAltas,
   ROTULOS_DA_FASE,
+  tabelaDeTempo,
   VIEW_MICRO_SISTEMA,
 } from "@ovh/cpu-domain";
 import type { ErroDeMontagem } from "@ovh/cpu-domain";
 import { Explorer } from "./Explorer.js";
+import { TabelaDeTempo } from "./TabelaDeTempo.js";
 
 /**
  * O genérico: um tick é um micro-passo, e não uma instrução.
@@ -49,6 +51,12 @@ export function MicroLab() {
   const [rodando, setRodando] = useState(false);
   const [compasso, setCompasso] = useState(500);
   const [viewId, setViewId] = useState(VIEW_MICRO_SISTEMA.id);
+  // O livro-caixa da tabela de tempo: um estado por tick, do zero até agora.
+  // `World` não guarda isso sozinho — de propósito, para `advance()` poder
+  // rodar por muito tempo sem o histórico crescer sem limite —, então quem
+  // pede a tabela é quem tem de juntar os estados, um a um, conforme eles
+  // acontecem.
+  const [historico, setHistorico] = useState<readonly WorldState[]>([]);
   const mundoRef = useRef<World | null>(null);
 
   const montar = (): void => {
@@ -82,6 +90,7 @@ export function MicroLab() {
   useEffect(() => {
     if (mundo === null) return;
     setTick(0);
+    setHistorico([mundo.state]);
     setRodando(true);
   }, [mundo]);
 
@@ -92,6 +101,7 @@ export function MicroLab() {
       if (agora === null) return;
       agora.advance(1);
       setTick(agora.tick);
+      setHistorico((h) => [...h, agora.state]);
     }, compasso);
     return () => window.clearInterval(id);
   }, [rodando, compasso, mundo]);
@@ -102,6 +112,7 @@ export function MicroLab() {
     setRodando(false);
     m.advance(1);
     setTick(m.tick);
+    setHistorico((h) => [...h, m.state]);
   };
 
   const estado: WorldState | null = mundo === null ? null : mundo.state;
@@ -109,6 +120,10 @@ export function MicroLab() {
   const microEstado = estado === null ? null : estadoDoMicro(estado);
 
   const view = MICRO_VIEWS.find((v) => v.id === viewId) ?? VIEW_MICRO_SISTEMA;
+
+  // A mesma função que o oráculo do slide 43 usa, no mesmo histórico — a
+  // tabela não tem outra fonte.
+  const linhasDeTempo = useMemo(() => tabelaDeTempo(historico), [historico]);
 
   const readouts =
     microEstado === null
@@ -254,6 +269,9 @@ export function MicroLab() {
             Every row here is a single bus transaction — the unit this
             program&rsquo;s tick counter never rounds up.
           </p>
+          <div className="micro-lab__tabela">
+            <TabelaDeTempo linhas={linhasDeTempo} />
+          </div>
         </section>
 
         <section>

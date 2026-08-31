@@ -67,3 +67,5 @@ export {
   VIEW_MICRO_PROCESSADOR,
   VIEW_MICRO_SISTEMA,
 } from "./micro/views.js";
+export { tabelaDeTempo } from "./micro/tempo.js";
+export type { Acesso, LinhaDeTempo } from "./micro/tempo.js";

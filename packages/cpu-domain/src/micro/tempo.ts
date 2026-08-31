@@ -146,19 +146,27 @@ const hex = (n: number, casas: number): string =>
  * Byte que não decodifica em instrução nenhuma não ganha texto: é assim que o
  * fim do programa aparece na tabela como o que ele é, uma leitura que não virou
  * instrução.
+ *
+ * `linhas` pode ser um run inteiro (como no oráculo) ou um run ainda em
+ * andamento (como no lab, tick a tick): a tabela cresce ao vivo, e a linha do
+ * opcode chega antes das linhas do operando existirem. Até elas chegarem, o
+ * operando não é conhecido — e "0000" no lugar dele seria exatamente a
+ * mentira silenciosa que este arquivo inteiro existe para não contar. Melhor
+ * a coluna ficar vazia mais um instante do que confiante e errada.
  */
 function comInstrucoes(linhas: readonly LinhaDeTempo[]): readonly LinhaDeTempo[] {
   return linhas.map((linha, i) => {
     if (linha.ir === undefined) return linha;
     const m = decodificar(linha.ir);
     if (m === undefined) return linha;
-    const bytes = (FORMATO[m] === 1 ? [linhas[i + 1]] : [linhas[i + 1], linhas[i + 2]])
-      .map((l) => l?.dado)
-      .filter((d): d is number => d !== undefined);
+    const bytes = (FORMATO[m] === 1 ? [linhas[i + 1]] : [linhas[i + 1], linhas[i + 2]]).map(
+      (l) => l?.dado,
+    );
+    if (bytes.some((d) => d === undefined)) return linha;
     const operando =
       FORMATO[m] === 1
-        ? hex(bytes[0] ?? 0, 2)
-        : hex(((bytes[0] ?? 0) << 8) | (bytes[1] ?? 0), 4);
+        ? hex(bytes[0]!, 2)
+        : hex((bytes[0]! << 8) | bytes[1]!, 4);
     return { ...linha, instrucao: `${m.toUpperCase()} ${operando}` };
   });
 }
