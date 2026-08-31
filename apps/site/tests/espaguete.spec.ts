@@ -66,6 +66,7 @@ const TETOS = [
   { lab: "labs/cpu/", nome: "o caminho de dados inteiro", cruzamentos: 15 },
   { lab: "labs/gates/", nome: "o somador de quatro bits", cruzamentos: 4 },
   { lab: "labs/rpn/", nome: "a máquina de pilha", cruzamentos: 4 },
+  { lab: "labs/micro/", nome: "o sistema do genérico", cruzamentos: 7 },
 ] as const;
 
 for (const teto of TETOS) {
