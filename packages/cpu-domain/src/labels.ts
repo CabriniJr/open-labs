@@ -85,6 +85,64 @@ export const ROTULOS = {
 } as const;
 
 /**
+ * O que cada peça do genérico **é**, no vocabulário do domínio — nunca no do
+ * motor.
+ *
+ * A Ficha descrevia todo objeto selecionado só pelo `kind`: quem clicava em
+ * `MAR` lia a descrição de `buffer`, um registrador de um bit de capacidade, e
+ * nunca descobria que ali mora o endereço que a CPU está pondo no barramento
+ * agora. `KINDS[node.kind].detalhe` é verdade sobre a peça e não é a pergunta
+ * que o leitor fez.
+ *
+ * Chave é **id do objeto**, não `kind`: dois objetos do mesmo `kind` — dois
+ * `buffer`, `mar` e `ac` — são coisas diferentes nesta máquina, e um mapa por
+ * `kind` faria um responder pela descrição do outro.
+ *
+ * A cobertura é travada dos dois lados em `labels.test.ts`, contra a árvore de
+ * `microWorld` — e não contra uma segunda lista escrita à mão, que é
+ * exatamente o duplicado que este projeto proíbe.
+ */
+export const DESCRICOES: Readonly<Record<string, string>> = {
+  pc: "Holds the address of the next instruction. It advances by one after " +
+    "every fetch, and only a jump or a taken branch changes it any other way.",
+  ir: "Holds the instruction byte just fetched from memory — the one the " +
+    "control unit is decoding right now.",
+  mar: "Holds the address the CPU is putting on the address bus right now. " +
+    "The CPU cannot name a memory cell any other way.",
+  mbr: "Holds the byte in transit between the CPU and memory — the one just " +
+    "read, or the one about to be written.",
+  ac: "Where arithmetic happens. Almost every instruction of this machine " +
+    "either fills it or changes it.",
+  t: "Where the second operand waits while the ALU adds. It is why ADD " +
+    "takes one more instant than LOAD.",
+  h: "The high byte of a two-byte address, paired with L. Neither half " +
+    "holds a full address alone — that is why loading one costs a whole " +
+    "instant of its own.",
+  l: "The low byte of that same address, paired with H.",
+  sp: "Declared and unused: this machine has no instruction that moves it. " +
+    "The reference model lists it among the registers and never uses it, " +
+    "and so do we.",
+  status: "Holds the flags the last ALU result set — zero and carry. The " +
+    "conditional jump is the only thing in this machine that ever reads Z.",
+  uc: "Keeps the phase of the instruction cycle and lights the control " +
+    "lines that phase calls for. It decides; it never carries a value.",
+  "barramento-endereco": "The one wire nothing reaches memory without. " +
+    "Whatever the MAR holds is what is on it, every instant — the CPU has " +
+    "no other way to name a cell.",
+  "barramento-dado": "Two one-way lanes between the CPU and memory, never " +
+    "the same instant: a byte comes back on one, and only leaves on the " +
+    "other. A single two-way wire would ask this model to carry a byte in " +
+    "both directions at once, which it never does.",
+  "via-leitura": "The lane a byte travels back from memory on, when the " +
+    "read line is lit.",
+  "via-escrita": "The lane a byte travels out to memory on, when the write " +
+    "line is lit.",
+  memoria: "The single memory this machine has — program at 0000, data at " +
+    "2000. It is why fetch and execute can never share an instant: one " +
+    "address bus, one memory, one access at a time.",
+} as const;
+
+/**
  * Os sinais de controle, com o nome que eles têm no livro.
  *
  * A unidade de controle emitia os identificadores internos crus no payload —

@@ -34,3 +34,4 @@ export {
 } from "./transistors.js";
 export type { Canal, PortaCmos } from "./transistors.js";
 export type { PortaLogica } from "./gates.js";
+export { DESCRICOES } from "./labels.js";

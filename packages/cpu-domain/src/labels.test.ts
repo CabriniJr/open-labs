@@ -5,9 +5,10 @@ import { assemble } from "./assembler.js";
 import { controlar, cpuWorld } from "./datapath.js";
 import { decode, FORMAS } from "./isa.js";
 import type { Instruction, Mnemonic } from "./isa.js";
-import { rotuloDoSinal } from "./labels.js";
+import { DESCRICOES, rotuloDoSinal } from "./labels.js";
 import { somadorWorld } from "./gates.js";
 import { CPU_VIEWS, viewsDoSomador } from "./views.js";
+import { microWorld } from "./micro/datapath.js";
 
 /**
  * O que o leitor vê está em inglês, como o resto do site.
@@ -154,5 +155,46 @@ describe("todo objeto tem nome de peça, e não de variável", () => {
       .filter((node) => node.label === node.id)
       .map((node) => node.id);
     expect(crus).toEqual([]);
+  });
+});
+
+/**
+ * `DESCRICOES` contra a árvore do genérico, nos dois sentidos.
+ *
+ * A Ficha descrevia todo objeto pelo `kind` do motor — quem clicava em `MAR`
+ * lia a descrição de `buffer`, nunca a de "onde mora o endereço que está no
+ * barramento agora". `DESCRICOES` é o mapa que corrige isso, e sem uma guarda
+ * bidirecional ele apodrece dos dois lados: uma chave sobra quando a peça é
+ * renomeada e ninguém atualiza o mapa; uma peça nova nasce sem entrada e a
+ * Ficha volta a mostrar só o `kind`, calada sobre o defeito.
+ *
+ * A lista do lado "toda peça precisa de descrição" vem da própria árvore,
+ * filtrada por `kind` — nunca de uma segunda lista escrita à mão, que é
+ * exatamente a duplicata que este projeto proíbe. `buffer` e `sequencer` são
+ * os dois `kind` que este mundo usa para registrador, latch e unidade de
+ * controle; nenhum outro `kind` do genérico guarda estado nomeável desse jeito.
+ */
+describe("as descrições do genérico batem com a árvore, nos dois sentidos", () => {
+  const arvoreMicro = indexTree(microWorld(new Uint8Array()).root);
+  const KINDS_DE_ESTADO_NOMEAVEL = new Set(["buffer", "sequencer"]);
+
+  it("toda chave de DESCRICOES é um id que existe na árvore do genérico", () => {
+    const orfas = Object.keys(DESCRICOES).filter((id) => !arvoreMicro.byId.has(id));
+    expect(orfas).toEqual([]);
+  });
+
+  it("todo registrador, latch e a unidade de controle têm descrição", () => {
+    const semDescricao = [...arvoreMicro.byId.values()]
+      .filter((node) => KINDS_DE_ESTADO_NOMEAVEL.has(node.kind))
+      .map((node) => node.id)
+      .filter((id) => DESCRICOES[id] === undefined);
+    expect(semDescricao).toEqual([]);
+  });
+
+  it("nenhuma descrição do genérico é acentuada — o leitor lê em inglês", () => {
+    const acentuadas = Object.entries(DESCRICOES)
+      .filter(([, texto]) => ACENTO.test(texto))
+      .map(([id]) => id);
+    expect(acentuadas).toEqual([]);
   });
 });
