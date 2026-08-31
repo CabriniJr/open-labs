@@ -40,14 +40,17 @@ export function TabelaDeTempo({ linhas }: { readonly linhas: readonly LinhaDeTem
     <table className="tabela-de-tempo mono">
       <thead>
         <tr>
-          <th rowSpan={2}>Controle</th>
-          <th colSpan={2}>Barramentos</th>
-          <th colSpan={6}>Registradores</th>
-          <th rowSpan={2}>Instrução</th>
+          {/* O handbook é em inglês, e estes quatro cabeçalhos ficaram em
+              português: o leitor lia "Barramentos" numa tabela que o artigo
+              ensina a ler chamando as colunas por outros nomes. */}
+          <th rowSpan={2}>Control</th>
+          <th colSpan={2}>Buses</th>
+          <th colSpan={6}>Registers</th>
+          <th rowSpan={2}>Instruction</th>
         </tr>
         <tr>
-          <th>End.</th>
-          <th>Dados</th>
+          <th>Addr.</th>
+          <th>Data</th>
           <th>PC</th>
           <th>IR</th>
           <th>AC</th>

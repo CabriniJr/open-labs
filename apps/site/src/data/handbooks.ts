@@ -37,6 +37,25 @@ export interface HandbookItem {
   readonly href?: string | undefined;
 }
 
+/**
+ * O modelo de referência de onde a máquina do handbook veio, quando ela veio de
+ * fora.
+ *
+ * Mora no catálogo, e não escrito na página, porque crédito enterrado numa
+ * página que ninguém abre é crédito que não foi dado: estando aqui, a página do
+ * handbook o imprime sozinha, e quem escrever o próximo handbook a partir de
+ * material de terceiro encontra o campo antes de precisar inventar um lugar.
+ */
+export interface HandbookReference {
+  readonly title: string;
+  readonly author: string;
+  readonly where: string;
+  /** A página do handbook que conta a história inteira. */
+  readonly href: string;
+  /** A frase que a página imprime, curta, sem abrir a página do crédito. */
+  readonly line: string;
+}
+
 export interface Handbook {
   readonly id: string;
   readonly name: string;
@@ -59,6 +78,8 @@ export interface Handbook {
   readonly phases: readonly HandbookPhase[];
   readonly articles: readonly HandbookItem[];
   readonly labs: readonly HandbookItem[];
+  /** De onde veio o modelo, quando ele não é nosso. */
+  readonly reference?: HandbookReference;
 }
 
 const OTEL_LABS: readonly HandbookItem[] = otelLabs.map((lab) => ({
@@ -161,8 +182,66 @@ const CPU: Handbook = {
     // agora mora na fase 5.
     { id: "one-instruction-end-to-end", title: "One instruction, end to end", status: "coming", phase: 5 },
     { id: "writing-rv32i", title: "Writing RV32I by hand", status: "coming", phase: 6 },
+
+    // Os oito da máquina genérica, na ordem do modelo de referência. Dois estão
+    // escritos — o que explica por que o ciclo existe e o que atravessa dele
+    // para um chip que existiu — e seis são caminho declarado.
+    //
+    // Item pronto tem link, item por escrever **não tem**: um `href` para uma
+    // página que ninguém escreveu é link morto em produção, e o leitor só
+    // descobre clicando. Há teste dos dois lados.
+    { id: "structure-of-a-computer", title: "Structure of a computer", status: "coming", phase: 1 },
+    { id: "buses-and-the-clock", title: "Buses and the clock", status: "coming", phase: 1 },
+    {
+      id: "the-registers-a-computer-cannot-do-without",
+      title: "The registers a computer cannot do without",
+      status: "coming",
+      phase: 3,
+    },
+    {
+      id: "from-a-sum-to-bits",
+      title: "From total = 10 + 5 + 18 to bits",
+      status: "coming",
+      phase: 6,
+    },
+    { id: "instruction-formats", title: "Instruction formats", status: "coming", phase: 4 },
+    {
+      id: "the-instruction-cycle",
+      title: "The instruction cycle",
+      status: "available",
+      phase: 4,
+      href: "handbooks/cpu/articles/the-instruction-cycle",
+    },
+    // O deck conta 23 instantes para este programa e a nossa máquina gasta 29:
+    // o instante dele é o quadro da animação, o nosso é o micro-passo, e o
+    // título traz o número que o leitor consegue conferir no contador de ticks
+    // do lab. Prometer 23 seria mandá-lo procurar um número que não está lá.
+    {
+      id: "one-program-twenty-nine-instants",
+      title: "One program, twenty-nine instants",
+      status: "coming",
+      phase: 4,
+    },
+    {
+      id: "from-the-generic-machine-to-the-8085",
+      title: "From the generic machine to the 8085",
+      status: "available",
+      phase: 6,
+      href: "handbooks/cpu/articles/from-the-generic-machine-to-the-8085",
+    },
   ],
   labs: CPU_LABS,
+  reference: {
+    title: "Princípio de Funcionamento de um Microprocessador",
+    author: "Prof. Filippo Valiante Filho",
+    where: "prof.valiante.info",
+    href: "handbooks/cpu/reference",
+    line:
+      "The machine in the instruction-cycle lab — its registers, its buses, " +
+      "its two instruction formats and its example program — is reconstructed " +
+      "from a lecture deck by Prof. Filippo Valiante Filho, used with his " +
+      "permission. The text here is our own.",
+  },
 };
 
 /**

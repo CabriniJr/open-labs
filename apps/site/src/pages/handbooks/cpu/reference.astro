@@ -1,0 +1,137 @@
+---
+import SiteFooter from "../../../components/SiteFooter.astro";
+import SiteNav from "../../../components/SiteNav.astro";
+import Base from "../../../layouts/Base.astro";
+import { handbookOf } from "../../../data/handbooks";
+import { url } from "../../../lib/urls";
+import "../../../styles/docs.css";
+import "../../../styles/article.css";
+
+/**
+ * O crédito do modelo de referência, como página.
+ *
+ * Ela é do handbook da CPU e não genérica porque o que ela tem a dizer é
+ * específico: o que foi tomado, o que não foi, e por que a prosa é nossa. Um
+ * gerador genérico imprimiria a mesma frase morna para qualquer origem — e o
+ * ponto desta página é justamente ser exata sobre uma.
+ */
+const handbook = handbookOf("cpu")!;
+const ref = handbook.reference!;
+---
+
+<Base
+  domain="cpu"
+  title={`Reference model — ${handbook.name}`}
+  description="Where the generic microprocessor in this handbook comes from, what we took from it, and what we wrote ourselves."
+>
+  <SiteNav current="handbooks" />
+
+  <main id="content" class="article">
+    <header class="article__head editorial">
+      <div>
+        <p class="article__eyebrow mono">
+          <a href={url("handbooks/cpu")}>{handbook.name}</a>
+          <span aria-hidden="true"> · </span>
+          <span>reference model</span>
+        </p>
+        <h1>The machine we did not invent</h1>
+        <p class="article__dek">
+          The generic microprocessor in this handbook is somebody else&rsquo;s
+          model, rebuilt in our engine with his permission. Here is exactly
+          what came from him and what did not.
+        </p>
+      </div>
+      <aside class="article__meta mono">
+        <p>{ref.author}</p>
+        <p>{ref.where}</p>
+        <p>
+          <a href={url("labs/micro")}>open the lab →</a>
+        </p>
+      </aside>
+    </header>
+
+    <div class="article__body">
+      <article class="prose article__prose">
+        <blockquote>
+          <p>
+            The reference model for this machine — its registers, its buses,
+            its two instruction formats and its example program — comes from
+            <cite>Princípio de Funcionamento de um Microprocessador</cite>, by
+            Prof. Filippo Valiante Filho (<a
+              href="https://prof.valiante.info"
+              rel="noopener">prof.valiante.info</a
+            >), used with his permission. The text here is our own.
+          </p>
+        </blockquote>
+
+        <h2>What we took</h2>
+        <p>
+          The <strong>shape of the machine</strong>, and the order in which it
+          is worth meeting. An 8-bit accumulator processor with a program
+          counter, an instruction register, an address latch and a data latch,
+          an accumulator and a temporary, an H/L pair holding a 16-bit address
+          in two 8-bit halves, a stack pointer that is declared and wired to
+          nothing, and a status register. One memory, with the program at
+          <code>0000</code> and the data at <code>2000</code>. One 16-line
+          address bus and one 8-line data bus.
+        </p>
+        <p>
+          The <strong>two instruction formats</strong>: opcode plus value in
+          two bytes, opcode plus high byte plus low byte in three. The three
+          instructions <code>LOAD</code>, <code>ADD</code> and
+          <code>STORE</code>, with the opcodes <code>86</code>,
+          <code>8B</code> and <code>B7</code> — deliberately invented numbers,
+          because the machine is generic in the literal sense. The example
+          program that adds <code>0A</code>, <code>05</code> and
+          <code>12</code> and stores the result at <code>2000</code>. The list
+          of cycle phases, and the timing table that shows one program as one
+          page of instants.
+        </p>
+
+        <h2>What we added</h2>
+        <p>
+          Three instructions the deck does not have —
+          <code>LOADM</code>, <code>JMP</code> and <code>JZ</code> — because
+          with three instructions you cannot write a loop, and a machine that
+          cannot loop is a machine you can only watch. Their opcodes are as
+          arbitrary as the originals, and picked only so as not to collide.
+        </p>
+        <p>
+          And depth. The deck draws the ALU as two boxes and stops, because a
+          slide does not open; here the same ALU opens into an adder, into one
+          bit of it, into the XOR, into the NAND, into the transistors and the
+          supply rail — nine levels from the system down. That is the part of
+          the model that only exists because it runs.
+        </p>
+
+        <h2>What is ours, and why it matters</h2>
+        <p>
+          Every word of prose on this site. Permission to use a model is not
+          permission to reuse a lecturer&rsquo;s sentences: transcribing his
+          text would be plagiarism with a licence attached. So the articles
+          were written from scratch, and every technical claim in them stands
+          on its own — traced to a primary source, or to the model in the lab,
+          which you can run and disagree with.
+        </p>
+        <p>
+          The one place where his document is quoted as a document is the
+          timing table, which we hold as an
+          <strong>oracle</strong>: our machine is run against his table cell by
+          cell, eleven rows, in a test that fails if we drift. Using someone
+          else&rsquo;s table that way is the strongest form of credit we know —
+          it means his page, and not our opinion, decides when we are wrong.
+        </p>
+
+        <p>
+          <a href={url("labs/micro")}>The lab</a> ·
+          <a href={url("handbooks/cpu/articles/the-instruction-cycle")}
+            >The instruction cycle</a
+          > ·
+          <a href={url("handbooks/cpu")}>Back to the handbook</a>
+        </p>
+      </article>
+    </div>
+  </main>
+
+  <SiteFooter />
+</Base>

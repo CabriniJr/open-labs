@@ -148,6 +148,11 @@ describe("os links internos dos artigos abrem", () => {
       "/handbooks/",
       "/docs/",
       ...HANDBOOKS.map((h) => `/handbooks/${h.id}/`),
+      // A página de crédito do modelo de referência é rota de verdade, e um
+      // artigo pode apontar para ela.
+      ...HANDBOOKS.filter((h) => h.reference !== undefined).map(
+        (h) => `/${h.reference!.href}/`,
+      ),
       ...HANDBOOKS.flatMap((h) => [...h.labs, ...h.articles])
         .filter((i) => i.href !== undefined)
         .map((i) => `/${i.href}/`),

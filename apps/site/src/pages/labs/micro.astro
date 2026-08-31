@@ -58,6 +58,26 @@ import "../../components/TabelaDeTempo.css";
     <section class="lab-stage">
       <MicroLab client:only="react" />
     </section>
+
+    {/*
+      O crédito fica na página do lab, e não só na do handbook: esta é a
+      página que as pessoas mandam uma para a outra, e um crédito que só
+      existe a dois cliques daqui é um crédito que a maioria nunca vê.
+    */}
+    <aside class="lab-credit">
+      <p>
+        The reference model for this machine — its registers, its buses, its
+        two instruction formats and its example program — comes from
+        <cite>Princípio de Funcionamento de um Microprocessador</cite>, by
+        Prof. Filippo Valiante Filho (<a
+          href="https://prof.valiante.info"
+          rel="noopener">prof.valiante.info</a
+        >), used with his permission. The text here is our own —
+        <a href={url("handbooks/cpu/reference")}
+          >what we took, and what we wrote</a
+        >.
+      </p>
+    </aside>
   </main>
 
   <SiteFooter />
@@ -96,5 +116,21 @@ import "../../components/TabelaDeTempo.css";
     max-width: 96rem;
     margin-inline: auto;
     padding: 0 var(--space-3) var(--space-5);
+  }
+
+  .lab-credit {
+    max-width: 96rem;
+    margin-inline: auto;
+    padding: 0 var(--space-3) var(--space-5);
+  }
+
+  .lab-credit p {
+    max-width: var(--measure);
+    margin: 0;
+    padding-block-start: var(--space-2);
+    border-block-start: 1px solid var(--rule);
+    color: var(--ink-muted);
+    font-size: var(--size-step--1);
+    line-height: 1.6;
   }
 </style>
