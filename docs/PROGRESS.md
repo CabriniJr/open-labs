@@ -1104,3 +1104,73 @@ suíte cheia.
 
 Estado: 687 testes unitários, 155 e2e, typecheck, boundaries (80 arquivos), catálogo e build
 verdes.
+
+## 2026-08-30 — O microprocessador genérico
+
+Um modelo que existia fora daqui — desenhado à mão por um professor, em slides — foi
+reconstruído no motor, roda, e abre onde o slide não pode abrir. Deck de referência:
+*Princípio de Funcionamento de um Microprocessador*, de **Prof. Filippo Valiante Filho**
+(`prof.valiante.info`), usado **com permissão dele**.
+
+**O que faltava e agora existe: o ciclo de instrução como tempo.** O caminho de dados do
+RISC-V abre dizendo "um ciclo por tick" — a instrução inteira acontece dentro de um tick, e
+busca, decodificação e execução existem só como profundidade topológica da acomodação. No
+`micro`, **um tick é um micro-passo**: uma transferência entre registradores. Vinte e nove
+deles para o programa do slide 16.
+
+**O motor ganhou `kind: "sequencer"`**, o primeiro da família `controller` — que existia
+desde o começo e não tinha nenhum. Ele guarda a fase entre ticks e emite só por linha de
+controle; `validateWorld` recusa aresta de dado saindo dele, e a mutação da guarda mata
+exatamente um teste. `router` não servia porque não lembra do tick passado, `store` mentiria
+na forma. A UC do RISC-V também passou a usá-lo: família que só um mundo usa é `kind`
+disfarçado.
+
+**A tabela do slide 43 virou oráculo, e as onze linhas bateram célula por célula, na
+primeira execução.** É um documento que não controlamos decidindo quando estamos errados.
+O deck tem duas granularidades da mesma execução — 22 quadros de animação e 11 transações de
+barramento — e nós produzimos as duas **de um livro-caixa só**, que é a tese do projeto
+provada num caso que não inventamos.
+
+**A profundidade vai a nove níveis**, dois a mais do que o desenho previa:
+`sistema › cpu › processador › ula › somador › bit0 › xor › nand › vdd`, 930 objetos. O deck
+desenha a ULA como duas caixas e para ali, porque slide não abre. **E o reuso não custou uma
+linha de domínio nova:** `gates.ts` e `transistors.ts` saíram da tarefa sem uma modificação.
+A largura da ULA virou argumento com 32 como padrão, e o RISC-V não mudou.
+
+**Três defeitos que só a tela pegou, e dois deles estavam no plano escrito antes:**
+
+1. A tabela preenchia coluna por **diferença**, e o segundo `ADD` recarregava o IR com `8B`,
+   o byte que já estava lá — célula vazia, tabela afirmando que a instrução não foi buscada
+   naquele ciclo. Transferência real, invisível. Preenche-se por **qual ordem disparou**,
+   não pelo delta: reescrever o mesmo valor é evento, e diff não vê evento.
+2. Ao vivo, a coluna de instrução mostrava `STORE 0000` antes de os bytes do endereço serem
+   buscados — completava com zero o que a máquina ainda não tinha lido. Passava em todos os
+   testes, porque o oráculo compara a execução completa. Fica em branco até os bytes
+   existirem.
+3. A ficha descrevia um objeto só em vocabulário do motor: quem clicava em `MAR` lia o que é
+   um `buffer`. Nasceu `DESCRICOES`, por id, com teste bidirecional que tira a lista de ids
+   **da própria árvore** — lista à mão é a fonte duplicada de sempre.
+
+**Um erro no material de referência.** O slide 44 dá o código de máquina do 8085 como
+`21 20 00` para `LXI H,2000h`. O 8085 guarda imediato de 16 bits com o byte baixo primeiro
+(*8080/8085 Assembly Language Programming Manual*), então o correto é `21 00 20` — como
+está no deck, o programa escreveria em `0020h`. O artigo da ponte usa a forma certa e faz da
+divergência um dos dois pontos em que as duas máquinas discordam.
+
+**O handbook passou a se chamar pelo que é:** `RISC-V Visual Handbook` → **`CPU Visual
+Handbook`** (o campo `model` já dizia `cpu.model` antes de nós). O mapa reordenou — o
+genérico na fase 4 (*The instruction cycle*), o RISC-V na 5 (*The datapath, all at once*) —
+e o vazio "The control lines of one opcode" foi **absorvido, não substituído**: uma UC
+multiciclo *é* as linhas de controle de um opcode, desenroladas no tempo. Nenhum placeholder
+novo nasceu; um morreu.
+
+**Método:** um agente reportou `pnpm typecheck` limpo quando não estava, e a quebra foi
+commitada — `Kind` tem **duas** tabelas exaustivas, a `FAMILY` do motor e a `KINDS` do
+`depth-ui`, e é a segunda que impede um `kind` de aparecer na tela sem ninguém saber dizer o
+que ele é. Quem pegou foi o agente seguinte, rodando o comando de verdade. Relatório de
+agente é evidência, não veredito.
+
+Espaguete do lab novo: **7 cruzamentos, 0 sobreposições cegas**, teto cravado no medido.
+
+Estado: 773 testes unitários, 179 e2e, typecheck, boundaries (81 arquivos), catálogo (10
+arquivos) e build (29 páginas) verdes.
