@@ -6,7 +6,7 @@ import { expect, test } from "@playwright/test";
  * parágrafo já aberto, e que as fontes citadas no texto levam a algum lugar.
  */
 test("an article opens from the handbook and carries its phase", async ({ page }) => {
-  await page.goto("handbooks/riscv/");
+  await page.goto("handbooks/cpu/");
 
   await page.getByRole("link", { name: "From transistor to adder" }).click();
 
@@ -16,11 +16,11 @@ test("an article opens from the handbook and carries its phase", async ({ page }
 
   // O tema é do handbook, e não o da casa: um handbook de CPU pintado com a
   // cor de outro assunto foi exatamente o defeito que isto guarda.
-  await expect(page.locator("html")).toHaveAttribute("data-domain", "riscv");
+  await expect(page.locator("html")).toHaveAttribute("data-domain", "cpu");
 });
 
 test("the drill-down is closed until the reader opens it", async ({ page }) => {
-  await page.goto("handbooks/riscv/articles/from-transistor-to-adder/");
+  await page.goto("handbooks/cpu/articles/from-transistor-to-adder/");
 
   const degrau = page.locator("details.drill").first();
   await expect(degrau).not.toHaveAttribute("open", "");
@@ -31,7 +31,7 @@ test("the drill-down is closed until the reader opens it", async ({ page }) => {
 });
 
 test("every source cited in the text lands on a listed source", async ({ page }) => {
-  await page.goto("handbooks/riscv/articles/from-transistor-to-adder/");
+  await page.goto("handbooks/cpu/articles/from-transistor-to-adder/");
 
   const citacoes = page.locator('.article__prose a[href^="#src-"]');
   const quantas = await citacoes.count();
@@ -46,7 +46,7 @@ test("every source cited in the text lands on a listed source", async ({ page })
 });
 
 test("the article points at the lab of its own phase", async ({ page }) => {
-  await page.goto("handbooks/riscv/articles/from-transistor-to-adder/");
+  await page.goto("handbooks/cpu/articles/from-transistor-to-adder/");
 
   await page.locator(".article__meta").getByRole("link", { name: /open the lab/ }).click();
   await expect(page.getByRole("heading", { level: 1 })).toContainText("Adding, gate by gate");

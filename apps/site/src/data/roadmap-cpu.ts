@@ -7,7 +7,7 @@ import {
 } from "./roadmap.js";
 
 /**
- * O mapa do RISC-V handbook.
+ * O mapa do handbook da CPU.
  *
  * Ele não existia por um motivo que estava escrito: desenhar o caminho antes de
  * o modelo existir seria prometer um caminho que ainda não foi andado. O modelo
@@ -57,8 +57,11 @@ const annexes: readonly RoadmapAnnex[] = [
   { id: "rv32i", title: "RV32I base ISA", y: 422, afterLab: "single-cycle-datapath" },
 ];
 
-export const MAPA_RISCV: RoadmapMap = {
-  storageKey: "ovh:progress:riscv:v1",
+export const MAPA_CPU: RoadmapMap = {
+  // v2: o v1 guardava progresso por nó de um mapa que ainda não tinha os dois
+  // machines nem a fase reordenada. Manter a chave faria o navegador de um
+  // leitor antigo marcar como feito um nó que mudou de fase e de sentido.
+  storageKey: "ovh:progress:cpu:v2",
   height: 700,
   spineTop: 27,
   spineBottom: 642,

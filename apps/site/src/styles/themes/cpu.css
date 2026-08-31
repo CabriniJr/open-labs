@@ -1,5 +1,5 @@
 /*
- * Tema de domínio: RISC-V.
+ * Tema de domínio: CPU.
  *
  * Mesma regra do irmão: pinta acento e sinais, nunca fundo, nunca tipografia.
  * O que muda de um handbook para o outro é a identidade, e ela não pode custar
@@ -10,7 +10,7 @@
  * circuito: linha alta, linha baixa, decisão, e o pulso que atravessa a borda
  * do clock. Não é decoração — são os quatro estados que um lab desenha.
  */
-:root[data-domain="riscv"] {
+:root[data-domain="cpu"] {
   --accent: #0f766e;
 
   --sig-flow: #0f766e;
@@ -20,14 +20,14 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :root[data-domain="riscv"]:not([data-theme="light"]) {
+  :root[data-domain="cpu"]:not([data-theme="light"]) {
     --accent: #5eddd0;
     --sig-flow: #5eddd0;
     --sig-mutation: #fb923c;
   }
 }
 
-:root[data-domain="riscv"][data-theme="dark"] {
+:root[data-domain="cpu"][data-theme="dark"] {
   --accent: #5eddd0;
   --sig-flow: #5eddd0;
   --sig-mutation: #fb923c;

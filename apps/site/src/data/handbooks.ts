@@ -1,5 +1,5 @@
 import { MAPA_OTEL, type RoadmapMap } from "./roadmap.js";
-import { MAPA_RISCV } from "./roadmap-riscv.js";
+import { MAPA_CPU } from "./roadmap-cpu.js";
 import { labs as otelLabs, phases as otelPhases } from "./roadmap.js";
 
 /**
@@ -103,13 +103,13 @@ const OTEL: Handbook = {
 };
 
 /**
- * Os labs do RISC-V saem do mapa, e não de uma segunda lista.
+ * Os labs da CPU saem do mapa, e não de uma segunda lista.
  *
  * Eram duas listas escritas à mão, e elas divergiram: a página do handbook
  * anunciava como "coming" um lab que já estava no ar. Ninguém mentiu de
  * propósito — é o que duas fontes para o mesmo fato fazem sozinhas.
  */
-const RISCV_LABS: readonly HandbookItem[] = MAPA_RISCV.labs.map((lab) => ({
+const CPU_LABS: readonly HandbookItem[] = MAPA_CPU.labs.map((lab) => ({
   id: lab.id,
   title: lab.title,
   status: lab.status === "available" ? "available" : "coming",
@@ -117,18 +117,19 @@ const RISCV_LABS: readonly HandbookItem[] = MAPA_RISCV.labs.map((lab) => ({
   ...(lab.href === "#" ? {} : { href: lab.href }),
 }));
 
-const RISCV: Handbook = {
-  id: "riscv",
-  name: "RISC-V Visual Handbook",
+const CPU: Handbook = {
+  id: "cpu",
+  name: "CPU Visual Handbook",
   subject: "the CPU",
   tagline: "Type an instruction, watch the transistors settle.",
   blurb:
-    "A single-cycle RV32I datapath modelled all the way down: from the block " +
-    "diagram, through registers and the ALU, to the gates and the wire that " +
-    "is either high or low. You write the assembly; the model runs it.",
+    "Two machines, one engine. A generic accumulator microprocessor that " +
+    "spells the instruction cycle out instant by instant, and a single-cycle " +
+    "RV32I datapath that does the whole thing in one. Both modelled down to " +
+    "the transistor. You write the assembly; the model runs it.",
   model: "cpu.model",
   stage: "building",
-  map: MAPA_RISCV,
+  map: MAPA_CPU,
   phases: [
     { number: 1, title: "Signals", line: "A wire carries one bit, and time is what it takes to settle." },
     { number: 2, title: "Gates", line: "Transistors into gates, gates into adders. Nothing is a black box." },
@@ -143,21 +144,21 @@ const RISCV: Handbook = {
       title: "High or low: what a bit costs",
       status: "available",
       phase: 1,
-      href: "handbooks/riscv/articles/high-or-low",
+      href: "handbooks/cpu/articles/high-or-low",
     },
     {
       id: "from-transistor-to-adder",
       title: "From transistor to adder",
       status: "available",
       phase: 2,
-      href: "handbooks/riscv/articles/from-transistor-to-adder",
+      href: "handbooks/cpu/articles/from-transistor-to-adder",
     },
     { id: "the-register-file", title: "The register file", status: "coming", phase: 3 },
     { id: "one-instruction-end-to-end", title: "One instruction, end to end", status: "coming", phase: 4 },
     { id: "control-is-not-data", title: "Control is not data", status: "coming", phase: 5 },
     { id: "writing-rv32i", title: "Writing RV32I by hand", status: "coming", phase: 6 },
   ],
-  labs: RISCV_LABS,
+  labs: CPU_LABS,
 };
 
 /**
@@ -213,7 +214,7 @@ const ALGORITHMS: Handbook = {
   ],
 };
 
-export const HANDBOOKS: readonly Handbook[] = [OTEL, RISCV, ALGORITHMS];
+export const HANDBOOKS: readonly Handbook[] = [OTEL, CPU, ALGORITHMS];
 
 export function handbookOf(id: string): Handbook | undefined {
   return HANDBOOKS.find((handbook) => handbook.id === id);

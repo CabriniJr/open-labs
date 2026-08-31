@@ -1,7 +1,7 @@
 ---
 title: "From transistor to adder"
 dek: "Nothing in an adder knows how to add. Four switches make a NAND, nine NANDs make one bit of addition, and the sum appears because the composition is right — which is also why the thing is slow in a way no faster transistor can fix."
-handbook: riscv
+handbook: cpu
 phase: 2
 lab: labs/gates
 sources:

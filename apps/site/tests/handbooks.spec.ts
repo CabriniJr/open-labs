@@ -17,12 +17,12 @@ test("the landing lists the handbooks and each one opens", async ({ page }) => {
   const cartoes = page.locator(".handbooks .hb-card");
   await expect(cartoes).toHaveCount(HANDBOOKS.length);
 
-  await cartoes.filter({ hasText: "RISC-V" }).click();
-  await expect(page.locator("h1")).toContainText("RISC-V");
+  await cartoes.filter({ hasText: "CPU" }).click();
+  await expect(page.locator("h1")).toContainText("CPU");
 });
 
 test("a handbook page shows roadmap, articles and labs", async ({ page }) => {
-  await page.goto("handbooks/riscv/");
+  await page.goto("handbooks/cpu/");
 
   await expect(page.getByRole("heading", { name: "Roadmap" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Articles and labs" })).toBeVisible();
@@ -47,7 +47,7 @@ test("both handbooks draw their own interactive map", async ({ page }) => {
   await expect(page.locator(".roadmap")).toBeVisible();
   await expect(page.locator('.roadmap__node[data-status="coming"]').first()).toBeVisible();
 
-  await page.goto("handbooks/riscv/");
+  await page.goto("handbooks/cpu/");
   await expect(page.locator(".roadmap")).toBeVisible();
   // três labs abrem, e eles levam aos que estão no ar — o genérico ocupou o
   // vazio que "as linhas de controle de um opcode" era, porque a UC
@@ -122,11 +122,11 @@ test("o desenho do mapa e as coordenadas dos nós escalam juntos", async ({ page
 
 test("os links do mapa levam para onde dizem", async ({ page }) => {
   // O defeito: o mapa escrevia o href cru, e o navegador resolvia relativo à
-  // página — de dentro de /handbooks/riscv/ o link "labs/cpu" virava
-  // /handbooks/riscv/labs/cpu, que é 404. A página do handbook já passava pelo
+  // página — de dentro de /handbooks/cpu/ o link "labs/cpu" virava
+  // /handbooks/cpu/labs/cpu, que é 404. A página do handbook já passava pelo
   // helper de base; o mapa, não, e ninguém percebeu porque no OTel todo href
   // era "#".
-  await page.goto("handbooks/riscv/");
+  await page.goto("handbooks/cpu/");
 
   const link = page.locator('.roadmap__node a').first();
   await link.scrollIntoViewIfNeeded();
