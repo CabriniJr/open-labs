@@ -91,7 +91,7 @@ const OTEL_LABS: readonly HandbookItem[] = otelLabs.map((lab) => ({
 
 const OTEL_PHASE_LINES: Record<number, string> = {
   1: "Why three signals with no thread between them leave you blind.",
-  2: "Trace, span, context: the shape the data has before any vendor touches it.",
+  2: "Trace, metric, log: the shape each one has before any vendor touches it.",
   3: "SDK, Collector, backend — and what each one is allowed to change.",
   4: "Getting the signal out of code you wrote and code you did not.",
   5: "Sampling, backpressure, and the rollout that does not page anyone.",
@@ -113,12 +113,82 @@ const OTEL: Handbook = {
     title: phase.title,
     line: OTEL_PHASE_LINES[phase.number] ?? "",
   })),
+  /**
+   * A teoria do handbook, na ordem das cinco fases.
+   *
+   * Eram cinco títulos, um por fase, todos `coming` — o que é o mesmo que dizer
+   * que a teoria não existia. Uma fase tem mais de um conceito que se sustenta
+   * sozinho, e enfiar todos num artigo produz o texto que ninguém termina.
+   *
+   * A regra de pareamento: **um artigo é a teoria de um lab, ou é o degrau que
+   * dois labs pisam.** Artigo sem nenhuma das duas coisas é ensaio solto, e não
+   * entra.
+   *
+   * Item pronto tem link; item por escrever **não tem** — `href` para página que
+   * ninguém escreveu é link morto em produção, e o leitor só descobre clicando.
+   * Há teste dos dois lados.
+   *
+   * Nota sobre o frontmatter: nenhum artigo do OTel declara `lab` ainda, porque
+   * nenhum lab do OTel está no ar e a página do artigo renderiza o campo como
+   * "open the lab →". O primeiro lab publicado leva o campo consigo.
+   */
   articles: [
-    { id: "what-a-signal-is", title: "What a signal is", status: "coming", phase: 1 },
+    {
+      id: "what-a-signal-is",
+      title: "What a signal is",
+      status: "available",
+      phase: 1,
+      href: "handbooks/otel/articles/what-a-signal-is",
+    },
+    { id: "the-seam-between-signals", title: "The seam between the signals", status: "coming", phase: 1 },
+
+    { id: "a-trace-is-a-tree-nobody-owns", title: "A trace is a tree nobody owns", status: "coming", phase: 2 },
     { id: "context-is-the-product", title: "Context is the product", status: "coming", phase: 2 },
-    { id: "who-owns-the-pipeline", title: "Who owns the pipeline", status: "coming", phase: 3 },
-    { id: "instrumenting-what-you-did-not-write", title: "Instrumenting what you did not write", status: "coming", phase: 4 },
+    { id: "what-a-metric-remembers", title: "What a metric remembers", status: "coming", phase: 2 },
+    {
+      id: "the-envelope-is-the-object-graph",
+      title: "The envelope is the object graph",
+      status: "available",
+      phase: 2,
+      href: "handbooks/otel/articles/the-envelope-is-the-object-graph",
+    },
+
+    {
+      id: "who-owns-the-pipeline",
+      title: "Who owns the pipeline",
+      status: "available",
+      phase: 3,
+      href: "handbooks/otel/articles/who-owns-the-pipeline",
+    },
+    {
+      id: "agent-or-gateway-is-a-blast-radius",
+      title: "Agent or gateway is a blast-radius question",
+      status: "coming",
+      phase: 3,
+    },
+
+    {
+      id: "instrumenting-what-you-did-not-write",
+      title: "Instrumenting what you did not write",
+      status: "coming",
+      phase: 4,
+    },
+    { id: "a-library-depends-on-the-api-only", title: "A library depends on the API only", status: "coming", phase: 4 },
+    {
+      id: "context-does-not-cross-a-queue",
+      title: "Context does not cross a queue by itself",
+      status: "coming",
+      phase: 4,
+    },
+
     { id: "the-cost-of-keeping-everything", title: "The cost of keeping everything", status: "coming", phase: 5 },
+    {
+      id: "sampling-is-a-statement-about-ignorance",
+      title: "Sampling is a statement about what you will not know",
+      status: "coming",
+      phase: 5,
+    },
+    { id: "the-rollout-nobody-noticed", title: "The rollout nobody noticed", status: "coming", phase: 5 },
   ],
   labs: OTEL_LABS,
 };
