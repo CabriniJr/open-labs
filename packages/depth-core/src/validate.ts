@@ -48,6 +48,24 @@ export function validateWorld(spec: WorldSpec, tree: TreeIndex): void {
 
     const line = wire.line ?? "data";
 
+    // Um `sequencer` decide; ele não está no caminho da carga. Se pudesse
+    // emitir dado, a unidade de controle viraria caminho de dados por acidente
+    // de fiação, e o desenho — que separa as duas espécies de linha por cor —
+    // estaria mentindo sobre qual é qual. A regra é sobre o **fio**, e não
+    // sobre o nó: o defeito é "esta linha carrega carga saindo de quem não
+    // carrega carga".
+    if (line === "data") {
+      const origem = tree.byId.get(wire.from);
+      if (origem !== undefined && origem.kind === "sequencer") {
+        erros.push(
+          `"${wire.from}" é um sequencer e a aresta "${wire.from}.${wire.port}" ` +
+            `carrega dado — um sequencer emite decisão, nunca carga. ` +
+            `Ou marque a aresta com line: "control" e um toPort, ou o objeto ` +
+            `não é um sequencer.`,
+        );
+      }
+    }
+
     if (line === "control" && wire.toPort === undefined) {
       erros.push(
         `a linha de controle de "${wire.from}.${wire.port}" precisa de toPort — ` +

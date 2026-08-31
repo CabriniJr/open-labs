@@ -1,0 +1,34 @@
+.tabela-de-tempo {
+  border-collapse: collapse;
+  font-size: var(--size-step--2, 0.75rem);
+  font-variant-numeric: tabular-nums;
+}
+
+.tabela-de-tempo th,
+.tabela-de-tempo td {
+  padding: 0.25rem 0.45rem;
+  border: 1px solid var(--rule);
+  text-align: center;
+  white-space: nowrap;
+}
+
+.tabela-de-tempo thead th {
+  background: var(--paper-raised);
+  color: var(--ink-muted);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.tabela-de-tempo tbody td {
+  color: var(--ink);
+}
+
+/* Célula vazia é a informação, não um vazio a esconder — nenhum traço a preencher. */
+.tabela-de-tempo td:empty {
+  color: var(--ink-faint);
+}
+
+.tabela-de-tempo td[data-coluna="instrucao"] {
+  text-align: left;
+}

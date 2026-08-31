@@ -40,46 +40,102 @@ const FAIXA = { controle: 60, fluxo: 190, retorno: 470 } as const;
 export const VIEW_SISTEMA: View = {
   id: "sistema",
   focus: "sistema",
-  title: "The system: CPU, memories, and the clock that moves it",
-  width: 1180,
-  height: 620,
+  title: "The system: CPU, memories, and the buses between them",
+  width: 1260,
+  height: 800,
   /**
-   * A vista de cima mostra **poucas caixas, com profundidade** — e não muitas
-   * caixas rasas.
+   * A figura canônica de uma máquina Harvard, e não um arranjo inventado.
    *
-   * Ela chegou a desenhar PC, banco, mux de operando, ULA, unidade de desvio e
-   * mux de escrita todos no primeiro nível. Isso é o interior do processador
-   * vazando para a vista do sistema: dezessete peças lado a lado, nenhuma delas
-   * com um dentro para abrir, e a pergunta "o que é um computador" respondida
-   * com uma lista. É o contrário do que este motor existe para fazer.
+   * Três andares, e cada um responde uma pergunta:
    *
-   * O diagrama de blocos clássico responde com cinco: entrada, saída, memória,
-   * e uma CPU que contém a unidade de controle e o processador. Tudo o mais é
-   * um nível abaixo — e agora **é** um nível abaixo, atrás de `collapsed`, que
-   * é a forma de dizer em voz alta "há mais aqui dentro".
+   * - **em cima**, a CPU, numa moldura só. Quem decide e quem calcula moram
+   *   dentro dela, e o que está dentro não conversa com o mundo por fora dela.
+   * - **no meio**, os barramentos, deitados e paralelos. São dois porque esta
+   *   máquina tem duas memórias — desenhar um barramento só seria desenhar a
+   *   figura de von Neumann sobre um modelo que não é von Neumann.
+   * - **embaixo**, o que está fora da CPU, pendurado no barramento que lhe
+   *   cabe por um toco curto. Nenhuma linha atravessa o desenho.
+   *
+   * A regra que arruma tudo é uma: **quem está fora da CPU fala pelo
+   * barramento**. Antes, a entrada falava com a memória por uma linha que
+   * cruzava a máquina inteira, o PC falava com a memória de instruções por
+   * fora do barramento, e o barramento aparecia no desenho sem servir para
+   * nada. Um barramento que não é o caminho não é um barramento: é um enfeite
+   * deitado no meio da figura.
+   *
+   * A vista de cima mostra **poucas caixas, com profundidade**. Tudo o que é
+   * interior do processador está atrás de `collapsed`, que é a forma de dizer
+   * em voz alta "há mais aqui dentro".
    */
   places: [
-    // O relógio fica fora e embaixo: ele não participa do caminho, ele o move.
-    { id: "relogio", x: 30, y: 470, w: 120, h: 70 },
+    // O relógio fica fora e à esquerda: ele não participa do caminho, ele o
+    // move. A linha dele entra pela borda da CPU, curta, e não cruza nada.
+    { id: "relogio", x: 30, y: 170, w: 120, h: 64 },
 
-    { id: "cpu", x: 320, y: 40, w: 560, h: 340 },
-    { id: "controle", x: 360, y: 80, w: 200, h: 60 },
-    { id: "decodificador", x: 620, y: 80, w: 200, h: 60 },
+    // A CPU é alta o bastante para caber a faixa de retorno DENTRO dela — e
+    // isso não é folga de desenho, é onde a volta acontece: o valor que vai ser
+    // escrito e o próximo PC nunca saem da CPU. Reservada essa faixa, a volta
+    // deixa de cruzar a ida, que é o que transforma o desenho em espaguete.
+    /*
+      A CPU, com o controle deitado no topo.
 
-    { id: "processador", x: 360, y: 170, w: 460, h: 180 },
-    { id: "pc", x: 390, y: 205, w: 110, h: 55 },
-    { id: "banco", x: 390, y: 275, w: 180, h: 55 },
+      É a figura de referência, e não um arranjo novo: a unidade de controle
+      atravessa a largura do caminho e **desce** sobre cada peça que ela
+      comanda. Posta num canto, ela obriga cada linha de controle a cruzar o
+      caminho de dados na diagonal — e uma linha que cruza uma caixa parece
+      entrar nela. Deitada no topo, toda linha de controle é uma queda reta, e
+      o leitor lê "quem manda está acima" sem que ninguém escreva isso.
+
+      A CPU é alta o bastante para caber a faixa de retorno DENTRO dela, e isso
+      não é folga de desenho: o valor que vai ser escrito e o próximo PC nunca
+      saem da CPU. Reservada a faixa, a volta deixa de cruzar a ida.
+    */
+    { id: "cpu", x: 210, y: 30, w: 830, h: 390 },
+    { id: "controle", x: 250, y: 58, w: 750, h: 46 },
+
+    // O caminho, da esquerda para a direita, na ordem dos estágios: buscar,
+    // decodificar, ler, calcular.
+    { id: "processador", x: 250, y: 145, w: 750, h: 175 },
+    { id: "pc", x: 268, y: 190, w: 110, h: 56 },
+    { id: "decodificador", x: 410, y: 190, w: 150, h: 56 },
+    { id: "banco", x: 590, y: 175, w: 170, h: 100 },
     // A lógica combinacional vem fechada: dentro dela estão o mux de operando,
     // a ULA, a unidade de desvio e o mux de escrita. Abrir é descer um nível.
-    { id: "logica", x: 600, y: 205, w: 190, h: 125, collapsed: true },
+    { id: "logica", x: 790, y: 165, w: 190, h: 130, collapsed: true },
 
-    // Entrada e saída, nas pontas — é por onde o mundo fala com a máquina.
-    { id: "entrada", x: 40, y: 190, w: 130, h: 70 },
-    { id: "saida", x: 1010, y: 190, w: 130, h: 70 },
+    /*
+      Os dois barramentos, deitados sob a CPU — e **abertos**, com as vias à
+      vista.
 
-    // As memórias, embaixo: fora da CPU, e é isso que o desenho diz.
-    { id: "imem", x: 330, y: 470, w: 250, h: 70 },
-    { id: "memoria", x: 640, y: 470, w: 250, h: 70 },
+      Fechados eles eram uma barra verde no meio da figura: o leitor via que
+      havia um barramento e não via o que ele é. Um barramento é uma
+      **auto-estrada**: pistas paralelas, cada uma com a sua carga, e sentidos
+      que não se misturam. Desenhar as pistas é o que transforma "barramento"
+      de palavra em coisa — e é o que faz o leitor entender por que endereço,
+      dado e controle não podem andar na mesma linha.
+
+      A ordem das pistas é a do diagrama de referência: endereço em cima (sai
+      da CPU), dado no meio (vai e volta), controle embaixo (sai da CPU e diz o
+      que fazer com os outros dois).
+    */
+    { id: "barramento-instrucao", x: 210, y: 452, w: 330, h: 104 },
+    { id: "via-pc", x: 226, y: 492, w: 298, h: 20 },
+    { id: "via-instrucao", x: 226, y: 524, w: 298, h: 20 },
+
+    { id: "barramento", x: 600, y: 452, w: 610, h: 104 },
+    { id: "via-endereco", x: 620, y: 484, w: 570, h: 18 },
+    { id: "via-dado", x: 620, y: 510, w: 570, h: 18 },
+    { id: "via-acesso", x: 620, y: 536, w: 570, h: 18 },
+
+    // Embaixo, o que está fora da CPU, cada um pendurado no seu barramento.
+    { id: "imem", x: 210, y: 596, w: 330, h: 176, collapsed: true },
+
+    // A ordem aqui é a do caminho: ouve à esquerda, guarda no meio, fala à
+    // direita. Entrada e saída são endereços que não são memória, e por isso
+    // moram coladas nela — mapear em memória é estar no espaço dela.
+    { id: "entrada", x: 600, y: 646, w: 130, h: 76 },
+    { id: "memoria", x: 770, y: 596, w: 280, h: 176 },
+    { id: "saida", x: 1080, y: 646, w: 130, h: 76 },
   ],
 };
 
@@ -139,7 +195,36 @@ export const VIEW_ULA: View = {
   ],
 };
 
-export const CPU_VIEWS: readonly View[] = [VIEW_SISTEMA, VIEW_PROCESSADOR, VIEW_ULA];
+/**
+ * Dentro de uma memória endereçada: o decodificador e o banco de células.
+ *
+ * São as duas peças de qualquer memória, em qualquer livro. Fechada, a caixa
+ * recebe um número e devolve outro, e o passo que interessa acontece em lugar
+ * nenhum. Aberta, dá para ver o que "endereçar" quer dizer: **de um número,
+ * uma única linha escolhida** — e é o decodificador que faz isso, não a
+ * memória inteira.
+ *
+ * O decodificador é estreito e o banco é largo de propósito: um transforma, o
+ * outro guarda, e o tamanho na tela é a proporção honesta entre os dois.
+ */
+export const VIEW_IMEM: View = {
+  id: "imem",
+  focus: "imem",
+  title: "Inside a memory: the address decoder and the cells",
+  width: 800,
+  height: 340,
+  places: [
+    { id: "imem-decodificador", x: 40, y: 110, w: 200, h: 120 },
+    { id: "imem-celulas", x: 360, y: 30, w: 400, h: 280 },
+  ],
+};
+
+export const CPU_VIEWS: readonly View[] = [
+  VIEW_SISTEMA,
+  VIEW_PROCESSADOR,
+  VIEW_ULA,
+  VIEW_IMEM,
+];
 
 /**
  * Uma porta CMOS desenhada como esquemático, e não como fluxo.
@@ -193,6 +278,9 @@ export function viewPortaCmos(id: string, tipo: PortaCmos): View {
     title: `${tipo.toUpperCase()}: two complementary networks`,
     width: 860,
     height: 30 + andares.length * alturaAndar + 24,
+    // Daqui para baixo o desenho é esquemático, e as duas tintas trocam de
+    // sentido: vermelha passa a ser alimentação e preta, terra.
+    registro: "esquematico" as const,
     places,
   };
 }
@@ -217,7 +305,19 @@ export function viewSomador(bits: number, comTransistores = false): View {
     { id: "cin0", x: 30, y: topo + bits * alturaBit - 10, w: 130, h: 46 },
     { id: "somador", x: 220, y: topo, w: 680, h: bits * alturaBit + 10 },
     ...Array.from({ length: bits }, (_, i) => {
-      const y = topo + 20 + i * alturaBit;
+      // O bit menos significativo embaixo, e o vai-um SOBE.
+      //
+      // Estava ao contrário, e discordava de três coisas ao mesmo tempo: do
+      // texto do lab, que manda "watch the carry climb from the low bit to the
+      // high one"; do número escrito, porque ler as somas de cima para baixo
+      // dava `1011` onde a caixa de resultado dizia `1101`; e do próprio
+      // desenho, porque o vem-de-trás nascia embaixo, saltava a figura inteira
+      // até o bit zero lá em cima, e o vai-um descia de volta.
+      //
+      // É a orientação de qualquer figura de somador com propagação: o menos
+      // significativo na ponta em que o número termina, e o transporte
+      // caminhando para o mais significativo.
+      const y = topo + 20 + (bits - 1 - i) * alturaBit;
       const p = (s: string): string => `bit${i}-${s}`;
       // Com transistores a porta deixa de ser folha: a view diz isso em voz
       // alta em vez de desenhar uma caixa lisa, e dois cliques entram nela.
@@ -238,14 +338,17 @@ export function viewSomador(bits: number, comTransistores = false): View {
         porta(p("or1"), 600, 88),
       ];
     }).flat(),
+    // As somas acompanham os bits: a de cima é a mais significativa, e a
+    // coluna de saída se lê como o número se escreve.
     ...Array.from({ length: bits }, (_, i) => ({
       id: `soma${i}`,
       x: 960,
-      y: topo + 42 + i * alturaBit,
+      y: topo + 42 + (bits - 1 - i) * alturaBit,
       w: 110,
       h: 46,
     })),
-    { id: "vaium", x: 960, y: topo + 108 + (bits - 1) * alturaBit, w: 110, h: 46 },
+    // O vai-um é o bit seguinte ao mais significativo, então ele sai por cima.
+    { id: "vaium", x: 960, y: topo - 20, w: 110, h: 46 },
   ];
 
   return {
@@ -337,7 +440,11 @@ export function viewSomadorDaUla(bits: number, porLinha = 8): View {
       return {
         id: `bit${i}`,
         x: folga + x * (largura + folga),
-        y: folga + linha * (altura + folga),
+        // A serpentina SOBE, como a do somador de quatro bits: o menos
+        // significativo embaixo e o transporte caminhando para o mais
+        // significativo. As duas figuras do mesmo circuito liam em sentidos
+        // opostos, e quem descesse de uma para a outra teria de virar a cabeça.
+        y: folga + (linhas - 1 - linha) * (altura + folga),
         w: largura,
         h: altura,
         collapsed: true as const,

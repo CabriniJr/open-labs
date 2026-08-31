@@ -10,9 +10,12 @@ export type Kind =
   | "composite"
   | "source"
   | "router"
+  | "switch"
   | "pipeline"
   | "buffer"
+  | "store"
   | "sink"
+  | "sequencer"
   | "channel"
   | "static";
 
@@ -45,8 +48,22 @@ const FAMILY: Record<Kind, Family> = {
   pipeline: "container",
   source: "processor",
   router: "processor",
+  switch: "processor",
   buffer: "processor",
+  store: "processor",
   sink: "processor",
+  /**
+   * Guarda estado entre ticks e decide por linha de controle. É o que uma
+   * unidade de controle multiciclo é: uma máquina de fases.
+   *
+   * Não é `router`, porque `router` escolhe caminho e não lembra do tick
+   * passado. Não é `store`, porque `store` guarda **carga** — e o desenho
+   * mostraria a unidade de controle como memória, que ela não é. A família
+   * `controller` existia desde o começo e não tinha nenhum `kind`; este é o
+   * primeiro, e ele nasceu porque um modelo precisou dele, não para completar
+   * a tabela.
+   */
+  sequencer: "controller",
   channel: "conduit",
   static: "plate",
 };

@@ -4,7 +4,7 @@ import type { Mnemonic } from "./isa.js";
 import { ROTULOS } from "./labels.js";
 
 /**
- * A ULA aberta: por dentro dela, o somador de 32 bits é feito de portas.
+ * A ULA aberta: por dentro dela, o somador de N bits é feito de portas.
  *
  * É aqui que a fatia vertical encosta no caminho de dados. O resto da ULA
  * (lógica bit a bit, deslocamento, comparação) continua sendo folha — está
@@ -12,12 +12,20 @@ import { ROTULOS } from "./labels.js";
  * esse caminho é a soma, que é a operação que a máquina mais faz.
  *
  * Duas peças existem por causa de uma verdade que o desenho costuma esconder:
- * um barramento de 32 vias **é** 32 linhas. O `dispersor` transforma o número
- * nas trinta e duas linhas; o `coletor` transforma as trinta e duas de volta em
- * número. Elas não são adaptador de conveniência: são o `/32` do fio, dito em
- * voz alta.
+ * um barramento de N vias **é** N linhas. O `dispersor` transforma o número
+ * nas N linhas; o `coletor` transforma as N de volta em número. Elas não são
+ * adaptador de conveniência: são a barra do `/32` do fio, dita em voz alta.
  */
 
+/**
+ * A largura da ULA. Padrão, e não lei.
+ *
+ * Era constante de módulo enquanto havia uma máquina só. O microprocessador
+ * genérico tem oito bits e o RISC-V tem trinta e dois, e a prova da rodada é
+ * que a **mesma** composição serve às duas: se ela não generalizasse, a culpa
+ * seria dela, não do genérico. Fica como padrão para que nenhuma chamada
+ * existente precise mudar.
+ */
 export const LARGURA = 32;
 
 const dado = (m: Message | undefined, campo: string): number =>
@@ -29,32 +37,34 @@ const achar = (inbox: readonly Message[], kind: string): Message | undefined =>
 /** Operações que a soma resolve. As outras vão para a unidade lógica. */
 const SOMA = new Set<Mnemonic>(["add", "addi", "lw", "sw", "jalr"]);
 
-/** O número vira 32 linhas. Toda linha sai, dizendo o bit que ela vale. */
-const dispersor: ObjectSpec = {
-  id: "dispersor",
-  kind: "router",
-  label: ROTULOS.dispersor,
-  leaf: true,
-  behavior: (state, inbox, ctx) => {
-    if (ctx.phase !== "settle") return { state, out: [] };
-    const operandos = achar(inbox, "operandos");
-    if (operandos === undefined) return { state, out: [] };
-    const a = dado(operandos, "a");
-    const b = dado(operandos, "b");
-    const out: Emission[] = [
-      // O resto do número segue inteiro para quem não soma bit a bit.
-      { port: "resto", message: ctx.emit("operandos", 1, { ...operandos.data }) },
-    ];
-    for (let i = 0; i < LARGURA; i += 1) {
-      out.push({ port: `a${i}`, message: ctx.emit("bit", 1, { bit: (a >>> i) & 1 }) });
-      out.push({ port: `b${i}`, message: ctx.emit("bit", 1, { bit: (b >>> i) & 1 }) });
-    }
-    return { state, out };
-  },
-};
+/** O número vira N linhas. Toda linha sai, dizendo o bit que ela vale. */
+function dispersor(largura: number): ObjectSpec {
+  return {
+    id: "dispersor",
+    kind: "router",
+    label: ROTULOS.dispersor,
+    leaf: true,
+    behavior: (state, inbox, ctx) => {
+      if (ctx.phase !== "settle") return { state, out: [] };
+      const operandos = achar(inbox, "operandos");
+      if (operandos === undefined) return { state, out: [] };
+      const a = dado(operandos, "a");
+      const b = dado(operandos, "b");
+      const out: Emission[] = [
+        // O resto do número segue inteiro para quem não soma bit a bit.
+        { port: "resto", message: ctx.emit("operandos", 1, { ...operandos.data }) },
+      ];
+      for (let i = 0; i < largura; i += 1) {
+        out.push({ port: `a${i}`, message: ctx.emit("bit", 1, { bit: (a >>> i) & 1 }) });
+        out.push({ port: `b${i}`, message: ctx.emit("bit", 1, { bit: (b >>> i) & 1 }) });
+      }
+      return { state, out };
+    },
+  };
+}
 
 /** Uma linha vale o que a posição dela vale. É isso que faz o número posicional. */
-function peso(i: number): ObjectSpec {
+export function peso(i: number): ObjectSpec {
   return {
     id: `peso${i}`,
     kind: "router",
@@ -73,7 +83,7 @@ function peso(i: number): ObjectSpec {
   };
 }
 
-/** As 32 linhas viram número de novo. */
+/** As N linhas viram número de novo. */
 const coletor: ObjectSpec = {
   id: "coletor",
   kind: "router",
@@ -97,6 +107,20 @@ const coletor: ObjectSpec = {
  * O que não é soma. Continua sendo folha, e isso está declarado: abrir a lógica
  * bit a bit é o mesmo trabalho que abrir o somador, e a fatia desce por um
  * caminho só.
+ *
+ * **E `sub` passa por aqui, não pelo somador.** Isto é uma segunda
+ * simplificação, distinta da primeira, e ela precisa ser dita: a de cima fala
+ * da lógica bit a bit, e quem lê só ela conclui que o resto desce pelo
+ * silício. Não desce. `a - b` é resolvido como número neste bloco, sem visitar
+ * o somador de 32 bits e sem acionar a cascata de vai-um.
+ *
+ * O que isso esconde do aluno é a lição clássica: **um somador binário também
+ * subtrai**, invertendo `b` e ligando o vem-de-trás em 1, e é por isso que uma
+ * ULA não tem um subtrator separado. Hoje, quem roda `add` vê setenta e cinco
+ * subpassos no silício e quem roda `sub` não vê nada acender — e sai com a
+ * impressão de que soma e subtração são caminhos independentes de hardware.
+ *
+ * Meia declaração é meia mentira, e é por isso que esta metade está escrita.
  */
 const unidadeLogica: ObjectSpec = {
   id: "unidade-logica",
@@ -171,7 +195,7 @@ const muxOperacao: ObjectSpec = {
   },
 };
 
-/** O somador de 32 bits, e os fios que fazem a cascata do vai-um. */
+/** O somador de N bits, e os fios que fazem a cascata do vai-um. */
 /**
  * O vai-um que entra no bit zero, amarrado em zero.
  *
@@ -185,12 +209,16 @@ const muxOperacao: ObjectSpec = {
  * É exatamente o resultado que `docs/depth.md` §3 chama de precioso: descer um
  * nível mostrou que o de cima estava mentindo.
  */
-function somador(comTransistores: boolean): { objeto: AnyObject; wires: readonly Wire[] } {
-  const bits = Array.from({ length: LARGURA }, (_, i) =>
+export function somador(
+  largura: number,
+  comTransistores: boolean,
+  destinoDoVaiUm = "@drop",
+): { objeto: AnyObject; wires: readonly Wire[] } {
+  const bits = Array.from({ length: largura }, (_, i) =>
     somadorCompleto(`bit${i}`, false, comTransistores),
   );
   const wires: Wire[] = [];
-  for (let i = 0; i < LARGURA; i += 1) {
+  for (let i = 0; i < largura; i += 1) {
     wires.push(...fiosDoSomador(`bit${i}`, comTransistores));
     for (const via of ["a", "b"] as const) {
       wires.push({
@@ -202,7 +230,7 @@ function somador(comTransistores: boolean): { objeto: AnyObject; wires: readonly
       });
     }
     wires.push({ from: `bit${i}`, port: "soma", to: `peso${i}`, timing: "settle" });
-    if (i + 1 < LARGURA) {
+    if (i + 1 < largura) {
       wires.push({
         from: `bit${i}`,
         port: "vaium",
@@ -211,9 +239,11 @@ function somador(comTransistores: boolean): { objeto: AnyObject; wires: readonly
         timing: "settle",
       });
     } else {
-      // O vai-um do último bit é o estouro, e em 32 bits ele se perde de
-      // propósito: dizer isso ao descarte é diferente de esquecê-lo.
-      wires.push({ from: `bit${i}`, port: "vaium", to: "@drop", timing: "settle" });
+      // O vai-um do último bit é o estouro. No RISC-V ele se perde de propósito
+      // — e dizer isso ao descarte é diferente de esquecê-lo. Numa máquina que
+      // tem bandeira de carry ele vai para quem a guarda, e é para isso que o
+      // destino é parâmetro em vez de estar cravado em `@drop`.
+      wires.push({ from: `bit${i}`, port: "vaium", to: destinoDoVaiUm, timing: "settle" });
     }
     wires.push({ from: `peso${i}`, port: "out", to: "coletor", timing: "settle" });
   }
@@ -221,8 +251,8 @@ function somador(comTransistores: boolean): { objeto: AnyObject; wires: readonly
     objeto: {
       id: "somador",
       kind: "composite",
-      label: ROTULOS.somadorDe(LARGURA),
-      replicas: LARGURA,
+      label: ROTULOS.somadorDe(largura),
+      replicas: largura,
       children: bits,
     },
     wires,
@@ -240,8 +270,9 @@ function somador(comTransistores: boolean): { objeto: AnyObject; wires: readonly
 export function ula(
   comAtalho: boolean,
   comTransistores = false,
+  largura: number = LARGURA,
 ): { objeto: AnyObject; wires: readonly Wire[] } {
-  const somadorDe32 = somador(comTransistores);
+  const somadorDeNBits = somador(largura, comTransistores);
   const vaiUmInicial: Wire = {
     from: "cin0",
     port: "out",
@@ -249,7 +280,7 @@ export function ula(
     toPort: "cin",
     timing: "settle",
   };
-  const pesos = Array.from({ length: LARGURA }, (_, i) => peso(i));
+  const pesos = Array.from({ length: largura }, (_, i) => peso(i));
 
   const base: AnyObject = {
     id: "ula",
@@ -263,10 +294,10 @@ export function ula(
     },
     outlets: { out: ["mux-operacao"] },
     children: [
-      dispersor,
+      dispersor(largura),
       nivelFixo("cin0", 0, ROTULOS.cin),
-      somadorDe32.objeto,
-      { id: "pesos", kind: "composite", label: ROTULOS.pesos, replicas: LARGURA, children: pesos },
+      somadorDeNBits.objeto,
+      { id: "pesos", kind: "composite", label: ROTULOS.pesos, replicas: largura, children: pesos },
       coletor,
       unidadeLogica,
       muxOperacao,
@@ -275,7 +306,7 @@ export function ula(
 
   const wires: Wire[] = [
     vaiUmInicial,
-    ...somadorDe32.wires,
+    ...somadorDeNBits.wires,
     { from: "dispersor", port: "resto", to: "coletor", timing: "settle" },
     { from: "dispersor", port: "resto", to: "unidade-logica", timing: "settle" },
     { from: "coletor", port: "out", to: "mux-operacao", timing: "settle" },

@@ -72,3 +72,83 @@ test("a ULA só desce até o transistor quando o leitor pede", async ({ page }) 
   // A mesma conta, muito mais fundo: o atraso de propagação cresce porque o
   // caminho cresceu, e é isso que o número diz.
 });
+
+/**
+ * O barramento: a coisa que agrega.
+ *
+ * Endereço e dado eram dois fios soltos atravessando o desenho. É fiel e é
+ * ilegível no nível alto — é o espaguete que qualquer diagrama de sistema vira
+ * quando não há nada que agregue. De longe o barramento é uma esteira só; de
+ * perto, são as vias, cada uma com a sua carga.
+ */
+test("o barramento é uma auto-estrada, e as pistas dele estão à vista", async ({ page }) => {
+  await page.goto("labs/cpu/");
+  await page.waitForSelector("g.dui-stage__objeto");
+
+  const barramento = page.locator('[data-id="barramento"]');
+  await expect(barramento).toHaveAttribute("data-familia", "conduit");
+
+  // Fechado, ele era uma barra verde no meio da figura: o leitor via que havia
+  // um barramento e não via o que ele é. As três pistas do diagrama de sempre
+  // — endereço, dado, controle — estão desenhadas, e cada uma é um conduíte de
+  // verdade, que transporta e não altera.
+  for (const via of ["via-endereco", "via-dado", "via-acesso"]) {
+    const pista = page.locator(`[data-id="${via}"]`);
+    await expect(pista).toHaveCount(1);
+    await expect(pista).toHaveAttribute("data-familia", "conduit");
+  }
+
+  // E elas rodam: o endereço que a CPU pôs na pista chega na memória por ela.
+  await expect(page.locator('[data-id="via-endereco"][data-ativo="true"]')).toHaveCount(1, {
+    timeout: 15_000,
+  });
+});
+
+/**
+ * A forma vem do kind, e ela é a explicação.
+ *
+ * Um seletor desenhado como retângulo exige que o leitor já saiba o que é um
+ * mux — o rótulo é a única pista, e rótulo se ignora. O trapézio conta antes:
+ * largo do lado das entradas, estreito do lado da saída. Muitas entram, uma
+ * sai. É a notação universal, e ela não custa nada.
+ */
+test("um seletor é um trapézio, e o que não é seletor não é", async ({ page }) => {
+  await page.goto("labs/cpu/");
+  await page.waitForSelector("g.dui-stage__objeto");
+  await page.getByRole("group", { name: "Framing" }).getByRole("button", { name: "processor" }).click();
+  await page.waitForSelector('[data-id="mux-operando"]');
+
+  const mux = page.locator('[data-id="mux-operando"]');
+  await expect(mux.locator("path.dui-stage__caixa")).toHaveCount(1);
+  await expect(mux.locator("rect.dui-stage__caixa")).toHaveCount(0);
+
+  // E a saída sai pelo bico, e não espalhada pela borda: é ali que a linha
+  // realmente sai.
+  await expect(mux.locator('.dui-stage__porta[data-lado="saida"]')).toHaveCount(1);
+
+  // O banco de registradores guarda, não seleciona: continua sendo caixa.
+  const banco = page.locator('[data-id="banco"]');
+  await expect(banco.locator("rect.dui-stage__caixa")).toHaveCount(1);
+  await expect(banco.locator("path.dui-stage__caixa")).toHaveCount(0);
+});
+
+test("a memória abre, e lá dentro está o que endereçar quer dizer", async ({ page }) => {
+  await page.goto("labs/cpu/");
+  await page.waitForSelector("g.dui-stage__objeto");
+
+  // Fechada, a memória recebe um número e devolve outro: o passo que interessa
+  // acontece em lugar nenhum. Aberta, ele tem peça, e a peça roda.
+  await page.locator('.dui-stage__objeto[data-id="imem"]').first().dblclick();
+  await expect(page.locator(".explorer__trilha")).toContainText("instruction memory");
+
+  const decodificador = page.locator('.dui-stage__objeto[data-id="imem-decodificador"]');
+  const celulas = page.locator('.dui-stage__objeto[data-id="imem-celulas"]');
+  await expect(decodificador).toHaveCount(1);
+  await expect(celulas).toHaveCount(1);
+
+  // O decodificador é quem transforma: um endereço entra, uma linha sai.
+  await expect(decodificador).toHaveAttribute("data-familia", "processor");
+  // E o banco de células guarda de verdade: o programa está ali, linha a linha.
+  await expect(celulas.locator(".dui-stage__linha-chave").first()).toBeVisible();
+  await expect(celulas.locator(".dui-stage__prateleira")).toHaveCount(1);
+});

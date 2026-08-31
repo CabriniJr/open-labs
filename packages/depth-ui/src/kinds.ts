@@ -86,11 +86,26 @@ export const KINDS: Readonly<Record<Kind, Descricao>> = {
       "It consumes and does not emit. The other edge: what leaves the system. It keeps state, " +
       "which is why the result of a run is usually read off a sink.",
   },
+  sequencer: {
+    resumo: "Keeps a phase, and lights the lines that phase calls for.",
+    detalhe:
+      "It remembers where in a sequence the machine is, which is what separates it from a " +
+      "part that only picks a path: the same inputs get a different answer at a different " +
+      "step. It speaks only through control lines — an edge carrying a load out of one is " +
+      "refused when the world is built.",
+  },
   router: {
     resumo: "Takes in, decides, emits on an outlet.",
     detalhe:
       "The most common processor. A mux is a router: it picks which of its inputs answers, " +
       "and what commands the choice is usually a control line.",
+  },
+  switch: {
+    resumo: "Lets the path through, or does not.",
+    detalhe:
+      "Not a choice between inputs — a break in one path, and something else commands the " +
+      "break. A valve is one; so is a relay. What it decides is whether anything gets through " +
+      "at all, not which of several does.",
   },
   buffer: {
     resumo: "Holds the load between two points.",
@@ -98,6 +113,14 @@ export const KINDS: Readonly<Record<Kind, Descricao>> = {
       "With capacity one it is a register: it holds a value until the next clock edge. Full, " +
       "it refuses — and that refusal is what makes backpressure exist in the model instead of " +
       "vanishing.",
+  },
+  store: {
+    resumo: "Holds many values at once, and answers by key.",
+    detalhe:
+      "A buffer holds the load on its way through; a store keeps it and hands it back when " +
+      "asked. It is the only processor whose whole point is what it is holding right now — " +
+      "which is why it is drawn as a bank of rows, and why the rows are the state itself and " +
+      "not an illustration of it.",
   },
   channel: {
     resumo: "The pipe: it carries without altering.",

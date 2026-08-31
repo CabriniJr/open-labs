@@ -24,4 +24,16 @@ describe("familyOf", () => {
     ];
     for (const k of todos) expect(familyOf(k)).toBeDefined();
   });
+
+  it("sequencer é da família controller — a família existia sem nenhum kind", () => {
+    expect(familyOf("sequencer")).toBe("controller");
+  });
+
+  it("a família controller tem pelo menos um kind", () => {
+    const kinds: Kind[] = [
+      "composite", "source", "router", "switch", "pipeline",
+      "buffer", "store", "sink", "channel", "static", "sequencer",
+    ];
+    expect(kinds.filter((k) => familyOf(k) === "controller")).not.toHaveLength(0);
+  });
 });

@@ -75,10 +75,10 @@ test("the timeline lets you stop and read the payload", async ({ page }) => {
  */
 test.describe.serial("progresso do mapa", () => {
   test("the map tracks progress and it survives a reload", async ({ page }) => {
-    // No RISC-V, e não mais no OTel: só se marca o que abre, e hoje quem tem lab
-    // no ar é este handbook. O OTel voltou a ter todos os nós como caminho
-    // declarado, que é a verdade dele.
-    await page.goto("handbooks/riscv/");
+    // No handbook da CPU, e não mais no OTel: só se marca o que abre, e hoje
+    // quem tem lab no ar é este handbook. O OTel voltou a ter todos os nós
+    // como caminho declarado, que é a verdade dele.
+    await page.goto("handbooks/cpu/");
     await page.evaluate(() => window.localStorage.clear());
     await page.reload();
 
@@ -87,7 +87,7 @@ test.describe.serial("progresso do mapa", () => {
 
     await expect(roadmap.locator(".roadmap__progress-count")).toHaveText("0 of 6");
 
-    const marcar = page.getByRole("button", { name: /Mark The single-cycle datapath as done/i });
+    const marcar = page.getByRole("button", { name: /Mark The whole cycle in one tick as done/i });
     await marcar.click();
 
     await expect(roadmap.locator(".roadmap__progress-count")).toHaveText("1 of 6");
@@ -97,14 +97,14 @@ test.describe.serial("progresso do mapa", () => {
 
     await expect(roadmap.locator(".roadmap__progress-count")).toHaveText("1 of 6");
     await expect(
-      page.getByRole("button", { name: /Mark The single-cycle datapath as done/i }),
+      page.getByRole("button", { name: /Mark The whole cycle in one tick as done/i }),
     ).toHaveAttribute("aria-pressed", "true");
   });
 
   test("os dois handbooks contam o progresso separado", async ({ page }) => {
     // Eles compartilhavam a chave do localStorage enquanto só um tinha mapa.
     // Marcar um lab de CPU não pode adiantar o roadmap de OpenTelemetry.
-    await page.goto("handbooks/riscv/");
+    await page.goto("handbooks/cpu/");
     await page.evaluate(() => window.localStorage.clear());
     await page.reload();
     // Esperar o contador zerar antes de clicar não é folga: ele só existe
@@ -112,7 +112,7 @@ test.describe.serial("progresso do mapa", () => {
     // marca no estado inicial e o clique se perde na hidratação — falha
     // intermitente, e só sob carga.
     await expect(page.locator(".roadmap__progress-count")).toHaveText("0 of 6");
-    const marcar = page.getByRole("button", { name: /Mark The single-cycle datapath as done/i });
+    const marcar = page.getByRole("button", { name: /Mark The whole cycle in one tick as done/i });
     await marcar.scrollIntoViewIfNeeded();
     await marcar.click();
     await expect(page.locator(".roadmap__progress-count")).toHaveText("1 of 6");

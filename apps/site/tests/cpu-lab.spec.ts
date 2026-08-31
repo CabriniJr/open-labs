@@ -100,9 +100,9 @@ test("descer da CPU até a porta lógica, e achar o somador vivo lá embaixo", a
   // o somador de 32 bits tem 32 somadores completos, e eles existem de verdade
   await expect(page.locator(".dui-stage__objeto")).toHaveCount(32);
 
-  await page.locator('.dui-stage__objeto[aria-label^="bit7"]').first().dblclick();
+  await page.locator('.dui-stage__objeto[data-id="bit7"]').first().dblclick();
   await expect(page.locator(".dui-stage__objeto")).toHaveCount(5);
-  await expect(trilha).toContainText("bit7");
+  await expect(trilha).toContainText("full adder 7");
 
   // e volta pela trilha, sem recarregar nada
   await trilha.getByRole("button", { name: "system" }).click();
@@ -216,4 +216,88 @@ test("a ficha de um contêiner mostra o interior dele em grafo", async ({ page }
   // o interior da ULA: o dispersor, o somador, e a aresta entre eles
   await expect(dot).toContainText("splitter");
   await expect(dot).toContainText("->");
+});
+
+test("a memória mostra o que guarda, e a linha tocada acende", async ({ page }) => {
+  await page.goto("labs/cpu/");
+  await expect(page.locator(".dui-stage")).toBeVisible({ timeout: 15_000 });
+
+  // Uma memória desenhada como caixa lisa é a caixa fechada do armazém: sabe-se
+  // que tem coisa dentro e não se vê nenhuma. A tabela é o que faz "memória"
+  // deixar de ser palavra — e ela vem do estado, não de uma ilustração.
+  const memoria = page.locator('.dui-stage__objeto[data-id="memoria"]').first();
+  const linhas = memoria.locator(".dui-stage__linha-chave");
+  await expect(linhas.first()).toBeVisible({ timeout: 15_000 });
+  await expect(linhas.first()).toHaveText(/^0x[0-9a-f]{4}/);
+
+  // E o acesso deste tick acende: sem isso a tabela é um inventário parado, e o
+  // que se quer ver é o endereço que ESTA instrução tocou.
+  await expect(
+    memoria.locator('.dui-stage__conteudo g[data-ativo="true"]').first(),
+  ).toBeAttached({ timeout: 20_000 });
+});
+
+/**
+ * A ficha não pode sobreviver ao enquadramento em que ela foi aberta.
+ *
+ * Descer até uma peça funda, ler a ficha dela e voltar ao topo pela trilha
+ * deixava a ficha explicando uma peça que não está mais na tela — e a
+ * descrição errada lida como se descrevesse o que se está vendo. É a mesma
+ * espécie de defeito da porta acesa: a tela afirmando o que não é.
+ */
+test("a ficha não sobrevive à saída do enquadramento", async ({ page }) => {
+  await page.goto("labs/cpu/");
+  await expect(page.locator(".dui-stage")).toBeVisible({ timeout: 15_000 });
+
+  const trilha = page.locator(".explorer__trilha");
+  const topo = await trilha.locator("button, a").first().textContent();
+
+  // Entrar numa peça e escolher alguma coisa lá dentro.
+  const dentro = page.locator(".dui-stage__objeto[data-fechado='true']").first();
+  await dentro.dblclick();
+  await expect(trilha).not.toHaveText(topo ?? "", { timeout: 10_000 });
+
+  // Qual peça o clique pega não importa — molduras e filhos se sobrepõem, e
+  // fixar um id aqui seria o teste afirmando um layout que ele não decide. O
+  // que importa é que alguma coisa foi selecionada.
+  await page.locator(".dui-stage__objeto").first().click();
+  await expect(page.locator(".ficha__id")).toHaveCount(1, { timeout: 10_000 });
+
+  // Voltar ao topo pela trilha: a ficha não pode continuar falando de lá.
+  await trilha.locator("button, a").first().click();
+  await expect(page.locator(".ficha__id")).toHaveCount(0, { timeout: 10_000 });
+  await expect(page.locator(".ficha--vazia")).toBeVisible();
+});
+
+/**
+ * A carga muda de forma no caminho, e a forma vem do modelo.
+ *
+ * Ela era sempre o mesmo círculo: entre uma palavra de 32 bits e um vai-um de
+ * um bit a única diferença era a tinta. A transformação — que é o que este lab
+ * existe para mostrar — acontecia dentro da caixa, invisível.
+ *
+ * A forma vem da largura declarada do fio, que é a notação de qualquer
+ * esquemático: o traço grosso com a barra e o `/32`. Não é enfeite escolhido
+ * pelo desenho; é o mesmo número que já aparece escrito ao lado da linha.
+ */
+test("uma palavra viaja como barra e um bit como ponto", async ({ page }) => {
+  await page.goto("labs/cpu/");
+  await expect(page.locator(".dui-stage")).toBeVisible({ timeout: 15_000 });
+
+  // As duas formas convivem na mesma tela: é isso que faz a diferença
+  // significar alguma coisa. Só barras, ou só pontos, não diriam nada.
+  await expect
+    .poll(async () => page.locator("rect.dui-stage__carga").count(), { timeout: 10_000 })
+    .toBeGreaterThan(0);
+  await expect
+    .poll(async () => page.locator("circle.dui-stage__carga").count(), { timeout: 10_000 })
+    .toBeGreaterThan(0);
+
+  // E a barra está onde o modelo diz que o fio é largo: a instrução sai da
+  // memória por trinta e duas vias.
+  const naInstrucao = page
+    .locator('.dui-stage__carga-grupo[data-carga*="via-instrucao"] .dui-stage__carga')
+    .first();
+  await expect(naInstrucao).toHaveCount(1, { timeout: 10_000 });
+  expect(await naInstrucao.evaluate((el) => el.tagName.toLowerCase())).toBe("rect");
 });

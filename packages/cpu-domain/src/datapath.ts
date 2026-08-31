@@ -19,12 +19,14 @@ import { ROTULOS } from "./labels.js";
  * `pc -> ... -> pc` não é um laço combinacional: ele passa por um registrador,
  * e o motor recusaria se não passasse.
  *
- * Compromisso declarado: a unidade de controle é `router` porque o catálogo de
- * hoje não tem `kind` da família `controller` — `clock` e `arbiter` são onda 1.
- * A família está certa no papel; o `kind` chega com ela.
+ * A unidade de controle é `sequencer` — família `controller`. Ela era `router`
+ * enquanto o catálogo não tinha um `kind` dessa família; o `micro` precisou de
+ * uma UC com estado e o `kind` nasceu lá. Aqui ela não guarda estado (num
+ * caminho de ciclo único não há o que guardar), mas a família está certa: ela
+ * decide e não está no caminho da carga.
  */
 
-const PALAVRA = 4;
+export const PALAVRA = 4;
 
 /**
  * Entrada e saída mapeadas em memória.
@@ -96,30 +98,86 @@ const pc: ObjectSpec<EstadoPc> = {
   },
 };
 
-/** Memória de instruções: só lê, e é o que a torna diferente da principal. */
-function memoriaDeInstrucoes(image: readonly number[]): ObjectSpec<Record<string, never>> {
+/**
+ * Memória de instruções: só lê, e é o que a torna diferente da principal.
+ *
+ * Ela é **composta**, e não uma caixa preta: um endereço não vira uma palavra
+ * por mágica. Quem transforma endereço em "esta linha, e não as outras" é o
+ * decodificador de endereço, e quem guarda as palavras é o banco de células.
+ * São as duas peças de qualquer memória endereçada, em qualquer livro — e
+ * abrir a caixa é ver as duas, rodando.
+ *
+ * Sem essa divisão, "endereçar" continuava sendo uma palavra: a caixa recebia
+ * um número e devolvia outro, e o passo que interessa acontecia em lugar
+ * nenhum.
+ */
+function decodificadorDeEndereco(id: string): ObjectSpec<Record<string, never>> {
   return {
-    id: "imem",
-    kind: "buffer",
-    label: ROTULOS.imem,
+    id,
+    kind: "router",
+    label: ROTULOS.decodificadorDeEndereco,
     leaf: true,
     behavior: (state, inbox, ctx) => {
       if (ctx.phase !== "settle") return { state, out: [] };
       const pedido = achar(inbox, "endereco");
       if (pedido === undefined) return { state, out: [] };
       const endereco = dado(pedido, "pc");
-      const word = image[endereco / PALAVRA];
-      // Endereço fora do programa não emite nada: a cadeia morre aqui, e o
-      // mundo fica parado em vez de executar lixo como se fosse instrução.
-      if (word === undefined) return { state, out: [] };
       return {
         state,
-        out: [{ port: "out", message: ctx.emit("instrucao", 1, { pc: endereco, word }) }],
+        out: [
+          {
+            port: "out",
+            // A linha, e não o endereço: é exatamente isso que decodificar um
+            // endereço quer dizer — de um número, uma única célula escolhida.
+            message: ctx.emit("selecao", 1, { linha: endereco / PALAVRA, pc: endereco }),
+          },
+        ],
       };
     },
   };
 }
 
+function bancoDeCelulas(id: string, image: readonly number[]): ObjectSpec<Record<string, never>> {
+  return {
+    id,
+    kind: "store",
+    label: ROTULOS.celulas,
+    leaf: true,
+    behavior: (state, inbox, ctx) => {
+      if (ctx.phase !== "settle") return { state, out: [] };
+      const selecao = achar(inbox, "selecao");
+      if (selecao === undefined) return { state, out: [] };
+      const word = image[dado(selecao, "linha")];
+      // Linha fora do programa não emite nada: a cadeia morre aqui, e o mundo
+      // fica parado em vez de executar lixo como se fosse instrução.
+      if (word === undefined) return { state, out: [] };
+      return {
+        state,
+        out: [
+          {
+            port: "out",
+            message: ctx.emit("instrucao", 1, { pc: dado(selecao, "pc"), word }),
+          },
+        ],
+      };
+    },
+  };
+}
+
+function memoriaDeInstrucoes(image: readonly number[]): AnyObject {
+  return {
+    id: "imem",
+    kind: "store",
+    label: ROTULOS.imem,
+    children: [decodificadorDeEndereco("imem-decodificador"), bancoDeCelulas("imem-celulas", image)],
+    // Entrada nomeada, como qualquer contêiner com bornes: quem entrega aqui
+    // dentro entrega ao decodificador, e é ele que transforma o endereço em
+    // linha. Sem o borne, o motor escolheria a primeira folha por acidente de
+    // ordem — e acidente de ordem é a espécie de acerto que quebra calado.
+    inlets: { in: ["imem-decodificador"] },
+    outlets: { out: ["imem-celulas"] },
+  };
+}
 /** O que a decodificação extrai da palavra, sem decidir nada. */
 const decodificador: ObjectSpec<Record<string, never>> = {
   id: "decodificador",
@@ -155,8 +213,14 @@ type FonteEscrita = "ula" | "mem" | "pc4" | "nada";
 type Acesso = "ler" | "escrever" | "nada";
 type Desvio = "seq" | Mnemonic;
 
-/** O que cada instrução manda cada peça fazer. É a tabela de controle. */
-function controlar(instr: Instruction): {
+/**
+ * O que cada instrução manda cada peça fazer. É a tabela de controle.
+ *
+ * Exportada porque a legenda dos sinais é texto que o leitor lê, e a única
+ * varredura honesta é rodar a tabela de verdade para todo o ISA — inventar uma
+ * lista de valores possíveis no teste seria a segunda fonte de sempre.
+ */
+export function controlar(instr: Instruction): {
   op: Mnemonic;
   fonteB: FonteB;
   acesso: Acesso;
@@ -192,7 +256,7 @@ function controlar(instr: Instruction): {
  */
 const controle: ObjectSpec<Record<string, never>> = {
   id: "controle",
-  kind: "router",
+  kind: "sequencer",
   label: ROTULOS.controle,
   leaf: true,
   behavior: (state, inbox, ctx) => {
@@ -207,9 +271,9 @@ const controle: ObjectSpec<Record<string, never>> = {
       out: [
         { port: "op", message: ctx.emit("sinal", 1, { op: c.op }) },
         { port: "selb", message: ctx.emit("sinal", 1, { fonteB: c.fonteB }) },
-        { port: "acesso", message: ctx.emit("sinal", 1, { modo: c.acesso }) },
-        { port: "selwb", message: ctx.emit("sinal", 1, { fonte: c.escrita }) },
-        { port: "cond", message: ctx.emit("sinal", 1, { tipo: c.desvio }) },
+        { port: "acesso", message: ctx.emit("sinal", 1, { acesso: c.acesso }) },
+        { port: "selwb", message: ctx.emit("sinal", 1, { escrita: c.escrita }) },
+        { port: "cond", message: ctx.emit("sinal", 1, { desvio: c.desvio }) },
       ],
     };
   },
@@ -225,7 +289,7 @@ const controle: ObjectSpec<Record<string, never>> = {
  */
 const banco: ObjectSpec<EstadoBanco> = {
   id: "banco",
-  kind: "buffer",
+  kind: "store",
   label: ROTULOS.banco,
   leaf: true,
   init: (): EstadoBanco => ({ regs: new Array<number>(32).fill(0) }),
@@ -307,10 +371,115 @@ function ler(mem: ReadonlyMap<number, number>, entrada: number, endereco: number
   return mem.get(endereco) ?? 0;
 }
 
+
+/**
+ * O barramento de memória: as vias que ligam o processador à memória.
+ *
+ * Ele existia como três fios soltos atravessando o desenho — endereço, dado e
+ * controle indo cada um por conta. Isso é fiel ao que acontece e é ilegível no
+ * nível alto: é o espaguete que qualquer diagrama de sistema vira quando não há
+ * nada que agregue. **Um barramento é a coisa que agrega**, e é um conceito de
+ * estrutura de computadores tão fundamental quanto o somador.
+ *
+ * Cada via é uma folha que **transporta e não altera** — que é a definição de
+ * `conduit`. Elas rodam de verdade: de longe o barramento é uma esteira só, de
+ * perto são os trilhos, cada um com a sua carga passando. Não é ilustração do
+ * barramento, é o barramento.
+ */
+function via(id: string, label: string): ObjectSpec {
+  return {
+    id,
+    kind: "channel",
+    label,
+    leaf: true,
+    behavior: (state, inbox, ctx) =>
+      ctx.phase !== "settle" || inbox.length === 0
+        ? { state, out: [] }
+        : // Repassa exatamente o que recebeu: um canal que mexesse na carga
+          // deixaria de ser canal, e o desenho estaria mentindo sobre o que
+          // acontece entre as duas pontas.
+          { state, out: inbox.map((m) => ({ port: "out", message: m })) },
+  };
+}
+
+/**
+ * A via de controle: repassa **sinal**, e repassa pela porta em que ele chegou.
+ *
+ * Era lacuna declarada — "um barramento de verdade carrega controle também" — e
+ * o que a fechava não era motor novo: sinal já é roteado pela porta de emissão,
+ * então basta a via reemitir na mesma porta em que ouviu. O que ela **não** pode
+ * fazer é misturar com carga: um sinal que virasse item apareceria na contagem,
+ * e a contagem é o que diz quanto trabalho o sistema fez.
+ */
+function viaDeSinal(id: string, label: string): ObjectSpec {
+  return {
+    id,
+    kind: "channel",
+    label,
+    leaf: true,
+    behavior: (state, _inbox, ctx) => {
+      if (ctx.phase !== "settle") return { state, out: [] };
+      const out: Emission[] = [];
+      for (const [porta, mensagens] of Object.entries(ctx.signals)) {
+        for (const message of mensagens) out.push({ port: porta, message });
+      }
+      return { state, out };
+    },
+  };
+}
+
+/**
+ * O barramento de instruções.
+ *
+ * Esta máquina é **Harvard**: instrução e dado moram em memórias separadas, e
+ * a figura canônica de uma Harvard tem dois barramentos, não um. Desenhar um só
+ * seria desenhar a figura de von Neumann sobre um modelo que não é von Neumann
+ * — e o leitor sairia com a arquitetura errada na cabeça.
+ *
+ * Ele carrega as duas metades de uma busca: o endereço descendo, a palavra
+ * subindo. É por isso que o PC não fala mais direto com a memória de
+ * instruções: falar direto era o barramento existir no desenho e não servir
+ * para nada.
+ */
+const barramentoDeInstrucoes: ObjectSpec = {
+  id: "barramento-instrucao",
+  kind: "channel",
+  label: ROTULOS.barramentoInstrucao,
+  children: [via("via-pc", ROTULOS.viaPc), via("via-instrucao", ROTULOS.viaInstrucao)],
+};
+
+const barramentoDeMemoria: ObjectSpec = {
+  id: "barramento",
+  kind: "channel",
+  label: ROTULOS.barramento,
+  /*
+    Sem bornes, e é de propósito: linha de dado **não nomeia porta** — o motor
+    acha a folha de entrada —, então um borne por via faria o endereço e o dado
+    de volta caírem os dois na primeira. Os fios falam com a via que lhes cabe,
+    e o barramento é a caixa que as agrega. Visto de longe é uma esteira só;
+    aberto, são os trilhos, cada um com a sua carga.
+
+    Três vias, que são as três do diagrama de sempre: endereço, dado e controle.
+    A de controle foi a última a chegar porque exigia um canal que repassasse
+    **sinal** — uma via que só repassa carga engolia o modo de acesso, e a
+    memória parava de escrever. Ela repassa pela porta em que ouviu, e é isso
+    que a faz servir a qualquer linha de controle sem conhecer nenhuma.
+
+    Só o controle que **sai da CPU** anda aqui. O que comanda a ULA e os muxes
+    fica dentro da CPU, curto, como no diagrama de referência: um barramento
+    liga a CPU ao que está fora dela, e não uma peça interna à vizinha.
+  */
+  children: [
+    via("via-endereco", ROTULOS.viaEndereco),
+    via("via-dado", ROTULOS.viaDado),
+    viaDeSinal("via-acesso", ROTULOS.viaControle),
+  ],
+};
+
 function memoriaPrincipal(image: readonly number[]): ObjectSpec<EstadoMemoria> {
   return {
     id: "memoria",
-    kind: "buffer",
+    kind: "store",
     label: ROTULOS.memoria,
     leaf: true,
     init: (): EstadoMemoria => {
@@ -330,7 +499,7 @@ function memoriaPrincipal(image: readonly number[]): ObjectSpec<EstadoMemoria> {
       const entrada = doDispositivo === undefined ? state.entrada : dado(doDispositivo, "valor");
 
       const acesso = achar(inbox, "resultado");
-      const modo = sinal(ctx.signals, "acesso")?.data.modo as Acesso | undefined;
+      const modo = sinal(ctx.signals, "acesso")?.data.acesso as Acesso | undefined;
 
       if (ctx.phase === "commit") {
         const out: Emission[] = [];
@@ -375,7 +544,7 @@ const muxEscrita: ObjectSpec<Record<string, never>> = {
     const acessado = achar(inbox, "acessado");
     const sel = sinal(ctx.signals, "selwb");
     if (acessado === undefined || sel === undefined) return { state, out: [] };
-    const fonte = sel.data.fonte as FonteEscrita;
+    const fonte = sel.data.escrita as FonteEscrita;
     if (fonte === "nada") return { state, out: [] };
     const valor =
       fonte === "mem"
@@ -406,7 +575,7 @@ const unidadeDeDesvio: ObjectSpec<Record<string, never>> = {
     const resultado = achar(inbox, "resultado");
     const sel = sinal(ctx.signals, "cond");
     if (resultado === undefined || sel === undefined) return { state, out: [] };
-    const tipo = sel.data.tipo as Desvio;
+    const tipo = sel.data.desvio as Desvio;
     const pcAtual = dado(resultado, "pc");
     const a = dado(resultado, "aReg");
     const b = dado(resultado, "bReg");
@@ -517,7 +686,9 @@ export function cpuWorld(
       relogio,
       entrada,
       cpu,
+      barramentoDeInstrucoes,
       memoriaDeInstrucoes(image),
+      barramentoDeMemoria,
       memoriaPrincipal(image),
       saida,
     ],
@@ -540,20 +711,29 @@ export function cpuWorld(
       // acomodação: tudo isto fecha dentro do mesmo tick. `width: 32` não é
       // enfeite: a linha é um feixe de 32 vias, e é isso que faz somar dois
       // números custar 32 vezes um somador de um bit
-      { from: "pc", port: "out", to: "imem", timing: "settle", width: 32 },
-      { from: "imem", port: "out", to: "decodificador", timing: "settle", width: 32 },
-      { from: "imem", port: "out", to: "controle", timing: "settle", width: 32 },
+      { from: "pc", port: "out", to: "via-pc", timing: "settle", width: 32 },
+      { from: "via-pc", port: "out", to: "imem", toPort: "in", timing: "settle", width: 32 },
+      // Dentro da memória de instruções: o endereço vira linha, a linha vira
+      // palavra. Duas peças, e é o que "endereçar" quer dizer.
+      { from: "imem-decodificador", port: "out", to: "imem-celulas", timing: "settle" },
+      { from: "imem", port: "out", to: "via-instrucao", timing: "settle", width: 32 },
+      { from: "via-instrucao", port: "out", to: "decodificador", timing: "settle", width: 32 },
+      { from: "via-instrucao", port: "out", to: "controle", timing: "settle", width: 32 },
       { from: "decodificador", port: "out", to: "banco", timing: "settle" },
       { from: "banco", port: "out", to: "mux-operando", timing: "settle", width: 32 },
       { from: "mux-operando", port: "out", to: "ula", toPort: "in", timing: "settle", width: 32 },
-      { from: "ula", port: "out", to: "memoria", timing: "settle", width: 32 },
+      // O caminho até a memória passa pelo barramento, que é o que ele é.
+      { from: "ula", port: "out", to: "via-endereco", timing: "settle", width: 32 },
+      { from: "via-endereco", port: "out", to: "memoria", timing: "settle", width: 32 },
       { from: "ula", port: "out", to: "desvio", timing: "settle", width: 32 },
-      { from: "memoria", port: "out", to: "mux-escrita", timing: "settle", width: 32 },
+      { from: "memoria", port: "out", to: "via-dado", timing: "settle", width: 32 },
+      { from: "via-dado", port: "out", to: "mux-escrita", timing: "settle", width: 32 },
 
       // as linhas de controle: metade do diagrama, e nenhuma carrega carga
       { from: "controle", port: "op", to: "ula", line: "control", toPort: "op", timing: "settle" },
       { from: "controle", port: "selb", to: "mux-operando", line: "control", toPort: "selb", timing: "settle" },
-      { from: "controle", port: "acesso", to: "memoria", line: "control", toPort: "acesso", timing: "settle" },
+      { from: "controle", port: "acesso", to: "via-acesso", line: "control", toPort: "acesso", timing: "settle" },
+      { from: "via-acesso", port: "acesso", to: "memoria", line: "control", toPort: "acesso", timing: "settle" },
       { from: "controle", port: "selwb", to: "mux-escrita", line: "control", toPort: "selwb", timing: "settle" },
       { from: "controle", port: "cond", to: "desvio", line: "control", toPort: "cond", timing: "settle" },
 

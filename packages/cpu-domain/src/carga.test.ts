@@ -36,8 +36,22 @@ describe("o que a carga mostra na esteira", () => {
     expect(leituraDaCarga(msg("escrita", { rd: 5, valor: 42 }))).toBe("x5=42");
   });
 
-  it("um sinal carrega a decisão, e é o nome dela que se lê", () => {
-    expect(leituraDaCarga(msg("sinal", { op: "sub" }))).toBe("sub");
+  it("um sinal carrega a decisão, e se lê pelo nome que ela tem no livro", () => {
+    // Era o identificador interno cru. `sub` é mnemônico do ISA e sobrevive
+    // como está; o que não sobrevive é o valor que só o código conhecia.
+    expect(leituraDaCarga(msg("sinal", { op: "sub" }))).toBe("ALUOp=sub");
+    expect(leituraDaCarga(msg("sinal", { acesso: "ler" }))).toBe("MemRead");
+    expect(leituraDaCarga(msg("sinal", { acesso: "escrever" }))).toBe("MemWrite");
+    expect(leituraDaCarga(msg("sinal", { escrita: "ula" }))).toBe("MemToReg=ALU");
+  });
+
+  it("um sinal que ninguém traduziu fica sem legenda, e não sai em português", () => {
+    // Devolver o valor cru seria o desenho afirmar o que ninguém revisou — e
+    // foi assim que `ler`, `escrever` e `nada` chegaram à tela de um site em
+    // inglês. Quem impede o par desconhecido de existir é a varredura do ISA
+    // em `labels.test.ts`; aqui só se garante que ninguém invente.
+    expect(leituraDaCarga(msg("sinal", { acesso: "hipnotizar" }))).toBeUndefined();
+    expect(leituraDaCarga(msg("sinal", { inventado: "coisa" }))).toBeUndefined();
   });
 
   it("o que não se sabe ler fica sem legenda, em vez de virar [object Object]", () => {

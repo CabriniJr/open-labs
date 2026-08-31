@@ -1,0 +1,136 @@
+---
+import { MicroLab } from "../../components/MicroLab.tsx";
+import SiteFooter from "../../components/SiteFooter.astro";
+import SiteNav from "../../components/SiteNav.astro";
+import Base from "../../layouts/Base.astro";
+import { url } from "../../lib/urls";
+import "../../styles/docs.css";
+import "../../components/MicroLab.css";
+import "@ovh/depth-ui/src/stage.css";
+import "../../components/Explorer.css";
+import "../../components/TabelaDeTempo.css";
+---
+
+<Base
+  domain="cpu"
+  title="The instruction cycle — OpenLabs"
+  description="A tiny multicycle processor, reconstructed from a lecture model: watch fetch and execute happen as separate instants, one bus transaction per tick."
+>
+  <SiteNav current="labs" />
+
+  <main id="content">
+    <section class="lab-head editorial">
+      <div class="prose">
+        <p class="lab-head__eyebrow mono">
+          <a href={url("handbooks/cpu")}>CPU Visual Handbook</a> · lab
+        </p>
+        <h1>The instruction cycle, one instant at a time</h1>
+        <p>
+          A single-cycle datapath settles a whole instruction inside one
+          clock. This one doesn't: fetching the instruction, decoding it,
+          fetching an operand, and writing a result are each their own
+          instant here — a MAR, an MBR and a handful of latches carrying a
+          byte across a single address bus and a single data bus, one
+          transaction at a time. That is the fetch-execute cycle as time
+          instead of as a diagram.
+        </p>
+        <p>
+          Eight bits, two instruction formats, and a program counter, an
+          instruction register, an accumulator and a temporary — the minimum
+          set a machine needs to run anything at all. <code>LOAD</code>,
+          <code>ADD</code> and <code>STORE</code> are the reference model's
+          own three instructions; <code>LOADM</code>, <code>JMP</code> and
+          <code>JZ</code> are added so a loop can exist.
+        </p>
+        <p>
+          Step through one micro-step at a time, or let the clock run. The
+          phase shown beside the controls is state the control unit itself
+          holds between ticks — the one thing a single-cycle machine never
+          needs.
+        </p>
+      </div>
+      <aside class="lab-head__note mono">
+        <p>8-bit accumulator machine, multicycle.</p>
+        <p>Down to a transistor, under the ALU.</p>
+      </aside>
+    </section>
+
+    <section class="lab-stage">
+      <MicroLab client:only="react" />
+    </section>
+
+    {/*
+      O crédito fica na página do lab, e não só na do handbook: esta é a
+      página que as pessoas mandam uma para a outra, e um crédito que só
+      existe a dois cliques daqui é um crédito que a maioria nunca vê.
+    */}
+    <aside class="lab-credit">
+      <p>
+        The reference model for this machine — its registers, its buses, its
+        two instruction formats and its example program — comes from
+        <cite>Princípio de Funcionamento de um Microprocessador</cite>, by
+        Prof. Filippo Valiante Filho (<a
+          href="https://prof.valiante.info"
+          rel="noopener">prof.valiante.info</a
+        >), used with his permission. The text here is our own —
+        <a href={url("handbooks/cpu/reference")}
+          >what we took, and what we wrote</a
+        >.
+      </p>
+    </aside>
+  </main>
+
+  <SiteFooter />
+</Base>
+
+<style>
+  .lab-head {
+    padding-block: var(--space-4) var(--space-2);
+  }
+
+  .lab-head__eyebrow {
+    margin: 0 0 var(--space-1);
+    color: var(--accent);
+    font-size: var(--size-step--1);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  h1 {
+    margin: 0 0 var(--space-2);
+    font-size: var(--size-step-3);
+    max-width: 20ch;
+  }
+
+  .lab-head__note {
+    align-self: end;
+    color: var(--ink-muted);
+    font-size: var(--size-step--1);
+  }
+
+  .lab-head__note p {
+    margin: 0 0 0.35rem;
+  }
+
+  .lab-stage {
+    max-width: 96rem;
+    margin-inline: auto;
+    padding: 0 var(--space-3) var(--space-5);
+  }
+
+  .lab-credit {
+    max-width: 96rem;
+    margin-inline: auto;
+    padding: 0 var(--space-3) var(--space-5);
+  }
+
+  .lab-credit p {
+    max-width: var(--measure);
+    margin: 0;
+    padding-block-start: var(--space-2);
+    border-block-start: 1px solid var(--rule);
+    color: var(--ink-muted);
+    font-size: var(--size-step--1);
+    line-height: 1.6;
+  }
+</style>

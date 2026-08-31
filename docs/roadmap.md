@@ -247,6 +247,32 @@ executa um programa em assembly de verdade, abre até a porta lógica, e **não 
 `depth-core` a saber o que é um registrador**. Commits em `depth-core` fechando as três
 lacunas contam a favor; vocabulário de CPU dentro dele reprova.
 
+### F6c — O microprocessador genérico, feito em 30/08/2026
+
+A F6 tinha parado pelo critério certo: o que sobrava da CPU não ensinava mais nada ao motor.
+Mas o critério mudou — passou a ser **"abrir isto ensina algo a quem lê"** —, e um modelo de
+terceiro apareceu para pôr as duas perguntas à prova de uma vez.
+
+Reconstruímos no motor o microprocessador genérico do deck de **Prof. Filippo Valiante
+Filho** (usado com permissão): máquina de acumulador de 8 bits, **multiciclo**, ao lado do
+RISC-V e antes dele no mapa. O que ela traz e o ciclo único não tinha é o **ciclo de
+instrução como tempo** — um tick é um micro-passo, não uma instrução.
+
+Ela ainda ensinou o motor, contra a previsão: nasceu **`kind: "sequencer"`**, o primeiro da
+família `controller`, porque uma UC multiciclo é máquina de estados e `router` não guarda
+estado. E ensinou muito a quem lê: a tabela de tempo do slide 43 do professor virou
+**oráculo**, e as onze linhas bateram célula por célula.
+
+**O que isso reposiciona:** a frase "o motor instancia modelos e lhes dá profundidade"
+deixou de depender de modelos que nós mesmos desenhamos. O deck para na ULA, porque slide não
+abre; nós descemos dali até o transistor, nove níveis, sem uma linha de domínio nova em
+`gates.ts` ou `transistors.ts`.
+
+**A decisão de ordem da F6 segue aberta e é do Luigi:** `F6b ATmega` ou `F4 OTel`. O que
+mudou é que a F6c já entregou parte do que a F6b ia buscar — fidelidade verificável contra um
+documento que não controlamos — sem gastar um datasheet inteiro. O que a F6b ainda tem de
+único é a **interrupção**.
+
 ### F6b — ATmega: a fidelidade posta à prova
 
 Pedido pelo Luigi em 29/08/2026, **depois** de a CPU genérica estar bem feita. Um AVR de

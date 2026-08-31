@@ -1,4 +1,5 @@
 import type { Message } from "@ovh/depth-core";
+import { rotuloDoSinal } from "./labels.js";
 
 /**
  * O que a carga leva, em dois ou três caracteres.
@@ -31,6 +32,10 @@ export function leituraDaCarga(mensagem: Message): string | undefined {
 
     case "endereco":
       return hex(d.pc);
+    case "selecao":
+      // A linha escolhida, e não o endereço: é o que sai de um decodificador
+      // de endereço, e ver o número mudar de um para o outro é ver o passo.
+      return `#${String(d.linha)}`;
     case "instrucao":
       return hex(d.word);
     case "proximo":
@@ -89,10 +94,47 @@ export function leituraDaCarga(mensagem: Message): string | undefined {
     // O sinal de controle não carrega valor: carrega a decisão, e o nome dela
     // é o que se quer ler na linha tracejada.
     case "sinal": {
-      const decisao = Object.values(d).find((v) => typeof v === "string" || typeof v === "number");
-      return decisao === undefined ? undefined : String(decisao);
+      const entrada = Object.entries(d).find(
+        ([, v]) => typeof v === "string" || typeof v === "number",
+      );
+      return entrada === undefined ? undefined : rotuloDoSinal(entrada[0], String(entrada[1]));
     }
 
+    default:
+      return undefined;
+  }
+}
+
+/**
+ * A espécie de cada carga, para o desenho poder distingui-las.
+ *
+ * O palco sabe que duas cargas são diferentes; **o que elas são, só o domínio
+ * sabe**. Isto estava do lado errado da fronteira: o CSS do motor tinha
+ * seletores `data-kind="instrucao"`, `"escrita"` e `"guardar"` — vocabulário de
+ * CPU dentro do palco. A guarda de fronteira não pegou porque só varre
+ * TypeScript; quem pegou foi a guarda do catálogo, e só porque a tinta estava
+ * escrita ali junto.
+ *
+ * O número não nomeia cor: nomeia **proeminência**, da mais forte para a mais
+ * discreta. As quatro primeiras são os momentos em que a carga muda de cara no
+ * caminho de dados — a instrução que sai da memória, o endereço que volta para
+ * o PC, o valor que vai para o banco, e o que vai para a memória. A última é
+ * para quem atravessa o desenho o tempo todo e não deve competir com nada: o
+ * pulso do relógio bate a cada tick, e um pulso vistoso apagaria justamente a
+ * carga que ele existe para acompanhar.
+ */
+export function especieDaCarga(mensagem: Message): number | undefined {
+  switch (mensagem.kind) {
+    case "instrucao":
+      return 1;
+    case "proximo":
+      return 2;
+    case "escrita":
+      return 3;
+    case "guardar":
+      return 4;
+    case "pulso":
+      return 5;
     default:
       return undefined;
   }

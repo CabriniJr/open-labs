@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { LIMIAR_CHEIO, LIMIAR_ENTRA, encaixar, quantoAparece } from "./lod.js";
+import { LIMIAR_CHEIO, LIMIAR_ENTRA, encaixar, quantoAparece, tabelaLegivel } from "./lod.js";
 
 describe("quanto do interior aparece", () => {
   it("longe, o interior não existe", () => {
@@ -65,5 +65,21 @@ describe("o encaixe do interior na caixa", () => {
       expect(moldura.width * escala + 2 * dx).toBeCloseTo(caixa.w, 6);
       expect(moldura.height * escala + 2 * dy).toBeCloseTo(caixa.h, 6);
     }
+  });
+});
+
+describe("uma tabela dentro de uma caixa", () => {
+  it("é legível bem antes de o interior de um contêiner aparecer", () => {
+    // A vista de cima do caminho de dados: 1180 unidades de quadro. Nela a
+    // memória ocupa um quinto da largura — longe do limiar do interior — e é
+    // exatamente ali que se quer ver o que ela guarda.
+    expect(tabelaLegivel(1180)).toBe(true);
+    expect(quantoAparece(250 / 1180)).toBe(0);
+  });
+
+  it("some quando a linha ficaria menor que um traço", () => {
+    // Um quadro de dez mil unidades é o desenho inteiro visto de muito longe:
+    // ali a linha tem menos de um pixel, e desenhá-la seria sujeira.
+    expect(tabelaLegivel(10_000)).toBe(false);
   });
 });

@@ -1,7 +1,7 @@
 ---
 title: "High or low: what a bit costs"
 dek: "A bit is not a thing a wire contains. It is a decision imposed on a voltage — and the discipline that makes the decision safe is paid for in headroom, in time, and in energy."
-handbook: riscv
+handbook: cpu
 phase: 1
 sources:
   - id: shannon-1938

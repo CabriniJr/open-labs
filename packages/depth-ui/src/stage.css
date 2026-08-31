@@ -9,18 +9,105 @@
  * por uma diferença no livro-caixa, e por isso um objeto parado na tela é um
  * objeto que de fato não fez nada naquele tick.
  */
-.dui-stage {
-  --dui-tick: 700ms;
+/*
+ * ═══════════════ O CATÁLOGO DA LINGUAGEM VISUAL ═══════════════
+ *
+ * Cor e forma moram aqui, e em nenhum outro lugar. Nenhum lab escreve tinta
+ * própria: um quarto lab escolhendo bem por disciplina é sorte, e sorte não é
+ * sistema. `scripts/check-catalogo.mjs` reprova cor escrita fora daqui.
+ *
+ * **Lê-se por sentido, nunca por valor.** O CSS abaixo diz `var(--dui-dado)`,
+ * não diz azul — é isso que faz a mesma leitura funcionar nos dois temas sem
+ * virar dois desenhos, e é isso que permite trocar a tinta de um sentido sem
+ * caçar hexadecimal em vinte arquivos.
+ *
+ * **Duas tintas, dois registros.** O desenho técnico tem duas tintas — a preta
+ * e a vermelha — e o que elas querem dizer depende do registro:
+ *
+ * - no **diagrama de blocos**, preta é dado e vermelha é controle. É a figura
+ *   canônica de qualquer livro de arquitetura, e metade dela é vermelha, que é
+ *   a medida real de quanto a linha de controle importa;
+ * - no **esquemático**, vermelha é alimentação e preta é terra. É a convenção
+ *   mais universal que existe em eletrônica.
+ *
+ * Isso não é ambiguidade: um diagrama de blocos e um esquemático são duas
+ * linguagens de desenho, ninguém as confunde porque nunca aparecem no mesmo
+ * quadro, e a trilha diz em qual o leitor está. O que era ambíguo era o
+ * sentido ficar implícito — agora cada registro está declarado, e a legenda do
+ * palco é lida daqui em vez de escrita à mão.
+ *
+ * "Preta" é o `--ink` do site, e por isso ela é clara no tema escuro. A
+ * convenção é a leitura, não o hexadecimal.
+ */
+/*
+ * O catálogo mora na raiz, e não no palco.
+ *
+ * Ele morava em `.dui-stage`, e a legenda — que vive fora do SVG — não
+ * enxergava token nenhum: a amostra saía transparente. Um catálogo que só
+ * existe dentro do desenho não é catálogo, é estilo local. Na raiz, qualquer
+ * coisa que precise falar a língua do desenho pode lê-la pelo nome.
+ */
+:root {
+  /* ── as duas tintas ── */
+  --dui-tinta: var(--ink);
+  --dui-viva: #d94b4b;
 
-  /* dado e sinal: as duas espécies de linha, e nunca a mesma cor */
-  --dui-dado: #2f81f7;
-  --dui-sinal: #f0883e;
+  /* ── registro: diagrama de blocos ── */
+  --dui-dado: var(--dui-tinta);
+  --dui-sinal: var(--dui-viva);
 
-  /* as famílias */
+  /* ── registro: esquemático ── */
+  --dui-terra: var(--dui-tinta);
+  --dui-alimentacao: var(--dui-viva);
+
+  /*
+   * ── nível lógico ──
+   *
+   * Não é família nem espécie de linha: é o VALOR que saiu da peça, e por isso
+   * tem tinta própria. Misturado na cor do dado, "acesa" caía na mesma tinta
+   * de "isto é uma linha de dado" — e, pior, a mistura saía mais escura que a
+   * superfície nos DOIS temas, de modo que a porta em 1 era desenhada mais
+   * apagada que a porta em 0.
+   */
+  --dui-alto: #ffd23f;
+
+  /*
+   * ── as famílias ──
+   *
+   * Identidade da peça, e não sentido de linha: as duas coisas se separaram
+   * aqui de propósito. A caixa diz o que ela é; a linha diz o que ela leva. O
+   * controlador toma a tinta viva porque peça de controle e linha de controle
+   * são a mesma espécie, e no diagrama do livro elas são o mesmo vermelho.
+   */
   --dui-processor: #1f6feb;
   --dui-container: #8b93a7;
-  --dui-controller: #f0883e;
+  --dui-controller: var(--dui-viva);
   --dui-conduit: #3fb950;
+
+  /*
+   * ── as espécies de carga ──
+   *
+   * Quem diz qual carga é de qual espécie é o domínio, porque só ele sabe que
+   * uma palavra de 32 bits e um par de operandos são coisas diferentes. O
+   * palco só precisa conseguir desenhá-las diferentes.
+   *
+   * O número não nomeia uma cor — nomeia **proeminência**, da mais forte para
+   * a mais discreta. Sem isso o domínio escolheria tinta por acidente de
+   * numeração, que é o domínio pintando pela porta dos fundos; com isso ele
+   * escolhe o quanto aquela carga deve puxar o olho, que é decisão dele. A
+   * última é para o que atravessa o desenho o tempo todo e não deve competir
+   * com nada — o pulso do relógio é o caso.
+   */
+  --dui-especie-1: #a371f7;
+  --dui-especie-2: #3fb950;
+  --dui-especie-3: #db61a2;
+  --dui-especie-4: #e3b341;
+  --dui-especie-5: var(--ink-faint);
+}
+
+/* O compasso é de cada palco, e vem escrito na instância. */
+.dui-stage {
+  --dui-tick: 700ms;
 
   --dui-superficie: color-mix(in oklab, var(--paper-raised) 88%, var(--paper));
   --dui-borda: var(--rule);
@@ -35,6 +122,22 @@
   border: 1px solid var(--rule);
   border-radius: var(--radius-3);
   font-family: var(--font-mono);
+}
+
+/*
+ * Três estados, não dois — mesma regra do `tokens.css`: escolha explícita
+ * marca `data-theme`, e a ausência segue a preferência do sistema. Definir a
+ * tinta só dentro do media query deixaria o estado sem marca com a vermelha de
+ * um tema sobre o papel do outro.
+ */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --dui-viva: #ff7070;
+  }
+}
+
+:root[data-theme="dark"] {
+  --dui-viva: #ff7070;
 }
 
 /* ---------- fios ---------- */
@@ -131,12 +234,19 @@
   filter: none;
 }
 
-/* A carga muda de aparência atravessando quem a transforma. */
-.dui-stage__carga[data-kind="instrucao"] { fill: #a371f7; }
-.dui-stage__carga[data-kind="proximo"] { fill: #3fb950; }
-.dui-stage__carga[data-kind="escrita"] { fill: #db61a2; }
-.dui-stage__carga[data-kind="guardar"] { fill: #e3b341; }
-.dui-stage__carga[data-kind="pulso"] { fill: var(--ink-faint); }
+/*
+ * A carga muda de aparência atravessando quem a transforma.
+ *
+ * Por espécie, e não por `kind`: o `kind` é palavra do domínio, e estes
+ * seletores diziam `instrucao`, `escrita`, `guardar` — vocabulário de CPU
+ * dentro do motor. Quem numera as espécies é o domínio; o palco só sabe que
+ * duas cargas são diferentes, e não o que elas são.
+ */
+.dui-stage__carga[data-especie="1"] { fill: var(--dui-especie-1); }
+.dui-stage__carga[data-especie="2"] { fill: var(--dui-especie-2); }
+.dui-stage__carga[data-especie="3"] { fill: var(--dui-especie-3); }
+.dui-stage__carga[data-especie="4"] { fill: var(--dui-especie-4); }
+.dui-stage__carga[data-especie="5"] { fill: var(--dui-especie-5); }
 
 /* ---------- objetos ---------- */
 
@@ -173,6 +283,16 @@
 }
 
 /*
+ * A prateleira do banco: a linha que separa a etiqueta do que está guardado.
+ * É o que faz um `store` ser lido como estante e não como mais uma máquina.
+ */
+.dui-stage__prateleira {
+  stroke: color-mix(in oklab, var(--dui-processor) 45%, var(--rule));
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+/*
  * A pilha da réplica: N objetos idênticos, um desenhado. As folhas atrás não
  * têm preenchimento — elas são o contorno dos outros N-1, não outra caixa.
  */
@@ -183,28 +303,38 @@
 }
 
 /*
- * Saída alta. Onde a presença da mensagem É o bit em alto — porta lógica —,
- * isto é literalmente a porta acesa, lida do livro-caixa. O atraso vem do
- * subpasso em que ela rodou, então a onda atravessa o desenho na ordem em que
- * o sinal atravessa o circuito.
+ * Saída alta: o VALOR que saiu da peça. É estado, e era desenhado como
+ * acontecimento — que é a razão de ele não existir.
+ *
+ * O aceso vinha inteiro de uma transição cujo primeiro quadro era
+ * `fill: var(--dui-superficie)`, a tinta do apagado. Com a simulação rodando,
+ * a peça reiniciava a transição a cada tick e vivia perto do quadro zero.
+ * Medido no navegador: a porta em 1 saía mais ESCURA que a porta em 0, nos
+ * dois temas, e sem brilho nenhum — enquanto o brilho que o olho lia como
+ * "acesa" pertencia a `data-ativo`, isto é, a quem RODOU e não a quem DISSE
+ * UM. São justamente as duas coisas que a troca de codificação foi feita para
+ * separar, e o desenho as tinha juntado de volta.
+ *
+ * Agora o repouso já é aceso e a animação só pulsa por cima: ela parte de
+ * MAIS aceso e assenta no aceso. Nenhum quadro dela é mais apagado que o
+ * repouso, então não existe instante em que a porta minta sobre o seu valor.
+ * O atraso continua vindo do subpasso, e a onda continua atravessando o
+ * desenho na ordem em que o sinal atravessa o circuito.
  */
 .dui-stage__objeto[data-alto="true"] > .dui-stage__caixa {
-  fill: color-mix(in oklab, var(--dui-dado) 30%, var(--paper-raised));
-  stroke: var(--dui-dado);
+  fill: color-mix(in oklab, var(--dui-alto) 42%, var(--paper-raised));
+  stroke: var(--dui-alto);
+  filter: drop-shadow(0 0 6px color-mix(in oklab, var(--dui-alto) 45%, transparent));
   animation: dui-acender calc(var(--dui-tick) * 0.5) ease-out both;
   animation-delay: var(--dui-atraso, 0ms);
 }
 
 @keyframes dui-acender {
   from {
-    fill: var(--dui-superficie);
-    filter: none;
-  }
-  40% {
-    filter: drop-shadow(0 0 10px color-mix(in oklab, var(--dui-dado) 75%, transparent));
+    filter: drop-shadow(0 0 12px color-mix(in oklab, var(--dui-alto) 85%, transparent));
   }
   to {
-    filter: drop-shadow(0 0 6px color-mix(in oklab, var(--dui-dado) 45%, transparent));
+    filter: drop-shadow(0 0 6px color-mix(in oklab, var(--dui-alto) 45%, transparent));
   }
 }
 
@@ -295,6 +425,108 @@
 
 .dui-stage__objeto[data-fechado="true"] > .dui-stage__caixa {
   stroke-dasharray: 8 4;
+}
+
+/*
+ * ---------- o registro esquemático ----------
+ *
+ * Aqui vermelha é alimentação e preta é terra: a convenção mais universal que
+ * existe em eletrônica. Quem é quem **sai do modelo**, e não de uma lista que
+ * alguém escreveu — os dois trilhos são a mesma espécie de objeto, uma fonte
+ * que dirige, e o que os separa é o nível que cada um dirige. Alimentação é a
+ * fonte que dirige alto; terra é a que dirige baixo. O palco não sabe o que é
+ * um Vdd, e não precisa saber.
+ *
+ * A primeira versão disto separava por `source` contra `sink` e pintava os
+ * DOIS trilhos de vermelho, porque no modelo os dois são `source`. Estava
+ * bonito e errado, e nenhum teste teria dito — foi preciso olhar a tela.
+ *
+ * E o trilho troca a tinta de aceso pela do registro: um trilho de alimentação
+ * está sempre em alto, então acendê-lo não informa nada e gasta a única tinta
+ * que o leitor precisa reservar para o que muda. As duas redes da porta se
+ * distinguem pelo que elas tocam — a de cima nasce no vermelho, a de baixo
+ * termina na preta —, que é como um esquemático de verdade as separa, e não
+ * por uma cor inventada para cada tipo de chave.
+ */
+.dui-stage__objeto[data-registro="esquematico"][data-kind="source"][data-alto="true"]
+  > .dui-stage__caixa {
+  fill: color-mix(in oklab, var(--dui-alimentacao) 22%, var(--paper-raised));
+  stroke: var(--dui-alimentacao);
+  stroke-width: 2;
+  filter: none;
+  animation: none;
+}
+
+.dui-stage__objeto[data-registro="esquematico"][data-kind="source"]:not([data-alto="true"])
+  > .dui-stage__caixa {
+  fill: color-mix(in oklab, var(--dui-terra) 14%, var(--paper-raised));
+  stroke: var(--dui-terra);
+  stroke-width: 2;
+  filter: none;
+}
+
+/*
+ * ---------- a chave ----------
+ *
+ * Os dois terminais e a lâmina são o caminho, e por isso falam a cor do dado.
+ * O comando chega tracejado, na cor do sinal: é uma linha de controle, e o
+ * desenho não pode deixar isso por conta do leitor adivinhar.
+ */
+/*
+ * A junção. Pequena e cheia, como num esquemático: ela não é um objeto, é a
+ * afirmação de que ali as duas linhas se falam. E a AUSÊNCIA dela num
+ * cruzamento é o que diz que as outras duas não se falam — por isso ela
+ * precisa ser inconfundível, porque meia marca é pior que marca nenhuma.
+ */
+.dui-stage__juncao {
+  fill: color-mix(in oklab, var(--dui-dado) 85%, var(--ink));
+  stroke: none;
+}
+
+.dui-stage__chave-via,
+.dui-stage__chave-lamina {
+  stroke: color-mix(in oklab, var(--dui-dado) 70%, var(--ink));
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  transition: stroke 160ms ease, opacity 160ms ease;
+}
+
+/*
+ * Conduzir é estado, e estado se lê de relance.
+ *
+ * Cortada, a chave não some — some seria confundir "não está passando" com
+ * "não está aqui", e é a mesma conflação que fez o somador nunca acionar o
+ * vai-um do primeiro bit. Ela fica ali, apagada, com a lâmina no ar.
+ */
+.dui-stage__chave[data-fechada="true"] .dui-stage__chave-via,
+.dui-stage__chave[data-fechada="true"] .dui-stage__chave-lamina {
+  stroke: var(--dui-alto);
+  stroke-width: 1.8;
+}
+
+.dui-stage__chave[data-fechada="false"] .dui-stage__chave-via,
+.dui-stage__chave[data-fechada="false"] .dui-stage__chave-lamina {
+  opacity: 0.45;
+}
+
+/*
+ * A caixa de uma chave cortada acompanha, senão o corpo continua dizendo
+ * "estou trabalhando" enquanto o símbolo diz que não passa nada.
+ */
+.dui-stage__objeto[data-conduz="false"] > .dui-stage__caixa {
+  fill: color-mix(in oklab, var(--dui-processor) 5%, var(--paper-raised));
+  stroke: color-mix(in oklab, var(--dui-processor) 30%, var(--rule));
+}
+
+.dui-stage__chave-comando {
+  stroke: var(--dui-sinal);
+  stroke-width: 1.2;
+  stroke-dasharray: 2 2;
+  stroke-linecap: round;
+}
+
+.dui-stage__chave-eixo {
+  fill: color-mix(in oklab, var(--dui-dado) 70%, var(--ink));
 }
 
 /* ---------- a engrenagem ---------- */
@@ -607,10 +839,19 @@
  * A moldura acende, o miolo continua sendo o desenho.
  */
 .dui-stage__objeto[data-familia="container"][data-alto="true"] > .dui-stage__caixa {
-  fill: color-mix(in oklab, var(--dui-dado) 5%, transparent);
-  stroke: var(--dui-dado);
+  fill: color-mix(in oklab, var(--dui-alto) 5%, transparent);
+  stroke: var(--dui-alto);
   stroke-width: 2;
-  filter: none;
+  /*
+   * `fill-opacity: 0` da moldura está certo e fica: preencher a área onde os
+   * filhos moram apaga o circuito que interessa. Mas ele anulava o
+   * preenchimento de acesa sem pôr nada no lugar, e o contorno de acesa usava
+   * a MESMA cor do contorno de apagada — sobrava meio pixel de espessura, e
+   * uma moldura acesa era indistinguível de uma apagada. O que resta para
+   * dizer é o traço, e ele basta: apagada é tracejada, acesa é contínua.
+   */
+  stroke-dasharray: none;
+  filter: drop-shadow(0 0 5px color-mix(in oklab, var(--dui-alto) 40%, transparent));
   animation: none;
 }
 
@@ -651,4 +892,143 @@
   letter-spacing: 0.1em;
   text-transform: uppercase;
   pointer-events: none;
+}
+
+/*
+ * A família `conduit`: uma esteira, e não uma caixa.
+ *
+ * Transportar e transformar são coisas diferentes, e é a primeira distinção que
+ * este desenho precisa deixar clara. Um retângulo com nome dentro parece uma
+ * peça que processa; um corpo baixo de pontas arredondadas, com o nome fora e a
+ * carga andando por dentro, parece o que é.
+ *
+ * O barramento é a instância que isto existe para desenhar: de longe, uma
+ * esteira larga com um nome; de perto, os trilhos que ele agrega.
+ */
+.dui-stage__objeto[data-familia="conduit"] > .dui-stage__caixa {
+  fill: color-mix(in oklab, var(--dui-conduit) 12%, var(--paper-raised));
+  stroke: color-mix(in oklab, var(--dui-conduit) 60%, var(--rule));
+  stroke-width: 1.5;
+}
+
+.dui-stage__objeto[data-familia="conduit"][data-alto="true"] > .dui-stage__caixa {
+  fill: color-mix(in oklab, var(--dui-conduit) 30%, var(--paper-raised));
+  stroke: var(--dui-conduit);
+}
+
+.dui-stage__objeto[data-familia="conduit"] .dui-stage__titulo {
+  fill: var(--ink-muted);
+  text-transform: none;
+  letter-spacing: 0.04em;
+}
+
+.dui-stage__objeto[data-familia="conduit"] .dui-stage__porta rect {
+  stroke: color-mix(in oklab, var(--dui-conduit) 70%, var(--rule));
+}
+
+.dui-stage__objeto[data-familia="conduit"] .dui-stage__porta[data-lado="saida"] rect {
+  fill: color-mix(in oklab, var(--dui-conduit) 55%, var(--paper));
+}
+
+/*
+ * O seletor é um trapézio, e o rótulo dele cabe onde há espaço.
+ *
+ * A forma é a explicação: largo do lado das entradas, estreito do lado da
+ * saída — muitas entram, uma sai. Escrever "mux" dentro de um retângulo exige
+ * que o leitor já saiba o que é um mux; o trapézio conta antes de ele ler.
+ */
+.dui-stage__objeto:has(> path.dui-stage__caixa) .dui-stage__rotulo {
+  font-size: 10px;
+}
+
+/*
+ * O que a caixa guarda: a tabela do armazém.
+ *
+ * A linha tocada neste tick acende. É a diferença entre ver um monte de
+ * números e ver **o acesso acontecendo** — que é a coisa a entender numa
+ * memória, e a razão de abrir a caixa em vez de listá-la num painel ao lado.
+ */
+.dui-stage__linha {
+  fill: color-mix(in oklab, var(--dui-processor) 6%, transparent);
+}
+
+.dui-stage__conteudo g[data-ativo="true"] .dui-stage__linha {
+  fill: color-mix(in oklab, var(--dui-dado) 28%, transparent);
+}
+
+.dui-stage__linha-chave,
+.dui-stage__linha-valor,
+.dui-stage__linha-resto {
+  font-size: 8px;
+  fill: var(--ink-muted);
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+.dui-stage__linha-valor {
+  fill: var(--ink);
+}
+
+.dui-stage__conteudo g[data-ativo="true"] .dui-stage__linha-chave,
+.dui-stage__conteudo g[data-ativo="true"] .dui-stage__linha-valor {
+  fill: var(--ink);
+  font-weight: 600;
+}
+
+.dui-stage__linha-resto {
+  fill: var(--ink-faint);
+  letter-spacing: 0.06em;
+}
+
+/*
+ * A pista de um conduíte: leito largo e apagado, trilho fino por cima.
+ *
+ * É a mesma linguagem do fio, e é de propósito — um conduíte e um fio são a
+ * mesma coisa, transporte. Desenhada como retângulo, a pista virava uma barra
+ * chapada: o leitor via um lugar onde precisava ver um caminho, e um
+ * barramento aberto ficava parecendo uma prateleira de barras vazias.
+ */
+.dui-stage__pista-leito {
+  stroke: color-mix(in oklab, var(--dui-conduit) 20%, transparent);
+  stroke-width: 11;
+  stroke-linecap: round;
+  fill: none;
+}
+
+.dui-stage__pista {
+  stroke: color-mix(in oklab, var(--dui-conduit) 60%, var(--rule));
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  fill: none;
+  vector-effect: non-scaling-stroke;
+  transition: stroke 160ms ease;
+}
+
+.dui-stage__objeto[data-ativo="true"] .dui-stage__pista {
+  stroke: var(--dui-conduit);
+  stroke-width: 2.6;
+}
+
+.dui-stage__objeto[data-ativo="true"] .dui-stage__pista-leito {
+  stroke: color-mix(in oklab, var(--dui-conduit) 38%, transparent);
+}
+
+/*
+ * Moldura: contorno e nada mais. O que ela guarda está desenhado por cima, e um
+ * preenchimento forte aqui apagaria justamente isso.
+ */
+.dui-stage__caixa.dui-stage__moldura {
+  fill: color-mix(in oklab, currentColor 0%, transparent);
+  fill-opacity: 0;
+  stroke-dasharray: 4 6;
+}
+
+/* A ponta da pista: diz o sentido, e não disputa atenção com o que anda nela. */
+.dui-stage__ponta {
+  fill: color-mix(in oklab, var(--dui-conduit) 70%, var(--rule));
+  stroke: none;
+}
+
+.dui-stage__objeto[data-ativo="true"] .dui-stage__ponta {
+  fill: var(--dui-conduit);
 }

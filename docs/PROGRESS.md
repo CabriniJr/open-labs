@@ -968,3 +968,209 @@ guardava `a === 0 && b === 0` e devolvia nada, enquanto a composição entregava
 virou varredura: o espaço é pequeno o bastante para não sobrar sorte.
 
 Estado: 497 testes unitários, 84 e2e, typecheck, boundaries e build verdes.
+
+---
+
+## Entrega 1 do refino: o que a tela afirma passa a ser verdade
+
+**Data:** 2026-08-30. **Desenho:** `docs/superpowers/specs/2026-08-30-refino-grafico-e-pedagogico-design.md`.
+**Código:** `packages/depth-ui/src/{stage.css,Stage.tsx,kinds.ts}`, `packages/depth-core/src/model.ts`,
+`packages/cpu-domain/src/{labels.ts,carga.ts,datapath.ts,gates.ts,alu.ts,transistors.ts}`,
+`apps/site/src/components/Explorer.tsx`.
+
+Isto saiu de uma **auditoria agêntica em três frentes**: um agente nas telas reais pelo
+navegador, um no modelo da CPU, um na ficha do objeto. As três acharam coisas que nenhum
+teste pegava, e a primeira delas é a razão de esta entrega existir.
+
+**A porta acesa não existia.** O lab promete por escrito que "uma porta acesa é uma porta
+cuja saída é 1". O agente mediu `fill` e `stroke` com `a=b=0` e com `a=6,b=7`: o mesmo valor.
+Três causas, e as três da mesma família — **aceso era desenhado como acontecimento, não como
+estado**. (a) O aceso vinha inteiro de uma transição cujo primeiro quadro era a tinta do
+apagado; com a simulação rodando, a peça reiniciava a transição a cada tick e vivia perto do
+quadro zero, saindo mais **escura** que a porta em 0 nos dois temas. (b) O halo que o olho lê
+como "acesa" pertencia a `data-ativo` — a quem *rodou*, não a quem *disse um* —, então a porta
+em 0 brilhava e a em 1 não. São as duas coisas que a troca de codificação foi feita para
+separar, recoladas pelo desenho. (c) Na moldura, `fill-opacity: 0` anulava o preenchimento e o
+contorno de acesa tinha a mesma cor do de apagada: sobrava meio pixel.
+
+Agora o repouso já é aceso e a animação só pulsa por cima — parte de **mais** aceso e assenta
+no aceso, então nenhum quadro dela mente. O nível alto ganhou token próprio: misturado na cor
+do dado, "acesa" caía na mesma tinta de "isto é linha de dado", e a mistura escurecia a
+superfície nos dois temas.
+
+**Duas armadilhas de teste caíram junto, e valem mais que o conserto.** A checagem de
+permanência trocava o tema e esperava 1,2s, e o site restaurava o tema no meio: a segunda
+amostra media outro tema em vez de outro instante. E o laço "nos dois temas" **não trocava
+tema nenhum** — nem escrevendo o atributo, nem emulando a preferência do sistema. Passava
+medindo o mesmo caso duas vezes. Regra que fica: **teste que varre dois casos prova, no fim,
+que os dois casos aconteceram.**
+
+**A ficha sobrevivia ao enquadramento.** Ler a ficha do NAND e voltar ao topo deixava o painel
+explicando peça que não está mais desenhada. A correção não é limpar no clique da trilha —
+isso é regra sobre um botão, e sobraria todo outro caminho de navegação. A seleção passa a
+carregar o enquadramento em que foi feita, e quem lê descarta o que não é dali: não há limpeza
+a esquecer. Conferir contra o que o palco desenhou não serve, porque o interior aparece ou não
+conforme o nível de detalhe, que é conta do palco.
+
+**Os sinais de controle vazavam em português.** `ler`, `escrever`, `nada`, `ula`, `mem`, `pc4`
+iam crus para a linha tracejada de um site em inglês — e nem no idioma certo seriam os nomes
+certos: o aluno procura `MemRead`, `MemWrite`, `ALUSrc`, `MemToReg`. A guarda de idioma não
+pegou, e não por descuido: ela varre acento, e nenhuma daquelas palavras tem. Quem pega agora é
+**cobertura**: todo par campo/valor que a tabela de controle emite, para todo o ISA, tem de ter
+tradução — com a tabela rodada de verdade, porque listar os valores à mão seria a segunda
+fonte. O mapa é por campo **e** valor: `nada` quer dizer "não acessa memória" num sinal e "não
+escreve no banco" noutro. Caiu junto uma duplicação que era a causa de a varredura não fechar:
+a tabela dizia `acesso`/`escrita`/`desvio` e o payload dizia `modo`/`fonte`/`tipo`.
+
+**A chave entrou no catálogo do motor.** O transistor era `router`: herdava o trapézio do mux e
+a ficha o explicava com o texto do mux. Símbolo errado e explicação errada, no nível mais fundo
+do modelo. Uma chave não escolhe entre entradas — deixa passar ou não, e quem manda é o
+terminal de porta. É objeto que faltava no catálogo, não remendo de CPU: válvula e relé são o
+mesmo objeto. Ela não ganha engrenagem, porque deixar passar não é processar. A guarda de
+fronteira pegou a primeira versão, em que eu havia escrito "transistor" nos comentários do
+motor — e estava certa.
+
+**Rótulo igual ao id não é rótulo.** Trinta e dois objetos se chamavam `bit0`…`bit31` na tela.
+Virou guarda geral.
+
+**E a ULA declara a segunda simplificação:** `sub` também não desce pelo somador. Estava
+escrito que a lógica bit a bit fica de fora, e quem lia só isso concluía que o resto desce pelo
+silício. Meia declaração é meia mentira.
+
+**Um achado da auditoria NÃO virou conserto.** A ordem "bit1, bit2, bit3 … bit14, bit13, bit12"
+no somador da ULA foi lida como bagunça e é **serpentina deliberada** — a linha ímpar volta ao
+contrário para o vai-um não pular a largura toda. O defeito ali é outro: a dobra é invisível,
+então quem olha lê como desordem. Fica para a entrega do desenho. Vale como método: relatório
+de agente é evidência, não veredito.
+
+Estado: 668 testes unitários, 145 e2e, typecheck, boundaries (74 arquivos) e build verdes.
+
+---
+
+## Entrega 2 e a arrumação: a cor diz o que a coisa é, e o espaguete vira número
+
+**Data:** 2026-08-30. **Desenho:** `docs/superpowers/specs/2026-08-30-refino-grafico-e-pedagogico-design.md`.
+
+**O catálogo da linguagem visual.** Cor e forma passam a morar num lugar só, lidos por
+**sentido** e nunca por valor, com `scripts/check-catalogo.mjs` reprovando tinta escrita fora
+dele. A disciplina já funcionava — os três labs escolheram bem, cada um por sua conta — mas
+disciplina não é sistema: nada impedia o quarto lab de escolher diferente, e no dia em que
+escolhesse ninguém seria avisado.
+
+Duas tintas, dois registros: no diagrama de blocos preta é dado e vermelha é controle; no
+esquemático vermelha é alimentação e preta é terra. Não é ambiguidade — são duas linguagens
+de desenho, nunca aparecem no mesmo quadro, e a trilha diz em qual o leitor está. O que era
+ambíguo era o sentido ficar implícito. A vista **declara** o registro; adivinhar pelo conteúdo
+erraria calado no dia em que um esquemático não tivesse chave nenhuma.
+
+**A guarda achou o que ninguém procurava.** O CSS do MOTOR tinha seletores
+`data-kind="instrucao"`, `"escrita"`, `"guardar"` e `"pulso"`. A guarda de fronteira não via
+porque só varria TypeScript — uma fronteira que vigia meia linguagem vigia meia fronteira. E a
+correção não foi pôr as palavras na lista: **a regra certa é sobre o substantivo.** O `kind` de
+uma *mensagem* é palavra do domínio pela definição do próprio motor, então a guarda passou a
+perguntar o inverso — *está no vocabulário do motor?* —, lendo a lista do `model.ts` na hora,
+porque copiada ela envelheceria em silêncio.
+
+**Um defeito que só a tela pegou.** Separei os trilhos por `source` contra `sink`, e no modelo
+os DOIS são `source`: saíram os dois vermelhos. Passou em typecheck, fronteira, catálogo e 149
+e2e. O que de fato os separa é o nível que cada um dirige, que é a física da coisa.
+
+**A leitura do somador estava invertida**, e discordava de três coisas ao mesmo tempo: do texto
+do lab ("watch the carry climb"), do número escrito — de cima para baixo dava `1011` onde a
+caixa dizia `1101` — e do próprio desenho, com o vem-de-trás saltando a figura inteira. Nada
+disso quebrava teste.
+
+**Espaguete virou número**, medido nos `path` que a página pintou. Achou 21 sobreposições no
+lab da CPU e 56 no das portas, todas com ponta em comum: leque e convergência desenhados como
+N linhas empilhadas, que se leem como uma linha só. Daí saíram o **pontinho de junção** (o T
+ganha, o X não — e a ausência dele é que diz que dois fios não se falam) e a **memória do
+roteador**, que desviava de caixas e ignorava fios.
+
+E os pesos do roteador passaram a ser a hierarquia dos defeitos escrita como número:
+atravessar caixa é **mentira** e custa cem, repetir reta é **ambiguidade** e custa um, sair do
+centro é **estética** e custa um décimo de milésimo. Na mesma ordem de grandeza, bastavam duas
+retas repetidas para ele preferir cortar uma caixa.
+
+**A dívida que a medida expôs se fechou com uma regra.** O somador cruzava 28 contra 16 do
+caminho de dados inteiro. Doze eram um leque sem ordem. Agora **a saída mira o destino e a
+entrada mira a origem** — regra local com efeito global: duas pontas ordenadas pelo que está do
+outro lado não se cruzam, e o feixe abre como pente. Cruzamentos: somador 28 → **4**, caminho
+de dados 16 → 15, pilha 4.
+
+**Regra de método que saiu daqui:** teste que varre dois casos prova, no fim, que os dois
+aconteceram. Dois testes meus fingiam cobrir dois temas e cobriam um; um terceiro comparava
+`.first()` de um conjunto que muda, que não é um elemento — passava sozinho e reprovava na
+suíte cheia.
+
+Estado: 687 testes unitários, 155 e2e, typecheck, boundaries (80 arquivos), catálogo e build
+verdes.
+
+## 2026-08-30 — O microprocessador genérico
+
+Um modelo que existia fora daqui — desenhado à mão por um professor, em slides — foi
+reconstruído no motor, roda, e abre onde o slide não pode abrir. Deck de referência:
+*Princípio de Funcionamento de um Microprocessador*, de **Prof. Filippo Valiante Filho**
+(`prof.valiante.info`), usado **com permissão dele**.
+
+**O que faltava e agora existe: o ciclo de instrução como tempo.** O caminho de dados do
+RISC-V abre dizendo "um ciclo por tick" — a instrução inteira acontece dentro de um tick, e
+busca, decodificação e execução existem só como profundidade topológica da acomodação. No
+`micro`, **um tick é um micro-passo**: uma transferência entre registradores. Vinte e nove
+deles para o programa do slide 16.
+
+**O motor ganhou `kind: "sequencer"`**, o primeiro da família `controller` — que existia
+desde o começo e não tinha nenhum. Ele guarda a fase entre ticks e emite só por linha de
+controle; `validateWorld` recusa aresta de dado saindo dele, e a mutação da guarda mata
+exatamente um teste. `router` não servia porque não lembra do tick passado, `store` mentiria
+na forma. A UC do RISC-V também passou a usá-lo: família que só um mundo usa é `kind`
+disfarçado.
+
+**A tabela do slide 43 virou oráculo, e as onze linhas bateram célula por célula, na
+primeira execução.** É um documento que não controlamos decidindo quando estamos errados.
+O deck tem duas granularidades da mesma execução — 22 quadros de animação e 11 transações de
+barramento — e nós produzimos as duas **de um livro-caixa só**, que é a tese do projeto
+provada num caso que não inventamos.
+
+**A profundidade vai a nove níveis**, dois a mais do que o desenho previa:
+`sistema › cpu › processador › ula › somador › bit0 › xor › nand › vdd`, 930 objetos. O deck
+desenha a ULA como duas caixas e para ali, porque slide não abre. **E o reuso não custou uma
+linha de domínio nova:** `gates.ts` e `transistors.ts` saíram da tarefa sem uma modificação.
+A largura da ULA virou argumento com 32 como padrão, e o RISC-V não mudou.
+
+**Três defeitos que só a tela pegou, e dois deles estavam no plano escrito antes:**
+
+1. A tabela preenchia coluna por **diferença**, e o segundo `ADD` recarregava o IR com `8B`,
+   o byte que já estava lá — célula vazia, tabela afirmando que a instrução não foi buscada
+   naquele ciclo. Transferência real, invisível. Preenche-se por **qual ordem disparou**,
+   não pelo delta: reescrever o mesmo valor é evento, e diff não vê evento.
+2. Ao vivo, a coluna de instrução mostrava `STORE 0000` antes de os bytes do endereço serem
+   buscados — completava com zero o que a máquina ainda não tinha lido. Passava em todos os
+   testes, porque o oráculo compara a execução completa. Fica em branco até os bytes
+   existirem.
+3. A ficha descrevia um objeto só em vocabulário do motor: quem clicava em `MAR` lia o que é
+   um `buffer`. Nasceu `DESCRICOES`, por id, com teste bidirecional que tira a lista de ids
+   **da própria árvore** — lista à mão é a fonte duplicada de sempre.
+
+**Um erro no material de referência.** O slide 44 dá o código de máquina do 8085 como
+`21 20 00` para `LXI H,2000h`. O 8085 guarda imediato de 16 bits com o byte baixo primeiro
+(*8080/8085 Assembly Language Programming Manual*), então o correto é `21 00 20` — como
+está no deck, o programa escreveria em `0020h`. O artigo da ponte usa a forma certa e faz da
+divergência um dos dois pontos em que as duas máquinas discordam.
+
+**O handbook passou a se chamar pelo que é:** `RISC-V Visual Handbook` → **`CPU Visual
+Handbook`** (o campo `model` já dizia `cpu.model` antes de nós). O mapa reordenou — o
+genérico na fase 4 (*The instruction cycle*), o RISC-V na 5 (*The datapath, all at once*) —
+e o vazio "The control lines of one opcode" foi **absorvido, não substituído**: uma UC
+multiciclo *é* as linhas de controle de um opcode, desenroladas no tempo. Nenhum placeholder
+novo nasceu; um morreu.
+
+**Método:** um agente reportou `pnpm typecheck` limpo quando não estava, e a quebra foi
+commitada — `Kind` tem **duas** tabelas exaustivas, a `FAMILY` do motor e a `KINDS` do
+`depth-ui`, e é a segunda que impede um `kind` de aparecer na tela sem ninguém saber dizer o
+que ele é. Quem pegou foi o agente seguinte, rodando o comando de verdade. Relatório de
+agente é evidência, não veredito.
+
+Espaguete do lab novo: **7 cruzamentos, 0 sobreposições cegas**, teto cravado no medido.
+
+Estado: 773 testes unitários, 179 e2e, typecheck, boundaries (81 arquivos), catálogo (10
+arquivos) e build (29 páginas) verdes.

@@ -32,7 +32,7 @@ export type AssembleResult =
   | { readonly ok: false; readonly errors: readonly AssemblyError[] };
 
 /** Nomes ABI, porque é assim que se escreve na vida real. */
-const ABI: Readonly<Record<string, number>> = {
+export const ABI: Readonly<Record<string, number>> = {
   zero: 0, ra: 1, sp: 2, gp: 3, tp: 4,
   t0: 5, t1: 6, t2: 7,
   s0: 8, fp: 8, s1: 9,
@@ -40,6 +40,23 @@ const ABI: Readonly<Record<string, number>> = {
   s2: 18, s3: 19, s4: 20, s5: 21, s6: 22, s7: 23, s8: 24, s9: 25, s10: 26, s11: 27,
   t3: 28, t4: 29, t5: 30, t6: 31,
 };
+
+/**
+ * O nome de cada registrador, na ordem do índice — **derivado** do ABI.
+ *
+ * A mesma lista estava escrita à mão dentro do lab. Duas listas dos mesmos
+ * trinta e dois nomes divergem no dia em que uma delas ganhar um apelido, e a
+ * divergência aparece como um valor no registrador errado, longe daqui.
+ *
+ * `fp` é apelido de `s0` e por isso não entra: quem escreve escolhe qualquer um
+ * dos dois, quem lê precisa de um só.
+ */
+export const NOMES: readonly string[] = Array.from({ length: 32 }, (_, i) => {
+  const nomes = Object.entries(ABI)
+    .filter(([nome, indice]) => indice === i && nome !== "fp")
+    .map(([nome]) => nome);
+  return nomes[0] ?? `x${i}`;
+});
 
 const R_TYPE = new Set<Mnemonic>(["add", "sub", "and", "or", "xor", "sll", "srl", "sra", "slt"]);
 const I_ALU = new Set<Mnemonic>(["addi", "andi", "ori", "xori", "slli", "srli", "srai", "slti"]);

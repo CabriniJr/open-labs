@@ -83,11 +83,28 @@ if (orfaos.length > 0) {
       </aside>
     </section>
 
+    {
+      handbook.reference && (
+        <section class="hb-section hb-reference" id="reference">
+          <h2>Reference model</h2>
+          <p class="hb-reference__line">{handbook.reference.line}</p>
+          <p class="hb-reference__cite mono">
+            <cite>{handbook.reference.title}</cite>, {handbook.reference.author} ·{" "}
+            {handbook.reference.where} ·{" "}
+            <a href={url(handbook.reference.href)}>what we took, and what we wrote →</a>
+          </p>
+        </section>
+      )
+    }
+
     <section class="hb-section" id="roadmap">
       <h2>Roadmap</h2>
       <p class="hb-section__lede">
-        The order in which the concepts hold each other up. Not a queue — later
-        phases reach back, and the map shows it.
+        {
+          handbook.map
+            ? "The order in which the concepts hold each other up. Not a queue — later phases reach back, and the map shows it."
+            : "The order in which the concepts hold each other up. The interactive map is not drawn yet — drawing the path before walking it would be a promise, so the phases are listed plainly instead."
+        }
       </p>
       {handbook.map && <Roadmap mapa={handbook.map} client:visible />}
       <ol class="hb-phases">
@@ -209,6 +226,19 @@ if (orfaos.length > 0) {
     max-width: var(--measure);
     color: var(--ink-muted);
     margin: 0 0 var(--space-3);
+  }
+
+  /* O crédito fica acima do roadmap, e não no rodapé: quem emprestou o modelo
+     aparece antes do que foi feito com ele. */
+  .hb-reference__line {
+    max-width: var(--measure);
+    margin: 0 0 var(--space-1);
+  }
+
+  .hb-reference__cite {
+    margin: 0;
+    color: var(--ink-muted);
+    font-size: var(--size-step--1);
   }
 
   .hb-phases {

@@ -17,8 +17,19 @@ import type {
 } from "@ovh/depth-core";
 import type { NodePlacement, View } from "./view.js";
 import { resumoDoKind } from "./kinds.js";
-import { PROFUNDIDADE_MAXIMA, ZOOM_MAXIMO, encaixar, quantoAparece } from "./lod.js";
+import {
+  ALTURA_DA_LINHA,
+  PROFUNDIDADE_MAXIMA,
+  ZOOM_MAXIMO,
+  encaixar,
+  fracaoDoQuadro,
+  quantoAparece,
+  tabelaLegivel,
+} from "./lod.js";
+import { caminho, retasDe } from "./roteador.js";
+import type { Ponto } from "./roteador.js";
 import { travessia } from "./travessia.js";
+import { juncoes } from "./espaguete.js";
 import { portasDaCaixa, posicaoDaPorta } from "./portas.js";
 import { dilatarPara, relogioDaCamada } from "./tempo.js";
 
@@ -62,6 +73,19 @@ export interface StageProps {
    * lê `WorldState.settled` e entrega o conjunto pronto.
    */
   readonly altos?: ReadonlySet<string> | undefined;
+  /**
+   * Quem, neste tick, está **deixando passar**.
+   *
+   * É o par de `altos` para o registro esquemático: `altos` diz que valor saiu,
+   * isto diz se o caminho está aberto. As duas coisas são diferentes e o
+   * desenho as confundia — sete objetos do mesmo azul, e a pergunta que aquele
+   * nível existe para responder (*por que esta porta deu 1?*) só se respondia
+   * lendo número pequeno.
+   *
+   * Quem responde é o domínio: só ele sabe ler o que passou. Sem isto, nada
+   * conduz — e não conduzir é a resposta honesta para "não me disseram".
+   */
+  readonly conduzindo?: ReadonlySet<string> | undefined;
   readonly selected?: string | undefined;
   readonly onSelect?: (id: string) => void;
   readonly onOpen?: (id: string) => void;
@@ -90,6 +114,39 @@ export interface StageProps {
    * transformação, que é a coisa toda.
    */
   readonly leituraDaCarga?: ((mensagem: Message) => string | undefined) | undefined;
+  /**
+   * A **espécie** de uma carga, para o desenho poder distingui-la das outras.
+   *
+   * A carga muda de cara ao atravessar quem a transforma — uma palavra vira
+   * campos, campos viram operandos, operandos viram resultado —, e essa
+   * transformação é a coisa que se está ensinando. Para desenhá-la, o palco
+   * precisa saber que duas cargas são de espécies diferentes; **o que cada
+   * espécie é, ele não pode saber**.
+   *
+   * Isto existia e estava do lado errado da fronteira: o CSS do motor tinha
+   * seletores `data-kind="instrucao"`, `"escrita"`, `"guardar"` — vocabulário
+   * de CPU dentro do palco. A guarda de fronteira não viu porque só varre
+   * TypeScript, e a do catálogo só achou porque a tinta estava escrita ali.
+   *
+   * O número não tem significado nenhum e não deve ter: ele só precisa ser
+   * estável e diferente. Quem lhe dá sentido é o domínio, do lado de lá.
+   */
+  readonly especieDaCarga?: ((mensagem: Message) => number | undefined) | undefined;
+  /**
+   * O que um objeto **guarda** agora, linha a linha.
+   *
+   * Um objeto que acumula, desenhado como caixa lisa, é a caixa fechada do
+   * armazém: o leitor sabe que tem coisa lá dentro e não vê nenhuma. Abrir e
+   * ver as entradas — chave e valor, linha a linha — é o que transforma um
+   * nome em coisa.
+   *
+   * Não é interior inventado: são as linhas do **estado**, entregues pelo
+   * domínio, que é quem sabe ler aquele estado. O desenho só decide quando há
+   * espaço para mostrá-las.
+   */
+  readonly conteudo?:
+    | ((id: string) => readonly { readonly chave: string; readonly valor: string; readonly ativo?: boolean }[] | undefined)
+    | undefined;
   /**
    * O retângulo que a câmera deve enquadrar, animando até lá.
    *
@@ -134,99 +191,6 @@ interface CamadaProps extends StageProps {
   readonly emissoes: Readonly<Record<string, EmissaoDaPorta>>;
 }
 
-interface Ponto {
-  readonly x: number;
-  readonly y: number;
-}
-
-const centro = (p: NodePlacement): Ponto => ({ x: p.x + p.w / 2, y: p.y + p.h / 2 });
-
-/**
- * O caminho de um fio, em cotovelos retos — é assim que esquemático se desenha,
- * e a diagonal esconderia por onde a linha passa.
- *
- * Quando o destino está atrás da origem, a linha desce para uma faixa livre e
- * volta por baixo: é a realimentação, e ela precisa **parecer** uma volta.
- */
-interface Retangulo {
-  readonly x: number;
-  readonly y: number;
-  readonly w: number;
-  readonly h: number;
-}
-
-const cruzaVertical = (x: number, y1: number, y2: number, r: Retangulo): boolean =>
-  x > r.x - 6 && x < r.x + r.w + 6 && Math.max(y1, y2) > r.y - 6 && Math.min(y1, y2) < r.y + r.h + 6;
-
-const cruzaHorizontal = (y: number, x1: number, x2: number, r: Retangulo): boolean =>
-  y > r.y - 6 && y < r.y + r.h + 6 && Math.max(x1, x2) > r.x - 6 && Math.min(x1, x2) < r.x + r.w + 6;
-
-/** O primeiro candidato que não passa por cima de ninguém, ou o primeiro. */
-function escolher(
-  candidatos: readonly number[],
-  livre: (valor: number) => boolean,
-): number {
-  return candidatos.find(livre) ?? candidatos[0] ?? 0;
-}
-
-/**
- * O caminho de um fio, em cotovelos retos — é assim que esquemático se desenha,
- * e a diagonal esconderia por onde a linha passa.
- *
- * O cotovelo **desvia de quem estiver no caminho**. Uma linha que atravessa uma
- * caixa parece entrar nela, e o leitor passa a ver uma ligação que não existe —
- * é mentira de desenho, e custa o mesmo tanto que mentira de número.
- */
-function caminho(
-  de: NodePlacement,
-  para: NodePlacement,
-  faixa: number,
-  obstaculos: readonly Retangulo[],
-): string {
-  const a = centro(de);
-  const b = centro(para);
-  const saida = { x: de.x + de.w, y: a.y };
-  const outros = obstaculos.filter((r) => r !== de && r !== para);
-
-  // Para a frente: sai pela direita, entra pela esquerda, com um cotovelo no
-  // meio. É a leitura natural, e é a maioria dos fios.
-  if (para.x >= saida.x + 16) {
-    const meio = (saida.x + para.x) / 2;
-    const candidatos = [meio, meio - 14, meio + 14, saida.x + 12, para.x - 12];
-    const x = escolher(candidatos, (c) =>
-      outros.every((r) => !cruzaVertical(c, saida.y, b.y, r)),
-    );
-    return `M ${saida.x} ${saida.y} H ${x} V ${b.y} H ${para.x}`;
-  }
-
-  // Destino claramente abaixo ou acima: **desce (ou sobe) pela borda**, em vez
-  // de sair de lado e cruzar tudo na altura do meio. É o barramento indo até a
-  // memória, e é assim que a figura de livro desenha.
-  const abaixo = para.y > de.y + de.h + 8;
-  const acima = para.y + para.h + 8 < de.y;
-  if (abaixo || acima) {
-    const entre = abaixo
-      ? [(de.y + de.h + para.y) / 2, para.y - 16, de.y + de.h + 16]
-      : [(para.y + para.h + de.y) / 2, para.y + para.h + 16, de.y - 16];
-    const candidatos = entre.flatMap((c) => [c, c - 12, c + 12, c - 24, c + 24]);
-    const lane = escolher(candidatos, (c) =>
-      outros.every((r) => !cruzaHorizontal(c, a.x, b.x, r)),
-    );
-    const inicioY = abaixo ? de.y + de.h : de.y;
-    const fimY = abaixo ? para.y : para.y + para.h;
-    return `M ${a.x} ${inicioY} V ${lane} H ${b.x} V ${fimY}`;
-  }
-
-  // Sobrepostos na vertical: a linha precisa PARECER uma volta. Sai pela
-  // direita, contorna por baixo dos dois e entra pela borda de baixo.
-  const base = Math.max(de.y + de.h, para.y + para.h);
-  const lane = escolher(
-    [base + faixa, base + faixa + 14, base + faixa + 28, base + faixa - 10],
-    (c) => outros.every((r) => !cruzaHorizontal(c, saida.x + 14, b.x, r)),
-  );
-  return `M ${saida.x} ${saida.y} H ${saida.x + 14} V ${lane} H ${b.x} V ${para.y + para.h}`;
-}
-
 /** O que mudou no livro-caixa entre dois estados. É a fonte de todo movimento. */
 function delta(
   state: WorldState,
@@ -251,6 +215,45 @@ function usaMovimentoReduzido(): boolean {
     return () => consulta.removeEventListener("change", ouvir);
   }, []);
   return reduzido;
+}
+
+/**
+ * A chave: um caminho com uma quebra, e algo comandando a quebra.
+ *
+ * É o símbolo que separa "deixar passar ou não" de "escolher qual entrada
+ * responde". Uma chave desenhada com o trapézio do seletor — que é a notação de
+ * uma escolha — empurra o modelo mental errado, e empurra justamente onde o
+ * leitor está mais fundo e menos seguro. Aqui os dois terminais são o caminho,
+ * a lâmina é a quebra, e o traço que chega de baixo é quem comanda: desenhado
+ * na linguagem da linha de controle porque **é** uma linha de controle, e não
+ * parte do caminho.
+ *
+ * A lâmina está aberta, e por enquanto sempre: fechá-la quando a chave conduz é
+ * a entrega da cor, onde conduzir e cortar ganham leitura de relance.
+ */
+function Chave({ x, y, r, fechada }: { x: number; y: number; r: number; fechada: boolean }) {
+  return (
+    <g
+      className="dui-stage__chave"
+      data-fechada={fechada ? "true" : "false"}
+      transform={`translate(${x} ${y})`}
+    >
+      <line className="dui-stage__chave-via" x1={-r * 1.4} y1={0} x2={-r * 0.5} y2={0} />
+      <line className="dui-stage__chave-via" x1={r * 0.5} y1={0} x2={r * 1.4} y2={0} />
+      {/* Fechada, a lâmina deita e encosta no outro terminal: o caminho está
+          inteiro. Aberta, ela levanta e o caminho tem um buraco. É o mesmo
+          desenho que um esquemático usa, e ele se lê sem legenda. */}
+      <line
+        className="dui-stage__chave-lamina"
+        x1={-r * 0.5}
+        y1={0}
+        x2={fechada ? r * 0.5 : r * 0.45}
+        y2={fechada ? 0 : -r * 0.9}
+      />
+      <line className="dui-stage__chave-comando" x1={0} y1={r * 1.3} x2={0} y2={r * 0.3} />
+      <circle className="dui-stage__chave-eixo" cx={-r * 0.5} cy={0} r={r * 0.18} />
+    </g>
+  );
 }
 
 /** A engrenagem: oito dentes, e só gira quando o objeto agiu neste tick. */
@@ -294,19 +297,42 @@ function Engrenagem({ x, y, r }: { x: number; y: number; r: number }) {
  * segui-la é entender o sistema: o que entra num bloco com um nome sai com
  * outro, e a linha entre os dois mostra exatamente onde isso aconteceu.
  */
+/**
+ * A largura de uma carga, em unidades de desenho.
+ *
+ * **A forma vem da largura do fio**, que o modelo declara. Um fio de uma via
+ * leva um ponto; um barramento de trinta e duas leva uma barra. É a notação de
+ * qualquer esquemático — o traço grosso com a barra e o `/32` — e é ela que faz
+ * a transformação aparecer: a palavra sai da memória como barra larga, o
+ * decodificador a devolve em campos estreitos, os operandos entram na ULA como
+ * barras e o vai-um de um bit é um ponto. Antes disso tudo era o mesmo círculo,
+ * e a transformação acontecia dentro da caixa, invisível.
+ *
+ * Cresce pelo logaritmo porque a diferença que interessa é de ORDEM: entre 1 e
+ * 8 há uma lição, entre 24 e 32 não há nenhuma, e linear faria a carga de 32
+ * atravessar a tela inteira.
+ */
+export function comprimentoDaCarga(largura: number | undefined, raio: number): number {
+  if (largura === undefined || largura <= 1) return 0;
+  return Math.min(raio * 5, raio * Math.log2(largura));
+}
+
 function Carga({
   mensagem,
   leitura,
   raio,
+  largura,
   de,
   para,
 }: {
   mensagem: Message;
   leitura: string | undefined;
   raio: number;
+  largura?: number | undefined;
   de: string;
   para: string;
 }) {
+  const comprimento = comprimentoDaCarga(largura, raio);
   return (
     <>
       {/* O hover é o mesmo gesto que já responde "o que é esta peça?": bateu a
@@ -316,7 +342,18 @@ function Carga({
           mensagem.weight > 1 ? `\n${mensagem.weight} itens` : ""
         }`}
       </title>
-      <circle className="dui-stage__carga" r={raio} />
+      {comprimento > 0 ? (
+        <rect
+          className="dui-stage__carga"
+          x={-comprimento}
+          y={-raio}
+          width={comprimento * 2}
+          height={raio * 2}
+          rx={raio}
+        />
+      ) : (
+        <circle className="dui-stage__carga" r={raio} />
+      )}
       {leitura === undefined ? null : (
         // Ao lado, e não em cima: por cima do ponto o valor fica ilegível
         // justamente quando a linha está acesa, que é quando se quer lê-lo.
@@ -344,11 +381,14 @@ function Camada({
   fills,
   readouts,
   altos,
+  conduzindo,
   selected,
   onSelect,
   onOpen,
   interiores,
   leituraDaCarga,
+  especieDaCarga,
+  conteudo,
   unidadesPorQuadro,
   profundidade,
   dilatacao,
@@ -458,6 +498,7 @@ function Camada({
    * disseram", que é diferente de acender tudo por causa de uma contagem.
    */
   const alto = (id: string): boolean => altos?.has(id) === true;
+  const passa = (id: string): boolean => conduzindo?.has(id) === true;
 
   // Contêineres são moldura: uma linha atravessando um deles é normal, e
   // desviar dela empurraria todo fio para fora do desenho.
@@ -469,12 +510,64 @@ function Camada({
    * Calculado antes dos fios porque é ele que decide se um fio **entra** na
    * caixa ou para na borda dela.
    */
+  // O quadro em unidades da vista: a largura vem da câmera, e a altura sai da
+  // proporção da própria vista — a câmera enquadra sem distorcer, então a
+  // proporção do quadro é a da vista.
+  const quadro = {
+    largura: unidadesPorQuadro,
+    altura: (unidadesPorQuadro * view.height) / view.width,
+  };
+
+  /**
+   * As caixas que contêm outra caixa desenhada: **elas são moldura**.
+   *
+   * Não é o `kind` que decide, é o desenho. Um barramento com as pistas à
+   * vista é a moldura das pistas, e desenhá-lo como esteira o transformava
+   * numa barra verde chapada com as pistas boiando dentro. A regra é a mesma
+   * que separa contêiner de peça: quem tem gente dentro é moldura.
+   */
+  const molduras = new Set<string>(
+    view.places
+      .filter((place) =>
+        view.places.some((outro) => {
+          if (outro.id === place.id) return false;
+          let cursor = tree.parent.get(outro.id);
+          while (cursor !== undefined) {
+            if (cursor === place.id) return true;
+            cursor = tree.parent.get(cursor);
+          }
+          return false;
+        }),
+      )
+      .map((place) => place.id),
+  );
+
+  /**
+   * Para que lado uma pista anda.
+   *
+   * Sai da geometria do próprio modelo: se quem recebe daquela pista está à
+   * **esquerda** de quem a alimenta, ela anda para a esquerda. Num barramento
+   * é o que separa a pista de ida da de volta — e sem isso as duas apontavam
+   * para o mesmo lado, que é o contrário do que um barramento é.
+   */
+  const sentidoDaPista = (id: string): 1 | -1 => {
+    const meu = lugares.get(id);
+    if (meu === undefined) return 1;
+    const alvos = wires
+      .filter((w) => w.from === id && typeof w.to === "string")
+      .map((w) => ondeCai(String(w.to)))
+      .filter((p): p is NodePlacement => p !== undefined && p !== FORA);
+    if (alvos.length === 0) return 1;
+    const media = alvos.reduce((t, p) => t + p.x + p.w / 2, 0) / alvos.length;
+    return media < meu.x + meu.w / 2 ? -1 : 1;
+  };
+
   const dentroDe2 = new Map<string, { readonly interior: View; readonly aparece: number }>();
   for (const place of view.places) {
     if (place.collapsed !== true || profundidade >= PROFUNDIDADE_MAXIMA) continue;
     const interior = interiores?.(place.id);
     if (interior === undefined) continue;
-    const aparece = quantoAparece(place.w / unidadesPorQuadro);
+    const aparece = quantoAparece(fracaoDoQuadro(place, quadro));
     if (aparece > 0) dentroDe2.set(place.id, { interior, aparece });
   }
 
@@ -539,25 +632,43 @@ function Camada({
   const ANCORA_SAI = "__sai";
   const FORA = "__fora" as const;
 
+  /**
+   * A caixa desenhada **mais funda** que contém este objeto.
+   *
+   * Subir pela árvore até achar quem está na vista, e não perguntar qual filho
+   * do foco o contém. A diferença parece de detalhe e é a causa da bagunça: uma
+   * vista desenha caixas aninhadas — a moldura de fora, a de dentro, e a peça
+   * fechada dentro dela — e nenhuma das duas últimas é filha direta do foco.
+   * Perguntando pelo filho do foco, TODO fio que nascia lá no fundo era
+   * desenhado saindo da moldura de fora: a linha atravessava a máquina inteira
+   * para chegar na caixa vizinha, e o desenho dizia que a peça está ligada a
+   * quem ela não está.
+   */
+  const caixaQueContem = (id: string): NodePlacement | undefined => {
+    let cursor = tree.parent.get(id);
+    while (cursor !== undefined) {
+      const caixa = lugares.get(cursor);
+      if (caixa !== undefined) return caixa;
+      cursor = tree.parent.get(cursor);
+    }
+    return undefined;
+  };
+
   const ondeCai = (id: string): NodePlacement | typeof FORA | undefined => {
     const direto = lugares.get(id);
     if (direto !== undefined) return direto;
     if (!tree.byId.has(id)) return undefined;
-    const quem = visibleChild(tree, view.focus, id);
-    if (quem.at === "child") {
-      const caixa = lugares.get(quem.id);
-      if (caixa !== undefined) return caixa;
-    }
+    const dentro = caixaQueContem(id);
+    if (dentro !== undefined) return dentro;
     // O próprio foco: a ligação atravessa a moldura. Quem responde por ela lá
     // dentro é resolvido logo abaixo — aqui só se diz que ela vem de fora.
+    const quem = visibleChild(tree, view.focus, id);
     return quem.at === "self" || quem.at === "outside" ? FORA : undefined;
   };
 
   /** A caixa desta vista que contém aquele objeto, se alguma contiver. */
-  const dentroDoFoco = (id: string): NodePlacement | undefined => {
-    const quem = visibleChild(tree, view.focus, id);
-    return quem.at === "child" ? lugares.get(quem.id) : undefined;
-  };
+  const dentroDoFoco = (id: string): NodePlacement | undefined =>
+    lugares.get(id) ?? caixaQueContem(id);
 
   /**
    * Quem, **nesta vista**, responde por uma ligação que atravessa a moldura.
@@ -602,6 +713,9 @@ function Camada({
   });
 
   const vistos = new Set<string>();
+  // As retas já usadas por fios anteriores, para o roteador não empilhar dois
+  // fios na mesma coluna. Acumula na ordem das arestas, que é estável.
+  const ocupadas = new Set<string>();
 
   /** Fios desenháveis: cada ponta cai numa caixa da vista ou na margem dela. */
   const arestas = wires
@@ -628,6 +742,19 @@ function Camada({
       const para = b === FORA ? margem("sai", a as NodePlacement) : b;
       const de = a === FORA ? margem("entra", para) : a;
 
+      /*
+        Ligação que começa e termina na mesma caixa desenhada, sem ser um
+        laço de verdade: é **interior**, e desenhá-la é desenhar por fora o que
+        acontece por dentro. A ULA falando com a unidade de desvio virava uma
+        alça saindo da lógica combinacional e voltando nela — uma volta que o
+        leitor lê como realimentação e que não é nenhuma.
+
+        Um laço de verdade — o objeto que escreve nele mesmo — continua sendo
+        desenhado, porque ali as duas pontas do fio SÃO o mesmo objeto, e é isso
+        que a alça diz.
+      */
+      if (de.id === para.id && wire.from !== String(wire.to)) return null;
+
       // Duas folhas dentro das mesmas duas caixas produzem a mesma aresta
       // agregada. Desenhá-la trinta e duas vezes engrossa a linha sem dizer
       // nada — a multiplicidade quem conta é a marca de réplicas.
@@ -637,7 +764,20 @@ function Camada({
         vistos.add(chaveVisual);
       }
       const linha = wire.line ?? "data";
-      const traco = caminho(de, para, 18 + (i % 3) * 12, obstaculos);
+      /*
+        O roteador lembra por onde os fios anteriores passaram.
+
+        Sem isso ele desviava de caixas e ignorava fios: dois sem nada em comum
+        escolhiam a MESMA coluna de cotovelo, porque o desempate era a
+        proximidade do centro e os dois queriam o centro. Desenhados um por
+        cima do outro, eles se leem como um só.
+
+        A ordem importa e é a das arestas, que é estável: o primeiro fio fica
+        com a coluna mais central, e quem vem depois se afasta. Um sorteio aqui
+        faria o desenho mudar entre dois carregamentos da mesma página.
+      */
+      const traco = caminho(de, para, 18 + (i % 3) * 12, obstaculos, ocupadas);
+      for (const reta of retasDe(traco)) ocupadas.add(reta);
 
       /*
         A travessia da fronteira.
@@ -686,9 +826,14 @@ function Camada({
   // primeiro que liga os dois. Com leque, as cópias são itens distintos, cada
   // uma com o seu destino, então nenhuma some no caminho de outra.
   const trilhoEntre = new Map<string, string>();
+  // A largura declarada do fio, para a carga em voo poder tomar a forma dele.
+  const larguraEntre = new Map<string, number>();
   for (const aresta of arestas) {
     const chave = `${aresta.from}->${aresta.to}`;
     if (!trilhoEntre.has(chave)) trilhoEntre.set(chave, aresta.d);
+    if (aresta.width !== undefined && !larguraEntre.has(chave)) {
+      larguraEntre.set(chave, aresta.width);
+    }
   }
 
   const identificador = (chave: string): string =>
@@ -755,6 +900,10 @@ function Camada({
           <g
             key={aresta.chave}
             className="dui-stage__fio"
+            /* As duas pontas, nomeadas: é o que permite conferir de fora que
+               nenhum fio atravessa uma caixa que não é ponta dele. */
+            data-de={aresta.from}
+            data-para={aresta.to}
             data-linha={aresta.linha}
             data-timing={aresta.timing}
             data-acesa={aresta.acesa ? "true" : undefined}
@@ -800,6 +949,30 @@ function Camada({
         ))}
       </g>
 
+      {/*
+        As junções.
+
+        A convenção mais antiga do esquemático, e a mais barata: o T ganha
+        pontinho e o X não ganha. Sem ela não há como saber se duas linhas que
+        se tocam estão ligadas ou só passam uma pela outra — e um leque saindo
+        da mesma porta era desenhado como três linhas empilhadas, que se leem
+        como uma linha só. O leitor via uma ligação onde existem três.
+
+        Sai da geometria do que foi desenhado, e não de saber o que é leque:
+        junção é a ponta de um fio caindo no meio do trecho de outro.
+      */}
+      <g className="dui-stage__juncoes">
+        {juncoes(arestas.map((a) => a.traco)).map((ponto) => (
+          <circle
+            key={`${ponto.x},${ponto.y}`}
+            className="dui-stage__juncao"
+            cx={ponto.x}
+            cy={ponto.y}
+            r={2.6}
+          />
+        ))}
+      </g>
+
       <g className="dui-stage__objetos">
         {ordenados.map((place) => {
           const node = tree.byId.get(place.id);
@@ -826,7 +999,7 @@ function Camada({
               ? interiores?.(place.id)
               : undefined;
           const aparece =
-            interior === undefined ? 0 : quantoAparece(place.w / unidadesPorQuadro);
+            interior === undefined ? 0 : quantoAparece(fracaoDoQuadro(place, quadro));
           // Escala uniforme, pelo lado que aperta: esticar o interior para
           // preencher a caixa distorceria o esquemático, e num esquemático a
           // proporção é informação — uma rede em paralelo esticada deixa de
@@ -839,8 +1012,15 @@ function Camada({
               className="dui-stage__objeto"
               data-id={place.id}
               data-familia={fam}
+              data-kind={node?.kind}
+              // O registro é da VISTA, e vai no objeto porque uma camada de
+              // dentro pode estar noutro registro que a de fora: descendo, o
+              // diagrama de blocos vira esquemático em algum degrau, e os dois
+              // aparecem no mesmo SVG durante a transição.
+              data-registro={view.registro ?? "blocos"}
               data-ativo={agindo ? "true" : undefined}
               data-alto={aceso ? "true" : undefined}
+              data-conduz={node?.kind === "switch" ? (passa(place.id) ? "true" : "false") : undefined}
               style={{ ["--dui-atraso" as string]: `${atraso}ms` }}
               data-fechado={place.collapsed === true ? "true" : undefined}
               data-selecionado={place.id === selected ? "true" : undefined}
@@ -884,14 +1064,123 @@ function Camada({
                   />
                 </>
               ) : null}
-              <rect
-                className="dui-stage__caixa"
-                x={place.x}
-                y={place.y}
-                width={place.w}
-                height={place.h}
-                rx={fam === "container" ? 14 : 8}
-              />
+              {/*
+                A forma vem da família, e a família vem do kind.
+
+                Um `conduit` é uma **esteira**, não uma caixa: pontas
+                arredondadas, corpo baixo, e o nome fora dele. Desenhá-lo como
+                retângulo o faz parecer uma peça que processa, e a diferença
+                entre transportar e transformar é a primeira coisa que este
+                desenho precisa deixar clara.
+              */}
+              {molduras.has(place.id) ? (
+                // Moldura: contorno e nada mais. O que ela guarda está
+                // desenhado por cima dela, e um preenchimento forte aqui
+                // apagaria justamente isso.
+                <rect
+                  className="dui-stage__caixa dui-stage__moldura"
+                  x={place.x}
+                  y={place.y}
+                  width={place.w}
+                  height={place.h}
+                  rx={14}
+                />
+              ) : fam === "conduit" ? (
+                /*
+                  Um conduíte é uma **pista**, não uma caixa.
+
+                  Desenhado como retângulo vazado ele virava uma barra chapada:
+                  o leitor via um lugar, e o que ele precisa ver é um caminho. A
+                  pista é o leito largo e apagado com o trilho fino por cima —
+                  a mesma linguagem do fio, porque é a mesma coisa: transporte.
+                  E é o que faz um barramento aberto parecer o que é, uma
+                  auto-estrada de pistas paralelas.
+                */
+                (() => {
+                  const meio = place.y + place.h / 2;
+                  const paraDireita = sentidoDaPista(place.id) === 1;
+                  const inicio = paraDireita ? place.x : place.x + place.w;
+                  const fim = paraDireita ? place.x + place.w : place.x;
+                  return (
+                    <>
+                      <line
+                        className="dui-stage__pista-leito"
+                        x1={place.x}
+                        y1={meio}
+                        x2={place.x + place.w}
+                        y2={meio}
+                      />
+                      <line
+                        className="dui-stage__pista"
+                        x1={inicio}
+                        y1={meio}
+                        x2={fim}
+                        y2={meio}
+                      />
+                      {/*
+                        A ponta da pista é desenhada aqui, e não com o marcador
+                        do fio: o marcador é dimensionado para um traço de
+                        espessura fixa, e sobre uma pista ele vinha do tamanho
+                        de uma peça — uma seta preta gigante no meio do
+                        barramento, gritando mais alto que o barramento.
+                      */}
+                      <path
+                        className="dui-stage__ponta"
+                        d={`M ${fim} ${meio} L ${fim - (paraDireita ? 9 : -9)} ${meio - 5} L ${
+                          fim - (paraDireita ? 9 : -9)
+                        } ${meio + 5} Z`}
+                      />
+                    </>
+                  );
+                })()
+              ) : node?.kind === "store" ? (
+                // Um banco não é uma caixa: é uma **estante**. A faixa de topo
+                // é a etiqueta da prateleira, e o que vem abaixo dela são as
+                // linhas do estado. Desenhado como retângulo liso ele fica
+                // igual a quem processa — e a diferença entre "guarda" e
+                // "transforma" é justamente a que este desenho precisa dizer.
+                <>
+                  <rect
+                    className="dui-stage__caixa"
+                    x={place.x}
+                    y={place.y}
+                    width={place.w}
+                    height={place.h}
+                    rx={4}
+                  />
+                  <line
+                    className="dui-stage__prateleira"
+                    x1={place.x}
+                    y1={place.y + 18}
+                    x2={place.x + place.w}
+                    y2={place.y + 18}
+                  />
+                </>
+              ) : node?.kind === "router" && fam !== "controller" ? (
+                // O trapézio é a notação de um seletor, e ela é universal:
+                // largo do lado das entradas, estreito do lado da saída. Só
+                // vale para quem está NO caminho: quem só manda sinal não
+                // seleciona nada, e um trapézio deitado sobre a largura do
+                // desenho vira uma seta gigante apontando para lugar nenhum.
+                //
+                // A forma **é** a explicação — muitas entram, uma sai —, e um
+                // retângulo a esconde atrás de um rótulo que ninguém lê.
+                <path
+                  className="dui-stage__caixa"
+                  d={`M ${place.x} ${place.y} L ${place.x + place.w} ${place.y + place.h * 0.2} L ${
+                    place.x + place.w
+                  } ${place.y + place.h * 0.8} L ${place.x} ${place.y + place.h} Z`}
+                />
+              ) : (
+                <rect
+                  className="dui-stage__caixa"
+                  x={place.x}
+                  y={place.y}
+                  width={place.w}
+                  height={place.h}
+                  rx={fam === "container" ? 14 : 8}
+                />
+              )}
               {cheio !== undefined ? (
                 <rect
                   className="dui-stage__nivel"
@@ -944,9 +1233,12 @@ function Camada({
                       fills={fills}
                       readouts={readouts}
                       altos={altos}
+                      conduzindo={conduzindo}
                       selected={selected}
                       interiores={interiores}
                       leituraDaCarga={leituraDaCarga}
+                      especieDaCarga={especieDaCarga}
+                      conteudo={conteudo}
                       emissoes={emissoes}
                       unidadesPorQuadro={unidadesPorQuadro / (dentro?.escala ?? 1)}
                       profundidade={profundidade + 1}
@@ -956,6 +1248,67 @@ function Camada({
                   </g>
                 </>
               ) : null}
+
+              {/*
+                O que a caixa guarda, quando há espaço para mostrar.
+
+                O limiar é o mesmo do interior de um contêiner, e pela mesma
+                razão: de longe, uma tabela de doze linhas é doze borrões. O que
+                muda é que aqui não há um nível abaixo — o conteúdo **é** o
+                objeto, e por isso ele aparece dentro dele, sem moldura nova.
+              */}
+              {(() => {
+                const linhas = conteudo?.(place.id);
+                if (linhas === undefined || linhas.length === 0) return null;
+                if (!tabelaLegivel(unidadesPorQuadro)) return null;
+                const alturaDaLinha = ALTURA_DA_LINHA;
+                const cabem = Math.max(0, Math.floor((place.h - 26) / alturaDaLinha));
+                if (cabem < 1) return null;
+                const mostradas = linhas.slice(0, cabem);
+                return (
+                  <g className="dui-stage__conteudo">
+                    {mostradas.map((linha, i) => (
+                      <g key={linha.chave} data-ativo={linha.ativo === true ? "true" : undefined}>
+                        <rect
+                          className="dui-stage__linha"
+                          x={place.x + 6}
+                          y={place.y + 20 + i * alturaDaLinha}
+                          width={place.w - 12}
+                          height={alturaDaLinha - 2}
+                          rx={2}
+                        />
+                        <text
+                          className="dui-stage__linha-chave"
+                          x={place.x + 11}
+                          y={place.y + 30 + i * alturaDaLinha}
+                        >
+                          {linha.chave}
+                        </text>
+                        <text
+                          className="dui-stage__linha-valor"
+                          x={place.x + place.w - 11}
+                          y={place.y + 30 + i * alturaDaLinha}
+                          textAnchor="end"
+                        >
+                          {linha.valor}
+                        </text>
+                      </g>
+                    ))}
+                    {linhas.length > mostradas.length ? (
+                      // Dizer quantas ficaram de fora é diferente de cortar em
+                      // silêncio: o leitor sabe que a caixa tem mais.
+                      <text
+                        className="dui-stage__linha-resto"
+                        x={place.x + place.w / 2}
+                        y={place.y + place.h - 6}
+                        textAnchor="middle"
+                      >
+                        {`+${linhas.length - mostradas.length}`}
+                      </text>
+                    ) : null}
+                  </g>
+                );
+              })()}
 
               {/*
                 As portas da caixa: por onde entra, por onde sai.
@@ -982,7 +1335,12 @@ function Camada({
                   );
                 })}
                 {portas.saidas.map((porta, i) => {
-                  const cy = place.y + place.h * posicaoDaPorta(i, portas.saidas.length);
+                  // No trapézio a saída fica no bico, e não espalhada pela
+                  // borda: é ali que a linha realmente sai.
+                  const cy =
+                    node?.kind === "router"
+                      ? place.y + place.h / 2
+                      : place.y + place.h * posicaoDaPorta(i, portas.saidas.length);
                   return (
                     <g key={`s${porta}`} className="dui-stage__porta" data-lado="saida">
                       <title>{`out · ${porta}`}</title>
@@ -1010,14 +1368,49 @@ function Camada({
                 o campo livre.
               */}
               <g className="dui-stage__rosto" opacity={Math.max(0, 1 - aparece * 2)}>
-              {fam === "container" ? (
+              {fam === "container" || molduras.has(place.id) ? (
                 <text className="dui-stage__titulo" x={place.x + 12} y={place.y + 18}>
                   {rotulo}
                 </text>
+              ) : fam === "conduit" ? (
+                // O nome de uma pista vai na **ponta de onde ela sai**, rente à
+                // linha, como a placa de uma estrada. Centralizado acima, ele
+                // caía entre duas pistas e o leitor não sabia de qual era.
+                <>
+                  <text
+                    className="dui-stage__titulo"
+                    x={sentidoDaPista(place.id) === 1 ? place.x + 4 : place.x + place.w - 4}
+                    y={place.y + place.h / 2 - 6}
+                    textAnchor={sentidoDaPista(place.id) === 1 ? "start" : "end"}
+                  >
+                    {rotulo}
+                  </text>
+                  {leitura === undefined ? null : (
+                    <text
+                      className="dui-stage__leitura"
+                      x={place.x + place.w / 2}
+                      y={place.y + place.h / 2 + 4}
+                      textAnchor="middle"
+                    >
+                      {leitura}
+                    </text>
+                  )}
+                </>
               ) : (
                 <>
                   {fam === "processor" && place.h >= 34 ? (
-                    <Engrenagem x={place.x + place.w - 16} y={place.y + 16} r={6} />
+                    // Uma chave não processa: ela deixa passar. Engrenagem nela
+                    // seria o mesmo gesto para duas coisas diferentes.
+                    node?.kind === "switch" ? (
+                      <Chave
+                        x={place.x + place.w - 18}
+                        y={place.y + 16}
+                        r={7}
+                        fechada={passa(place.id)}
+                      />
+                    ) : (
+                      <Engrenagem x={place.x + place.w - 16} y={place.y + 16} r={6} />
+                    )
                   ) : null}
                   <text
                     className="dui-stage__rotulo"
@@ -1125,7 +1518,7 @@ function Camada({
                 key={`${aresta.chave}:${state.tick}`}
                 className="dui-stage__carga-grupo dui-stage__carga-grupo--acomodada"
                 data-carga={aresta.chave}
-                data-kind={mensagem.kind}
+                data-especie={especieDaCarga?.(mensagem)}
                 data-linha={aresta.linha}
                 style={{
                   ["--dui-trilho" as string]: `path("${aresta.d}")`,
@@ -1137,6 +1530,7 @@ function Camada({
                   mensagem={mensagem}
                   leitura={leituraDaCarga?.(mensagem)}
                   raio={4}
+                  largura={aresta.width}
                   de={aresta.from}
                   para={aresta.to}
                 />
@@ -1155,7 +1549,7 @@ function Camada({
               key={`${item.id}:${state.tick}`}
               className="dui-stage__carga-grupo dui-stage__carga-grupo--voo"
               data-carga={item.id}
-              data-kind={item.message.kind}
+              data-especie={especieDaCarga?.(item.message)}
               data-sinal={item.signalPort !== undefined ? "true" : undefined}
               style={{
                 ["--dui-trilho" as string]: `path("${trilho}")`,
@@ -1168,6 +1562,7 @@ function Camada({
                 mensagem={item.message}
                 leitura={leituraDaCarga?.(item.message)}
                 raio={5}
+                largura={larguraEntre.get(`${item.from}->${String(item.to)}`)}
                 de={item.from}
                 para={String(item.to)}
               />

@@ -103,4 +103,9 @@ describe("o caminho de dados como mundo do motor", () => {
     }
     expect(arvore.byId.get("somador")?.replicas).toBe(32);
   });
+
+  it("a unidade de controle é um sequencer, e não um router", () => {
+    const mundo = new World(cpuWorld(imagem("addi x1, x0, 7")));
+    expect(mundo.tree.byId.get("controle")?.kind).toBe("sequencer");
+  });
 });

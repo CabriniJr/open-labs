@@ -2,7 +2,13 @@ import { describe, expect, it } from "vitest";
 import { World, shortcutDisagreement } from "@ovh/depth-core";
 import type { WorldSpec } from "@ovh/depth-core";
 import { decide } from "./gates.js";
-import { portaCmos, portaCmosWorld, fiosDaPortaCmos, transistor } from "./transistors.js";
+import {
+  chavesConduzindo,
+  portaCmos,
+  portaCmosWorld,
+  fiosDaPortaCmos,
+  transistor,
+} from "./transistors.js";
 import type { PortaLogica } from "./gates.js";
 
 /**
@@ -140,5 +146,60 @@ describe("a porta CMOS, transistor por transistor", () => {
     const fios = fiosDaPortaCmos("x", "nand");
     expect(fios).toContainEqual({ from: "x-n1", port: "dreno", to: "x-n2", timing: "settle" });
     expect(fios.filter((f) => f.to === "x-no")).toHaveLength(3);
+  });
+});
+
+/**
+ * Quem conduz, para o desenho poder mostrar.
+ *
+ * O nível do transistor eram sete objetos do mesmo azul, e a pergunta que ele
+ * existe para responder — *por que esta porta deu 1?* — só se respondia lendo
+ * número pequeno. Conduzir é estado; o desenho só consegue mostrá-lo se o
+ * domínio souber dizer quem está conduzindo.
+ *
+ * A prova é a complementaridade, que é a lei da porta CMOS: com as duas
+ * entradas em 1, o NAND puxa por baixo e não puxa por cima. Testar "algum
+ * transistor conduz" passaria com qualquer coisa; testar QUAL rede conduz é o
+ * que amarra o conjunto ao circuito.
+ */
+describe("quem conduz neste tick", () => {
+  function conduzindoNo(tipo: PortaLogica, a: number, b: number): ReadonlySet<string> {
+    const mundo = new World(portaCmosWorld(tipo, false));
+    mundo.setParam("a", a);
+    mundo.setParam("b", b);
+    mundo.advance(6);
+    return chavesConduzindo(mundo.state);
+  }
+
+  it("no NAND com a=b=1, a rede de baixo puxa e a de cima está cortada", () => {
+    const passando = conduzindoNo("nand", 1, 1);
+    // NMOS em série: os dois conduzem, e é por isso que a saída cai para zero.
+    expect(passando.has("porta-n1")).toBe(true);
+    expect(passando.has("porta-n2")).toBe(true);
+    // PMOS em paralelo: nenhum, senão seria curto.
+    expect(passando.has("porta-p1")).toBe(false);
+    expect(passando.has("porta-p2")).toBe(false);
+  });
+
+  it("no NAND com a=0, a de cima puxa e a de baixo abre", () => {
+    const passando = conduzindoNo("nand", 0, 1);
+    // Basta um PMOS conduzir para a saída ir a um: é o paralelo.
+    expect(passando.has("porta-p1")).toBe(true);
+    // E a série de baixo se rompe no primeiro que abrir.
+    expect(passando.has("porta-n1")).toBe(false);
+  });
+
+  it("nunca as duas redes ao mesmo tempo, em nenhuma entrada", () => {
+    // As duas puxando é curto, que no silício é o caminho da fumaça. Isto é a
+    // complementaridade dita como invariante, e não como exemplo.
+    for (const a of [0, 1]) {
+      for (const b of [0, 1]) {
+        const passando = conduzindoNo("nand", a, b);
+        const cima = ["porta-p1", "porta-p2"].some((id) => passando.has(id));
+        const baixo = ["porta-n1", "porta-n2"].every((id) => passando.has(id));
+        expect(cima && baixo, `a=${a} b=${b}: as duas redes puxando é curto`).toBe(false);
+        expect(cima || baixo, `a=${a} b=${b}: nenhuma rede puxando é flutuação`).toBe(true);
+      }
+    }
   });
 });
