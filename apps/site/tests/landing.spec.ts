@@ -87,7 +87,7 @@ test.describe.serial("progresso do mapa", () => {
 
     await expect(roadmap.locator(".roadmap__progress-count")).toHaveText("0 of 6");
 
-    const marcar = page.getByRole("button", { name: /Mark The single-cycle datapath as done/i });
+    const marcar = page.getByRole("button", { name: /Mark The whole cycle in one tick as done/i });
     await marcar.click();
 
     await expect(roadmap.locator(".roadmap__progress-count")).toHaveText("1 of 6");
@@ -97,7 +97,7 @@ test.describe.serial("progresso do mapa", () => {
 
     await expect(roadmap.locator(".roadmap__progress-count")).toHaveText("1 of 6");
     await expect(
-      page.getByRole("button", { name: /Mark The single-cycle datapath as done/i }),
+      page.getByRole("button", { name: /Mark The whole cycle in one tick as done/i }),
     ).toHaveAttribute("aria-pressed", "true");
   });
 
@@ -112,7 +112,7 @@ test.describe.serial("progresso do mapa", () => {
     // marca no estado inicial e o clique se perde na hidratação — falha
     // intermitente, e só sob carga.
     await expect(page.locator(".roadmap__progress-count")).toHaveText("0 of 6");
-    const marcar = page.getByRole("button", { name: /Mark The single-cycle datapath as done/i });
+    const marcar = page.getByRole("button", { name: /Mark The whole cycle in one tick as done/i });
     await marcar.scrollIntoViewIfNeeded();
     await marcar.click();
     await expect(page.locator(".roadmap__progress-count")).toHaveText("1 of 6");

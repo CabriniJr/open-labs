@@ -134,8 +134,8 @@ const CPU: Handbook = {
     { number: 1, title: "Signals", line: "A wire carries one bit, and time is what it takes to settle." },
     { number: 2, title: "Gates", line: "Transistors into gates, gates into adders. Nothing is a black box." },
     { number: 3, title: "Registers and the ALU", line: "Where a number waits, and where it changes." },
-    { number: 4, title: "The datapath", line: "Fetch, decode, execute — as one drawing that actually runs." },
-    { number: 5, title: "Control", line: "The second kind of line: the one that carries a decision, not a value." },
+    { number: 4, title: "The instruction cycle", line: "Fetch, decode, execute — spelled out as separate instants instead of drawn as one arrow." },
+    { number: 5, title: "The datapath, all at once", line: "Fetch, decode, execute — as one drawing that actually runs." },
     { number: 6, title: "Assembly", line: "Your program is the input. The CPU is the model that consumes it." },
   ],
   articles: [
@@ -154,8 +154,12 @@ const CPU: Handbook = {
       href: "handbooks/cpu/articles/from-transistor-to-adder",
     },
     { id: "the-register-file", title: "The register file", status: "coming", phase: 3 },
-    { id: "one-instruction-end-to-end", title: "One instruction, end to end", status: "coming", phase: 4 },
-    { id: "control-is-not-data", title: "Control is not data", status: "coming", phase: 5 },
+    // Segue o lab que ela explica: "control is not data" é o conceito de uma
+    // unidade de controle multiciclo, que agora mora na fase 4.
+    { id: "control-is-not-data", title: "Control is not data", status: "coming", phase: 4 },
+    // Idem: "uma instrução, do início ao fim" é o single-cycle datapath, que
+    // agora mora na fase 5.
+    { id: "one-instruction-end-to-end", title: "One instruction, end to end", status: "coming", phase: 5 },
     { id: "writing-rv32i", title: "Writing RV32I by hand", status: "coming", phase: 6 },
   ],
   labs: CPU_LABS,
