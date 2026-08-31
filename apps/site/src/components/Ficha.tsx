@@ -20,12 +20,22 @@ export interface FichaProps {
   readonly wires: readonly Wire[];
   readonly state: WorldState;
   readonly id: string | undefined;
+  /**
+   * O que a peça **é**, no vocabulário do domínio — por id, não por `kind`.
+   *
+   * Sem isto a ficha só sabia responder no vocabulário do motor: quem clicava
+   * no MAR lia a descrição de `buffer`, nunca a de "onde mora o endereço que
+   * está no barramento agora". Opcional porque a maioria dos labs não tem
+   * (ainda) um mapa assim — e um objeto sem entrada aqui continua mostrando
+   * exatamente o que mostrava antes.
+   */
+  readonly descricoes?: Readonly<Record<string, string>> | undefined;
 }
 
 const numero = (v: unknown): string =>
   typeof v === "number" ? String(v) : JSON.stringify(v) ?? "";
 
-export function Ficha({ tree, wires, state, id }: FichaProps) {
+export function Ficha({ tree, wires, state, id, descricoes }: FichaProps) {
   const [mostrarDot, setMostrarDot] = useState(false);
   const node = id === undefined ? undefined : tree.byId.get(id);
 
@@ -45,6 +55,7 @@ export function Ficha({ tree, wires, state, id }: FichaProps) {
     );
   }
 
+  const descricaoDoDominio = descricoes?.[id];
   const familia = familyOf(node.kind);
   const entram = wires.filter((w) => String(w.to) === id && w.to !== DROP);
   const saem = wires.filter((w) => w.from === id);
@@ -62,7 +73,15 @@ export function Ficha({ tree, wires, state, id }: FichaProps) {
       <dl className="ficha__campos">
         <dt>kind</dt>
         <dd className="mono">{node.kind}</dd>
-        <dd className="ficha__prosa">{KINDS[node.kind].detalhe}</dd>
+        <dd className="ficha__prosa">
+          {descricaoDoDominio ?? KINDS[node.kind].detalhe}
+        </dd>
+        {descricaoDoDominio === undefined ? null : (
+          // O domínio responde "o que é" primeiro; o motor continua disponível
+          // logo abaixo, porque "buffer" também é verdade sobre a peça — só
+          // não é a pergunta que quem clicou fez.
+          <dd className="ficha__prosa ficha__prosa--motor">{KINDS[node.kind].detalhe}</dd>
+        )}
 
         <dt>family</dt>
         <dd className="mono">{familia}</dd>

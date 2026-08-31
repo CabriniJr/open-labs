@@ -49,11 +49,14 @@ test("both handbooks draw their own interactive map", async ({ page }) => {
 
   await page.goto("handbooks/riscv/");
   await expect(page.locator(".roadmap")).toBeVisible();
-  // dois nós abrem, e eles levam aos labs que estão no ar
+  // três labs abrem, e eles levam aos que estão no ar — o genérico ocupou o
+  // vazio que "as linhas de controle de um opcode" era, porque a UC
+  // multiciclo dele é literalmente isso, em tempo.
   const abertos = page.locator('.roadmap__node:not([data-status="coming"]) a');
-  await expect(abertos).toHaveCount(3);
+  await expect(abertos).toHaveCount(4);
   await expect(page.locator('.roadmap__node a[href*="labs/cpu"]').first()).toBeVisible();
   await expect(page.locator('.roadmap__node a[href*="labs/gates"]').first()).toBeVisible();
+  await expect(page.locator('.roadmap__node a[href*="labs/micro"]').first()).toBeVisible();
 });
 
 test("nothing on a map promises a link that goes nowhere", async ({ page }) => {

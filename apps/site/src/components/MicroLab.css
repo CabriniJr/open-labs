@@ -1,0 +1,196 @@
+.micro-lab {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 22rem);
+  gap: var(--space-2);
+  align-items: start;
+}
+
+@media (max-width: 68rem) {
+  .micro-lab {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.micro-lab__palco {
+  min-width: 0;
+}
+
+.micro-lab__vazio {
+  padding: var(--space-4);
+  border: 1px dashed var(--rule);
+  border-radius: var(--radius-3);
+  color: var(--ink-muted);
+  text-align: center;
+}
+
+.micro-lab__controles {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+  margin-block-start: var(--space-1);
+}
+
+.micro-lab__controles button,
+.micro-lab__views button {
+  padding: 0.35rem 0.8rem;
+  background: var(--paper-raised);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-2);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: var(--size-step--1);
+  cursor: pointer;
+}
+
+.micro-lab__controles button:hover:not(:disabled),
+.micro-lab__views button:hover {
+  border-color: var(--accent);
+}
+
+.micro-lab__controles button:disabled {
+  color: var(--ink-faint);
+  cursor: not-allowed;
+}
+
+.micro-lab__views {
+  display: flex;
+  gap: 2px;
+  margin-inline-start: auto;
+}
+
+.micro-lab__views button[aria-pressed="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--paper);
+}
+
+.micro-lab__compasso {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--ink-muted);
+  font-size: var(--size-step--1);
+}
+
+.micro-lab__compasso input {
+  width: 7rem;
+  accent-color: var(--accent);
+}
+
+.micro-lab__tick {
+  color: var(--ink-faint);
+  font-size: var(--size-step--1);
+}
+
+/* A fase é o registrador que o single-cycle não tem: um instante nomeado. */
+.micro-lab__fase {
+  padding: 0.2rem 0.6rem;
+  background: var(--paper-raised);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-2);
+  color: var(--accent);
+  font-size: var(--size-step--1);
+}
+
+.micro-lab__legenda {
+  max-width: 60ch;
+  margin-block: var(--space-1) 0;
+  color: var(--ink-muted);
+  font-size: var(--size-step--1);
+  line-height: 1.5;
+}
+
+.micro-lab__painel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.micro-lab__painel h3 {
+  margin: 0 0 0.4rem;
+  color: var(--ink-faint);
+  font-family: var(--font-mono);
+  font-size: var(--size-step--1);
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.micro-lab__editor {
+  width: 100%;
+  padding: var(--space-1);
+  background: var(--paper-raised);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-2);
+  color: var(--ink);
+  font-size: 0.8rem;
+  line-height: 1.5;
+  resize: vertical;
+  tab-size: 8;
+}
+
+.micro-lab__erros {
+  margin: var(--space-1) 0 0;
+  padding: var(--space-1);
+  list-style: none;
+  background: color-mix(in oklab, var(--ink-warn) 10%, transparent);
+  border-inline-start: 3px solid var(--ink-warn);
+  border-radius: var(--radius-1);
+  color: var(--ink);
+  font-size: var(--size-step--1);
+  line-height: 1.45;
+}
+
+.micro-lab__erros li + li {
+  margin-block-start: 0.4rem;
+}
+
+.micro-lab__agora {
+  margin: 0;
+  padding: var(--space-1);
+  background: var(--paper-raised);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-2);
+  color: var(--ink);
+  font-size: var(--size-step--1);
+}
+
+.micro-lab__nota {
+  margin: var(--space-1) 0 0;
+  color: var(--ink-muted);
+  font-size: var(--size-step--2, 0.75rem);
+  line-height: 1.5;
+}
+
+.micro-lab__regs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  background: var(--rule);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-2);
+  overflow: hidden;
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.micro-lab__regs li {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.4rem;
+  padding: 0.2rem 0.45rem;
+  background: var(--paper-raised);
+  color: var(--ink);
+}
+
+.micro-lab__regs li[data-zero="true"] {
+  color: var(--ink-faint);
+}
+
+.micro-lab__regs li span:first-child {
+  color: var(--ink-muted);
+}

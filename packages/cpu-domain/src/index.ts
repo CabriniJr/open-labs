@@ -34,4 +34,36 @@ export {
 } from "./transistors.js";
 export type { Canal, PortaCmos } from "./transistors.js";
 export type { PortaLogica } from "./gates.js";
-export { DESCRICOES } from "./labels.js";
+export { DESCRICOES, ROTULOS_DA_FASE } from "./labels.js";
+
+// O microprocessador genérico. Os tipos de estado repetem o nome dos do
+// RISC-V — `EstadoRegistrador`, `EstadoStatus` — porque cada mundo os cunhou
+// para a própria árvore; o alias aqui é só para os dois poderem sair do mesmo
+// pacote sem um esconder o outro.
+export { estadoDe as estadoDoMicro, microWorld } from "./micro/datapath.js";
+export type {
+  EstadoMemoria as EstadoMemoriaDoMicro,
+  EstadoMicro,
+  EstadoRegistrador as EstadoRegistradorDoMicro,
+  EstadoStatus as EstadoStatusDoMicro,
+  EstadoUc as EstadoUcDoMicro,
+} from "./micro/datapath.js";
+export { montarMicro } from "./micro/assembler.js";
+export type { ErroDeMontagem, ResultadoDaMontagem } from "./micro/assembler.js";
+export {
+  decodificar,
+  FORMATO,
+  INICIO_DADOS,
+  INICIO_PROGRAMA,
+  OPCODES,
+  tamanhoEmBytes,
+} from "./micro/isa.js";
+export type { Formato, Mnemonico as MnemonicoDoMicro } from "./micro/isa.js";
+export { ordensDe, PRIMEIRA_FASE, proximaFase } from "./micro/fases.js";
+export type { Fase, Ordem } from "./micro/fases.js";
+export {
+  MICRO_VIEWS,
+  VIEW_MICRO_CPU,
+  VIEW_MICRO_PROCESSADOR,
+  VIEW_MICRO_SISTEMA,
+} from "./micro/views.js";

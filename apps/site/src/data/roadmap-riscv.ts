@@ -40,7 +40,11 @@ const labs: readonly RoadmapLab[] = [
 
   { id: "single-cycle-datapath", title: "The single-cycle datapath", href: "labs/cpu", status: "available", side: "left", y: 422, phase: 4 },
 
-  { id: "control-lines", title: "The control lines of one opcode", href: "#", status: "coming", side: "right", y: 532, phase: 5 },
+  // O que este vazio pedia — as linhas de controle de um opcode — é
+  // literalmente o que a UC multiciclo do genérico é, em tempo: uma fase por
+  // instante, e uma ordem acesa por fase. Reordenar o mapa em torno dela é
+  // trabalho de outra rodada; o que cabe aqui é parar de apontar para o vazio.
+  { id: "control-lines", title: "The instruction cycle", href: "labs/micro", status: "available", side: "right", y: 532, phase: 5 },
 
   // Mesmo lab do caminho de dados, e é honesto: escrever o próprio programa e
   // ver o caminho de dados rodar são duas coisas que se faz lá, e o leitor que

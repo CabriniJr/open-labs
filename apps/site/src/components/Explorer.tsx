@@ -38,6 +38,8 @@ export interface ExplorerProps {
     | undefined;
   /** Mostra a ficha do objeto selecionado ao lado do palco. */
   readonly comFicha?: boolean;
+  /** O que cada peça é, no vocabulário do domínio. Ver `FichaProps.descricoes`. */
+  readonly descricoes?: Readonly<Record<string, string>> | undefined;
 }
 
 export function Explorer({
@@ -57,6 +59,7 @@ export function Explorer({
   especieDaCarga,
   conteudo,
   comFicha = false,
+  descricoes,
 }: ExplorerProps) {
   const primeiro = inicial ?? views[0]?.focus ?? tree.rootId;
   const [foco, setFoco] = useState(primeiro);
@@ -210,7 +213,15 @@ export function Explorer({
           especieDaCarga={especieDaCarga}
           conteudo={conteudo}
         />
-        {comFicha ? <Ficha tree={tree} wires={wires} state={state} id={selecionado} /> : null}
+        {comFicha ? (
+          <Ficha
+            tree={tree}
+            wires={wires}
+            state={state}
+            id={selecionado}
+            descricoes={descricoes}
+          />
+        ) : null}
       </div>
 
       {/*

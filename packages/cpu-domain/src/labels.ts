@@ -11,6 +11,7 @@
  * O código, os comentários e os identificadores seguem em português — eles não
  * são lidos por quem visita o site.
  */
+import type { Fase } from "./micro/fases.js";
 
 export const ROTULOS = {
   // o sistema
@@ -140,6 +141,33 @@ export const DESCRICOES: Readonly<Record<string, string>> = {
   memoria: "The single memory this machine has — program at 0000, data at " +
     "2000. It is why fetch and execute can never share an instant: one " +
     "address bus, one memory, one access at a time.",
+} as const;
+
+/**
+ * O nome de cada fase do ciclo de instrução, para quem está olhando o lab.
+ *
+ * `Fase` é vocabulário do motor de tempo do genérico (`micro/fases.ts`), e o
+ * leitor não vê `"end-instrucao"` escrito assim em lugar nenhum — ele lê o que
+ * a máquina está fazendo neste instante. `Record<Fase, string>` é a segunda
+ * metade da guarda: uma fase nova em `fases.ts` sem entrada aqui é erro de
+ * tipo, não rótulo faltando descoberto em produção.
+ */
+export const ROTULOS_DA_FASE: Readonly<Record<Fase, string>> = {
+  "end-instrucao": "addressing the instruction",
+  "busca-instrucao": "fetching the instruction",
+  decodifica: "decoding",
+  "end-operando": "addressing the operand",
+  "busca-operando": "fetching the operand",
+  "executa-valor": "executing",
+  "end-alto": "addressing the high byte",
+  "busca-alto": "fetching the high byte",
+  "guarda-alto": "storing the high byte",
+  "end-baixo": "addressing the low byte",
+  "busca-baixo": "fetching the low byte",
+  "guarda-baixo": "storing the low byte",
+  "end-dado": "addressing the data",
+  "acesso-dado": "accessing data",
+  desvia: "branching",
 } as const;
 
 /**

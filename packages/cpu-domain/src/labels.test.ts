@@ -5,7 +5,7 @@ import { assemble } from "./assembler.js";
 import { controlar, cpuWorld } from "./datapath.js";
 import { decode, FORMAS } from "./isa.js";
 import type { Instruction, Mnemonic } from "./isa.js";
-import { DESCRICOES, rotuloDoSinal } from "./labels.js";
+import { DESCRICOES, ROTULOS_DA_FASE, rotuloDoSinal } from "./labels.js";
 import { somadorWorld } from "./gates.js";
 import { CPU_VIEWS, viewsDoSomador } from "./views.js";
 import { microWorld } from "./micro/datapath.js";
@@ -195,6 +195,13 @@ describe("as descrições do genérico batem com a árvore, nos dois sentidos", 
     const acentuadas = Object.entries(DESCRICOES)
       .filter(([, texto]) => ACENTO.test(texto))
       .map(([id]) => id);
+    expect(acentuadas).toEqual([]);
+  });
+
+  it("nenhum nome de fase é acentuado", () => {
+    const acentuadas = Object.entries(ROTULOS_DA_FASE)
+      .filter(([, texto]) => ACENTO.test(texto))
+      .map(([fase]) => fase);
     expect(acentuadas).toEqual([]);
   });
 });
