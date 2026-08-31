@@ -94,7 +94,7 @@ describe("o laço", () => {
   });
 
   it("um laço completo roda, termina e o total bate", () => {
-    const estados = rodar(microWorld(bytesDe(SOMA_TRES_VEZES_DOIS)), 600);
+    const estados = rodar(microWorld(bytesDe(SOMA_TRES_VEZES_DOIS)), 300);
     const fim = estadoDe(estados.at(-1)!);
     expect(fim.memoria.get(0x2000)).toBe(0x00);
     expect(fim.memoria.get(0x2001)).toBe(0x06);
@@ -103,7 +103,7 @@ describe("o laço", () => {
   it("o laço passa três vezes pelo topo, e não uma nem para sempre", () => {
     // Sem esta contagem, um `JZ` que saísse na primeira volta ainda deixaria
     // 2000 em zero por outro caminho, e o teste de cima passaria em silêncio.
-    const estados = rodar(microWorld(bytesDe(SOMA_TRES_VEZES_DOIS)), 600);
+    const estados = rodar(microWorld(bytesDe(SOMA_TRES_VEZES_DOIS)), 300);
     const topo = estados.filter((s) => estadoDe(s).pc === 0x000a).length;
     expect(topo).toBeGreaterThanOrEqual(3);
   });

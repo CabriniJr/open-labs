@@ -1,11 +1,14 @@
 import type {
   AnyObject,
+  Emission,
   Message,
   ObjectSpec,
   Wire,
   WorldSpec,
   WorldState,
 } from "@ovh/depth-core";
+import { peso, somador as somadorDeNBits } from "../alu.js";
+import { nivelFixo } from "../gates.js";
 import { ROTULOS } from "../labels.js";
 import { PRIMEIRA_FASE, ordensDe, proximaFase } from "./fases.js";
 import type { Fase, Ordem } from "./fases.js";
@@ -456,23 +459,77 @@ const status: ObjectSpec<EstadoStatus> = {
 };
 
 /**
- * O somador de oito bits, por enquanto a ULA inteira.
+ * A ULA, aberta até onde o slide não vai.
  *
- * Ele só emite quando `somar` está aceso: uma ULA que respondesse a cada tick
- * encheria o livro-caixa de contas que a máquina não pediu, e a conta é
- * justamente o que mede quanto trabalho o sistema fez.
+ * O deck desenha duas caixas — "Complementador/Deslocador" e "Somador" — e para
+ * ali, porque um slide não abre. Aqui o somador de oito bits é o **mesmo** que
+ * o RISC-V usa em trinta e dois: `somador()` de `alu.ts`, agora com a largura
+ * por argumento, e por baixo dele os somadores completos de `gates.ts` e as
+ * redes CMOS de `transistors.ts`. Nenhum silício foi escrito de novo — se
+ * tivesse sido, haveria duas verdades sobre o que uma porta XOR faz, e uma
+ * delas envelheceria calada.
+ *
+ * O que é desta máquina, e só dela, são as duas pontas: o dispersor lê `AC` e
+ * `T`, o coletor devolve `{valor, zero, vaium}`. A ULA inteira do RISC-V não
+ * serviria, e a razão é o topo dela, não o fundo: lá a operação é escolhida por
+ * mnemônico de RISC-V e o vai-um final é jogado fora, porque aquela máquina não
+ * tem bandeira de carry. O que generaliza é o andar de baixo, e é ele que está
+ * reusado.
+ *
+ * Nada disso mexeu num fio de fora. Os bornes continuam `operando`, `somar` e
+ * `resultado`, exatamente como quando a ULA era uma folha só — que é o motivo
+ * de ela ter nascido como contêiner de uma peça.
  */
-const somador: ObjectSpec<Record<string, never>> = {
-  id: "somador",
+const BITS_DA_ULA = 8;
+
+/**
+ * O número vira oito linhas, e só quando mandam somar.
+ *
+ * Uma ULA que respondesse a cada tick encheria o livro-caixa de contas que a
+ * máquina não pediu, e a conta é justamente o que mede quanto trabalho o
+ * sistema fez. Calada, ela também deixa o silício em repouso nos micro-passos
+ * que não somam — que é o que um circuito real faz quando nada muda na entrada.
+ */
+const dispersorDaUla: ObjectSpec<Record<string, never>> = {
+  id: "dispersor",
   kind: "router",
-  label: ROTULOS.somadorDe(8),
+  label: ROTULOS.dispersor,
   leaf: true,
   behavior: (state, inbox, ctx) => {
     if (ctx.phase !== "settle" || !acesa(ctx.signals, "somar")) return { state, out: [] };
     const a = dado(exigir(achar(inbox, "ac"), "somar sem o acumulador na entrada da ULA"), "valor");
     const b = dado(exigir(achar(inbox, "t"), "somar sem o temporário na entrada da ULA"), "valor");
-    const soma = a + b;
-    const valor = soma & OITO_BITS;
+    const out: Emission[] = [];
+    for (let i = 0; i < BITS_DA_ULA; i += 1) {
+      out.push({ port: `a${i}`, message: ctx.emit("bit", 1, { bit: (a >>> i) & 1 }) });
+      out.push({ port: `b${i}`, message: ctx.emit("bit", 1, { bit: (b >>> i) & 1 }) });
+    }
+    return { state, out };
+  },
+};
+
+/**
+ * As oito linhas viram número, e as duas bandeiras saem com ele.
+ *
+ * Ele espera as oito parcelas **e** o vai-um do bit sete antes de falar: com
+ * menos que isso a soma ainda estaria se propagando pela cascata, e anunciar no
+ * meio seria publicar um número que o circuito ainda vai corrigir.
+ *
+ * O carry é lido da linha que sai do último somador, e não recalculado
+ * comparando `a + b` com 255. Recalcular seria a segunda contabilidade de
+ * sempre — e ela concordaria com a primeira até o dia em que não concordasse.
+ */
+const coletorDaUla: ObjectSpec<Record<string, never>> = {
+  id: "coletor",
+  kind: "router",
+  label: ROTULOS.coletor,
+  leaf: true,
+  behavior: (state, inbox, ctx) => {
+    if (ctx.phase !== "settle") return { state, out: [] };
+    const parcelas = inbox.filter((m) => m.kind === "parcela");
+    const vaium = achar(inbox, "bit");
+    if (parcelas.length < BITS_DA_ULA || vaium === undefined) return { state, out: [] };
+    const valor = parcelas.reduce((total, m) => total + dado(m, "n"), 0) & OITO_BITS;
     return {
       state,
       out: [
@@ -480,25 +537,53 @@ const somador: ObjectSpec<Record<string, never>> = {
           port: "resultado",
           // Uma emissão, dois destinos: o acumulador e as bandeiras. É o mesmo
           // fio da ULA se abrindo, e não duas contas.
-          message: ctx.emit("resultado", 1, { valor, zero: valor === 0, vaium: soma > OITO_BITS }),
+          message: ctx.emit("resultado", 1, {
+            valor,
+            zero: valor === 0,
+            vaium: vaium.data.bit === 1,
+          }),
         },
       ],
     };
   },
 };
 
-/**
- * A ULA. Aberta desde já, com uma peça só: o complementador e o deslocador
- * entram depois, e entram **aqui dentro**, sem que a fiação de fora mude.
- */
-const ula: AnyObject = {
-  id: "ula",
-  kind: "composite",
-  label: ROTULOS.ula,
-  children: [somador],
-  inlets: { operando: ["somador"], somar: ["somador"] },
-  outlets: { resultado: ["somador"] },
-};
+function ulaAberta(): { objeto: AnyObject; wires: readonly Wire[] } {
+  // O vai-um do último bit vai para o coletor, e não para o descarte: esta
+  // máquina tem bandeira de carry e o RISC-V não. É a única diferença que a
+  // largura não explica.
+  const somaDeOito = somadorDeNBits(BITS_DA_ULA, true, "coletor");
+  const pesos = Array.from({ length: BITS_DA_ULA }, (_, i) => peso(i));
+
+  return {
+    objeto: {
+      id: "ula",
+      kind: "composite",
+      label: ROTULOS.ula,
+      inlets: { operando: ["dispersor"], somar: ["dispersor"] },
+      outlets: { resultado: ["coletor"] },
+      children: [
+        dispersorDaUla,
+        nivelFixo("cin0", 0, ROTULOS.cin),
+        somaDeOito.objeto,
+        {
+          id: "pesos",
+          kind: "composite",
+          label: ROTULOS.pesos,
+          replicas: BITS_DA_ULA,
+          children: pesos,
+        },
+        coletorDaUla,
+      ],
+    },
+    wires: [
+      // O vem-de-trás do bit zero, amarrado em zero. Sem ele a primeira porta
+      // não tem o que responder, e a ULA inteira devolve zero sem reclamar.
+      { from: "cin0", port: "out", to: "bit0", toPort: "cin", timing: "settle" },
+      ...somaDeOito.wires,
+    ],
+  };
+}
 
 /**
  * Uma via: transporta e não altera, que é a definição de `conduit`. Uma via que
@@ -642,11 +727,12 @@ function linha(ordem: Ordem, para: readonly string[]): readonly Wire[] {
 }
 
 export function microWorld(programa: Uint8Array, seed = 1): WorldSpec {
+  const ula = ulaAberta();
   const processador: AnyObject = {
     id: "processador",
     kind: "composite",
     label: ROTULOS.processador,
-    children: [pc, ir, mar, mbr, ac, t, h, l, sp, status, ula],
+    children: [pc, ir, mar, mbr, ac, t, h, l, sp, status, ula.objeto],
   };
   const cpu: AnyObject = {
     id: "cpu",
@@ -678,6 +764,10 @@ export function microWorld(programa: Uint8Array, seed = 1): WorldSpec {
     root,
     params: {},
     wires: [
+      // Os fios de dentro da ULA. Eles são gerados por `alu.ts` a partir da
+      // largura, e é por isso que oito bits não custam oito linhas escritas.
+      ...ula.wires,
+
       // o pulso, e o que a UC precisa saber para decidir: o byte que está no IR
       // e o bit Z. Nenhum dos dois é copiado para dentro dela
       { from: "relogio", port: "pulso", to: "uc", timing: "settle" },
