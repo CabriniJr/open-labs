@@ -181,6 +181,21 @@ export function pontasDe(d: string): { readonly inicio: Ponto; readonly fim: Pon
 export interface Ancoras {
   readonly desvioSaida?: number | undefined;
   readonly desvioEntrada?: number | undefined;
+  /**
+   * A altura exata em que a linha sai e entra, quando o **interior** da caixa
+   * está aberto e se sabe em qual peça de dentro ela pousa.
+   *
+   * É o que faz o fluxo continuar entre os níveis em vez de morrer na moldura.
+   * Sem isso, três ligações da mesma aplicação para três provedores diferentes
+   * miram todas o centro da moldura do SDK, saem na mesma altura e são
+   * desenhadas uma por cima da outra — e lá dentro nascem três entradas em
+   * alturas que a linha de fora nunca visitou.
+   *
+   * Ganha da mira e do desvio porque não é heurística: é o lugar em que a
+   * travessia continua, e as duas têm de ser a mesma linha.
+   */
+  readonly alvoSaida?: number | undefined;
+  readonly alvoEntrada?: number | undefined;
 }
 
 export function caminho(
@@ -225,7 +240,7 @@ export function caminho(
     */
     const mira = Math.max(
       de.y + 6,
-      Math.min(de.y + de.h - 6, b.y + (ancoras.desvioSaida ?? 0)),
+      Math.min(de.y + de.h - 6, ancoras.alvoSaida ?? b.y + (ancoras.desvioSaida ?? 0)),
     );
     // E a entrada mira a origem, pelo mesmo motivo e com a mesma consequência:
     // vários fios chegando na mesma caixa entram ordenados por de onde vieram,
@@ -233,7 +248,7 @@ export function caminho(
     // trançar. O leque e a convergência são a mesma figura, invertida.
     const miraEntrada = Math.max(
       para.y + 6,
-      Math.min(para.y + para.h - 6, a.y + (ancoras.desvioEntrada ?? 0)),
+      Math.min(para.y + para.h - 6, ancoras.alvoEntrada ?? a.y + (ancoras.desvioEntrada ?? 0)),
     );
     const custoDe = ({ x, y1, y2 }: { x: number; y1: number; y2: number }): number =>
       outros.filter((r) => cruzaHorizontal(y1, saida.x, x, r)).length * MENTIRA +

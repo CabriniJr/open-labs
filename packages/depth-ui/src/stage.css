@@ -155,9 +155,24 @@
   stroke-dasharray: 6 4;
 }
 
+/*
+ * A ponta da seta toma a cor do fio, e isso precisa de `context-stroke`.
+ *
+ * O conteúdo de um `<marker>` **não herda** do elemento que o referencia: ele
+ * herda de onde está no documento, que é o `<defs>`. `currentColor` ali resolvia
+ * uma cor só para o desenho inteiro — medido na tela: a ponta saía na tinta do
+ * dado enquanto o fio de controle estava na tinta viva. Toda linha vermelha
+ * terminava numa ponta da cor do dado, e um fio aceso não acendia a ponta.
+ *
+ * `context-stroke` é o mecanismo que o SVG tem exatamente para isto: a ponta
+ * pinta com o traço de quem a chamou. O `currentColor` fica antes como reserva —
+ * navegador que não conheça o valor novo ignora a segunda linha e mantém a
+ * primeira, e uma ponta de cor única é pior que a certa, não é quebrado.
+ */
 .dui-stage__fio marker path,
 .dui-stage #dui-seta path {
   fill: currentColor;
+  fill: context-stroke;
 }
 
 .dui-stage__fio {

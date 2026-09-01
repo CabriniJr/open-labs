@@ -858,6 +858,31 @@ function Camada({
   };
 
   /**
+   * Qual travessia de fronteira esta aresta é, na granularidade que o INTERIOR
+   * mostra: de qual peça de dentro ela sai, e em qual peça de dentro ela entra.
+   *
+   * É a chave da agregação, e ela precisa ser esta e não a porta. Medido nos
+   * dois labs: na vista do processo, três sinais saem da API para três
+   * provedores distintos; no caminho de dados, quatro linhas de controle entram
+   * na lógica combinacional e pousam em quatro peças diferentes — a ULA, os dois
+   * multiplexadores e a unidade de desvio. Agregadas, as duas viravam **uma
+   * linha**, e o interior continuava mostrando três e quatro entradas.
+   */
+  const cruzamentoDe = (wire: Wire, de: NodePlacement, para: NodePlacement): string => {
+    // A âncora de margem NÃO é objeto: ela é a moldura dizendo que a ligação
+    // continua fora daqui, e perguntar à árvore por ela lança. Do lado da
+    // margem, o que distingue uma travessia da outra é a peça do lado de cá.
+    const dentro = (caixa: NodePlacement, alvo: string): string => {
+      if (!tree.byId.has(caixa.id)) return `@${alvo}`;
+      const quem = visibleChild(tree, caixa.id, alvo);
+      return quem.at === "child" ? quem.id : quem.at;
+    };
+    const fonte = emissoes[`${wire.from}.${wire.port}`]?.fonte ?? wire.from;
+    const alvo = borneDeEntrada(String(wire.to), wire.toPort) ?? String(wire.to);
+    return `${dentro(de, fonte)}|${dentro(para, alvo)}`;
+  };
+
+  /**
    * As portas distintas que ligam **o mesmo par de caixas**.
    *
    * É a única situação em que a posição da porta tem de mandar no fio. Três
@@ -871,10 +896,26 @@ function Camada({
    */
   const saidasDoPar = new Map<string, string[]>();
   const entradasDoPar = new Map<string, string[]>();
+  /**
+   * Quantas travessias distintas cada par de caixas agrega.
+   *
+   * Com o interior fechado, elas viram uma linha só — e a linha **diz quantas
+   * são**, pela mesma marca de feixe que o esquemático usa para um barramento.
+   * É o que impede a vista de longe de mentir sem transformá-la numa meada:
+   * de longe o feixe informa a conta, e de perto ele se abre nos fios que o
+   * compõem, que é como todo o resto deste palco já funciona.
+   */
+  const cruzamentosDoPar = new Map<string, Set<string>>();
   for (const wire of wires) {
     const pontas = pontasDaAresta(wire);
     if (pontas === null) continue;
-    if (pontas.de.id !== wire.from || pontas.para.id !== String(wire.to)) continue;
+    if (pontas.de.id !== wire.from || pontas.para.id !== String(wire.to)) {
+      const par = `${pontas.de.id}>${pontas.para.id}>${wire.line ?? "data"}`;
+      const conjunto = cruzamentosDoPar.get(par) ?? new Set<string>();
+      conjunto.add(cruzamentoDe(wire, pontas.de, pontas.para));
+      cruzamentosDoPar.set(par, conjunto);
+      continue;
+    }
     const par = `${pontas.de.id}->${pontas.para.id}`;
     const saidas = saidasDoPar.get(par) ?? [];
     if (!saidas.includes(wire.port)) saidas.push(wire.port);
@@ -974,14 +1015,42 @@ function Camada({
       */
       if (de.id === para.id && wire.from !== String(wire.to)) return null;
 
-      // Duas folhas dentro das mesmas duas caixas produzem a mesma aresta
-      // agregada. Desenhá-la trinta e duas vezes engrossa a linha sem dizer
-      // nada — a multiplicidade quem conta é a marca de réplicas.
-      const chaveVisual = `${de.id}>${para.id}>${wire.line ?? "data"}`;
-      if (de.id !== wire.from || para.id !== String(wire.to)) {
+      /*
+        A agregação de fronteira, e ela tem duas respostas — uma por zoom.
+
+        Duas folhas dentro das mesmas duas caixas produzem a mesma aresta
+        agregada, e desenhá-la trinta e duas vezes engrossa a linha sem dizer
+        nada. Mas agregar **travessias distintas** numa linha só é a vista de
+        fora contradizendo o próprio interior, que é a pior espécie de defeito
+        que este projeto conhece. Medido nos dois labs: três sinais da API para
+        três provedores viravam uma linha; quatro linhas de controle para quatro
+        peças dentro da lógica combinacional viravam uma. Zoom in e o interior
+        mostrava três e quatro entradas nascendo do nada.
+
+        A saída não é escolher um dos dois: é deixar o **nível de detalhe**
+        responder, como ele já responde por todo o resto deste palco.
+
+        - **interior aberto** — cada travessia é uma linha, e ela pousa na peça
+          em que de fato entra. É o que faz o fluxo continuar entre os níveis em
+          vez de morrer na moldura;
+        - **interior fechado** — uma linha só, marcada como **feixe de N**. De
+          longe o desenho informa a conta em vez de esconder a diferença, e é a
+          mesma notação que o esquemático usa para um barramento.
+      */
+      const parVisual = `${de.id}>${para.id}>${wire.line ?? "data"}`;
+      const agregada = de.id !== wire.from || para.id !== String(wire.to);
+      const aberta = dentroDe2.has(de.id) || dentroDe2.has(para.id);
+      const cruzamentos = cruzamentosDoPar.get(parVisual)?.size ?? 1;
+      const chaveVisual = aberta
+        ? `${parVisual}>${cruzamentoDe(wire, de, para)}`
+        : parVisual;
+      if (agregada) {
         if (vistos.has(chaveVisual)) return null;
         vistos.add(chaveVisual);
       }
+      /** Quantas travessias esta linha representa quando ela representa várias. */
+      const feixe =
+        agregada && !aberta && cruzamentos >= 2 ? cruzamentos : undefined;
       const linha = wire.line ?? "data";
       /*
         O roteador lembra por onde os fios anteriores passaram.
@@ -995,8 +1064,24 @@ function Camada({
         com a coluna mais central, e quem vem depois se afasta. Um sorteio aqui
         faria o desenho mudar entre dois carregamentos da mesma página.
       */
+      /*
+        Onde esta ligação de fato sai e entra, quando o interior está aberto.
+
+        Calculado ANTES de rotear, e não depois: eram estes dois pontos que a
+        travessia usava para continuar a linha lá dentro, enquanto o traço de
+        fora era roteado sem saber deles. As duas metades da mesma ligação eram
+        desenhadas por dois critérios diferentes, e o resultado é o que se via —
+        a linha morrendo na moldura e o interior começando em outro lugar.
+      */
+      const emissaoDaqui = emissoes[`${wire.from}.${wire.port}`];
+      const saiDe = emissaoDaqui === undefined ? undefined : pontoDentro(de, emissaoDaqui.fonte);
+      const alvoDeEntrada = borneDeEntrada(String(wire.to), wire.toPort);
+      const chegaEm = alvoDeEntrada === undefined ? undefined : pontoDentro(para, alvoDeEntrada);
+
       const par = `${de.id}->${para.id}`;
       const traco = caminho(de, para, 18 + (i % 3) * 12, obstaculos, ocupadas, {
+        alvoSaida: saiDe?.y,
+        alvoEntrada: chegaEm?.y,
         // A âncora só vale quando a ponta é a própria caixa: se o fio nasce lá
         // no fundo e sai pela moldura, a porta que ele usa não é a da moldura.
         desvioSaida:
@@ -1020,10 +1105,6 @@ function Camada({
         Quem recebe é dito pelos bornes de entrada; quem emite, pela resolução
         das emissões. Nada é escolhido pelo desenho.
       */
-      const emissao = emissoes[`${wire.from}.${wire.port}`];
-      const saiDe = emissao === undefined ? undefined : pontoDentro(de, emissao.fonte);
-      const alvo = borneDeEntrada(String(wire.to), wire.toPort);
-      const chegaEm = alvo === undefined ? undefined : pontoDentro(para, alvo);
       const d = travessia(traco, saiDe, chegaEm);
       const marca = { x: de.x + de.w + 6, y: de.y + de.h / 2 - 6 };
       return {
@@ -1036,7 +1117,9 @@ function Camada({
         traco,
         linha,
         timing: wire.timing ?? "clocked",
-        width: wire.width,
+        // A largura declarada pelo modelo ganha da marca de agregação: se o
+        // domínio disse que a linha é um barramento de 32, ela é de 32.
+        width: wire.width ?? feixe,
         // Uma emissão na porta acende todos os fios que saem dela: é o leque,
         // e mostrar só o primeiro seria voltar a mentir sobre o percurso.
         acesa: (mudou[`out:${wire.from}.${wire.port}`] ?? 0) > 0,

@@ -1363,6 +1363,64 @@ o leitor via uma ligação onde existem duas. Um cruzamento a mais, quatro liga�
 existiam e não podiam ser vistas. Os outros três labs não mexeram (15, 4, 7), e o lab dos
 provedores foi para **0**.
 
+### A rodada do fluxo entre níveis, e o que a investigação salvou
+
+Ele disse que os fluxos entre níveis, as animações, as setas e os fios ainda estavam
+errados, e autorizou mexer no motor. A investigação veio antes de qualquer conserto, e o
+primeiro achado foi um **falso positivo**: medindo na aba de automação, a carga aparecia
+congelada em `offset-distance: 0%` com a animação "running" e `currentTime` parado. Parecia
+defeito grave. Não era: `requestAnimationFrame` não dispara naquela aba, porque ela não
+pinta — a linha do tempo do documento está parada. **Um "conserto" ali teria mexido em
+código que funciona.** Screenshot força pintura; medição de tempo naquela aba não vale.
+
+**O defeito real, e ele é da pior espécie do projeto: a vista de fora discordava do próprio
+interior.** Medido na tela: uma linha chegava na moldura do SDK em y≈817, e lá dentro
+nasciam **três** entradas, em 734, 818 e 902. Duas nasciam do nada, a oitenta e oito
+unidades de qualquer linha existente.
+
+A causa era a regra de agregação: duas folhas dentro das mesmas duas caixas viravam uma
+aresta só. A regra é certa — trinta e dois filhos idênticos não viram trinta e duas linhas
+—, mas a chave dela não distinguia **travessias diferentes**. Confirmado nos dois labs, e o
+segundo caso só se prova no modelo: as quatro linhas de controle que entram na lógica
+combinacional do caminho de dados pousam em **quatro peças diferentes** (`ula`,
+`mux-operando`, `mux-escrita`, `desvio`), e eram desenhadas como uma. Latente, porque
+naquele zoom o interior está fechado.
+
+Duas tentativas erradas antes da certa, e as duas ensinam:
+
+1. **pôr a porta na chave** — desagrega os três sinais, e leva o caminho de dados de 15 para
+   26 cruzamentos, porque desagrega também o que não precisava;
+2. **a porta mandar no fio** (rodada anterior) — quebrou o somador de 4 para 27, porque a
+   mira ordena o leque e foi ela que o levou de 28 para 4.
+
+A resposta é deixar o **nível de detalhe** responder, como ele já responde por todo o resto
+do palco: com o interior **aberto**, cada travessia é uma linha e pousa na peça em que de
+fato entra; com o interior **fechado**, uma linha só, marcada como **feixe de N** — a mesma
+notação que o esquemático usa para um barramento. De longe o desenho informa a conta em vez
+de esconder a diferença; de perto o feixe se abre nos fios que o compõem. Os quatro labs
+antigos não mexeram um cruzamento (15, 5, 4, 7).
+
+E o que fecha a continuidade: **a linha de fora passou a mirar a peça em que ela entra lá
+dentro**. Os dois pontos já eram conhecidos — a travessia os usava para continuar a linha —
+enquanto o traço de fora era roteado sem saber deles. Duas metades da mesma ligação
+desenhadas por dois critérios diferentes. Agora as três linhas terminam exatamente em 734,
+818 e 902, que é onde as três entradas do interior começam.
+
+**A seta apontava a cor errada em todo fio de controle.** O conteúdo de um `<marker>` não
+herda do elemento que o referencia — ele herda do `<defs>` —, então `currentColor` resolvia
+uma tinta só para o desenho inteiro. Toda linha vermelha terminava numa ponta da cor do
+dado, e fio aceso não acendia a ponta. `context-stroke` é o mecanismo que o SVG tem para
+isso, com `currentColor` antes como reserva.
+
+O invariante virou `apps/site/tests/travessia.spec.ts`, e ele cobra **geometria**: cada
+linha que chega numa moldura aberta termina onde uma entrada do interior começa, e as duas
+contagens batem. Provado por mutação — voltando a agregar, ele cai dizendo qual moldura e
+quantas linhas. E o lab dos provedores é obrigado a ter moldura aberta, senão os dez casos
+pulariam e o invariante ficaria sem guarda, calado.
+
+O lab dos provedores foi de 0 para **1** cruzamento: o leque de três precisa cruzar uma vez.
+Um cruzamento pelo preço de duas ligações que existiam e não podiam ser vistas.
+
 ### O que ficou pendente desta rodada
 
 - **Arrastar processadores para a `pipeline`** e ver a ordem de registro importar. É a
@@ -1376,5 +1434,5 @@ provedores foi para **0**.
   num pacote menor, e vale para qualquer domínio. Meia medida aqui seria o domínio
   escolhendo forma, que é a porta dos fundos que o catálogo existe para fechar.
 
-Estado: 911 testes unitários, 199 e2e, typecheck, boundaries (81 arquivos), catálogo (12
+Estado: 911 testes unitários, 201 e2e, typecheck, boundaries (81 arquivos), catálogo (12
 arquivos) e build (33 páginas) verdes.
