@@ -82,11 +82,21 @@ export interface Handbook {
   readonly reference?: HandbookReference;
 }
 
+/**
+ * O mesmo mapeamento do lado da CPU, e pelo mesmo motivo: os labs saem do mapa,
+ * fonte única.
+ *
+ * O `href` faltava aqui. Enquanto todo lab do OTel estava `coming`, ninguém
+ * percebia — o teste de "item pronto tem para onde levar" só tem o que cobrar
+ * quando existe um item pronto. O primeiro lab publicado achou o buraco, que é o
+ * jeito ruim de achar: a lista prometia um lab e não levava a lugar nenhum.
+ */
 const OTEL_LABS: readonly HandbookItem[] = otelLabs.map((lab) => ({
   id: lab.id,
   title: lab.title,
   status: lab.status === "available" ? "available" : "coming",
   phase: lab.phase,
+  ...(lab.href === "#" ? {} : { href: lab.href }),
 }));
 
 const OTEL_PHASE_LINES: Record<number, string> = {

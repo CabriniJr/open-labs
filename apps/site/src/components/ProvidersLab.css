@@ -1,0 +1,173 @@
+/*
+  Sem hexadecimal: `pnpm catalogo` reprova tinta escrita fora do catálogo. Cor
+  sai de token, e a cor do desenho sai do catálogo de `depth-ui/src/stage.css`.
+*/
+.providers-lab {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 24rem);
+  gap: var(--space-2);
+  align-items: start;
+}
+
+@media (max-width: 72rem) {
+  .providers-lab {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.providers-lab__palco {
+  min-width: 0;
+}
+
+.providers-lab__controles {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+  margin-block-start: var(--space-1);
+}
+
+.providers-lab__controles button,
+.providers-lab__botoes button {
+  padding: 0.35rem 0.8rem;
+  background: var(--paper-raised);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-2);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: var(--size-step--1);
+  cursor: pointer;
+}
+
+.providers-lab__controles button:hover,
+.providers-lab__botoes button:hover {
+  border-color: var(--accent);
+}
+
+.providers-lab__compasso {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: var(--size-step--1);
+  color: var(--ink-muted);
+}
+
+.providers-lab__tick {
+  color: var(--ink-muted);
+  font-size: var(--size-step--1);
+}
+
+.providers-lab__legenda {
+  max-width: var(--measure);
+  margin-block-start: var(--space-1);
+  color: var(--ink-muted);
+  font-size: var(--size-step--1);
+  line-height: 1.6;
+}
+
+.providers-lab__painel {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.providers-lab__painel section {
+  padding: var(--space-2);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-3);
+  background: var(--paper-raised);
+}
+
+.providers-lab__painel h3 {
+  margin: 0 0 var(--space-1);
+  font-size: var(--size-step--1);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.providers-lab__campo {
+  display: grid;
+  gap: 0.25rem;
+  margin-block-end: var(--space-1);
+  font-size: var(--size-step--1);
+}
+
+.providers-lab__campo span b {
+  color: var(--ink);
+}
+
+.providers-lab__campo select {
+  padding: 0.3rem 0.4rem;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-1);
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: var(--size-step--1);
+}
+
+.providers-lab__switch {
+  display: flex;
+  align-items: start;
+  gap: 0.45rem;
+  margin-block-end: var(--space-1);
+  font-size: var(--size-step--1);
+  line-height: 1.5;
+}
+
+.providers-lab__botoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.providers-lab__nota {
+  max-width: var(--measure);
+  margin: var(--space-1) 0 0;
+  color: var(--ink-muted);
+  font-size: var(--size-step--1);
+  line-height: 1.6;
+}
+
+.providers-lab__contas {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--size-step--1);
+}
+
+.providers-lab__contas li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-1);
+  padding-block: 0.2rem;
+  border-block-end: 1px solid var(--rule);
+}
+
+.providers-lab__contas li:last-child {
+  border-block-end: 0;
+}
+
+.providers-lab__contas li span:first-child {
+  color: var(--ink-muted);
+}
+
+/* Zero é uma afirmação sobre o mundo, e não ausência de valor. Ele fica legível. */
+.providers-lab__contas li[data-zero="true"] span:last-child {
+  color: var(--ink-faint);
+}
+
+.providers-lab__envelope {
+  max-height: 22rem;
+  overflow: auto;
+  margin: var(--space-1) 0 0;
+  padding: var(--space-1);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-2);
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 0.72rem;
+  line-height: 1.5;
+  white-space: pre;
+}

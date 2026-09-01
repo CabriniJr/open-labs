@@ -114,7 +114,7 @@ export const labs: readonly RoadmapLab[] = [
   // `providers` sozinho na primeira fileira: é pré-requisito dos dois abaixo.
   // Quem não sabe o que um provider decide não tem como avaliar o que um
   // Collector muda depois.
-  { id: "providers", title: "The three providers", href: "#", status: "coming", side: "left", y: 490, phase: 3 },
+  { id: "providers", title: "The three providers", href: "labs/providers", status: "available", side: "left", y: 490, phase: 3 },
   { id: "collector-pipeline", title: "The Collector pipeline", href: "#", status: "coming", side: "left", y: 546, phase: 3 },
   { id: "agent-or-gateway", title: "Agent or gateway", href: "#", status: "coming", side: "right", y: 546, phase: 3 },
 
