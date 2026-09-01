@@ -202,6 +202,33 @@
   filter: drop-shadow(0 0 5px color-mix(in oklab, var(--dui-sinal) 60%, transparent));
 }
 
+/*
+ * O descarte. Ele toma a tinta da linha que morre nele — um descarte de dado é
+ * dado que some, e um de sinal é sinal que some —, e o traço é o de fim de
+ * linha do esquemático: curto, transversal, sem seta. Sem seta de propósito:
+ * seta aponta para um destino, e o descarte é a ausência de um.
+ */
+.dui-stage__descarte path {
+  stroke: var(--dui-dado);
+  stroke-width: 2;
+  opacity: 0.75;
+  fill: none;
+}
+
+.dui-stage__fio[data-linha="control"] .dui-stage__descarte path {
+  stroke: var(--dui-sinal);
+}
+
+.dui-stage__descarte text {
+  fill: var(--ink-faint);
+  font-size: 9px;
+  letter-spacing: 0.04em;
+}
+
+.dui-stage__fio[data-descarte="true"] .dui-stage__trilho {
+  opacity: 0.7;
+}
+
 .dui-stage__largura {
   fill: var(--ink-faint);
   font-size: 9px;

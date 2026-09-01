@@ -27,7 +27,21 @@
   margin-block-start: var(--space-1);
 }
 
+.providers-lab__views {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  margin-inline-start: auto;
+}
+
+.providers-lab__views button[aria-pressed="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--paper);
+}
+
 .providers-lab__controles button,
+.providers-lab__views button,
 .providers-lab__botoes button {
   padding: 0.35rem 0.8rem;
   background: var(--paper-raised);
@@ -40,6 +54,7 @@
 }
 
 .providers-lab__controles button:hover,
+.providers-lab__views button:hover,
 .providers-lab__botoes button:hover {
   border-color: var(--accent);
 }

@@ -29,7 +29,7 @@ import type { View } from "@ovh/depth-ui";
  */
 
 /** A moldura compartilhada pelas três views de provider. R3 depende disto. */
-const MOLDURA = { width: 1100, height: 460 } as const;
+const MOLDURA = { width: 1100, height: 360 } as const;
 
 /**
  * As duas faixas, e o `x` das colunas. Números e não literais espalhados: R3 é
@@ -78,9 +78,17 @@ export const VIEW_PROCESS: View = {
     // A altura é escolhida contra o LOD, não por estética: abaixo de 24% do
     // quadro pelo lado que aperta, o interior não aparece, e o leitor não veria
     // a assimetria sem clicar. 220/740 = 0,297 — folga, e não empate.
-    { id: "tracer-provider", x: 250, y: 60, w: 920, h: 220, collapsed: true },
-    { id: "logger-provider", x: 250, y: 288, w: 920, h: 220, collapsed: true },
-    { id: "meter-provider", x: 250, y: 516, w: 920, h: 220, collapsed: true },
+    //
+    // A folga entre as molduras é 16, e não 8, e o número não é gosto: o
+    // roteador só desce pela borda quando o destino está mais de 8 abaixo do
+    // fim da origem. Com folga de 8 exatos, a linha de controle entre o
+    // tracer-provider e o logger-provider caía no caso "sobrepostos na
+    // vertical" e contornava o desenho inteiro pela direita — uma barra
+    // vermelha de ponta a ponta, que é como a linha mais importante do lab
+    // estava sendo desenhada. Defeito que só a tela pega.
+    { id: "tracer-provider", x: 250, y: 56, w: 920, h: 216, collapsed: true },
+    { id: "logger-provider", x: 250, y: 288, w: 920, h: 216, collapsed: true },
+    { id: "meter-provider", x: 250, y: 520, w: 920, h: 216, collapsed: true },
   ],
 };
 

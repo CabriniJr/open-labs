@@ -67,6 +67,7 @@ export function ProvidersLab() {
   const [rodando, setRodando] = useState(true);
   const [compasso, setCompasso] = useState(420);
   const [envelope, setEnvelope] = useState<ExportTraceServiceRequest | undefined>();
+  const [foco, setFoco] = useState("process");
   const mundoRef = useRef<World | null>(null);
 
   // Só o cenário sem SDK troca a ÁRVORE. Todo o resto é parâmetro, e parâmetro
@@ -83,6 +84,7 @@ export function ProvidersLab() {
     setTick(0);
     setEnvelope(undefined);
     setControles(INICIAIS);
+    setFoco("process");
     setRodando(true);
   }, [mundo]);
 
@@ -141,7 +143,7 @@ export function ProvidersLab() {
     <div className="providers-lab">
       <div className="providers-lab__palco">
         <Explorer
-          key={semSdk ? "no-sdk" : "sdk"}
+          key={`${semSdk ? "no-sdk" : "sdk"}:${foco}`}
           tree={arvore}
           wires={spec.wires}
           state={estado}
@@ -149,7 +151,7 @@ export function ProvidersLab() {
           edgeTicks={spec.edgeTicks ?? 1}
           tickMs={compasso}
           views={views}
-          inicial="process"
+          inicial={foco}
           readouts={readouts}
           leituraDaCarga={leituraDaCarga}
           especieDaCarga={especieDaCarga}
@@ -186,6 +188,26 @@ export function ProvidersLab() {
           <span className="providers-lab__tick mono" title="One tick is one second in this world">
             {tick}s
           </span>
+          {/*
+            R3 é entregue aqui. As três views de provider compartilham moldura,
+            faixas e colunas, então alternar entre elas é um diff visual: no
+            lugar onde traces e logs têm uma fila, métricas têm um banco, e a
+            seta do gatilho aponta para o outro lado. Sem estes botões a
+            comparação existiria só para quem soubesse clicar duas vezes na
+            caixa certa — e F4 depende dela.
+          */}
+          <div className="providers-lab__views" role="group" aria-label="Framing">
+            {views.map((v) => (
+              <button
+                key={v.id}
+                type="button"
+                aria-pressed={v.focus === foco}
+                onClick={() => setFoco(v.focus)}
+              >
+                {arvore.byId.get(v.focus)?.label ?? v.focus}
+              </button>
+            ))}
+          </div>
         </div>
 
         <p className="providers-lab__legenda">

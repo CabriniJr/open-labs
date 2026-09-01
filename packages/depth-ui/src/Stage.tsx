@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   borneNode,
   bornePort,
+  DROP,
   emissoesPorPorta,
   entryLeaf,
   familyOf,
@@ -703,6 +704,35 @@ function Camada({
     return anda(destino, porta);
   };
 
+  /**
+   * O descarte, desenhado.
+   *
+   * Ele não era desenhado: `@drop` não está na árvore, então o fio inteiro
+   * sumia do palco. E o que isso produz na tela é a pior coisa que este projeto
+   * pode produzir — **descarte deliberado e fio esquecido viram o mesmo
+   * desenho**. Um amostrador com três saídas aparecia com duas; uma fila que
+   * recusa aparecia como uma fila que não recusa; e o leitor não tinha como
+   * saber que faltava alguma coisa.
+   *
+   * O descarte não é objeto e não vira um: ele é a **ausência de destino, dita
+   * em voz alta**, e por isso é um terminal curto ao lado de quem descarta, com
+   * o traço de fim que um esquemático usa para uma linha que não vai a lugar
+   * nenhum. Dois descartes da mesma caixa recebem alturas diferentes — são dois
+   * motivos diferentes de a carga morrer, e empilhá-los diria que é um só.
+   */
+  const descartesPorFonte = new Map<string, number>();
+  const terminalDeDescarte = (vizinho: NodePlacement): NodePlacement => {
+    const n = descartesPorFonte.get(vizinho.id) ?? 0;
+    descartesPorFonte.set(vizinho.id, n + 1);
+    return {
+      id: `__descarte-${vizinho.id}-${n}`,
+      x: Math.min(view.width - 3, vizinho.x + vizinho.w + 46),
+      y: vizinho.y + vizinho.h * 0.62 + n * 24,
+      w: 2,
+      h: 16,
+    };
+  };
+
   /** A margem da moldura, na altura de quem ela serve. */
   const margem = (lado: "entra" | "sai", vizinho: NodePlacement): NodePlacement => ({
     id: lado === "entra" ? ANCORA_ENTRA : ANCORA_SAI,
@@ -720,7 +750,8 @@ function Camada({
   /** Fios desenháveis: cada ponta cai numa caixa da vista ou na margem dela. */
   const arestas = wires
     .map((wire, i) => {
-      const destino = typeof wire.to === "string" ? String(wire.to) : undefined;
+      const paraODescarte = String(wire.to) === DROP;
+      const destino = paraODescarte ? undefined : typeof wire.to === "string" ? String(wire.to) : undefined;
 
       // Fora do foco, ainda pode ser desta vista: quem emitiu de verdade pode
       // morar aqui dentro, e quem vai receber também.
@@ -728,6 +759,35 @@ function Camada({
       const fonte = emissoes[`${wire.from}.${wire.port}`]?.fonte;
       const a =
         bruto === FORA && fonte !== undefined ? (dentroDoFoco(fonte) ?? FORA) : bruto;
+
+      if (paraODescarte) {
+        if (a === undefined || a === FORA) return null;
+        // O descarte é desenhado onde quem descarta está desenhado. Vindo de
+        // dentro de uma caixa fechada, ele é **interior** — e pendurá-lo na
+        // borda da moldura diria que a moldura inteira descarta, quando quem
+        // descarta é uma peça lá dentro que este enquadramento não mostra.
+        if (lugares.get(wire.from) !== a) return null;
+        const fim = terminalDeDescarte(a);
+        const trilho = caminho(a, fim, 18 + (i % 3) * 12, obstaculos, ocupadas);
+        for (const reta of retasDe(trilho)) ocupadas.add(reta);
+        return {
+          marca: { x: a.x + a.w + 6, y: a.y + a.h / 2 - 6 },
+          chave: `${a.id}.${wire.port}->drop${fim.id}`,
+          to: fim.id,
+          d: trilho,
+          traco: trilho,
+          linha: (wire.line ?? "data") as typeof wire.line extends undefined ? "data" : NonNullable<typeof wire.line>,
+          timing: wire.timing ?? "clocked",
+          width: wire.width,
+          acesa: (mudou[`out:${wire.from}.${wire.port}`] ?? 0) > 0,
+          from: a.id,
+          deLugar: a,
+          paraLugar: fim,
+          ancora: undefined,
+          descarte: true as const,
+          port: wire.port,
+        };
+      }
 
       const brutoDestino = destino === undefined ? undefined : ondeCai(destino);
       const b =
@@ -817,6 +877,7 @@ function Camada({
         // A âncora não é objeto: ela é a moldura dizendo que a ligação
         // continua fora daqui.
         ancora: de.id === ANCORA_ENTRA ? ("entra" as const) : para.id === ANCORA_SAI ? ("sai" as const) : undefined,
+        descarte: false as const,
         port: wire.port,
       };
     })
@@ -907,6 +968,7 @@ function Camada({
             data-linha={aresta.linha}
             data-timing={aresta.timing}
             data-acesa={aresta.acesa ? "true" : undefined}
+            data-descarte={aresta.descarte ? "true" : undefined}
           >
             {/*
               O canal é uma esteira, e não um risco.
@@ -937,6 +999,19 @@ function Camada({
                   fill="freeze"
                 />
               </path>
+            ) : null}
+            {aresta.descarte ? (
+              // O terminal: a barra de fim, e a palavra. Sem a palavra, um
+              // traço curto pareceria um fio cortado pela moldura — que é
+              // acidente, e descarte é decisão.
+              <g className="dui-stage__descarte">
+                <path
+                  d={`M ${aresta.paraLugar.x} ${aresta.paraLugar.y} V ${aresta.paraLugar.y + aresta.paraLugar.h}`}
+                />
+                <text x={aresta.paraLugar.x + 6} y={aresta.paraLugar.y + aresta.paraLugar.h / 2 + 3}>
+                  drop
+                </text>
+              </g>
             ) : null}
             {aresta.width !== undefined ? (
               // Ao lado da saída, e não sobre o traço: seguindo o caminho, a
