@@ -79,11 +79,37 @@ export function spansDa(m: Message): readonly RegistroDeSpan[] {
  * Quem desenha pergunta a espécie ao domínio, e o domínio responde numa palavra
  * que o motor já conhece.
  */
-export type EspecieDaCarga = "unidade" | "lote" | "pedido" | "medida";
+export function especieDaCarga(m: Message): number | undefined {
+  switch (m.kind) {
+    case "span":
+      return 1;
+    case "batch":
+      return 2;
+    case "otlp-traces":
+    case "otlp-logs":
+    case "otlp-metrics":
+      return 3;
+    case "log":
+      return 4;
+    case "measurement":
+    case "point":
+      return 5;
+    case "dropped":
+      return 6;
+    default:
+      return undefined;
+  }
+}
 
-export function especieDaCarga(m: Message): EspecieDaCarga {
-  if (m.kind === "batch") return "lote";
-  if (m.kind === "collect" || m.kind === "flush") return "pedido";
-  if (m.kind === "point") return "medida";
-  return "unidade";
+/**
+ * O que a carga leva, em uma linha, para o rótulo em cima do fio.
+ *
+ * Peso, e não conteúdo: um lote de 512 spans não cabe num rótulo, e o que o
+ * leitor precisa saber olhando a linha é **quantos** atravessaram — que é o
+ * número que muda quando ele mexe num controle.
+ */
+export function leituraDaCarga(m: Message): string | undefined {
+  if (m.kind === "dropped") return `−${m.weight}`;
+  if (m.weight <= 0) return undefined;
+  return String(m.weight);
 }
