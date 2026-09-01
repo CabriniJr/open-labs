@@ -283,6 +283,27 @@ git commit -m "feat(labs): o esqueleto da contraparte real dos provedores"
 **Files:**
 - Create: `labs/providers/app/src/main/java/checkout/Checkout.java`
 
+> ⚠️ **CORREÇÃO, achada na execução (01/09/2026).** A listagem abaixo, como estava escrita,
+> **não funciona** — e falha do jeito que este projeto trata como inaceitável.
+>
+> `OtlpGrpcSpanExporter.builder().build()` **não lê** `OTEL_EXPORTER_OTLP_ENDPOINT`: quem lê
+> `OTEL_*` é o `sdk-extension-autoconfigure`, que este lab não inclui de propósito. O
+> exportador ia para `localhost:4317`, o span sumia, e do lado de quem instrumentou não
+> aparecia erro nenhum. As outras duas variáveis eram pior: `OTEL_BSP_SCHEDULE_DELAY`
+> *parecia* funcionar só porque 5 000 ms é o padrão do SDK, e `OTEL_TRACES_SAMPLER_ARG` não
+> fazia absolutamente nada — dava para pôr `0.0` e continuar vendo todo span.
+>
+> Um compose que declara três variáveis e honra zero é uma mentira silenciosa, e ainda por
+> cima sobre o parâmetro que o lab da tela usa para ensinar. O arquivo real lê as três à
+> mão, com um helper `variavel(...)`, e liga `setEndpoint`, `setScheduleDelay` e
+> `Sampler.traceIdRatioBased`.
+>
+> **Consequência para o Bloco B:** o corpo do trecho `onde-mora-o-service-name` tem uma
+> linha a mais que a listagem abaixo (`.setSampler(amostrador)`), e há código novo **acima**
+> do primeiro marcador. Os ids e as lacunas não mudaram. Leia
+> `labs/providers/app/src/main/java/checkout/Checkout.java` como ele está no disco, e não
+> esta listagem, que fica aqui como registro do que se tentou primeiro.
+
 - [ ] **Step 1: escrever o arquivo**
 
 Os marcadores **não são decoração**: `apps/site/src/lib/exercicios.ts` os lê no build, e um
