@@ -55,6 +55,16 @@ export interface EstadoOtel {
   readonly logsBarradosPeloTrace: number;
   readonly logsExportados: number;
 
+  /**
+   * Quantas vezes o gatilho do lote **empurrou**, e quantas o leitor **pediu**.
+   *
+   * São os dois sequenciadores, contados no livro-caixa. É daqui que sai o 12×
+   * de F4, e não da contagem de lotes recebidos: o exportador recebe com atraso
+   * de travessia, e uma razão medida na chegada mede o atraso junto.
+   */
+  readonly disparosDoLote: number;
+  readonly pedidosDoLeitor: number;
+
   readonly pontos: readonly PontoDeMetrica[];
   readonly colapsados: number;
   readonly coletas: number;
@@ -111,6 +121,9 @@ export function estadoOtel(state: WorldState): EstadoOtel {
     logsEmitidos: numero(state, "out:app.log.weight"),
     logsBarradosPeloTrace: porta?.barrados ?? 0,
     logsExportados: logExportador?.spans ?? 0,
+
+    disparosDoLote: numero(state, "out:batch-timer.flush"),
+    pedidosDoLeitor: numero(state, "out:metric-reader.collect"),
 
     pontos: Object.entries(linhas).map(([chave, valor]) => ({
       chave,
