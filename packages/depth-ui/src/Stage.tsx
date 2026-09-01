@@ -314,6 +314,35 @@ function Engrenagem({ x, y, r }: { x: number; y: number; r: number }) {
  * 8 há uma lição, entre 24 e 32 não há nenhuma, e linear faria a carga de 32
  * atravessar a tela inteira.
  */
+/**
+ * Onde o desenho **de fato** está dentro do elemento, e com que escala.
+ *
+ * `preserveAspectRatio` encaixa o `viewBox` pelo lado que aperta e centraliza,
+ * então sobra faixa vazia dos dois lados sempre que a caixa e a vista não têm a
+ * mesma forma. Enquanto o palco tirava a altura da proporção, as duas formas
+ * eram iguais e mapear a caixa inteira linearmente estava certo; com altura
+ * própria, deixou de estar — e a roda do mouse passou a ampliar um ponto em que
+ * o cursor não está.
+ *
+ * Mora aqui, e é uma só, porque a conta estava escrita duas vezes: uma no zoom e
+ * outra no arraste. Duas cópias da mesma conta divergem no dia em que alguém
+ * corrige uma delas.
+ */
+export function encaixeDoQuadro(
+  caixa: { readonly width: number; readonly height: number },
+  quadro: { readonly largura: number; readonly altura: number },
+): { readonly escala: number; readonly margemX: number; readonly margemY: number } | undefined {
+  if (caixa.width <= 0 || caixa.height <= 0) return undefined;
+  if (quadro.largura <= 0 || quadro.altura <= 0) return undefined;
+  const escala = Math.min(caixa.width / quadro.largura, caixa.height / quadro.altura);
+  if (!(escala > 0)) return undefined;
+  return {
+    escala,
+    margemX: (caixa.width - quadro.largura * escala) / 2,
+    margemY: (caixa.height - quadro.altura * escala) / 2,
+  };
+}
+
 export function comprimentoDaCarga(largura: number | undefined, raio: number): number {
   if (largura === undefined || largura <= 1) return 0;
   return Math.min(raio * 5, raio * Math.log2(largura));
@@ -2120,11 +2149,14 @@ export function Stage(props: StageProps) {
             y: Math.min(view.height - a / 2, Math.max(a / 2, y)),
           };
         };
-        if (caixa.width === 0 || caixa.height === 0) return limitar(escala, atual.x, atual.y);
+        const encaixe = encaixeDoQuadro(caixa, { largura: lq, altura: aq });
+        if (encaixe === undefined) return limitar(escala, atual.x, atual.y);
         // Aproximar onde o cursor está: o ponto sob ele tem que ficar parado,
         // senão o leitor aponta para uma coisa e recebe outra no meio da tela.
-        const alvoX = atual.x - lq / 2 + ((e.clientX - caixa.left) / caixa.width) * lq;
-        const alvoY = atual.y - aq / 2 + ((e.clientY - caixa.top) / caixa.height) * aq;
+        // A margem de encaixe entra na conta — sem ela, "onde o cursor está" é
+        // um lugar que o cursor não visitou.
+        const alvoX = atual.x - lq / 2 + (e.clientX - caixa.left - encaixe.margemX) / encaixe.escala;
+        const alvoY = atual.y - aq / 2 + (e.clientY - caixa.top - encaixe.margemY) / encaixe.escala;
         const k = atual.escala / escala;
         return limitar(escala, alvoX + (atual.x - alvoX) * k, alvoY + (atual.y - alvoY) * k);
       });
@@ -2187,15 +2219,7 @@ export function Stage(props: StageProps) {
     };
   };
 
-  /** Onde o cursor está, nas coordenadas da view. */
-  const noDesenho = (clientX: number, clientY: number) => {
-    const caixa = svgRef.current?.getBoundingClientRect();
-    if (caixa === undefined || caixa.width === 0 || caixa.height === 0) return undefined;
-    return {
-      x: daVista.x - larguraDoQuadro / 2 + ((clientX - caixa.left) / caixa.width) * larguraDoQuadro,
-      y: daVista.y - alturaDoQuadro / 2 + ((clientY - caixa.top) / caixa.height) * alturaDoQuadro,
-    };
-  };
+
 
   return (
     <svg
@@ -2213,9 +2237,15 @@ export function Stage(props: StageProps) {
         const partiu = { x: e.clientX, y: e.clientY, camera: daVista };
         const arrastar = (ev: PointerEvent) => {
           const caixa = alvo.getBoundingClientRect();
-          if (caixa.width === 0) return;
-          const dx = ((ev.clientX - partiu.x) / caixa.width) * (view.width / partiu.camera.escala);
-          const dy = ((ev.clientY - partiu.y) / caixa.height) * (view.height / partiu.camera.escala);
+          // O mesmo encaixe do zoom: arrastar tem de mover o desenho exatamente
+          // o que o dedo andou, e a faixa vazia não é desenho.
+          const encaixe = encaixeDoQuadro(caixa, {
+            largura: view.width / partiu.camera.escala,
+            altura: view.height / partiu.camera.escala,
+          });
+          if (encaixe === undefined) return;
+          const dx = (ev.clientX - partiu.x) / encaixe.escala;
+          const dy = (ev.clientY - partiu.y) / encaixe.escala;
           setCamera({
             ...enquadrar(partiu.camera.escala, partiu.camera.x - dx, partiu.camera.y - dy),
             vista: view.id,

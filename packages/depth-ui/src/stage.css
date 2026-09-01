@@ -459,9 +459,15 @@
   transition: y var(--dui-tick) linear, height var(--dui-tick) linear;
 }
 
+/*
+ * O tipo do palco é medido em UNIDADES DA VISTA, e por isso ele encolhe junto
+ * com a projeção. Numa vista de mil e duzentas unidades projetada num laptop, um
+ * rótulo de 11 chegava com menos de cinco pixels. Doze não resolve sozinho — a
+ * tela cheia é que resolve —, mas é a folga que existe sem apertar as caixas.
+ */
 .dui-stage__rotulo {
   fill: var(--ink);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
 }
 

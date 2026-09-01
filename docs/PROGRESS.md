@@ -1421,6 +1421,42 @@ pulariam e o invariante ficaria sem guarda, calado.
 O lab dos provedores foi de 0 para **1** cruzamento: o leque de três precisa cruzar uma vez.
 Um cruzamento pelo preço de duas ligações que existiam e não podiam ser vistas.
 
+### O palco cabe o leitor — e o defeito que a mudança criou
+
+Pedido dele: *"o bloco dos fluxos precisa ser redimensionável, possível de abrir em tela
+cheia, os textos estão pequenos"*.
+
+O diagnóstico não era o óbvio. O texto do palco é medido em **unidades da vista**, então
+ele chega na tela multiplicado pela escala da projeção — e a escala era 0,62 num monitor de
+2560, porque o palco estava **preso pela largura**: 744 pixels de desenho espremidos entre a
+ficha (320) e o painel do lab (384). Altura sozinha não aumenta texto nenhum.
+
+Pior no caso que importa: num laptop de 1280 o mesmo rótulo chegava com **4,5 pixels**. A
+primeira medição foi no monitor grande e teria fechado a questão errado; foi o teste, rodando
+no viewport de 1280, que mostrou.
+
+O que entrou: altura própria e redimensionável pelo canto (`resize: vertical`), botão de
+**tela cheia** no Explorer inteiro — trilha e ficha vão junto, porque em tela cheia a pessoa
+continua precisando saber onde está —, ficha e painel do lab descendo até 96rem em vez de
+70rem, e o tipo do rótulo de 11 para 12 unidades. Resultado medido: 4,5 → **8,4px** no
+laptop, ~10,4px no monitor grande, e **~19px em tela cheia**.
+
+**E a mudança criou um defeito, que o teste do zoom da CPU pegou na mesma rodada.** Com
+altura própria, o `preserveAspectRatio` passa a deixar faixa vazia dos dois lados do desenho
+— e as contas do zoom e do arraste mapeavam a caixa **inteira** linearmente para o `viewBox`.
+Enquanto a altura saía da proporção, as duas formas eram iguais e a conta estava certa; com
+altura própria, deixou de estar, e a roda do mouse passou a ampliar um ponto em que o cursor
+não está. O somador da ULA parava em 7% de abertura.
+
+A conta estava escrita **duas vezes** — uma no zoom, outra no arraste — e havia ainda uma
+terceira cópia em `noDesenho`, que não era usada por ninguém. Agora é uma só
+(`encaixeDoQuadro`), e as três viraram uma.
+
+A legibilidade virou número em `apps/site/tests/palco-legivel.spec.ts`, e o piso é honesto
+sobre o que a página entrega sozinha: numa tela de 1280 por 720 uma vista de 1200 por 740
+ocupa quase o monitor inteiro, e nenhum arranjo põe o rótulo em nove pixels ali dentro. Oito
+é o que a página dá; a tela cheia leva o mesmo rótulo a dezoito.
+
 ### O que ficou pendente desta rodada
 
 - **Arrastar processadores para a `pipeline`** e ver a ordem de registro importar. É a

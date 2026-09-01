@@ -216,8 +216,14 @@ import "../../components/Explorer.css";
     margin: 0 0 0.35rem;
   }
 
+  /*
+    O lab é a peça mais larga da página de propósito: o texto do desenho é
+    medido em unidades da vista, então cada pixel de largura que o palco ganha
+    vira texto legível. O limite antigo, de 96rem, deixava mil pixels de tela
+    sobrando num monitor grande enquanto o desenho ficava espremido.
+  */
   .lab-stage {
-    max-width: 96rem;
+    max-width: 118rem;
     margin-inline: auto;
     padding: 0 var(--space-3) var(--space-4);
   }

@@ -9,7 +9,12 @@
   align-items: start;
 }
 
-@media (max-width: 72rem) {
+/*
+ * Mesmo motivo da ficha: até 96rem o painel desce e o palco fica com a largura
+ * inteira. Ler o desenho é o que a página existe para permitir; os contadores
+ * continuam ali, logo abaixo.
+ */
+@media (max-width: 96rem) {
   .providers-lab {
     grid-template-columns: minmax(0, 1fr);
   }

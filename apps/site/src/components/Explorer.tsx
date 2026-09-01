@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { isOpenable } from "@ovh/depth-core";
 import type { Message, TreeIndex, Wire, WorldState } from "@ovh/depth-core";
 import { Legenda, Stage, autoView, pathTo } from "@ovh/depth-ui";
@@ -166,8 +166,33 @@ export function Explorer({
     [viagem, view],
   );
 
+  /**
+   * Tela cheia, e ela é do EXPLORER inteiro — não só do palco.
+   *
+   * A ficha e a trilha vão junto porque em tela cheia a pessoa continua
+   * precisando saber onde está e o que é a peça que ela clicou. Mandar só o
+   * desenho deixaria o leitor grande e cego.
+   */
+  const caixaRef = useRef<HTMLDivElement>(null);
+  const [cheia, setCheia] = useState(false);
+
+  useEffect(() => {
+    // O estado vem do documento, e não do nosso clique: sair com Esc não passa
+    // pelo botão, e um botão que mente sobre o próprio estado é pior que não ter.
+    const ouvir = (): void => setCheia(document.fullscreenElement === caixaRef.current);
+    document.addEventListener("fullscreenchange", ouvir);
+    return () => document.removeEventListener("fullscreenchange", ouvir);
+  }, []);
+
+  const alternarTelaCheia = (): void => {
+    const caixa = caixaRef.current;
+    if (caixa === null) return;
+    if (document.fullscreenElement === caixa) void document.exitFullscreen();
+    else void caixa.requestFullscreen?.();
+  };
+
   return (
-    <div className="explorer">
+    <div className="explorer" ref={caixaRef} data-cheia={cheia ? "true" : undefined}>
       <nav className="explorer__trilha mono" aria-label="Onde você está">
         {trilha.map((id, i) => (
           <span key={id}>
@@ -187,9 +212,26 @@ export function Explorer({
             ? "auto-laid view · double-click to enter"
             : "double-click to enter"}
         </span>
+        <button
+          type="button"
+          className="explorer__cheia"
+          onClick={alternarTelaCheia}
+          aria-pressed={cheia}
+        >
+          {cheia ? "Exit full screen" : "Full screen"}
+        </button>
       </nav>
 
       <div className="explorer__corpo" data-com-ficha={comFicha ? "true" : undefined}>
+        {/*
+          O palco tem altura própria e é redimensionável pelo canto.
+
+          Antes ele era `height: auto`, e a altura saía da proporção da vista:
+          quem queria mais desenho não tinha o que fazer. E como a largura é
+          quase sempre o lado que aperta, o texto do desenho — que é medido em
+          unidades da vista — chegava na tela menor do que dá para ler.
+        */}
+        <div className="explorer__palco">
         <Stage
           tree={tree}
           wires={wires}
@@ -213,6 +255,7 @@ export function Explorer({
           especieDaCarga={especieDaCarga}
           conteudo={conteudo}
         />
+        </div>
         {comFicha ? (
           <Ficha
             tree={tree}
