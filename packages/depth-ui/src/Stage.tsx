@@ -1292,6 +1292,11 @@ function Camada({
                   <g clipPath={`url(#dui-dentro-${identificador(place.id)})`}>
                   <g
                     className="dui-stage__interior"
+                    /* De quem é este interior. O desenho já dizia; quem mede de
+                       fora não tinha como saber, e um interior é um ESPAÇO DE
+                       COORDENADAS próprio: duas figuras de caixas diferentes
+                       podem ter o mesmo `d` sem se tocarem na tela. */
+                    data-dentro={place.id}
                     opacity={aparece}
                     transform={`translate(${place.x + (dentro?.dx ?? 0)} ${
                       place.y + (dentro?.dy ?? 0)
