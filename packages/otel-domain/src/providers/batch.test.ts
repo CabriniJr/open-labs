@@ -12,6 +12,7 @@ const CFG = {
   rotulos: { lote: "Batch", fila: "Queue", gatilho: "Timer", exportador: "Exporter" },
   paramFila: "max-queue-size",
   paramPrazo: "scheduled-delay",
+  kindDeSaida: "otlp",
   maxExportBatchSize: 4,
 } as const;
 

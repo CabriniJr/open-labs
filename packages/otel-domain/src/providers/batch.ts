@@ -38,6 +38,21 @@ export interface LoteConfig {
   /** A chave que mede, em ticks, o `scheduledDelayMillis`. */
   readonly paramPrazo: string;
   readonly maxExportBatchSize: number;
+  /** O `kind` da mensagem que sai pelo canal. É por ele que o Collector separa os sinais. */
+  readonly kindDeSaida: string;
+  /**
+   * Recusar, na entrada, o que não foi amostrado.
+   *
+   * É verdade só do lado dos traces, e é a [tabela de reação](https://opentelemetry.io/docs/specs/otel/trace/sdk/#recording-sampled-reaction-table):
+   * com `RECORD_ONLY` o processador **é** chamado e o exportador não vê o span.
+   * O `BatchLogRecordProcessor` não tem essa checagem — o `LoggerProvider` não
+   * tem amostrador nenhum —, e por isso isto é opção e não regra.
+   *
+   * A recusa sai por porta própria, separada da recusa por fila cheia: são dois
+   * motivos diferentes de o span não sair, e um desenho que os juntasse
+   * ensinaria que são o mesmo.
+   */
+  readonly recusaNaoAmostrado?: true;
 }
 
 export interface EstadoFila {
@@ -54,6 +69,8 @@ export interface EstadoGatilho {
 export interface EstadoExportador {
   readonly lotes: number;
   readonly spans: number;
+  /** Quantos `ForceFlush` desceram até aqui. Sem contador, o cascateamento seria invisível. */
+  readonly flushes: number;
   /** O último lote que saiu. É daqui que o envelope do L3 é derivado. */
   readonly ultimo: readonly RegistroDeSpan[];
 }
@@ -83,8 +100,13 @@ export function loteProcessor(cfg: LoteConfig): Lote {
       const max = inteiro(ctx.params[cfg.paramFila], MAX_QUEUE_SIZE_PADRAO, 0);
       const itens: RegistroDeSpan[] = [...state.itens];
       let recusados = 0;
+      let naoAmostrados = 0;
       for (const message of inbox) {
         for (const span of spansDa(message)) {
+          if (cfg.recusaNaoAmostrado === true && !span.amostrado) {
+            naoAmostrados += 1;
+            continue;
+          }
           if (itens.length < max) itens.push(span);
           else recusados += 1;
         }
@@ -93,6 +115,12 @@ export function loteProcessor(cfg: LoteConfig): Lote {
       const out: Emission[] = [];
       if (recusados > 0) {
         out.push({ port: "dropped", message: ctx.emit("dropped", recusados, { motivo: "queue-full" }) });
+      }
+      if (naoAmostrados > 0) {
+        out.push({
+          port: "unsampled",
+          message: ctx.emit("dropped", naoAmostrados, { motivo: "record-only" }),
+        });
       }
 
       // Três gatilhos, e todos são da spec: o tamanho do lote, o prazo (que
@@ -152,9 +180,14 @@ export function loteProcessor(cfg: LoteConfig): Lote {
     kind: "sink",
     label: cfg.rotulos.exportador,
     leaf: true,
-    init: (): EstadoExportador => ({ lotes: 0, spans: 0, ultimo: [] }),
+    init: (): EstadoExportador => ({ lotes: 0, spans: 0, flushes: 0, ultimo: [] }),
     behavior: (state, inbox, ctx) => {
-      if (ctx.phase !== "commit" || inbox.length === 0) return { state, out: [] };
+      if (ctx.phase !== "commit") return { state, out: [] };
+      // O `ForceFlush` do provider desce até aqui: a spec manda invocá-lo em
+      // todos os processadores registrados, e o do lote continua a descida até
+      // o exportador. Contar é o que impede o cascateamento de ser invisível.
+      const flushes = state.flushes + (ctx.signals["flush"]?.length ?? 0);
+      if (inbox.length === 0) return { state: { ...state, flushes }, out: [] };
       const out: Emission[] = [];
       let lotes = state.lotes;
       let spans = state.spans;
@@ -165,9 +198,9 @@ export function loteProcessor(cfg: LoteConfig): Lote {
         lotes += 1;
         spans += carga.length;
         ultimo = carga;
-        out.push({ port: "out", message: ctx.emit("otlp", carga.length, { spans: carga }) });
+        out.push({ port: "out", message: ctx.emit(cfg.kindDeSaida, carga.length, { spans: carga }) });
       }
-      return { state: { lotes, spans, ultimo }, out };
+      return { state: { lotes, spans, flushes, ultimo }, out };
     },
   };
 
@@ -190,6 +223,9 @@ export function loteProcessor(cfg: LoteConfig): Lote {
       // O descarte é destino declarado. Sem ele, a recusa da fila sumiria do
       // livro-caixa e a perda de dado deixaria de existir no modelo.
       { from: cfg.fila, port: "dropped", to: DROP },
+      ...(cfg.recusaNaoAmostrado === true
+        ? [{ from: cfg.fila, port: "unsampled", to: DROP } as const]
+        : []),
       { from: cfg.gatilho, port: "flush", to: cfg.fila, line: "control", toPort: "flush" },
     ],
   };
