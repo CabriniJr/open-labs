@@ -12,6 +12,7 @@ const CFG = {
   rotulos: { lote: "Batch", fila: "Queue", gatilho: "Timer", exportador: "Exporter" },
   paramFila: "max-queue-size",
   paramPrazo: "scheduled-delay",
+  paramQueda: "collector-down",
   kindDeSaida: "otlp",
   recurso: { titulo: "Resource", attributes: [{ chave: "service.name", valor: "t" }] },
   maxExportBatchSize: 4,
@@ -66,7 +67,7 @@ function mundo(porTick: number, params: Record<string, number>): WorldSpec {
     seed: 1,
     edgeTicks: 1,
     root,
-    params: { "max-queue-size": 100, "scheduled-delay": 1000, ...params },
+    params: { "max-queue-size": 100, "scheduled-delay": 1000, "collector-down": 0, ...params },
     wires: [
       { from: "app", port: "out", to: CFG.fila },
       ...lote.wires,

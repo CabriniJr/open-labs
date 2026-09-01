@@ -59,36 +59,73 @@ export const VIEW_HOST: View = {
   ],
 };
 
+/**
+ * A vista do processo, e a fronteira que ela existe para desenhar.
+ *
+ * Duas molduras, e a linha entre elas é a costura que sustenta o ecossistema
+ * inteiro: à esquerda o que depende **só do pacote da API**, à direita o que
+ * decide o destino do dado. Trocar tudo o que está à direita não muda uma linha
+ * do que está à esquerda — e é por isso que uma biblioteca pode ser
+ * instrumentada sem escolher o SDK de ninguém.
+ *
+ * É também a explicação do silêncio: sem SDK, a moldura da direita não existe, e
+ * do lado de cá **ninguém sabe disso**.
+ */
 export const VIEW_PROCESS: View = {
   id: "otel-process",
   focus: "process",
-  title: "One process, three providers",
+  title: "The API you call, and the SDK that decides",
   width: 1200,
   height: 740,
   registro: "blocos",
   places: [
-    // R1: os propagadores encostam na borda do PROCESSO, e ficam fora das três
-    // molduras. A posição é a afirmação — contexto não é configuração de provider.
+    // R1: os propagadores encostam na borda do PROCESSO, e ficam fora das duas
+    // molduras. A posição é a afirmação — contexto não é configuração de
+    // provider, e também não é da aplicação.
     { id: "propagators", x: 24, y: 6, w: 190, h: 40 },
-    { id: "app", x: 24, y: 300, w: 190, h: 150 },
+    // Os tamanhos são escolhidos contra o LOD, e não por estética: abaixo de 24%
+    // do quadro pelo lado que aperta o interior não aparece, e o leitor teria de
+    // clicar para descobrir que há dois lados aqui.
+    { id: "application", x: 24, y: 120, w: 380, h: 520, collapsed: true },
+    { id: "sdk", x: 470, y: 60, w: 700, h: 650, collapsed: true },
+  ],
+};
+
+export const VIEW_APPLICATION: View = {
+  id: "otel-application",
+  focus: "application",
+  title: "Your code depends on the API, and on nothing else",
+  width: 800,
+  height: 400,
+  registro: "blocos",
+  places: [
+    { id: "app", x: 60, y: 130, w: 260, h: 150 },
+    { id: "api", x: 460, y: 130, w: 260, h: 150 },
+  ],
+};
+
+export const VIEW_SDK: View = {
+  id: "otel-sdk",
+  focus: "sdk",
+  title: "Three providers, and only one of them samples",
+  width: 1180,
+  height: 700,
+  registro: "blocos",
+  places: [
     // As três molduras têm o mesmo tamanho de propósito: a assimetria que
     // interessa é o que está dentro, e caixas de tamanhos diferentes sugeririam
     // que a diferença é de importância.
     //
-    // A altura é escolhida contra o LOD, não por estética: abaixo de 24% do
-    // quadro pelo lado que aperta, o interior não aparece, e o leitor não veria
-    // a assimetria sem clicar. 220/740 = 0,297 — folga, e não empate.
-    //
-    // A folga entre as molduras é 16, e não 8, e o número não é gosto: o
-    // roteador só desce pela borda quando o destino está mais de 8 abaixo do
-    // fim da origem. Com folga de 8 exatos, a linha de controle entre o
-    // tracer-provider e o logger-provider caía no caso "sobrepostos na
-    // vertical" e contornava o desenho inteiro pela direita — uma barra
-    // vermelha de ponta a ponta, que é como a linha mais importante do lab
-    // estava sendo desenhada. Defeito que só a tela pega.
-    { id: "tracer-provider", x: 250, y: 56, w: 920, h: 216, collapsed: true },
-    { id: "logger-provider", x: 250, y: 288, w: 920, h: 216, collapsed: true },
-    { id: "meter-provider", x: 250, y: 520, w: 920, h: 216, collapsed: true },
+    // A folga entre elas é 28, e não 8, e o número não é gosto: o roteador só
+    // desce pela borda quando o destino está mais de 8 abaixo do fim da origem.
+    // Com folga de 8 exatos, a linha de controle entre o tracer-provider e o
+    // logger-provider caía no caso "sobrepostos na vertical" e contornava o
+    // desenho inteiro pela direita — uma barra vermelha de ponta a ponta, que é
+    // como a linha mais importante do lab estava sendo desenhada. Defeito que só
+    // a tela pega.
+    { id: "tracer-provider", x: 20, y: 20, w: 1140, h: 200, collapsed: true },
+    { id: "logger-provider", x: 20, y: 248, w: 1140, h: 200, collapsed: true },
+    { id: "meter-provider", x: 20, y: 476, w: 1140, h: 200, collapsed: true },
   ],
 };
 
@@ -170,6 +207,8 @@ export const VIEWS_DE_PROVIDER: readonly View[] = [
 export const OTEL_VIEWS: readonly View[] = [
   VIEW_HOST,
   VIEW_PROCESS,
+  VIEW_APPLICATION,
+  VIEW_SDK,
   ...VIEWS_DE_PROVIDER,
   VIEW_BATCH_PROCESSOR,
 ];
@@ -179,18 +218,29 @@ export const OTEL_VIEWS: readonly View[] = [
  * outras views. Reusar as de cima desenharia caixas que aquela árvore não tem,
  * que é exatamente o que `viewDisagreement` existe para recusar.
  */
+/**
+ * O mesmo processo, com o lado direito da costura ausente.
+ *
+ * A `application` ocupa exatamente o mesmo lugar da vista de cima — é o diff
+ * visual de novo: o que muda é só o que está do outro lado. No lugar do SDK,
+ * uma folha que consome e não emite, com contador legível.
+ */
 export const VIEW_PROCESS_SEM_SDK: View = {
   id: "otel-process-no-sdk",
   focus: "process",
   title: "The API with no SDK installed",
   width: 1200,
-  height: 460,
+  height: 740,
   registro: "blocos",
   places: [
     { id: "propagators", x: 24, y: 6, w: 190, h: 40 },
-    { id: "app", x: 24, y: 160, w: 190, h: 150 },
-    { id: "tracer-provider", x: 420, y: 120, w: 480, h: 220, badge: "no-op" },
+    { id: "application", x: 24, y: 120, w: 380, h: 520, collapsed: true },
+    { id: "tracer-provider", x: 470, y: 260, w: 700, h: 250, badge: "no-op" },
   ],
 };
 
-export const VIEWS_SEM_SDK: readonly View[] = [VIEW_HOST, VIEW_PROCESS_SEM_SDK];
+export const VIEWS_SEM_SDK: readonly View[] = [
+  VIEW_HOST,
+  VIEW_PROCESS_SEM_SDK,
+  VIEW_APPLICATION,
+];

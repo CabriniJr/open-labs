@@ -11,6 +11,7 @@ import {
   VIEW_LOGGER_PROVIDER,
   VIEW_METER_PROVIDER,
   VIEW_PROCESS,
+  VIEW_SDK,
   VIEW_TRACER_PROVIDER,
 } from "./views.js";
 import { otelWorld } from "./world.js";
@@ -106,10 +107,12 @@ describe("as seis views, e as três regras de desenho como teste", () => {
     }
   });
 
-  it("R1 — os propagadores encostam na borda do PROCESSO e estão fora das três molduras", () => {
+  it("R1 — os propagadores encostam na borda do PROCESSO e estão fora das duas molduras", () => {
     const placa = lugar(VIEW_PROCESS, "propagators");
     expect(placa.y).toBeLessThanOrEqual(MARGEM_DA_BORDA);
-    for (const id of ["tracer-provider", "logger-provider", "meter-provider"]) {
+    // Nem da aplicação, nem do SDK: propagador não é configuração de nenhum dos
+    // dois, e a posição é o que afirma isso sem uma palavra de texto.
+    for (const id of ["application", "sdk"]) {
       const moldura = lugar(VIEW_PROCESS, id);
       const cruza =
         placa.x < moldura.x + moldura.w &&
@@ -120,10 +123,18 @@ describe("as seis views, e as três regras de desenho como teste", () => {
     }
   });
 
-  it("as três molduras passam do limiar de LOD — senão a assimetria só aparece com clique", () => {
+  it("as duas molduras do processo passam do limiar de LOD — a costura tem de se ver sem clique", () => {
     const quadro = { largura: VIEW_PROCESS.width, altura: VIEW_PROCESS.height };
-    for (const id of ["tracer-provider", "logger-provider", "meter-provider"]) {
+    for (const id of ["application", "sdk"]) {
       const caixa = lugar(VIEW_PROCESS, id);
+      expect(quantoAparece(fracaoDoQuadro(caixa, quadro)), id).toBeGreaterThan(0);
+    }
+  });
+
+  it("as três molduras de provider passam do limiar dentro do SDK — é onde a assimetria mora", () => {
+    const quadro = { largura: VIEW_SDK.width, altura: VIEW_SDK.height };
+    for (const id of ["tracer-provider", "logger-provider", "meter-provider"]) {
+      const caixa = lugar(VIEW_SDK, id);
       expect(quantoAparece(fracaoDoQuadro(caixa, quadro)), id).toBeGreaterThan(0);
     }
   });

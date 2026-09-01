@@ -1307,5 +1307,74 @@ jeito ruim de achar defeito.
   com três caixas na vertical, então o interior delas aparece a ~22% na vista do processo.
   A comparação de verdade é pelos botões de enquadramento.
 
-Estado: 900 testes unitários, 199 e2e, typecheck, boundaries (81 arquivos), catálogo (12
+### A rodada da auditoria visual do Luigi
+
+Ele olhou o lab rodando e a lista que saiu dali é o que este registro existe para guardar.
+
+**A costura API ↔ SDK virou desenho.** O `app` era uma caixa só. Agora há uma moldura
+`application` — o código e a **API** que ele chama, os dois do mesmo lado da costura — e
+uma moldura `sdk` com os três provedores. A API é `channel`, porque ela transporta e nunca
+altera: é literalmente o que ela faz. Trocar tudo o que está à direita não muda uma linha
+do que está à esquerda, e é por isso que uma biblioteca pode ser instrumentada sem escolher
+o SDK de ninguém — e é a explicação do silêncio de F5: sem SDK, a moldura da direita não
+existe, e do lado de cá **ninguém sabe disso**.
+
+**Contrapressão, e ela é uma aresta.** Um parâmetro corta o canal para o Collector. O
+exportador exporta um lote por vez e espera; com o outro lado mudo ele não termina, e avisa
+a fila por uma linha de **controle que anda contra o fluxo** — a única do lab. A fila para
+de entregar, enche, e a partir daí recusa. **A perda começa três peças antes de onde o
+problema está**, que é por que ela surpreende. Nem o `ForceFlush` passa por cima. E há a
+distinção que o painel mostra com número dos dois lados: o que o exportador segura está
+**preso**, não perdido, e volta a andar quando o canal volta; o que a fila recusou não volta.
+
+**A fila enche e esvazia na tela** (`fills`), e o banco de pontos usa a mesma barra contra o
+limite de cardinalidade — é ali que o contraste de F4 fica físico: um transborda e recusa, o
+outro colapsa.
+
+**A carga de geração é modulável** (spans, logs e medições por segundo), que é o que permite
+passar do que o pipeline drena e ver a contrapressão acontecer.
+
+**O descarte virou o terra do esquemático** — três traços que encurtam. É o símbolo mais
+universal que existe para "aqui acaba, e não continua em lugar nenhum", que é o que o
+descarte é. A palavra fica junto porque isto é material de ensino.
+
+### A porta e o fio, e o preço de dizer a verdade
+
+Achado dele: *"as setas dos fluxos não estão se conectando à entrada deles"*. Estava certo,
+e era estrutural: as portas eram distribuídas em alturas iguais pela borda e o roteador
+escolhia a altura por conta própria. **O desenho mostrava uma entrada e uma linha que não a
+tocava.**
+
+A correção passou por três tentativas, e as duas primeiras ensinam:
+
+1. **desenhar a porta onde o fio chega** — conserta o alinhamento e esconde o defeito de
+   baixo: três portas diferentes ligando as mesmas duas caixas miram o mesmo ponto, saem na
+   mesma altura, e viram **uma linha só**. O teste de junção do espaguete pegou;
+2. **a porta manda no fio** — quebrou o somador (4 → 27 cruzamentos), porque a mira ordena o
+   leque e foi ela que levou aquele desenho de 28 para 4. Regra nova não revoga regra que
+   pagou;
+3. **desvio em torno da mira**, e só quando o par de caixas tem mais de uma porta — que é a
+   única situação em que há empate a desfazer. A mira continua mandando na ordem; o desvio
+   só separa quem ela empatou.
+
+O somador foi de 4 para **5** cruzamentos, e o número subiu porque o desenho passou a dizer
+a verdade: as duas parcelas que entram em cada bit eram desenhadas uma por cima da outra, e
+o leitor via uma ligação onde existem duas. Um cruzamento a mais, quatro ligações que
+existiam e não podiam ser vistas. Os outros três labs não mexeram (15, 4, 7), e o lab dos
+provedores foi para **0**.
+
+### O que ficou pendente desta rodada
+
+- **Arrastar processadores para a `pipeline`** e ver a ordem de registro importar. É a
+  decisão "parâmetro vs composição" da spec do handbook §4 levada a sério, e é rodada
+  própria: mexe no palco (arrastar), no modelo (mundo que muda de forma sem recomeçar) e
+  no currículo (a `pipeline` nasce com um filho, e ordem só ensina com dois).
+- **A estampa da compressão mudando a forma do item.** A forma hoje sai de três fatos que o
+  motor já tem — largura declarada, aresta que é canal, peso maior que um — e nenhum deles
+  é compressão. O caminho honesto é uma primitiva nova e neutra: `Message` ganhar **quanto
+  ela pesa na linha**, separado de **quantos itens ela leva**. Aí comprimir é o mesmo `×N`
+  num pacote menor, e vale para qualquer domínio. Meia medida aqui seria o domínio
+  escolhendo forma, que é a porta dos fundos que o catálogo existe para fechar.
+
+Estado: 911 testes unitários, 199 e2e, typecheck, boundaries (81 arquivos), catálogo (12
 arquivos) e build (33 páginas) verdes.

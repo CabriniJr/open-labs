@@ -50,6 +50,16 @@ export interface EstadoOtel {
   readonly exportados: number;
   readonly lotes: number;
   readonly flushesRecebidos: number;
+  /**
+   * O que o exportador recebeu e ainda não conseguiu mandar.
+   *
+   * **Preso não é perdido**, e a diferença é a lição inteira da contrapressão:
+   * o que está aqui volta a andar quando o canal volta; o que a fila recusou não
+   * volta nunca.
+   */
+  readonly retidosNoExportador: number;
+  /** A fila parou de entregar porque o exportador não termina. */
+  readonly contrapressao: boolean;
 
   readonly logsEmitidos: number;
   readonly logsBarradosPeloTrace: number;
@@ -117,6 +127,8 @@ export function estadoOtel(state: WorldState): EstadoOtel {
     exportados: exportador?.spans ?? 0,
     lotes: exportador?.lotes ?? 0,
     flushesRecebidos: exportador?.flushes ?? 0,
+    retidosNoExportador: exportador?.retido.length ?? 0,
+    contrapressao: fila !== undefined && !fila.pronto,
 
     logsEmitidos: numero(state, "out:app.log.weight"),
     logsBarradosPeloTrace: porta?.barrados ?? 0,

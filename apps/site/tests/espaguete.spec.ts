@@ -109,10 +109,15 @@ function cegas(medidos: readonly FioMedido[]): number {
  */
 const TETOS = [
   { lab: "labs/cpu/", nome: "o caminho de dados inteiro", cruzamentos: 15 },
-  { lab: "labs/gates/", nome: "o somador de quatro bits", cruzamentos: 4 },
+  // Cinco, e não quatro: as duas parcelas que entram em cada bit eram
+  // desenhadas uma por cima da outra, e viravam uma linha só. Separá-las
+  // acrescentou UM cruzamento e tirou quatro ligações que o leitor não podia
+  // ver — o número subiu porque o desenho passou a dizer a verdade sobre
+  // quantas linhas existem.
+  { lab: "labs/gates/", nome: "o somador de quatro bits", cruzamentos: 5 },
   { lab: "labs/rpn/", nome: "a máquina de pilha", cruzamentos: 4 },
   { lab: "labs/micro/", nome: "o sistema do genérico", cruzamentos: 7 },
-  { lab: "labs/providers/", nome: "o processo instrumentado", cruzamentos: 1 },
+  { lab: "labs/providers/", nome: "o processo instrumentado", cruzamentos: 0 },
 ] as const;
 
 for (const teto of TETOS) {

@@ -145,6 +145,13 @@
   line-height: 1.6;
 }
 
+/* O alerta usa a tinta de aviso do site, e não uma nova: cor sai de token. */
+.providers-lab__nota[data-alerta="true"] {
+  padding: var(--space-1);
+  border-inline-start: 2px solid var(--ink-warn);
+  color: var(--ink);
+}
+
 .providers-lab__contas {
   margin: 0;
   padding: 0;

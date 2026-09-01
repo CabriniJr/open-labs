@@ -37,7 +37,10 @@ export const RECURSO_DO_SEGUNDO: readonly AtributoDeRecurso[] = [
 export const ROTULOS = {
   host: "Host",
   process: "Instrumented process",
-  app: "Instrumentation",
+  application: "Application",
+  app: "Your code and libraries",
+  api: "OpenTelemetry API",
+  sdk: "OpenTelemetry SDK",
   propagators: "Propagators",
 
   tracerProvider: "TracerProvider",
@@ -102,7 +105,11 @@ export const DESCRICOES: Readonly<Record<string, string>> = {
   host: "The machine. The process runs here, and so does the Collector — which is the point: they are not the same program.",
   process:
     "One process, one SDK. Everything inside this frame shares a lifetime: when it ends, whatever has not left is gone.",
-  app: "Your code and your libraries calling startSpan, record and emit. It produces without receiving — the inner edge of the system.",
+  application:
+    "Your process, from the inside: the code that calls, and the API it calls. Everything in here depends on the API package only — and the API package knows nothing about exporters, batching or the wire.",
+  app: "Your code and your instrumented libraries, calling startSpan, record and emit. It produces without receiving — the inner edge of the system.",
+  api: "The OpenTelemetry API. It transports and never alters: it hands the call to whichever provider is registered, and if none is, to a no-op. This is the seam that lets a library be instrumented without choosing anyone's SDK — and it is why nothing raises when the SDK never came up.",
+  sdk: "The SDK: the three providers, and everything they own. Swap it, configure it, remove it — the API above does not change, and neither does a single line of instrumented code.",
   propagators:
     "W3C Trace Context and Baggage. They hang on the PROCESS, not on any provider: the propagator API is global, and context is not provider configuration. This is why changing a TracerProvider never changes how context travels.",
 

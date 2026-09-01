@@ -33,6 +33,10 @@ import { Explorer } from "./Explorer.js";
  */
 
 const CONTROLES = [
+  "spans-per-tick",
+  "logs-per-tick",
+  "metrics-per-tick",
+  "collector-down",
   "sampling-ratio",
   "record-only",
   "max-queue-size",
@@ -47,6 +51,10 @@ const CONTROLES = [
 type Controle = (typeof CONTROLES)[number];
 
 const INICIAIS: Record<Controle, number> = {
+  "spans-per-tick": 1,
+  "logs-per-tick": 1,
+  "metrics-per-tick": 1,
+  "collector-down": 0,
   "sampling-ratio": 1,
   "record-only": 0,
   "max-queue-size": 2048,
@@ -120,6 +128,25 @@ export function ProvidersLab() {
   const e = estadoOtel(estado);
   const views = semSdk ? VIEWS_SEM_SDK : OTEL_VIEWS;
 
+  /**
+   * O quanto cada caixa está cheia, de 0 a 1.
+   *
+   * É o que faz a fila **acumular e soltar** em vez de ser um retângulo parado:
+   * o nível sobe enquanto os spans entram, e cai de uma vez quando o lote sai.
+   * Sem ele, o processador em lote é uma caixa por onde as coisas passam, e o
+   * que ele faz — juntar — não aparece em lugar nenhum.
+   *
+   * O banco de pontos usa a mesma barra contra o limite de cardinalidade, e é
+   * ali que o contraste de F4 fica físico: um enche até transbordar e recusar,
+   * o outro enche até colapsar.
+   */
+  const fills: Record<string, number> = semSdk
+    ? {}
+    : {
+        queue: Math.min(1, e.naFila / Math.max(1, controles["max-queue-size"])),
+        points: Math.min(1, e.pontos.length / Math.max(1, controles["cardinality-limit"])),
+      };
+
   const readouts: Record<string, string> = semSdk
     ? {
         created: numero(e.criados),
@@ -134,6 +161,7 @@ export function ProvidersLab() {
         dropped: numero(e.descartadosPeloSampler),
         "in queue": numero(e.naFila),
         "queue dropped": numero(e.descartadosPelaFila),
+        "held by exporter": numero(e.retidosNoExportador),
         exported: numero(e.exportados),
         "metric rows": numero(e.pontos.length),
         collapsed: numero(e.colapsados),
@@ -153,6 +181,7 @@ export function ProvidersLab() {
           views={views}
           inicial={foco}
           readouts={readouts}
+          fills={fills}
           leituraDaCarga={leituraDaCarga}
           especieDaCarga={especieDaCarga}
           comFicha
@@ -235,6 +264,26 @@ export function ProvidersLab() {
             the only evidence.
           </p>
           {!semSdk ? (
+            <label className="providers-lab__switch">
+              <input
+                type="checkbox"
+                checked={controles["collector-down"] === 1}
+                onChange={(ev) => mexer("collector-down", ev.target.checked ? 1 : 0)}
+              />
+              Cut the channel to the Collector
+            </label>
+          ) : null}
+          {!semSdk ? (
+            <p className="providers-lab__nota">
+              The exporter sends one batch and waits. With nothing answering, it
+              never finishes, the queue has no one to hand off to, it fills, and
+              from there it <b>refuses</b>. The loss starts three pieces before
+              the thing that broke — which is why it surprises people. Turn it
+              back on and the queue drains: backpressure is reversible, the
+              refusal is not.
+            </p>
+          ) : null}
+          {!semSdk ? (
             <div className="providers-lab__botoes">
               <button type="button" onClick={() => cenario(1, 0)}>
                 Kill the process now
@@ -248,6 +297,37 @@ export function ProvidersLab() {
             </div>
           ) : null}
         </section>
+
+        {!semSdk ? (
+          <section>
+            <h3>Load</h3>
+            <p className="providers-lab__nota">
+              How much telemetry the application produces each second. Raise it
+              past what the pipeline drains and you are looking at backpressure.
+            </p>
+            {(
+              [
+                ["spans-per-tick", "spans / s"],
+                ["logs-per-tick", "log records / s"],
+                ["metrics-per-tick", "measurements / s"],
+              ] as const
+            ).map(([chave, rotulo]) => (
+              <label className="providers-lab__campo" key={chave}>
+                <span>
+                  {rotulo} <b className="mono">{controles[chave]}</b>
+                </span>
+                <input
+                  type="range"
+                  min={0}
+                  max={24}
+                  step={1}
+                  value={controles[chave]}
+                  onChange={(ev) => mexer(chave, Number(ev.target.value))}
+                />
+              </label>
+            ))}
+          </section>
+        ) : null}
 
         {!semSdk ? (
           <section>
@@ -363,6 +443,14 @@ export function ProvidersLab() {
               </li>
             ))}
           </ul>
+          {!semSdk && e.contrapressao ? (
+            <p className="providers-lab__nota" data-alerta="true">
+              <b>Backpressure.</b> The exporter is holding{" "}
+              <b className="mono">{numero(e.retidosNoExportador)}</b> spans it could
+              not send, so the queue has stopped handing off. Held is not lost —
+              but everything the queue refuses from here on is.
+            </p>
+          ) : null}
           {!semSdk && e.logsBarradosPeloTrace > 0 ? (
             <p className="providers-lab__nota">
               <b className="mono">{numero(e.logsBarradosPeloTrace)}</b> log records

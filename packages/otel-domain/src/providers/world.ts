@@ -53,6 +53,15 @@ export const PARAMS_PADRAO: Readonly<Record<string, number>> = {
   "shutdown-at": 0,
   /** Chamar `ForceFlush` no fim. É o contrafactual de F3. */
   "force-flush": 0,
+  /**
+   * O outro lado do canal sumiu.
+   *
+   * É o modo de falha mais comum de um pipeline de telemetria, e o único jeito
+   * de **ver** contrapressão: o exportador espera uma resposta que não vem, a
+   * fila não tem para quem entregar, ela enche, e a partir daí recusa. A perda
+   * começa três peças antes de onde o problema está.
+   */
+  "collector-down": 0,
   "spans-per-tick": 1,
   "logs-per-tick": 1,
   "metrics-per-tick": 1,
@@ -148,6 +157,37 @@ function app(escopo: string): ObjectSpec<EstadoApp> {
     },
   };
 }
+
+/**
+ * A API do OpenTelemetry.
+ *
+ * `channel`: transporta e **nunca altera a carga** — que é a definição da
+ * família, e é literalmente o que a API faz. Ela entrega a chamada a quem estiver
+ * registrado, e se ninguém estiver, a um no-op.
+ *
+ * Desenhá-la separada do código é o que torna visível a costura que sustenta o
+ * ecossistema inteiro: uma biblioteca depende **só** do pacote da API, e por
+ * isso pode ser instrumentada sem escolher o SDK de ninguém. É também a razão
+ * pela qual nada estoura quando o SDK não subiu — do lado de cá da costura,
+ * ninguém sabe que ele não subiu.
+ */
+const api: ObjectSpec<Record<string, never>> = {
+  id: "api",
+  kind: "channel",
+  label: ROTULOS.api,
+  leaf: true,
+  behavior: (state, inbox, ctx) => {
+    if (ctx.phase !== "commit" || inbox.length === 0) return { state, out: [] };
+    // Repassa por porta, pela espécie da chamada. Não olha o conteúdo, não
+    // decide nada, não guarda nada: se olhasse, deixaria de ser um canal.
+    const porta = (kind: string): string =>
+      kind === "log" ? "log" : kind === "measurement" ? "metric" : "span";
+    return {
+      state,
+      out: inbox.map((m) => ({ port: porta(m.kind), message: m })),
+    };
+  },
+};
 
 // ---------------------------------------------------------------------------
 // O amostrador
@@ -425,6 +465,7 @@ function tracerProvider(sufixo: string, placaDoRecurso: PlacaDeRecurso, rotulo: 
     },
     paramFila: "max-queue-size",
     paramPrazo: "scheduled-delay",
+    paramQueda: "collector-down",
     maxExportBatchSize: MAX_EXPORT_BATCH_SIZE_PADRAO,
     kindDeSaida: "otlp-traces",
     recurso: placaDoRecurso,
@@ -483,6 +524,7 @@ function loggerProvider(): ProvedorDeTraces {
     },
     paramFila: "log-max-queue-size",
     paramPrazo: "log-scheduled-delay",
+    paramQueda: "collector-down",
     maxExportBatchSize: MAX_EXPORT_BATCH_SIZE_PADRAO,
     kindDeSaida: "otlp-logs",
     recurso: ROTULOS.recursoDeLogs,
@@ -580,9 +622,22 @@ export function otelWorld(opcoes: OpcoesDoMundo = {}): WorldSpec {
           id: "process",
           kind: "composite",
           label: ROTULOS.process,
-          entry: "app",
+          entry: "application",
           exit: "tracer-provider",
-          children: [app(ROTULOS.escopo), placa("propagators", ROTULOS.propagators), noopProvider],
+          children: [
+            // A costura continua inteira: o código e a API estão aqui, iguais.
+            // O que falta é o outro lado dela — e é por isso que nada estoura.
+            {
+              id: "application",
+              kind: "composite",
+              label: ROTULOS.application,
+              entry: "app",
+              exit: "api",
+              children: [app(ROTULOS.escopo), api],
+            },
+            placa("propagators", ROTULOS.propagators),
+            noopProvider,
+          ],
         },
         collector,
       ],
@@ -595,9 +650,12 @@ export function otelWorld(opcoes: OpcoesDoMundo = {}): WorldSpec {
       channels: [canalOtlp],
       params,
       wires: [
-        { from: "app", port: "span", to: "tracer-provider" },
-        { from: "app", port: "log", to: DROP },
-        { from: "app", port: "metric", to: DROP },
+        { from: "app", port: "span", to: "api" },
+        { from: "app", port: "log", to: "api" },
+        { from: "app", port: "metric", to: "api" },
+        { from: "api", port: "span", to: "tracer-provider" },
+        { from: "api", port: "log", to: DROP },
+        { from: "api", port: "metric", to: DROP },
       ],
     };
   }
@@ -610,23 +668,58 @@ export function otelWorld(opcoes: OpcoesDoMundo = {}): WorldSpec {
       ? tracerProvider("-b", ROTULOS.recursoDoSegundo, ROTULOS.tracerProviderB)
       : undefined;
 
+  /**
+   * A aplicação: o código e a API que ele chama.
+   *
+   * As duas coisas moram na mesma moldura porque **são o mesmo lado da
+   * costura** — as duas existem sem SDK nenhum, e nenhuma delas sabe o que é um
+   * exportador. O que muda do lado de fora é tudo.
+   */
+  const application: AnyObject = {
+    id: "application",
+    kind: "composite",
+    label: ROTULOS.application,
+    entry: "app",
+    exit: "api",
+    children: [app(ROTULOS.escopo), api],
+  };
+
+  /**
+   * O SDK: os três provedores, e tudo o que eles decidem.
+   *
+   * Ele é uma moldura, e não um agrupamento decorativo: trocá-lo, configurá-lo
+   * ou removê-lo não muda uma linha do que está dentro da `application`. Sem a
+   * moldura, a fronteira que sustenta o ecossistema inteiro seria uma frase no
+   * texto em vez de uma linha no desenho.
+   */
+  const sdk: AnyObject = {
+    id: "sdk",
+    kind: "composite",
+    label: ROTULOS.sdk,
+    entry: "tracer-provider",
+    exit: "meter-provider",
+    children: [
+      traces.objeto,
+      ...(segundo === undefined ? [] : [segundo.objeto]),
+      logs.objeto,
+      metricas.objeto,
+    ],
+  };
+
   const process: AnyObject = {
     id: "process",
     kind: "composite",
     label: ROTULOS.process,
-    entry: "app",
-    exit: "meter-provider",
+    entry: "application",
+    exit: "sdk",
     children: [
-      app(ROTULOS.escopo),
+      application,
       // A placa dos propagadores pendura no PROCESSO, e não em provider nenhum:
       // a API de propagadores é global, e contexto não é configuração de
       // provider. Quem a placa toca é quem a possui — a posição É a posse, e ela
       // mata o mal-entendido sem uma palavra de texto.
       placa("propagators", ROTULOS.propagators),
-      traces.objeto,
-      ...(segundo === undefined ? [] : [segundo.objeto]),
-      logs.objeto,
-      metricas.objeto,
+      sdk,
     ],
   };
 
@@ -657,10 +750,14 @@ export function otelWorld(opcoes: OpcoesDoMundo = {}): WorldSpec {
     channels: [canalOtlp],
     params,
     wires: [
-      { from: "app", port: "span", to: "tracer-provider" },
-      ...(segundo === undefined ? [] : [{ from: "app", port: "span", to: "tracer-provider-b" } as const]),
-      { from: "app", port: "log", to: "logger-provider" },
-      { from: "app", port: "metric", to: "meter-provider" },
+      // O código fala com a API, e é só com ela. Tudo depois disto é o SDK.
+      { from: "app", port: "span", to: "api" },
+      { from: "app", port: "log", to: "api" },
+      { from: "app", port: "metric", to: "api" },
+      { from: "api", port: "span", to: "tracer-provider" },
+      ...(segundo === undefined ? [] : [{ from: "api", port: "span", to: "tracer-provider-b" } as const]),
+      { from: "api", port: "log", to: "logger-provider" },
+      { from: "api", port: "metric", to: "meter-provider" },
       ...traces.wires,
       ...(segundo?.wires ?? []),
       ...logs.wires,

@@ -37,6 +37,17 @@ export interface LoteConfig {
   readonly paramFila: string;
   /** A chave que mede, em ticks, o `scheduledDelayMillis`. */
   readonly paramPrazo: string;
+  /**
+   * A chave que diz se o outro lado do canal sumiu.
+   *
+   * Não é capricho de simulação: é o modo de falha mais comum de um pipeline de
+   * telemetria, e o único jeito de **ver** contrapressão. O exportador exporta
+   * um lote por vez e espera; com o outro lado mudo, ele não termina, a fila não
+   * tem para quem entregar, ela enche, e a partir daí **recusa**. A perda não
+   * começa no exportador — começa na fila, três peças antes, e é por isso que
+   * ela surpreende quem só olha o exportador.
+   */
+  readonly paramQueda: string;
   readonly maxExportBatchSize: number;
   /** O `kind` da mensagem que sai pelo canal. É por ele que o Collector separa os sinais. */
   readonly kindDeSaida: string;
@@ -69,6 +80,15 @@ export interface EstadoFila {
   readonly itens: readonly RegistroDeSpan[];
   /** Acumulado desde o tick 0. É o número que prova que a perda existe. */
   readonly descartados: number;
+  /**
+   * Se o exportador está livre para receber o próximo lote.
+   *
+   * Chega por linha de **controle**, e não como parâmetro lido aqui dentro: a
+   * contrapressão é uma conversa entre duas peças, e uma conversa que só
+   * existisse como número no ar não apareceria no desenho. É a única aresta do
+   * lab que anda **contra** o fluxo, e é isso que a torna reconhecível.
+   */
+  readonly pronto: boolean;
 }
 
 export interface EstadoGatilho {
@@ -83,6 +103,14 @@ export interface EstadoExportador {
   readonly flushes: number;
   /** O último lote que saiu. É daqui que o envelope do L3 é derivado. */
   readonly ultimo: readonly RegistroDeSpan[];
+  /**
+   * O que ele recebeu e ainda não conseguiu mandar.
+   *
+   * A spec diz que o exportador exporta **um lote por vez** e espera a resposta.
+   * Com o outro lado mudo, o lote fica aqui — e é este campo que mostra que o
+   * dado não sumiu: ele está preso.
+   */
+  readonly retido: readonly RegistroDeSpan[];
 }
 
 export interface Lote {
@@ -103,9 +131,12 @@ export function loteProcessor(cfg: LoteConfig): Lote {
     kind: "buffer",
     label: cfg.rotulos.fila,
     leaf: true,
-    init: (): EstadoFila => ({ itens: [], descartados: 0 }),
+    init: (): EstadoFila => ({ itens: [], descartados: 0, pronto: true }),
     behavior: (state, inbox, ctx) => {
       if (ctx.phase !== "commit") return { state, out: [] };
+
+      const aviso = ctx.signals["ready"]?.at(-1);
+      const pronto = aviso === undefined ? state.pronto : aviso.data["pronto"] === true;
 
       const max = inteiro(ctx.params[cfg.paramFila], MAX_QUEUE_SIZE_PADRAO, 0);
       const itens: RegistroDeSpan[] = [...state.itens];
@@ -138,7 +169,10 @@ export function loteProcessor(cfg: LoteConfig): Lote {
       // porta, vindo do provider). O flush esvazia; o tamanho leva um lote só.
       const pedidoDeFlush = (ctx.signals["flush"]?.length ?? 0) > 0;
       const tamanho = Math.max(1, cfg.maxExportBatchSize);
-      let aSair = pedidoDeFlush ? itens.length : itens.length >= tamanho ? tamanho : 0;
+      // Nem o `ForceFlush` passa por cima da contrapressão, e é verdade: se o
+      // exportador não termina, não há para quem entregar, e o flush espera. É
+      // por isso que um `Shutdown` com o coletor fora do ar não salva nada.
+      let aSair = !pronto ? 0 : pedidoDeFlush ? itens.length : itens.length >= tamanho ? tamanho : 0;
 
       let restantes = itens;
       while (aSair > 0) {
@@ -149,7 +183,10 @@ export function loteProcessor(cfg: LoteConfig): Lote {
         out.push({ port: "out", message: ctx.emit("batch", n, { spans }) });
       }
 
-      return { state: { itens: restantes, descartados: state.descartados + recusados }, out };
+      return {
+        state: { itens: restantes, descartados: state.descartados + recusados, pronto },
+        out,
+      };
     },
   };
 
@@ -190,34 +227,53 @@ export function loteProcessor(cfg: LoteConfig): Lote {
     kind: "sink",
     label: cfg.rotulos.exportador,
     leaf: true,
-    init: (): EstadoExportador => ({ lotes: 0, spans: 0, flushes: 0, ultimo: [] }),
+    init: (): EstadoExportador => ({ lotes: 0, spans: 0, flushes: 0, ultimo: [], retido: [] }),
     behavior: (state, inbox, ctx) => {
       if (ctx.phase !== "commit") return { state, out: [] };
       // O `ForceFlush` do provider desce até aqui: a spec manda invocá-lo em
       // todos os processadores registrados, e o do lote continua a descida até
       // o exportador. Contar é o que impede o cascateamento de ser invisível.
       const flushes = state.flushes + (ctx.signals["flush"]?.length ?? 0);
-      if (inbox.length === 0) return { state: { ...state, flushes }, out: [] };
+      const caido = (ctx.params[cfg.paramQueda] ?? 0) >= 1;
+
+      const retido = [...state.retido];
+      for (const message of inbox) retido.push(...spansDa(message));
+
       const out: Emission[] = [];
       let lotes = state.lotes;
       let spans = state.spans;
       let ultimo = state.ultimo;
-      for (const message of inbox) {
-        const carga = spansDa(message);
-        if (carga.length === 0) continue;
+      if (!caido && retido.length > 0) {
         lotes += 1;
-        spans += carga.length;
-        ultimo = carga;
+        spans += retido.length;
+        ultimo = retido.slice();
         out.push({
           port: "out",
-          message: ctx.emit(cfg.kindDeSaida, carga.length, {
-            spans: carga,
+          message: ctx.emit(cfg.kindDeSaida, retido.length, {
+            spans: retido.slice(),
             resource: cfg.recurso.attributes,
             provider: cfg.id,
           }),
         });
+        retido.length = 0;
       }
-      return { state: { lotes, spans, flushes, ultimo }, out };
+
+      /*
+        Ele se declara pronto quando **não está segurando nada** — e não quando
+        o canal está de pé.
+
+        A diferença é a spec: o exportador exporta um lote por vez e espera a
+        resposta. Ele aceita o primeiro lote sem saber que o outro lado sumiu, e
+        só a partir daí é que a fila descobre. Amarrar o aviso ao parâmetro
+        pularia esse instante, e ele é o instante inteiro: a contrapressão
+        **começa** com um lote preso, não com um aviso vindo do nada.
+
+        O aviso corre todo tick, e não só quando muda: uma crença antiga na fila
+        seria uma fila entregando para quem não pode receber.
+      */
+      out.push({ port: "ready", message: ctx.emit("ready", 1, { pronto: retido.length === 0 }) });
+
+      return { state: { lotes, spans, flushes, ultimo, retido }, out };
     },
   };
 
@@ -244,6 +300,10 @@ export function loteProcessor(cfg: LoteConfig): Lote {
         ? [{ from: cfg.fila, port: "unsampled", to: DROP } as const]
         : []),
       { from: cfg.gatilho, port: "flush", to: cfg.fila, line: "control", toPort: "flush" },
+      // A única aresta que anda contra o fluxo. Contrapressão é conversa entre
+      // duas peças, e desenhá-la é o que permite ver a perda começar na fila em
+      // vez de no exportador.
+      { from: cfg.exportador, port: "ready", to: cfg.fila, line: "control", toPort: "ready" },
     ],
   };
 }

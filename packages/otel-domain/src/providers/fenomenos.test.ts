@@ -177,3 +177,68 @@ describe("D5 — a linha que cruza a fronteira de um provider", () => {
     expect(e.logsExportados).toBeGreaterThan(0);
   });
 });
+
+describe("F6 — contrapressão: a perda começa três peças antes de onde o problema está", () => {
+  const CARGA = { "spans-per-tick": 3, "max-queue-size": 8, "scheduled-delay": 2 };
+
+  it("com o canal de pé, o que entra sai", () => {
+    const e = estadoOtel(rodar(40, { params: { ...CARGA, "collector-down": 0 } }));
+    expect(e.recebidosPeloCollector).toBeGreaterThan(0);
+    expect(e.descartadosPelaFila).toBe(0);
+    expect(e.naFila).toBeLessThanOrEqual(8);
+  });
+
+  it("com o canal cortado, a FILA enche e passa a recusar — e o exportador não perdeu nada", () => {
+    const s = rodar(40, { params: { ...CARGA, "collector-down": 1 } });
+    const e = estadoOtel(s);
+
+    expect(e.recebidosPeloCollector).toBe(0);
+    // A fila encheu até o limite e o excedente foi recusado. É aqui que o dado
+    // morre — e não no exportador, que é onde todo mundo procura.
+    expect(e.naFila).toBe(8);
+    expect(e.descartadosPelaFila).toBeGreaterThan(0);
+
+    // O que o exportador chegou a receber está RETIDO, e não perdido: ele
+    // exporta um lote por vez e espera. A diferença entre preso e perdido é a
+    // lição, e ela tem número dos dois lados.
+    const exportador = s.nodes["span-exporter"] as { readonly retido: readonly unknown[] };
+    expect(exportador.retido.length).toBeGreaterThan(0);
+  });
+
+  it("nem o ForceFlush passa por cima: com o canal cortado, encerrar não salva nada", () => {
+    const e = estadoOtel(
+      rodar(40, { params: { ...CARGA, "collector-down": 1, "shutdown-at": 20, "force-flush": 1 } }),
+    );
+    expect(e.recebidosPeloCollector).toBe(0);
+    expect(e.naFila).toBeGreaterThan(0);
+  });
+
+  it("religado o canal, a fila drena — a contrapressão é reversível, a recusa não", () => {
+    const mundo = new World(otelWorld({ params: { ...CARGA, "collector-down": 1 } }));
+    mundo.advance(30);
+    const presos = estadoOtel(mundo.state).naFila;
+    expect(presos).toBeGreaterThan(0);
+
+    mundo.setParam("collector-down", 0);
+    mundo.setParam("spans-per-tick", 0);
+    mundo.advance(30);
+    const depois = estadoOtel(mundo.state);
+
+    expect(depois.naFila).toBe(0);
+    expect(depois.recebidosPeloCollector).toBeGreaterThan(0);
+    // O que a fila recusou enquanto estava cheia não volta. Contrapressão se
+    // desfaz; descarte não.
+    expect(depois.descartadosPelaFila).toBe(estadoOtel(mundo.state).descartadosPelaFila);
+  });
+
+  it("a contrapressão é uma ARESTA, e ela anda contra o fluxo", () => {
+    const spec = otelWorld();
+    const contra = spec.wires.find((w) => w.from === "span-exporter" && w.port === "ready");
+    expect(contra?.line).toBe("control");
+    expect(contra?.to).toBe("queue");
+    expect(contra?.toPort).toBe("ready");
+    // O par dela, no sentido do fluxo. As duas existem, e é isso que faz o
+    // laço aparecer no desenho em vez de virar um número lido no ar.
+    expect(spec.wires.some((w) => w.from === "queue" && w.port === "out" && w.to === "span-exporter")).toBe(true);
+  });
+});

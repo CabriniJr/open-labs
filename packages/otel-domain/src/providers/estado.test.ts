@@ -72,7 +72,7 @@ describe("o leitor de estado, e a conservação que impede o painel de mentir", 
   it("o leitor não cava o estado cru: um mundo qualquer devolve números, não undefined", () => {
     const e = estadoOtel(new World(otelWorld()).state);
     for (const [chave, valor] of Object.entries(e)) {
-      if (Array.isArray(valor)) continue;
+      if (Array.isArray(valor) || typeof valor === "boolean") continue;
       expect(Number.isFinite(valor), chave).toBe(true);
     }
   });

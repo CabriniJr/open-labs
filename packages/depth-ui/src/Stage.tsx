@@ -28,11 +28,11 @@ import {
   quantoAparece,
   tabelaLegivel,
 } from "./lod.js";
-import { caminho, retasDe } from "./roteador.js";
+import { caminho, pontasDe, retasDe } from "./roteador.js";
 import type { Ponto } from "./roteador.js";
 import { travessia } from "./travessia.js";
 import { juncoes } from "./espaguete.js";
-import { portasDaCaixa, posicaoDaPorta } from "./portas.js";
+import { PORTA_ANONIMA, portasDaCaixa, posicaoDaPorta } from "./portas.js";
 import { dilatarPara, relogioDaCamada } from "./tempo.js";
 
 /**
@@ -830,6 +830,80 @@ function Camada({
   // fios na mesma coluna. Acumula na ordem das arestas, que é estável.
   const ocupadas = new Set<string>();
 
+  /**
+   * As duas caixas desta vista que uma aresta liga — ou `null` quando ela não é
+   * desta vista.
+   *
+   * Extraída porque duas coisas precisam da mesma resposta e nenhuma delas pode
+   * ter a sua própria: o roteamento, e a conta de **quantas portas diferentes
+   * ligam o mesmo par de caixas**. Duas resoluções em paralelo divergiriam, e a
+   * divergência apareceria como uma porta desenhada onde nenhum fio passa.
+   */
+  const pontasDaAresta = (
+    wire: Wire,
+  ): { readonly de: NodePlacement; readonly para: NodePlacement } | null => {
+    if (String(wire.to) === DROP) return null;
+    const bruto = ondeCai(wire.from);
+    const fonte = emissoes[`${wire.from}.${wire.port}`]?.fonte;
+    const a = bruto === FORA && fonte !== undefined ? (dentroDoFoco(fonte) ?? FORA) : bruto;
+    const brutoDestino = ondeCai(String(wire.to));
+    const b =
+      brutoDestino === FORA ? (entradaNoFoco(String(wire.to), wire.toPort) ?? FORA) : brutoDestino;
+    if (a === undefined || b === undefined) return null;
+    if (a === FORA && b === FORA) return null;
+    const para = b === FORA ? margem("sai", a as NodePlacement) : b;
+    const de = a === FORA ? margem("entra", para) : a;
+    if (de.id === para.id && wire.from !== String(wire.to)) return null;
+    return { de, para };
+  };
+
+  /**
+   * As portas distintas que ligam **o mesmo par de caixas**.
+   *
+   * É a única situação em que a posição da porta tem de mandar no fio. Três
+   * saídas diferentes indo para a mesma caixa miram todas o mesmo ponto, saem na
+   * mesma altura e são desenhadas uma por cima da outra: o leitor vê uma ligação
+   * onde existem três, e a caixa parece ter uma porta só.
+   *
+   * Fora daí, quem manda é a mira — o fio que vai mais para cima sai mais para
+   * cima —, e ela não se toca aqui de propósito: foi ela que levou o somador de
+   * vinte e oito cruzamentos para quatro, e um leque sem ordem tranca sozinho.
+   */
+  const saidasDoPar = new Map<string, string[]>();
+  const entradasDoPar = new Map<string, string[]>();
+  for (const wire of wires) {
+    const pontas = pontasDaAresta(wire);
+    if (pontas === null) continue;
+    if (pontas.de.id !== wire.from || pontas.para.id !== String(wire.to)) continue;
+    const par = `${pontas.de.id}->${pontas.para.id}`;
+    const saidas = saidasDoPar.get(par) ?? [];
+    if (!saidas.includes(wire.port)) saidas.push(wire.port);
+    saidasDoPar.set(par, saidas);
+    const entrada = wire.toPort ?? PORTA_ANONIMA;
+    const entradas = entradasDoPar.get(par) ?? [];
+    if (!entradas.includes(entrada)) entradas.push(entrada);
+    entradasDoPar.set(par, entradas);
+  }
+
+  /**
+   * O afastamento de uma porta em torno da mira — só quando o par tem mais de
+   * uma, porque só aí há empate a desfazer.
+   *
+   * O passo é limitado pela altura da caixa: numa caixa baixa, espalhar as
+   * portas as jogaria para fora dela.
+   */
+  const desvioNoPar = (
+    caixa: NodePlacement,
+    portas: readonly string[] | undefined,
+    porta: string,
+  ): number | undefined => {
+    if (portas === undefined || portas.length < 2) return undefined;
+    const i = portas.indexOf(porta);
+    if (i < 0) return undefined;
+    const passo = Math.min(14, caixa.h / (portas.length + 1));
+    return (i - (portas.length - 1) / 2) * passo;
+  };
+
   /** Fios desenháveis: cada ponta cai numa caixa da vista ou na margem dela. */
   const arestas = wires
     .map((wire, i) => {
@@ -870,6 +944,7 @@ function Camada({
           descarte: true as const,
           canal: wire.channel,
           port: wire.port,
+          toPort: undefined,
         };
       }
 
@@ -920,7 +995,17 @@ function Camada({
         com a coluna mais central, e quem vem depois se afasta. Um sorteio aqui
         faria o desenho mudar entre dois carregamentos da mesma página.
       */
-      const traco = caminho(de, para, 18 + (i % 3) * 12, obstaculos, ocupadas);
+      const par = `${de.id}->${para.id}`;
+      const traco = caminho(de, para, 18 + (i % 3) * 12, obstaculos, ocupadas, {
+        // A âncora só vale quando a ponta é a própria caixa: se o fio nasce lá
+        // no fundo e sai pela moldura, a porta que ele usa não é a da moldura.
+        desvioSaida:
+          de.id === wire.from ? desvioNoPar(de, saidasDoPar.get(par), wire.port) : undefined,
+        desvioEntrada:
+          para.id === String(wire.to)
+            ? desvioNoPar(para, entradasDoPar.get(par), wire.toPort ?? PORTA_ANONIMA)
+            : undefined,
+      });
       for (const reta of retasDe(traco)) ocupadas.add(reta);
 
       /*
@@ -967,6 +1052,8 @@ function Camada({
          *  serializado do outro lado. */
         canal: wire.channel,
         port: wire.port,
+        /** Em que porta do destino esta ligação chega. Ausente é a entrada anônima. */
+        toPort: wire.toPort,
       };
     })
     .filter((a): a is NonNullable<typeof a> => a !== null);
@@ -974,6 +1061,21 @@ function Camada({
   // A carga em voo só sabe de onde veio e para onde vai; o fio que a leva é o
   // primeiro que liga os dois. Com leque, as cópias são itens distintos, cada
   // uma com o seu destino, então nenhuma some no caminho de outra.
+  /**
+   * Onde cada porta de fato está: a ponta do caminho que a usa.
+   *
+   * A porta é **a ligação, desenhada** — e por isso a posição dela sai do fio,
+   * e não de uma distribuição uniforme pela borda. Enquanto as duas coisas eram
+   * calculadas em separado, o desenho mostrava uma entrada num lugar e a linha
+   * chegando em outro, o que é a mesma espécie de mentira da linha que
+   * atravessa uma caixa: o leitor lê uma ligação onde ela não está.
+   *
+   * Porta que nenhum fio desta vista usa continua caindo na distribuição
+   * uniforme — ela existe (o objeto a declarou) e o enquadramento é que não
+   * mostra quem a usa.
+   */
+  const pontoDaPorta = new Map<string, Ponto>();
+
   const trilhoEntre = new Map<string, string>();
   // A largura declarada do fio, para a carga em voo poder tomar a forma dele.
   const larguraEntre = new Map<string, number>();
@@ -983,6 +1085,13 @@ function Camada({
   const descarteDaPorta = new Map<string, string>();
   for (const aresta of arestas) {
     const chave = `${aresta.from}->${aresta.to}`;
+    const pontas = pontasDe(aresta.traco);
+    if (aresta.ancora !== "entra") {
+      pontoDaPorta.set(`${aresta.from}.${aresta.port}`, pontas.inicio);
+    }
+    if (!aresta.descarte && aresta.ancora !== "sai") {
+      pontoDaPorta.set(`${aresta.to}.${aresta.toPort ?? PORTA_ANONIMA}`, pontas.fim);
+    }
     if (aresta.descarte) descarteDaPorta.set(`${aresta.from}.${aresta.port}`, aresta.d);
     if (!trilhoEntre.has(chave)) trilhoEntre.set(chave, aresta.d);
     if (aresta.width !== undefined && !larguraEntre.has(chave)) {
@@ -1134,19 +1243,35 @@ function Camada({
                 />
               </path>
             ) : null}
-            {aresta.descarte ? (
-              // O terminal: a barra de fim, e a palavra. Sem a palavra, um
-              // traço curto pareceria um fio cortado pela moldura — que é
-              // acidente, e descarte é decisão.
-              <g className="dui-stage__descarte">
-                <path
-                  d={`M ${aresta.paraLugar.x} ${aresta.paraLugar.y} V ${aresta.paraLugar.y + aresta.paraLugar.h}`}
-                />
-                <text x={aresta.paraLugar.x + 6} y={aresta.paraLugar.y + aresta.paraLugar.h / 2 + 3}>
-                  drop
-                </text>
-              </g>
-            ) : null}
+            {aresta.descarte
+              ? (() => {
+                  /*
+                    O terra do esquemático, deitado.
+
+                    Três traços que encurtam é o símbolo mais universal que a
+                    eletrônica tem para "aqui acaba, e não continua em lugar
+                    nenhum" — que é exatamente o que o descarte é. Uma barra
+                    sozinha pareceria um fio cortado pela moldura, e fio cortado
+                    é acidente; descarte é decisão. A palavra fica junto porque
+                    isto é material de ensino: quem não conhece o símbolo
+                    aprende os dois de uma vez.
+                  */
+                  const x = aresta.paraLugar.x;
+                  const y = aresta.paraLugar.y + aresta.paraLugar.h / 2;
+                  return (
+                    <g className="dui-stage__descarte">
+                      <path
+                        d={`M ${x} ${y - 7} V ${y + 7} M ${x + 3.5} ${y - 4.5} V ${y + 4.5} M ${
+                          x + 7
+                        } ${y - 2} V ${y + 2}`}
+                      />
+                      <text x={x + 11} y={y + 3}>
+                        drop
+                      </text>
+                    </g>
+                  );
+                })()
+              : null}
             {aresta.width !== undefined ? (
               // Ao lado da saída, e não sobre o traço: seguindo o caminho, a
               // marca sai de cabeça para baixo em todo fio que volta.
@@ -1535,11 +1660,14 @@ function Camada({
               */}
               <g className="dui-stage__portas">
                 {portas.entradas.map((porta, i) => {
-                  const cy = place.y + place.h * posicaoDaPorta(i, portas.entradas.length);
+                  const noFio = pontoDaPorta.get(`${place.id}.${porta}`);
+                  const cx = noFio?.x ?? place.x;
+                  const cy =
+                    noFio?.y ?? place.y + place.h * posicaoDaPorta(i, portas.entradas.length);
                   return (
                     <g key={`e${porta}`} className="dui-stage__porta" data-lado="entrada">
                       <title>{`in · ${porta}`}</title>
-                      <rect x={place.x - 6} y={cy - 8} width={12} height={16} rx={2} />
+                      <rect x={cx - 6} y={cy - 8} width={12} height={16} rx={2} />
                       {aparece > 0.5 ? (
                         <text className="dui-stage__porta-nome" x={place.x + 10} y={cy + 3}>
                           {porta}
@@ -1551,14 +1679,17 @@ function Camada({
                 {portas.saidas.map((porta, i) => {
                   // No trapézio a saída fica no bico, e não espalhada pela
                   // borda: é ali que a linha realmente sai.
+                  const noFio = pontoDaPorta.get(`${place.id}.${porta}`);
+                  const cx = noFio?.x ?? place.x + place.w;
                   const cy =
-                    node?.kind === "router"
+                    noFio?.y ??
+                    (node?.kind === "router"
                       ? place.y + place.h / 2
-                      : place.y + place.h * posicaoDaPorta(i, portas.saidas.length);
+                      : place.y + place.h * posicaoDaPorta(i, portas.saidas.length));
                   return (
                     <g key={`s${porta}`} className="dui-stage__porta" data-lado="saida">
                       <title>{`out · ${porta}`}</title>
-                      <rect x={place.x + place.w - 6} y={cy - 8} width={12} height={16} rx={2} />
+                      <rect x={cx - 6} y={cy - 8} width={12} height={16} rx={2} />
                       {aparece > 0.5 ? (
                         <text
                           className="dui-stage__porta-nome"

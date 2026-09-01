@@ -31,8 +31,29 @@ describe("a árvore do processo instrumentado", () => {
     }
   });
 
-  it("os propagadores penduram no PROCESSO, não em provider nenhum", () => {
+  it("os propagadores penduram no PROCESSO, não em provider nenhum e nem na aplicação", () => {
     expect(arvoreDe(otelWorld()).parent.get("propagators")).toBe("process");
+  });
+
+  it("o código fala com a API, e é só com ela — nada dele alcança um provider", () => {
+    const spec = otelWorld();
+    const arvore = arvoreDe(spec);
+    expect(arvore.parent.get("app")).toBe("application");
+    expect(arvore.parent.get("api")).toBe("application");
+    for (const w of spec.wires.filter((x) => x.from === "app")) {
+      expect(w.to, `app.${w.port}`).toBe("api");
+    }
+    // E a API é canal: transporta e nunca altera. É a costura que deixa uma
+    // biblioteca ser instrumentada sem escolher o SDK de ninguém.
+    expect(arvore.byId.get("api")?.kind).toBe("channel");
+  });
+
+  it("sem SDK, a costura continua inteira: código e API iguais, e o outro lado ausente", () => {
+    const arvore = arvoreDe(otelWorld({ semSdk: true }));
+    expect(arvore.parent.get("app")).toBe("application");
+    expect(arvore.parent.get("api")).toBe("application");
+    expect(arvore.byId.has("sdk")).toBe(false);
+    expect(arvore.byId.get("tracer-provider")?.kind).toBe("sink");
   });
 
   it("o collector está FORA do processo", () => {
@@ -78,8 +99,11 @@ describe("a árvore do processo instrumentado", () => {
     const arvore = arvoreDe(otelWorld());
     for (const id of ["tracer-provider", "logger-provider", "meter-provider"]) {
       expect(arvore.byId.get(id)?.kind, id).toBe("composite");
-      expect(arvore.parent.get(id), id).toBe("process");
+      // Os três moram no SDK, e o SDK é uma moldura de verdade: é ela que
+      // separa o que depende só da API do que decide o destino do dado.
+      expect(arvore.parent.get(id), id).toBe("sdk");
     }
+    expect(arvore.parent.get("sdk")).toBe("process");
     // A ausência é conteúdo: o LoggerProvider só configura processadores.
     expect([...arvore.byId.values()].filter((o) => o.kind === "router").length).toBe(1);
   });
