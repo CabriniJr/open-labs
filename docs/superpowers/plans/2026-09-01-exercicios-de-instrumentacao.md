@@ -102,22 +102,32 @@ Modificar:
 - Create: `labs/providers/app/pom.xml`, `labs/providers/app/Dockerfile`,
   `labs/providers/collector.yaml`, `labs/providers/compose.yaml`
 
-- [ ] **Step 1: descobrir a versão estável do BOM, e não inventá-la**
+- [ ] **Step 1: conferir as três versões — elas já foram consultadas, e não se inventam**
 
-Run:
+Consultadas em 2026-09-01 no repositório canônico, e é este o número que vai no arquivo:
+
+| Artefato | Versão | Onde foi lido |
+| --- | --- | --- |
+| `io.opentelemetry:opentelemetry-bom` | **1.65.0** | `repo1.maven.org/.../opentelemetry-bom/maven-metadata.xml`, campo `<release>` |
+| `io.opentelemetry.semconv:opentelemetry-semconv` | **1.43.0** | idem — e ele é **fora do BOM**, ver Task 2 |
+| `otel/opentelemetry-collector-contrib` | **0.159.0** | maior tag estável no Docker Hub |
+
+Confira antes de escrever, porque o número envelhece:
 
 ```bash
-curl -s "https://search.maven.org/solrsearch/select?q=g:io.opentelemetry+AND+a:opentelemetry-bom&core=gav&rows=20&wt=json" \
-  | grep -o '"v":"[0-9.]*"' | sed 's/"v":"//;s/"//' | sort -V | tail -5
+curl -s https://repo1.maven.org/maven2/io/opentelemetry/opentelemetry-bom/maven-metadata.xml | grep '<release>'
+curl -s https://repo1.maven.org/maven2/io/opentelemetry/semconv/opentelemetry-semconv/maven-metadata.xml | grep '<release>'
+curl -s "https://hub.docker.com/v2/repositories/otel/opentelemetry-collector-contrib/tags?page_size=100" \
+  | grep -o '"name":"[0-9]\+\.[0-9]\+\.[0-9]\+"' | sed 's/"name":"//;s/"//' | sort -V | tail -1
 ```
 
-Expected: uma lista de versões `1.x.y`. **Escolher a maior que não tenha sufixo**
-(`-alpha`, `-rc`): a spec do handbook proíbe API experimental no exercício.
+> **`search.maven.org` não responde neste ambiente** — foi por onde a primeira versão deste
+> plano mandava consultar, e ela falha em silêncio devolvendo vazio. O `maven-metadata.xml`
+> do `repo1` é a fonte canônica e responde.
 
-Se a rede não estiver disponível, pare e peça a versão ao Luigi. **Não escreva um número
-plausível** — um `pom.xml` que não resolve é pior que um bloco não começado.
-
-Anote a versão escolhida; ela aparece nos Steps seguintes como `<VERSAO_BOM>`.
+Se as consultas devolverem vazio, **use os números da tabela** — eles foram lidos, não
+inventados. O que não se pode é escrever um número plausível sem tê-lo lido em lugar nenhum:
+um `pom.xml` que não resolve envenena todo o Bloco B.
 
 - [ ] **Step 2: `labs/providers/app/pom.xml`**
 
@@ -146,7 +156,7 @@ Anote a versão escolhida; ela aparece nos Steps seguintes como `<VERSAO_BOM>`.
       <dependency>
         <groupId>io.opentelemetry</groupId>
         <artifactId>opentelemetry-bom</artifactId>
-        <version><VERSAO_BOM></version>
+        <version>1.65.0</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
@@ -241,7 +251,7 @@ service:
 # significa.
 services:
   collector:
-    image: otel/opentelemetry-collector-contrib:0.111.0
+    image: otel/opentelemetry-collector-contrib:0.159.0
     command: ["--config=/etc/collector.yaml"]
     volumes:
       - ./collector.yaml:/etc/collector.yaml:ro
@@ -255,11 +265,9 @@ services:
       OTEL_BSP_SCHEDULE_DELAY: "5000"
 ```
 
-> ⚠️ **A imagem do Collector também é uma versão.** Confira que a tag existe antes de
-> commitar: `docker pull otel/opentelemetry-collector-contrib:0.111.0`. Se não existir,
-> descubra a atual com
-> `curl -s https://hub.docker.com/v2/repositories/otel/opentelemetry-collector-contrib/tags?page_size=5 | grep -o '"name":"[^"]*"' | head -5`
-> e use a maior estável.
+> ⚠️ **Confirme que a imagem baixa** antes de commitar:
+> `docker pull otel/opentelemetry-collector-contrib:0.159.0`. A primeira versão deste plano
+> trazia `0.111.0`, que é de outra época — o aviso pagou por si.
 
 - [ ] **Step 6: Commit**
 
@@ -344,10 +352,21 @@ public final class Checkout {
 }
 ```
 
-> ⚠️ **`SERVICE_NAME` vem de `opentelemetry-semconv`**, que é artefato separado do BOM em
-> algumas versões. Se `mvn package` reclamar do import, acrescente a dependência
-> `io.opentelemetry.semconv:opentelemetry-semconv` com a versão que o Maven Central listar,
-> e **registre no README** que ela é a exceção fora do BOM.
+> ⚠️ **`SERVICE_NAME` vem de `opentelemetry-semconv`, e ele NÃO está no BOM.** Acrescente ao
+> `pom.xml`, com versão própria, e **registre no README** que ela é a exceção:
+>
+> ```xml
+> <dependency>
+>   <groupId>io.opentelemetry.semconv</groupId>
+>   <artifactId>opentelemetry-semconv</artifactId>
+>   <version>1.43.0</version>
+> </dependency>
+> ```
+>
+> Se o import continuar quebrando, confira o pacote da constante na versão instalada com
+> `unzip -l ~/.m2/repository/io/opentelemetry/semconv/opentelemetry-semconv/1.43.0/*.jar | grep -i serviceattributes`
+> — o nome da classe mudou de lugar mais de uma vez, e o exercício não pode nascer com um
+> import que não resolve.
 
 - [ ] **Step 2: rodar de verdade**
 
@@ -1542,9 +1561,10 @@ marcadores estão lá, e isso é teste de Node.
 
 **Onde ele pode dar errado:**
 
-1. **A versão do BOM** (Task 1). É a única coisa que não dá para escrever com certeza daqui.
-   O Step 1 manda consultar e **proíbe inventar** — se a rede não responder, o bloco para e
-   pergunta. Um `pom.xml` que não resolve envenena todo o Bloco B.
+1. **As três versões** (Task 1). Foram consultadas em 2026-09-01 e estão na tabela; o Step 1
+   manda reconferir e **proíbe inventar**. O endpoint `search.maven.org` que a primeira
+   versão deste plano usava **não responde** e falha devolvendo vazio — daí a fonte ter
+   mudado para o `maven-metadata.xml` do `repo1`.
 2. **`SERVICE_NAME` fora do BOM** (Task 2). Já está avisado no lugar, com o que fazer.
 3. **A ilha importando `node:fs`** (Task 9). Sai no `pnpm build`, com erro claro. A regra é
    uma: `montarExercicio` só é chamado no frontmatter.
