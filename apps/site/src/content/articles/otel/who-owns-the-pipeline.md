@@ -3,6 +3,7 @@ title: "Who owns the pipeline"
 dek: "API, SDK, Collector. Three owners, and one rule that decides almost every argument: information can be removed downstream and never restored. Most telemetry incidents are a change made at the wrong owner."
 handbook: otel
 phase: 3
+lab: labs/providers
 sources:
   - id: otel-trace-api
     author: "OpenTelemetry Authors"

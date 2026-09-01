@@ -1174,3 +1174,98 @@ Espaguete do lab novo: **7 cruzamentos, 0 sobreposições cegas**, teto cravado 
 
 Estado: 773 testes unitários, 179 e2e, typecheck, boundaries (81 arquivos), catálogo (10
 arquivos) e build (29 páginas) verdes.
+
+---
+
+## Entrega 4 — O lab dos provedores, o primeiro do `otel.model` ✅
+
+**Data:** 2026-08-31/09-01. Branch `main`.
+**Spec:** `docs/superpowers/specs/2026-08-31-provedores-otel-design.md`
+**Plano:** `docs/superpowers/plans/2026-08-31-lab-provedores-otel.md`
+(os dois vieram das PRs `kiro/lab-provedores-otel` e `kiro/curriculo-otel`).
+
+**O que ficou pronto.** `packages/otel-domain/src/providers/` — a árvore
+`host → process → {tracer,logger,meter}-provider`, com o `collector` filho do **host**
+e não do processo. `labs/providers` no ar, na fase 3 do mapa, pareado com o artigo
+`who-owns-the-pipeline`.
+
+**A tese, provada por teste e não por prosa:** o envelope do OTLP é a árvore de objetos
+do SDK. `envelope.test.ts` cobra o invariante nas duas metades — (⊆) o envelope não
+inventa campo, (⊇) nenhuma placa deixa de aparecer nele — e ele passou por **teste de
+mutação**: zerando o recurso sobre o qual o exportador fecha, três testes caem.
+
+**Nenhum `kind` novo nasceu.** O catálogo de onze cobriu o SDK inteiro, e há teste
+cobrando isso. O `Resource` é `static` — placa não tem porta e não é fiada, e por isso
+ele chega ao envelope porque a fábrica do exportador **fecha** sobre ele, que é o que o
+SDK faz.
+
+**O risco nº 1 do plano caiu:** `validateWorld` aceita a linha de controle entre o
+`sampler` do `tracer-provider` e o `trace-gate` do `logger-provider`. É a única linha do
+lab que cruza fronteira de provider, e é a que ensina que baixar a amostragem de traces
+apaga logs.
+
+**Um tick é um segundo neste mundo.** É o que faz os padrões da spec caberem na tela sem
+serem reescritos: `scheduledDelayMillis` 5 000 são 5 ticks, `exportIntervalMillis` 60 000
+são 60, e o 12× de F4 é `exportInterval / scheduledDelay` — número da spec, não número
+escolhido para a demonstração.
+
+**Cinco fenômenos, nenhum roteirizado**, todos `otelWorld` mais um parâmetro. O que vale
+guardar de F4: a fila cheia **recusa** e o span morre; o banco de pontos **colapsa** e a
+soma é conservada. Mesmo problema — memória finita —, duas mentiras diferentes, e cada
+uma tem forma própria no desenho.
+
+### Três defeitos que só a tela pegou
+
+Auditoria visual depois de o lab estar verde em tudo. Nenhum dos três tinha teste que os
+pegasse, e o primeiro é da classe que o projeto trata como inaceitável.
+
+1. **O descarte não era desenhado.** `@drop` não está na árvore, então o fio inteiro sumia
+   do palco — e isso faz **descarte deliberado e fio esquecido virarem o mesmo desenho**.
+   Um amostrador de três saídas aparecia com duas. Consertado no motor (`Stage.tsx`), com
+   terminal próprio, sem seta — seta aponta para um destino, e descarte é a ausência de um.
+   Nenhum outro domínio fia para `DROP`, então o desenho dos outros três labs não mudou.
+2. **A linha de controle entre dois providers contornava o desenho inteiro pela direita.**
+   A folga entre as molduras era 8, e o roteador só desce pela borda com **mais** de 8.
+   Passou a 16.
+3. **Não havia como alternar entre as três views de provider** sem saber clicar duas vezes
+   na caixa certa — e a comparação por superposição (R3) é o que entrega F4.
+
+### Um conserto de medida, e não de folga
+
+O espaguete passou a medir **por escopo**. Um interior é um espaço de coordenadas próprio,
+então dois fios de caixas diferentes podem ter o mesmo `d` e não se tocarem na tela. As três
+views de provider compartilham moldura de propósito — é R3 —, então os interiores saem com
+paths idênticos, e a medida sem escopo acusava dezoito sobreposições cegas onde não há uma.
+Os quatro tetos antigos foram remedidos com a mudança e **não mexeram** (15, 4, 4, 7). O do
+lab novo é **1 cruzamento, 0 sobreposições cegas**, cravado no medido.
+
+### Dois defeitos herdados das PRs do Kiro
+
+Nenhum dos dois era visível enquanto o handbook de OTel não tinha lab publicado — que é o
+jeito ruim de achar defeito.
+
+1. `landing.spec.ts` cravava `"0 of 13"` e a trilha cresceu para 18. O total passa a sair do
+   próprio mapa: uma fonte só por fato.
+2. `OTEL_LABS` não copiava o `href` do mapa. O teste de "item pronto tem para onde levar" só
+   tem o que cobrar quando existe um item pronto — é a mesma classe que a lista escrita à mão
+   do lado da CPU já tinha tido.
+
+### O que ficou pendente
+
+- **Bloco E — a contraparte real (`labs/providers/` com compose e fixture OTLP).** É o
+  princípio 3 da spec do handbook, e sem ele o lab não está *pronto* pela régua do projeto.
+  O modelo está honesto contra a spec escrita; falta a prova mecânica contra tráfego real.
+- **Task 16 — `docs/authoring.md` continua desatualizado**, mandando escrever `Scenario<S>`,
+  que o `depth-core` marca como andaime proibido em código novo.
+- **As duas saídas do amostrador que vão para o mesmo destino se desenham por cima.**
+  `sampled` e `recorded` entram ambas no `span-processors`, e o roteador dá o mesmo caminho
+  para as duas. Não é sobreposição cega (compartilham as duas pontas) e a contagem do painel
+  separa as três decisões — mas no desenho a porta do meio só se distingue pelo terminal de
+  descarte da terceira. Resolver pede borne nomeado na `pipeline`, ou o roteador sabendo
+  separar fios irmãos com o mesmo par de pontas.
+- **O LOD tem um teto para três molduras empilhadas**: `min(w/W, h/H)` não passa de ~0,30
+  com três caixas na vertical, então o interior delas aparece a ~22% na vista do processo.
+  A comparação de verdade é pelos botões de enquadramento.
+
+Estado: 900 testes unitários, 193 e2e, typecheck, boundaries (81 arquivos), catálogo (12
+arquivos) e build (33 páginas) verdes.

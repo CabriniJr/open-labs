@@ -132,6 +132,19 @@ dela mudar ao atravessar o `transform` — tudo por smoke automatizado.
 
 Aqui o projeto deixa de ser motor e passa a ser produto.
 
+### O primeiro lab está no ar — 2026-09-01
+
+`labs/providers` publicado: os três provedores do SDK, com L0, L1 e L3, e o invariante do
+envelope provado por property test mais teste de mutação. A linha "árvore fiel do
+TracerProvider" da tabela abaixo está **feita**; o importador de manifesto, a leitura da
+configuração nativa e o contrato de fidelidade no CI continuam abertos, e a validação
+contra o real é a pendência declarada do round (bloco E do plano). Registro em
+`docs/PROGRESS.md`.
+
+O retorno de motor deste round: o `router` estava descrito de um lado só — o texto do
+catálogo descreve o mux, que escolhe qual **entrada** responde, e um amostrador é o espelho
+disso. Fica registrado sem `kind` novo: a régua exige dois alvos pagantes, e há um.
+
 | Item | Nota |
 |---|---|
 | Árvore fiel do TracerProvider | Cada objeto com âncora na spec oficial |
