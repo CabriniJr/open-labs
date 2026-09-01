@@ -3,8 +3,8 @@ import type { AnyObject, Emission, ObjectSpec, Wire, WorldSpec } from "@ovh/dept
 import { loteProcessor, MAX_EXPORT_BATCH_SIZE_PADRAO, MAX_QUEUE_SIZE_PADRAO, SCHEDULED_DELAY_MS_PADRAO } from "./batch.js";
 import { medicao, EXPORT_INTERVAL_MS_PADRAO, LIMITE_DE_CARDINALIDADE_PADRAO } from "./metrics.js";
 import { decidir, PORTA_DA_DECISAO, type Amostrador, type Decisao } from "./sampler.js";
-import { spansDa, type RegistroDeSpan } from "./carga.js";
-import { ROTULOS, type PlacaDeRecurso } from "./labels.js";
+import { idHex, spansDa, type PlacaDeRecurso, type RegistroDeSpan } from "./carga.js";
+import { ROTULOS } from "./labels.js";
 
 /**
  * O processo instrumentado, e os três provedores dentro dele.
@@ -120,8 +120,8 @@ function app(escopo: string): ObjectSpec<EstadoApp> {
 
       const registros = (n: number, nome: string): readonly RegistroDeSpan[] =>
         Array.from({ length: n }, (_, i) => ({
-          traceId: `trace-${ctx.tick}-${i}`,
-          spanId: `span-${ctx.tick}-${i}`,
+          traceId: idHex(32, `trace:${ctx.tick}:${i}`),
+          spanId: idHex(16, `${nome}:${ctx.tick}:${i}`),
           nome,
           escopo,
           // O bit nasce falso e quem o estampa é o amostrador. É onde ele é
@@ -427,6 +427,7 @@ function tracerProvider(sufixo: string, placaDoRecurso: PlacaDeRecurso, rotulo: 
     paramPrazo: "scheduled-delay",
     maxExportBatchSize: MAX_EXPORT_BATCH_SIZE_PADRAO,
     kindDeSaida: "otlp-traces",
+    recurso: placaDoRecurso,
     recusaNaoAmostrado: true,
   });
 
@@ -484,6 +485,7 @@ function loggerProvider(): ProvedorDeTraces {
     paramPrazo: "log-scheduled-delay",
     maxExportBatchSize: MAX_EXPORT_BATCH_SIZE_PADRAO,
     kindDeSaida: "otlp-logs",
+    recurso: ROTULOS.recursoDeLogs,
     // Sem `recusaNaoAmostrado`: o `LoggerProvider` não tem amostrador nenhum, e
     // o `BatchLogRecordProcessor` não olha o bit. A ausência é conteúdo.
   });

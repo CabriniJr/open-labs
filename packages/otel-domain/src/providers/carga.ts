@@ -23,6 +23,48 @@ export interface RegistroDeSpan {
   readonly inicio: number;
 }
 
+/**
+ * Um atributo de recurso. Mora aqui, e não em `labels.ts`, porque ele é **dado
+ * do modelo** e não texto de tela: é ele que aparece campo por campo no envelope
+ * OTLP, e o teste do invariante compara os dois.
+ */
+export interface AtributoDeRecurso {
+  readonly chave: string;
+  readonly valor: string;
+}
+
+export interface PlacaDeRecurso {
+  readonly titulo: string;
+  readonly attributes: readonly AtributoDeRecurso[];
+}
+
+const embaralhar = (texto: string): number => {
+  let h = 2166136261 >>> 0;
+  for (let i = 0; i < texto.length; i += 1) {
+    h ^= texto.charCodeAt(i);
+    h = Math.imul(h, 16777619) >>> 0;
+  }
+  return h >>> 0;
+};
+
+/**
+ * Um id em hexadecimal, do comprimento que o W3C Trace Context exige — 32
+ * dígitos para o trace, 16 para o span —, derivado da semente.
+ *
+ * Existe porque `traceparent` **recusa** id fora do formato, e um lab que
+ * mostrasse `trace-3-0` na tela estaria ensinando um formato que a rede não
+ * aceita. Determinístico: replay tem de reproduzir o mesmo header.
+ */
+export function idHex(digitos: number, semente: string): string {
+  let bruto = "";
+  for (let i = 0; bruto.length < digitos; i += 1) {
+    bruto += embaralhar(`${semente}:${i}`).toString(16).padStart(8, "0");
+  }
+  const cortado = bruto.slice(0, digitos);
+  // A spec proíbe o id todo em zeros, e um hash pode chegar lá.
+  return /^0+$/u.test(cortado) ? `${cortado.slice(0, -1)}1` : cortado;
+}
+
 /** Os spans que uma mensagem carrega. Vazio quando ela não carrega nenhum. */
 export function spansDa(m: Message): readonly RegistroDeSpan[] {
   const carga = m.data["spans"];

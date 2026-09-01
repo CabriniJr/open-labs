@@ -13,6 +13,7 @@ const CFG = {
   paramFila: "max-queue-size",
   paramPrazo: "scheduled-delay",
   kindDeSaida: "otlp",
+  recurso: { titulo: "Resource", attributes: [{ chave: "service.name", valor: "t" }] },
   maxExportBatchSize: 4,
 } as const;
 

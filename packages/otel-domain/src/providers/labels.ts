@@ -11,15 +11,9 @@
  * correspondência entre a árvore do SDK e o envelope do OTLP, que é a tese do lab.
  */
 
-export interface AtributoDeRecurso {
-  readonly chave: string;
-  readonly valor: string;
-}
+import type { AtributoDeRecurso, PlacaDeRecurso } from "./carga.js";
 
-export interface PlacaDeRecurso {
-  readonly titulo: string;
-  readonly attributes: readonly AtributoDeRecurso[];
-}
+export type { AtributoDeRecurso, PlacaDeRecurso };
 
 /**
  * O recurso do processo.

@@ -1,6 +1,6 @@
 import { DROP } from "@ovh/depth-core";
 import type { AnyObject, Emission, ObjectSpec, Wire } from "@ovh/depth-core";
-import { spansDa, type RegistroDeSpan } from "./carga.js";
+import { spansDa, type PlacaDeRecurso, type RegistroDeSpan } from "./carga.js";
 
 /**
  * O processador em lote, e ele é o mesmo para traces e para logs.
@@ -40,6 +40,16 @@ export interface LoteConfig {
   readonly maxExportBatchSize: number;
   /** O `kind` da mensagem que sai pelo canal. É por ele que o Collector separa os sinais. */
   readonly kindDeSaida: string;
+  /**
+   * O recurso do provider que registrou este processador.
+   *
+   * É a consequência dura de a placa ser placa: **placa não tem porta e não é
+   * fiada**, então o `Resource` não chega ao exportador por fio nenhum. Ele
+   * chega porque a fábrica do exportador **fecha** sobre o recurso do provider —
+   * que é literalmente o que o SDK faz. O envelope o carrega, e `envelope.test.ts`
+   * prova que o campo `resource` é exatamente esta placa.
+   */
+  readonly recurso: PlacaDeRecurso;
   /**
    * Recusar, na entrada, o que não foi amostrado.
    *
@@ -198,7 +208,14 @@ export function loteProcessor(cfg: LoteConfig): Lote {
         lotes += 1;
         spans += carga.length;
         ultimo = carga;
-        out.push({ port: "out", message: ctx.emit(cfg.kindDeSaida, carga.length, { spans: carga }) });
+        out.push({
+          port: "out",
+          message: ctx.emit(cfg.kindDeSaida, carga.length, {
+            spans: carga,
+            resource: cfg.recurso.attributes,
+            provider: cfg.id,
+          }),
+        });
       }
       return { state: { lotes, spans, flushes, ultimo }, out };
     },
