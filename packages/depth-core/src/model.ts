@@ -338,6 +338,8 @@ export interface InFlight {
   readonly id: string;
   readonly message: Message;
   readonly from: string;
+  /** Por qual porta da origem esta carga saiu. */
+  readonly port: PortId;
   readonly to: string | Drop;
   readonly sent: number;
   /** Presente só quando este item é um sinal: a porta de destino dele. */

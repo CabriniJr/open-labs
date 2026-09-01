@@ -1230,6 +1230,46 @@ pegasse, e o primeiro é da classe que o projeto trata como inaceitável.
 3. **Não havia como alternar entre as três views de provider** sem saber clicar duas vezes
    na caixa certa — e a comparação por superposição (R3) é o que entrega F4.
 
+### Mais dois, e os piores: a carga não era desenhada
+
+Achados na segunda auditoria de tela, com o lab já verde em tudo.
+
+4. **Vinte e um fios na tela e zero bolinhas.** O motor entrega na **folha de entrada** de
+   um contêiner; o desenho conhece as **caixas da vista**. Ninguém traduzia de um para o
+   outro, então a chave do trilho nunca casava e a carga simplesmente não era desenhada.
+   Só funcionava em vista cujos objetos são todos folha — que é o caso dos três labs
+   antigos, e por isso o defeito viveu escondido. `InFlight` ganhou `port` para o descarte
+   saber por qual terminal a carga morre.
+5. **A cor por espécie nunca aplicou.** O `data-especie` está no grupo; o seletor pedia o
+   atributo na própria carga. As cinco espécies existiam no DOM e o desenho pintava todas
+   da mesma cor, calado, desde que a regra nasceu. Testado por mutação: com o seletor
+   antigo, o teste de tinta cai.
+
+### A carga muda de forma no caminho
+
+Pedido do Luigi, e ele nomeia o que o lab existe para mostrar: *"a bolinha vai se
+modificando no caminho — passa por um batch processor e vira um conjunto de bolinhas,
+passa no exporter e vira um file"*.
+
+A forma sai de **três fatos que o motor já tem**, e de nenhum vocabulário de domínio:
+
+| Fato do motor | Forma | O que ela afirma |
+|---|---|---|
+| o fio declara largura | barra | N vias em paralelo — a notação do esquemático |
+| a aresta é um **canal** | documento | o que atravessa um canal sai serializado: é o envelope |
+| `weight > 1` | punhado de pontos | várias coisas viajando juntas porque alguém decidiu |
+| nada disso | ponto | uma coisa |
+
+Um lote não é um círculo maior — isso diria "um span mais gordo". É **vários pontos**,
+que é a lição inteira do processador em lote. E o `×N` ao lado dá a conta exata, porque
+sete é o teto do que se lê como punhado.
+
+A espécie foi remapeada pela régua do catálogo, que diz que o número é **proeminência** e
+não categoria: o descarte vem primeiro (num lab sobre quem decide o que sai, a carga que
+morre é o que não se pode perder de vista), e **span e lote dividem a tinta**, porque um
+lote *é* spans e a forma já os separa — a cor que sobra vai para o envelope, que dali para
+a frente não é mais spans.
+
 ### Um conserto de medida, e não de folga
 
 O espaguete passou a medir **por escopo**. Um interior é um espaço de coordenadas próprio,
@@ -1267,5 +1307,5 @@ jeito ruim de achar defeito.
   com três caixas na vertical, então o interior delas aparece a ~22% na vista do processo.
   A comparação de verdade é pelos botões de enquadramento.
 
-Estado: 900 testes unitários, 193 e2e, typecheck, boundaries (81 arquivos), catálogo (12
+Estado: 900 testes unitários, 199 e2e, typecheck, boundaries (81 arquivos), catálogo (12
 arquivos) e build (33 páginas) verdes.

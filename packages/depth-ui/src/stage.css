@@ -269,11 +269,35 @@
  * dentro do motor. Quem numera as espécies é o domínio; o palco só sabe que
  * duas cargas são diferentes, e não o que elas são.
  */
-.dui-stage__carga[data-especie="1"] { fill: var(--dui-especie-1); }
-.dui-stage__carga[data-especie="2"] { fill: var(--dui-especie-2); }
-.dui-stage__carga[data-especie="3"] { fill: var(--dui-especie-3); }
-.dui-stage__carga[data-especie="4"] { fill: var(--dui-especie-4); }
-.dui-stage__carga[data-especie="5"] { fill: var(--dui-especie-5); }
+/*
+ * A espécie é declarada no GRUPO — é lá que o domínio a responde —, e a tinta
+ * pinta a carga lá dentro. O seletor pedia o atributo na própria carga, e o
+ * atributo nunca esteve nela: as cinco espécies existiam no DOM e o desenho
+ * pintava todas da mesma cor, calado, desde que a regra nasceu.
+ */
+.dui-stage__carga-grupo[data-especie="1"] .dui-stage__carga { fill: var(--dui-especie-1); }
+.dui-stage__carga-grupo[data-especie="2"] .dui-stage__carga { fill: var(--dui-especie-2); }
+.dui-stage__carga-grupo[data-especie="3"] .dui-stage__carga { fill: var(--dui-especie-3); }
+.dui-stage__carga-grupo[data-especie="4"] .dui-stage__carga { fill: var(--dui-especie-4); }
+.dui-stage__carga-grupo[data-especie="5"] .dui-stage__carga { fill: var(--dui-especie-5); }
+
+/*
+ * O pacote: o que atravessa um canal sai serializado do outro lado, e por isso
+ * ele deixa de ser "as coisas" e passa a ser "o documento que as carrega". A
+ * dobra e as linhas são o que fazem ler como papel em vez de mais um bloco — e
+ * elas tomam a cor do fundo, porque são vazio recortado no documento, não tinta.
+ */
+.dui-stage__carga--pacote path {
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.dui-stage__carga-dobra,
+.dui-stage__carga-linhas {
+  fill: none;
+  stroke: var(--paper);
+  stroke-width: 1.1;
+}
 
 /* ---------- objetos ---------- */
 

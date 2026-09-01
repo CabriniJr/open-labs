@@ -94,3 +94,80 @@ test("o descarte é desenhado: a saída que não vai a lugar nenhum tem terminal
   await expect(page.locator('.dui-stage__fio[data-descarte="true"]').first()).toBeAttached();
   await expect(page.locator(".dui-stage__descarte text").first()).toHaveText("drop");
 });
+
+/**
+ * A carga na esteira.
+ *
+ * Estes três são os que faltavam quando o lab ficou verde em tudo e a tela não
+ * mostrava nada andando: vinte e um fios desenhados e **zero** bolinhas. O
+ * motor entrega na folha de entrada de um contêiner, o desenho conhece as
+ * caixas da vista, e ninguém traduzia de um para o outro — então a chave nunca
+ * casava e a carga simplesmente não era desenhada.
+ */
+test("a carga aparece e anda, mesmo quando o fio entra num contêiner", async ({ page }) => {
+  await hidratado(page);
+  await expect
+    .poll(async () => page.locator(".dui-stage__carga-grupo--voo").count(), { timeout: 15_000 })
+    .toBeGreaterThan(0);
+});
+
+test("a carga muda de forma no caminho: um ponto, um punhado, um documento", async ({ page }) => {
+  await hidratado(page);
+  await enquadrar(page, "BatchSpanProcessor").click();
+  await page.getByRole("button", { name: "Pause" }).click();
+
+  const formas = async () =>
+    page.locator(".dui-stage__carga-grupo--voo").evaluateAll((nos) =>
+      nos.map((n) => ({
+        titulo: n.querySelector("title")?.textContent ?? "",
+        pontos: n.querySelectorAll("circle.dui-stage__carga").length,
+        pacote: n.querySelector(".dui-stage__carga--pacote") !== null,
+      })),
+    );
+
+  const visto = { unidade: false, feixe: false, pacote: false };
+  // Passo a passo, e não esperando: o lote sai quando um gatilho dispara, e o
+  // que se afirma é que as TRÊS formas acontecem — um teste que varre dois
+  // casos prova, no fim, que os dois casos aconteceram.
+  for (let i = 0; i < 24; i += 1) {
+    for (const carga of await formas()) {
+      if (carga.pacote) visto.pacote = true;
+      else if (carga.pontos > 1) visto.feixe = true;
+      else if (carga.pontos === 1 && carga.titulo.startsWith("span")) visto.unidade = true;
+    }
+    if (visto.unidade && visto.feixe && visto.pacote) break;
+    await page.getByRole("button", { name: "Step" }).click();
+  }
+
+  expect(visto, "o span solto, o lote e o envelope têm de aparecer os três").toEqual({
+    unidade: true,
+    feixe: true,
+    pacote: true,
+  });
+});
+
+test("espécies diferentes são pintadas diferente — o atributo estava certo e o CSS não pintava", async ({
+  page,
+}) => {
+  await hidratado(page);
+  await enquadrar(page, "Host").click();
+
+  // Cobrar a TINTA, e não o atributo. O `data-especie` sempre esteve no lugar
+  // certo; o seletor é que pedia o atributo na carga em vez de no grupo, e as
+  // cinco espécies eram pintadas da mesma cor, caladas.
+  await expect
+    .poll(
+      async () =>
+        page.locator(".dui-stage__carga-grupo--voo").evaluateAll((nos) => {
+          const tintas = new Set<string>();
+          for (const no of nos) {
+            const alvo = no.querySelector(".dui-stage__carga");
+            if (alvo === null) continue;
+            tintas.add(getComputedStyle(alvo).fill);
+          }
+          return tintas.size;
+        }),
+      { timeout: 20_000 },
+    )
+    .toBeGreaterThan(1);
+});

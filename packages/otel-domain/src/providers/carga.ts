@@ -79,10 +79,29 @@ export function spansDa(m: Message): readonly RegistroDeSpan[] {
  * Quem desenha pergunta a espécie ao domínio, e o domínio responde numa palavra
  * que o motor já conhece.
  */
+/**
+ * A espécie da carga.
+ *
+ * O número **não nomeia uma cor**: ele nomeia proeminência, do que mais puxa o
+ * olho ao que menos puxa. Quem escolhe a tinta é o catálogo do palco; quem
+ * escolhe o quanto aquela carga importa é este arquivo, e é decisão de domínio.
+ *
+ * Duas escolhas que valem justificativa:
+ *
+ * - **o descarte vem primeiro.** Num lab sobre quem decide o que sai do
+ *   processo, a coisa que não se pode perder de vista é a carga que morre. Ela
+ *   é o único evento aqui que é irreversível;
+ * - **span e lote dividem a mesma tinta**, porque um lote **é** spans. A forma
+ *   já separa os dois — um ponto contra um punhado —, e gastar uma segunda cor
+ *   para dizer o que a forma já disse é gastar a distinção que falta para o
+ *   envelope, que é outra coisa de verdade: dali para a frente não são mais
+ *   spans, é um documento.
+ */
 export function especieDaCarga(m: Message): number | undefined {
   switch (m.kind) {
-    case "span":
+    case "dropped":
       return 1;
+    case "span":
     case "batch":
       return 2;
     case "otlp-traces":
@@ -94,8 +113,6 @@ export function especieDaCarga(m: Message): number | undefined {
     case "measurement":
     case "point":
       return 5;
-    case "dropped":
-      return 6;
     default:
       return undefined;
   }

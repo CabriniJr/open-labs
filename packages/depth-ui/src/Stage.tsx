@@ -11,6 +11,7 @@ import {
 import type {
   EmissaoDaPorta,
   Family,
+  InFlight,
   Message,
   TreeIndex,
   Wire,
@@ -318,11 +319,35 @@ export function comprimentoDaCarga(largura: number | undefined, raio: number): n
   return Math.min(raio * 5, raio * Math.log2(largura));
 }
 
+/**
+ * Onde os pontos de um feixe ficam, em múltiplos do raio.
+ *
+ * Um lote não é uma coisa maior: é **várias coisas juntas**, e a diferença é a
+ * lição inteira do processador em lote. Um círculo maior diria "um span mais
+ * gordo"; um punhado de pontos diz "quinhentos spans que viajam juntos porque
+ * alguém decidiu que viajassem juntos".
+ *
+ * Sete é o teto do que se lê: acima disso vira uma mancha, e o número exato já
+ * está escrito ao lado, em `×N`. O desenho diz a espécie; o rótulo diz a conta.
+ */
+const FEIXE: readonly (readonly [number, number])[] = [
+  [0, 0],
+  [-1.05, -0.8],
+  [1.05, -0.8],
+  [-1.05, 0.8],
+  [1.05, 0.8],
+  [-2, 0],
+  [2, 0],
+];
+
+const MAXIMO_DO_FEIXE = FEIXE.length;
+
 function Carga({
   mensagem,
   leitura,
   raio,
   largura,
+  emPacote = false,
   de,
   para,
 }: {
@@ -330,10 +355,36 @@ function Carga({
   leitura: string | undefined;
   raio: number;
   largura?: number | undefined;
+  /** A carga atravessa um canal: ela vai empacotada, e não solta. */
+  emPacote?: boolean | undefined;
   de: string;
   para: string;
 }) {
   const comprimento = comprimentoDaCarga(largura, raio);
+  const quantos = Math.min(MAXIMO_DO_FEIXE, Math.max(1, Math.round(mensagem.weight)));
+  /**
+   * A forma, em ordem de precedência — e cada uma responde uma pergunta
+   * diferente sobre a **mesma** carga:
+   *
+   * - **barra**, quando o fio declara largura: o esquemático já tem notação
+   *   para "isto são N vias em paralelo", e ela ganha de tudo;
+   * - **pacote**, quando a aresta é um canal: o que atravessa um canal sai
+   *   serializado do outro lado. Deixa de ser "as coisas" e passa a ser "o
+   *   documento que as carrega" — é o envelope, e ele tem cara de documento;
+   * - **feixe**, quando a carga pesa mais de um: várias coisas viajando juntas;
+   * - **unidade**, o resto.
+   *
+   * Nada disso é vocabulário de domínio: peso, largura e canal são os três
+   * fatos que o motor já tem. O desenho decide como cada um aparece — o
+   * domínio nunca escolhe forma, exatamente como nunca escolhe cor.
+   */
+  const forma =
+    comprimento > 0 ? "barra" : emPacote ? "pacote" : quantos > 1 ? "feixe" : "unidade";
+  // O documento é maior que o ponto de propósito: ele não é "uma coisa", é o
+  // continente de várias. Do mesmo tamanho, a troca de forma passaria batida.
+  const largo = raio * 2.4;
+  const alto = raio * 3;
+  const dobra = raio * 1;
   return (
     <>
       {/* O hover é o mesmo gesto que já responde "o que é esta peça?": bateu a
@@ -343,7 +394,7 @@ function Carga({
           mensagem.weight > 1 ? `\n${mensagem.weight} itens` : ""
         }`}
       </title>
-      {comprimento > 0 ? (
+      {forma === "barra" ? (
         <rect
           className="dui-stage__carga"
           x={-comprimento}
@@ -352,9 +403,41 @@ function Carga({
           height={raio * 2}
           rx={raio}
         />
-      ) : (
-        <circle className="dui-stage__carga" r={raio} />
-      )}
+      ) : null}
+      {forma === "pacote" ? (
+        // Um documento: retângulo com a ponta dobrada e duas linhas de conteúdo.
+        // A dobra é o que o faz ler como "papel" e não como "caixa" — e é a
+        // diferença entre um envelope e mais um bloco no desenho.
+        <g className="dui-stage__carga dui-stage__carga--pacote">
+          <path
+            d={`M ${-largo / 2} ${-alto / 2} H ${largo / 2 - dobra} L ${largo / 2} ${
+              -alto / 2 + dobra
+            } V ${alto / 2} H ${-largo / 2} Z`}
+          />
+          <path
+            className="dui-stage__carga-dobra"
+            d={`M ${largo / 2 - dobra} ${-alto / 2} V ${-alto / 2 + dobra} H ${largo / 2}`}
+          />
+          <path
+            className="dui-stage__carga-linhas"
+            d={`M ${-largo / 2 + 1.6} ${-0.2} H ${largo / 2 - 1.6} M ${-largo / 2 + 1.6} ${
+              alto / 2 - 2
+            } H ${largo / 2 - 2.6}`}
+          />
+        </g>
+      ) : null}
+      {forma === "feixe"
+        ? FEIXE.slice(0, quantos).map(([dx, dy], i) => (
+            <circle
+              key={i}
+              className="dui-stage__carga"
+              cx={dx * raio * 0.78}
+              cy={dy * raio * 0.78}
+              r={raio * 0.62}
+            />
+          ))
+        : null}
+      {forma === "unidade" ? <circle className="dui-stage__carga" r={raio} /> : null}
       {leitura === undefined ? null : (
         // Ao lado, e não em cima: por cima do ponto o valor fica ilegível
         // justamente quando a linha está acesa, que é quando se quer lê-lo.
@@ -785,6 +868,7 @@ function Camada({
           paraLugar: fim,
           ancora: undefined,
           descarte: true as const,
+          canal: wire.channel,
           port: wire.port,
         };
       }
@@ -878,6 +962,10 @@ function Camada({
         // continua fora daqui.
         ancora: de.id === ANCORA_ENTRA ? ("entra" as const) : para.id === ANCORA_SAI ? ("sai" as const) : undefined,
         descarte: false as const,
+        /** O canal que esta aresta É, quando ela é um. A carga que o atravessa
+         *  vai empacotada: um canal é transporte, e o que entra nele sai
+         *  serializado do outro lado. */
+        canal: wire.channel,
         port: wire.port,
       };
     })
@@ -889,13 +977,59 @@ function Camada({
   const trilhoEntre = new Map<string, string>();
   // A largura declarada do fio, para a carga em voo poder tomar a forma dele.
   const larguraEntre = new Map<string, number>();
+  /** Se a aresta é um canal: a carga que a atravessa vai empacotada. */
+  const canalEntre = new Map<string, boolean>();
+  /** O terminal de descarte de cada porta, para a carga descartada ter para onde ir. */
+  const descarteDaPorta = new Map<string, string>();
   for (const aresta of arestas) {
     const chave = `${aresta.from}->${aresta.to}`;
+    if (aresta.descarte) descarteDaPorta.set(`${aresta.from}.${aresta.port}`, aresta.d);
     if (!trilhoEntre.has(chave)) trilhoEntre.set(chave, aresta.d);
     if (aresta.width !== undefined && !larguraEntre.has(chave)) {
       larguraEntre.set(chave, aresta.width);
     }
+    if (aresta.canal !== undefined) canalEntre.set(chave, true);
   }
+
+  /**
+   * O trilho de uma carga em voo.
+   *
+   * As pontas que o motor entrega são **folhas** — ele entrega no terminal que
+   * de fato recebe —, e as pontas que o desenho tem são as **caixas desta
+   * vista**. Sem traduzir de uma para a outra, a chave nunca casava e a carga
+   * simplesmente não era desenhada: o lab dos provedores tinha vinte e um fios
+   * na tela e nenhuma bolinha, porque todo fio dele entra num contêiner e o
+   * motor entrega na folha de entrada dele.
+   *
+   * É a mesma tradução que os fios já fazem — `ondeCai` mais a margem —, e
+   * fazê-la aqui também é o que faz "seguir a carga" ser possível em qualquer
+   * enquadramento, e não só naquele em que todo objeto é folha.
+   */
+  const caixaDaCarga = (id: string): string | undefined =>
+    (lugares.get(id) ?? caixaQueContem(id))?.id;
+
+  const trilhoDaCarga = (item: InFlight): { readonly d: string; readonly chave: string } | undefined => {
+    const de = caixaDaCarga(item.from);
+    if (de === undefined) {
+      // Nasceu fora do foco e entra por aqui: a margem responde.
+      const para = caixaDaCarga(String(item.to));
+      if (para === undefined) return undefined;
+      const chave = `${ANCORA_ENTRA}->${para}`;
+      const d = trilhoEntre.get(chave);
+      return d === undefined ? undefined : { d, chave };
+    }
+    if (String(item.to) === DROP) {
+      const d = descarteDaPorta.get(`${de}.${item.port}`);
+      return d === undefined ? undefined : { d, chave: `${de}->descarte` };
+    }
+    const para = caixaDaCarga(String(item.to));
+    // As duas pontas na mesma caixa: a travessia é interior, e quem a desenha é
+    // o interior dela, no espaço de coordenadas dele.
+    if (para === de) return undefined;
+    const chave = para === undefined ? `${de}->${ANCORA_SAI}` : `${de}->${para}`;
+    const d = trilhoEntre.get(chave);
+    return d === undefined ? undefined : { d, chave };
+  };
 
   const identificador = (chave: string): string =>
     `dui-fio-${chave.replace(/[^a-zA-Z0-9-]/g, "_")}`;
@@ -1609,8 +1743,9 @@ function Camada({
                 <Carga
                   mensagem={mensagem}
                   leitura={leituraDaCarga?.(mensagem)}
-                  raio={4}
+                  raio={5.5}
                   largura={aresta.width}
+                  emPacote={aresta.canal !== undefined}
                   de={aresta.from}
                   para={aresta.to}
                 />
@@ -1621,8 +1756,9 @@ function Camada({
       {/* a carga em voo: cada item é uma coisa, e viaja pelo fio que o leva */}
       <g className="dui-stage__cargas">
         {state.flight.map((item) => {
-          const trilho = trilhoEntre.get(`${item.from}->${String(item.to)}`);
-          if (trilho === undefined) return null;
+          const achado = trilhoDaCarga(item);
+          if (achado === undefined) return null;
+          const { d: trilho, chave } = achado;
           const andou = (state.tick - item.sent) / edgeTicks;
           return (
             <g
@@ -1641,8 +1777,12 @@ function Camada({
               <Carga
                 mensagem={item.message}
                 leitura={leituraDaCarga?.(item.message)}
-                raio={5}
-                largura={larguraEntre.get(`${item.from}->${String(item.to)}`)}
+                /* O item na esteira é o que se está seguindo com o olho, e ele
+                   competia com a moldura por atenção. O herói da landing tem a
+                   proporção certa: a bolinha é a figura, o resto é cenário. */
+                raio={7}
+                largura={larguraEntre.get(chave)}
+                emPacote={canalEntre.get(chave) === true}
                 de={item.from}
                 para={String(item.to)}
               />
