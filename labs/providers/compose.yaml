@@ -1,0 +1,17 @@
+# Duas variáveis, e são as duas que o lab da tela também tem. Mexer nelas aqui e
+# no lab tem de produzir a mesma história — é isso que "contraparte real"
+# significa.
+services:
+  collector:
+    image: otel/opentelemetry-collector-contrib:0.159.0
+    command: ["--config=/etc/collector.yaml"]
+    volumes:
+      - ./collector.yaml:/etc/collector.yaml:ro
+
+  checkout:
+    build: ./app
+    depends_on: [collector]
+    environment:
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://collector:4317
+      OTEL_TRACES_SAMPLER_ARG: "1.0"
+      OTEL_BSP_SCHEDULE_DELAY: "5000"
