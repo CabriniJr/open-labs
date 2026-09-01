@@ -78,9 +78,11 @@ Span span = tracer.spanBuilder("GET /checkout").startSpan();
 // </handbook:trecho>
 ```
 
-No **build** (frontmatter do Astro, que roda em Node), o trecho é lido do arquivo. A linha
-entre `<handbook:lacuna>` e `</handbook:lacuna>` **vira o bloco certo**, e o resto vira o
-código exibido com a lacuna aberta.
+No **build** (frontmatter do Astro, que roda em Node), o trecho é lido do arquivo. O que
+está entre `<handbook:lacuna>` e `</handbook:lacuna>` **vira o bloco certo** — uma linha ou
+mais de uma, tomadas como estão, com a indentação removida por igual —, e o resto vira o
+código exibido com a lacuna aberta. Os distratores têm de ter a mesma forma: um distrator de
+uma linha contra um certo de três entrega a resposta pelo tamanho.
 
 Portanto: **a definição do exercício não declara a resposta certa.** Ela declara só o
 arquivo, o marcador e os **distratores**. Não existe como escrever a resposta certa errada,
@@ -126,6 +128,9 @@ Chave nova: `ovh:placar:v1`, `Record<exercicioId, "primeira" | "depois">`. **Nã
 `ovh:progress:v1`** — mudar aquela apagaria o progresso de quem já leu, e está escrito no
 próprio arquivo que não se mexe nela.
 
+O nó do mapa só mostra o placar **onde há exercício** — num nó sem exercício não há `0/0`,
+porque zero de zero se lê como "você não fez", e a pessoa não deixou de fazer nada.
+
 Quantos exercícios um lab tem sai da **lista de exercícios**, e de nenhum outro lugar. Uma
 segunda lista escrita à mão é o defeito que este repo já teve duas vezes (o catálogo de
 labs, e o `href` do mapa).
@@ -165,6 +170,11 @@ extrair, e o exercício nasceria com a fraqueza que a §4 existe para remover.
 É a decisão mais cara deste desenho, e está escrita como decisão para que ninguém a inverta
 por pressa depois.
 
+**E ela é entrega própria.** No plano de implementação a contraparte é o primeiro bloco, e
+ela fecha sozinha: `labs/providers/` com compose, app e fixture OTLP já era pendência
+declarada do round anterior, e vale por si — é o princípio 3 do handbook, "todo lab tem
+contraparte real". Se o exercício for adiado, aquilo continua tendo valor; o contrário não.
+
 ### D4 — A peça é neutra de domínio, e mora em `apps/site`
 
 Como a `Predicao`. Não é primitiva de modelo, é pedagogia de página, e os dois handbooks a
@@ -198,7 +208,7 @@ A `Predicao` já nasceu botão puro, e esta nasce igual. Duas regras herdadas de
 | Arquivo | Responsabilidade |
 | --- | --- |
 | `labs/providers/` | **pré-requisito**: app Java + Collector, versão fixada, marcadores no código |
-| `packages/otel-domain/src/exercicios/tipos.ts` | `DefinicaoDeExercicio`, `Distrator`, `Veredito` |
+| `packages/otel-domain/src/exercicios/tipos.ts` | `DefinicaoDeExercicio` e `Distrator` |
 | `packages/otel-domain/src/exercicios/providers.ts` | os dois exercícios do lab, como dado |
 | `apps/site/src/lib/exercicios.ts` | **build-time**: lê o arquivo, extrai trecho e lacuna, monta os blocos |
 | `apps/site/src/components/Exercicio.tsx` + `.css` | a peça, neutra de domínio |
@@ -242,7 +252,8 @@ Além dos de sempre:
    a segunda escolha não muda o placar; e o caminho **por teclado** encaixa o bloco sem
    arraste nenhum.
 
-O 6º último item é o que impede a acessibilidade de virar intenção.
+O último item é o que impede a acessibilidade de virar intenção: sem ele, o caminho por
+teclado existe no código e ninguém percebe no dia em que ele parar de funcionar.
 
 ---
 
