@@ -119,3 +119,37 @@ export function tintaDoInterior(aparece: number): number {
   const a = Math.max(0, Math.min(1, aparece));
   return a ** EXPOENTE_DA_TINTA;
 }
+
+/** O traço e o preenchimento de uma caixa que está deixando de estar fechada. */
+export interface NotacaoDeFechada {
+  /** O `stroke-dasharray`, já pronto para ir ao SVG. */
+  readonly tracejado: string;
+  /** O `fill-opacity`: 1 é a caixa de hoje, 0 é contorno e nada mais. */
+  readonly preenchimento: number;
+}
+
+/**
+ * A caixa fechada virando moldura, continuamente.
+ *
+ * O defeito que isto conserta: `aparece` comandava a opacidade do interior e a
+ * borda era pintada por um booleano. Metade da ligação andava numa grandeza
+ * contínua e a outra metade era um interruptor — então a moldura anunciava
+ * "fechada" com o interior aberto e desenhado dentro dela.
+ *
+ * O fim da rampa não é um estado novo: **contorno e nada mais** é a definição
+ * da `moldura`, que o palco já desenha para o objeto enquadrado. A caixa não
+ * vira outra coisa; ela chega onde já estava escrito que se chega.
+ *
+ * O vão do tracejado encolhendo até zero é o que dá continuidade sem degrau:
+ * `8 4` (fechada) → `48 0`, e vão zero **é** linha contínua.
+ */
+export function notacaoDeFechada(aparece: number): NotacaoDeFechada {
+  const a = Math.max(0, Math.min(1, aparece));
+  // Duas casas bastam para o traço e evitam despejar `21.320000000000004` no
+  // atributo: o SVG aceita, e quem inspeciona o desenho lê ruído.
+  const duasCasas = (n: number): string => String(Math.round(n * 100) / 100);
+  return {
+    tracejado: `${duasCasas(8 + 40 * a)} ${duasCasas(4 - 4 * a)}`,
+    preenchimento: 1 - a,
+  };
+}

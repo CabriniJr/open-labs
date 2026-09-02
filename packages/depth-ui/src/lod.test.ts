@@ -5,6 +5,7 @@ import {
   LIMIAR_ENTRA,
   TINTA_LEGIVEL,
   encaixar,
+  notacaoDeFechada,
   quantoAparece,
   tabelaLegivel,
   tintaDoInterior,
@@ -128,5 +129,44 @@ describe("a tinta do interior sobe rápido, e sem degrau", () => {
     // Com expoente 1 a curva é a reta de hoje, e o platô do fantasma volta.
     expect(EXPOENTE_DA_TINTA).toBeLessThan(1);
     expect(EXPOENTE_DA_TINTA).toBeGreaterThan(0);
+  });
+});
+
+describe("a notação de fechada se desfaz na rampa", () => {
+  it("no começo, é exatamente o que existe hoje", () => {
+    const n = notacaoDeFechada(0);
+    expect(n.tracejado).toBe("8 4");
+    expect(n.preenchimento).toBe(1);
+  });
+
+  it("no fim, não resta marca de fechada nenhuma", () => {
+    // Vão zero é traço contínuo, e preenchimento zero é contorno e nada mais:
+    // a caixa chegou na `moldura`, que é uma forma que o sistema já tem.
+    const n = notacaoDeFechada(1);
+    expect(n.tracejado.split(" ")[1]).toBe("0");
+    expect(n.preenchimento).toBe(0);
+  });
+
+  it("o vão do tracejado só encolhe", () => {
+    let anterior = Number.POSITIVE_INFINITY;
+    for (let a = 0; a <= 1; a += 0.01) {
+      const vao = Number(notacaoDeFechada(a).tracejado.split(" ")[1]);
+      expect(vao).toBeLessThanOrEqual(anterior);
+      anterior = vao;
+    }
+  });
+
+  it("o preenchimento só cede", () => {
+    let anterior = Number.POSITIVE_INFINITY;
+    for (let a = 0; a <= 1; a += 0.01) {
+      const p = notacaoDeFechada(a).preenchimento;
+      expect(p).toBeLessThanOrEqual(anterior);
+      anterior = p;
+    }
+  });
+
+  it("fora da faixa, não inventa notação", () => {
+    expect(notacaoDeFechada(-1).preenchimento).toBe(1);
+    expect(notacaoDeFechada(2).preenchimento).toBe(0);
   });
 });
