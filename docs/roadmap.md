@@ -137,9 +137,15 @@ Aqui o projeto deixa de ser motor e passa a ser produto.
 `labs/providers` publicado: os três provedores do SDK, com L0, L1 e L3, e o invariante do
 envelope provado por property test mais teste de mutação. A linha "árvore fiel do
 TracerProvider" da tabela abaixo está **feita**; o importador de manifesto, a leitura da
-configuração nativa e o contrato de fidelidade no CI continuam abertos, e a validação
-contra o real é a pendência declarada do round (bloco E do plano). Registro em
+configuração nativa e o contrato de fidelidade no CI continuam abertos. Registro em
 `docs/PROGRESS.md`.
+
+**A contraparte real deixou de ser pendência em 02/09/2026.** `labs/providers/` tem
+aplicação Java, `Dockerfile` e `compose.yaml` que sobem contra um Collector, e a resposta
+certa dos exercícios da página é **recortada daquele arquivo** — o mesmo código que compila.
+Isso fecha o bloco E do plano do round anterior. O que continua aberto na linha "validação
+contra o real" da tabela é o passo seguinte, e é outro: modelo e lab rodando o **mesmo
+manifesto** e concordando; o que existe hoje é o código sendo um só, não a execução.
 
 O retorno de motor deste round: o `router` estava descrito de um lado só — o texto do
 catálogo descreve o mux, que escolhe qual **entrada** responde, e um amostrador é o espelho

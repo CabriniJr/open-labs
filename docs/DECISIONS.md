@@ -229,7 +229,12 @@ os quatro níveis como tipos de coisa · **o projeto é OpenLabs, e cada handboo
 ## 8. As três coisas baratas que faltam, e nenhuma exige o motor
 
 1. **Predição antes da revelação.** Perguntar o que a pessoa acha que vai acontecer **antes**
-   de rodar. É o achado mais replicado da pesquisa em simulação didática
+   de rodar. É o achado mais replicado da pesquisa em simulação didática.
+   **Desde 02/09/2026 isso são duas peças, e não uma:** a `Predicao`, que pergunta o que vai
+   acontecer, e o `Exercicio`, que pergunta qual linha escrever. As duas dividem a regra que
+   as faz valer — **a escolha não se refaz**. Deixar trocar depois de ver a resposta premiaria
+   tentar até ficar verde, que é o hábito oposto ao que se quer ensinar; é a mesma razão pela
+   qual o placar conta o acerto **de primeira**, e não o acerto
 2. **O mal-entendido que cada lab desfaz.** "As pessoas acham que o span vai direto para o
    backend." Vira campo no `teaches`, e força escrever para quem já tem ideia errada — que é
    o caso real

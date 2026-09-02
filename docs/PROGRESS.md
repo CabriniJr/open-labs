@@ -1472,3 +1472,74 @@ ocupa quase o monitor inteiro, e nenhum arranjo põe o rótulo em nove pixels al
 
 Estado: 911 testes unitários, 201 e2e, typecheck, boundaries (81 arquivos), catálogo (12
 arquivos) e build (33 páginas) verdes.
+
+---
+
+## Entrega 5 — Os exercícios de instrumentação ✅
+
+**Data:** 2026-09-01/02. Branch `entrega-5/exercicios-de-instrumentacao`.
+**Spec:** `docs/superpowers/specs/2026-09-01-exercicios-de-instrumentacao-design.md`
+**Plano:** `docs/superpowers/plans/2026-09-01-exercicios-de-instrumentacao.md`
+
+**A resposta certa não está escrita em lugar nenhum.** É o fato central desta entrega, e
+tudo o mais decorre dele. O tipo `DefinicaoDeExercicio` **não tem campo para o código
+correto**: ele tem o arquivo, o nome do trecho e o porquê. O código sai de
+`labs/providers/app/src/main/java/checkout/Checkout.java`, recortado entre os marcadores
+`<handbook:trecho>` e `<handbook:lacuna>` no momento do build. Um exercício não pode
+divergir do código que compila porque não existe a segunda cópia de onde divergir — e essa
+é a diferença entre este exercício e o exercício de tutorial que envelhece calado.
+
+**O teste de mutação da extração, medido em 02/09/2026:** apagada a primeira linha
+`// <handbook:lacuna>` do `Checkout.java`, `exercicios.test.ts` cai em **2 testes**, e a
+mensagem nomeia o exercício e o trecho — *`exercício "onde-mora-o-service-name": o trecho
+"onde-mora-o-service-name" não tem lacuna`*. Restaurada a linha, volta a passar. O teste
+cobra o arquivo real, não uma cópia de teste.
+
+**A contraparte real existe e roda:** `labs/providers/` com aplicação Java (SDK fixado por
+consulta ao `maven-metadata.xml`, não por memória), `Dockerfile` multi-stage, um Collector
+que recebe OTLP e imprime, e um `compose.yaml` com as **mesmas duas variáveis** que o lab da
+tela tem. A CI não compila Java, e é decisão: o que o CI precisa saber daquele arquivo é que
+os marcadores estão lá, e isso é teste de Node.
+
+**A peça: botão primeiro, arraste depois.** Cada bloco é um `<button>`; arrastar é camada por
+cima e some sem prejuízo. Se o arraste fosse o único caminho, metade dos leitores ficaria de
+fora. O veredito é **atributo** (`data-veredito`), não só cor — leitor de tela não lê borda.
+E a explicação **só entra no DOM depois da resposta**: escondê-la com CSS a deixaria legível
+no inspetor e, pior, para quem usa leitor de tela.
+
+**O placar conta o acerto de primeira, e não o acerto.** Chave própria (`ovh:placar:v1`),
+porque `ovh:progress:v1` guarda o que já foi lido e mexer nela apagaria o progresso de quem
+já leu. Errar e acertar em seguida **não promove** — premiar a segunda tentativa ensinaria a
+tentar até ficar verde. No nó do mapa isso vira `n/m first try`, e o `m` sai da **lista de
+exercícios**, nunca de uma segunda lista escrita à mão; nó sem exercício não mostra `0/0`,
+porque zero de zero se lê como "você não fez" e a pessoa não deixou de fazer nada.
+
+### Dois defeitos que só o portão pegou
+
+**A raiz do repositório era contada em pastas, e o empacotador move o código.**
+`exercicios.ts` achava a raiz com `new URL("../../../../", import.meta.url)`. Certo no teste,
+que roda o arquivo onde ele está; errado no build, que empacota o módulo em
+`apps/site/dist/chunks/` — e lá os quatro níveis param em `apps/`. O `pnpm build` morreu com
+`ENOENT … /apps/labs/providers/…`. A raiz agora é achada **subindo até o
+`pnpm-workspace.yaml`**: o marcador não se move quando o empacotador move o código. Dois
+testes travam — acha a raiz a partir de uma subpasta que nem existe, e falha nomeando o que
+procurou quando não há repo acima.
+
+**A tecla caía no vão entre o HTML do servidor e o React.** O e2e do caminho por teclado
+falhava, e o do clique passava — porque `expect(...).toBeDisabled()` reexecuta e uma tecla
+mandada uma vez, não. O HTML servido e o hidratado são idênticos, então nada na tela
+distinguia um botão que já responde de um que ainda não. A peça agora diz que está viva
+(`data-vivo`), e o teste espera por isso. Foi o e2e que pegou; o teste de unidade em jsdom
+não podia — lá a hidratação já aconteceu quando o `render` retorna.
+
+### A fraqueza que fica
+
+**As explicações são autorais.** O código correto é extraído e não pode envelhecer sem que a
+suíte perceba, mas o *porquê* de cada bloco — e o porquê dos distratores — é texto escrito à
+mão, ancorado num link para a spec. Se a spec mudar a semântica de um ponto ancorado, o link
+continua resolvendo e a explicação passa a mentir, sem que nada reprove. É a mesma classe do
+defeito da mentira silenciosa, e aqui ela está **declarada, não fechada**: fechá-la exigiria
+verificar a asserção contra a spec, e isso não é teste, é leitura.
+
+**Estado:** 934 testes unitários, 212 e2e (20 pulados), typecheck, boundaries (81 arquivos),
+catálogo (13 arquivos) e build (33 páginas) verdes.
