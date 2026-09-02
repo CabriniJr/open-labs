@@ -98,13 +98,25 @@ Testável sem tela, e a afirmação de legibilidade vira número:
 Segunda função pura:
 
 ```
-notacaoDeFechada(aparece) -> { tracejado, traco, preenchimento }
+notacaoDeFechada(aparece) -> { tracejado, preenchimento }
 ```
 
-Em `aparece = 0` ela devolve exatamente o que existe hoje: tracejado 8/4, traço 2,
-preenchimento cheio. Em `aparece = 1` não resta **nenhuma** marca de fechada — traço
-contínuo, espessura 1 (a da caixa comum), preenchimento cedido. Entre as duas pontas ela
+Em `aparece = 0` ela devolve exatamente o que existe hoje: tracejado 8/4, preenchimento
+cheio. Em `aparece = 1` não resta **nenhuma** marca de fechada: o vão do tracejado chegou a
+zero (traço contínuo) e o preenchimento cedeu por inteiro. Entre as duas pontas ela
 interpola de forma contínua.
+
+E é aqui que a interpolação encontra uma forma que o sistema **já tem**: uma caixa
+inteiramente aberta é contorno e nada mais — que é a definição da `moldura`
+(`.dui-stage__caixa.dui-stage__moldura`, "contorno e nada mais; o que ela guarda está
+desenhado por cima"). A rampa não inventa um estado novo no fim; ela leva a caixa até um
+estado que já estava escrito.
+
+**A espessura do traço fica de fora, de propósito.** Hoje ela pertence ao **estado** —
+`[data-ativo]` põe 2, `[data-selecionado]` e o foco põem 2,5 —, e não ao fechamento. Se o
+grau de abertura passasse a comandá-la, a moldura abrindo brigaria com a peça acendendo, e
+duas notações independentes disputariam o mesmo traço. É a mesma razão da §6: consertar
+duas coisas no mesmo lugar esconde qual das duas era a causa.
 
 Aplicada **inline**, e não por CSS: `calc()` dentro de `stroke-dasharray` é terreno
 instável entre navegadores, e o repo já prefere função pura com teste a expressão esperta
