@@ -1543,3 +1543,88 @@ verificar a asserção contra a spec, e isso não é teste, é leitura.
 
 **Estado:** 934 testes unitários, 212 e2e (20 pulados), typecheck, boundaries (81 arquivos),
 catálogo (13 arquivos) e build (33 páginas) verdes.
+
+---
+
+## Entrega 6 — A moldura na rampa ✅
+
+**Data:** 2026-09-02. Branch `entrega-6/moldura-na-rampa`, empilhada sobre a `entrega-5`.
+**Spec:** `docs/superpowers/specs/2026-09-02-moldura-na-rampa-design.md`
+**Plano:** `docs/superpowers/plans/2026-09-02-moldura-na-rampa.md`
+**Origem:** auditoria visual do Luigi — *"os canais das camadas inferiores estão causando
+muita confusão"*.
+
+**A causa não era falta de contraste.** `aparece` comandava a opacidade do interior, e a
+borda da caixa era pintada categoricamente por `[data-fechado="true"]`. **Metade da ligação
+andava numa grandeza contínua, a outra metade era um interruptor** — então a moldura
+anunciava "fechada" (tracejado 8/4, traço 2, acesa) por cima de um interior aberto e
+desenhado dentro dela, e ainda escrevia `more inside` embaixo. Três marcas na mesma caixa, e
+duas contradiziam o que o leitor estava vendo. O canal era só o sintoma mais visível: uma
+`travessia` nascia pontilhada a 35% da tinta do dado e, multiplicada pelo fade do interior,
+virava nada — justamente a linha que responde "o que entrou aqui vai parar onde lá dentro?".
+
+**`data-fechado` quer dizer "o interior mora um nível abaixo", e não "não tem interior".** É
+a condição sob a qual o palco decide desenhar um interior. O dado estava certo e ficou; o que
+estava errado era a **notação** pendurada nele ser categórica quando a coisa que ela descreve
+virou uma questão de grau.
+
+**O piso foi recusado, e o motivo é a regra.** Se o interior nunca descesse abaixo de 0,4,
+ele saltaria de 0 para 0,4 no instante em que a rampa começa. Piso é degrau com outro nome, e
+continuidade é inviolável. Entrou uma **curva** (`aparece ** 0,45`): contínua nas duas
+pontas, e sobe rápido o bastante para a rampa não ter platô de fantasma.
+
+**O fim da rampa é uma forma que o sistema já tinha.** `notacaoDeFechada` interpola o
+tracejado de `8 4` até vão zero e o preenchimento de 1 até 0 — e "contorno e nada mais" é a
+definição da `moldura`. A caixa não vira outra coisa; ela chega onde já estava escrito que se
+chega.
+
+### O que a tela mostra, medido
+
+No enquadramento do SDK, o interior do `tracer-provider` foi de **17,6% para 45,7% de
+tinta**. Os três `more inside` sumiram, e com eles os três títulos que caíam em cima do
+próprio interior. O canal atravessando a fronteira é uma linha sólida visível, onde antes era
+um pontilhado que se perdia no fundo.
+
+### As quatro mutações, e a que reprovou o plano
+
+1. `notacaoDeFechada` virando constante → **4 testes caem**, incluindo o property test.
+2. `EXPOENTE_DA_TINTA = 1` (a reta de antes) → 2 testes caem, entre eles o que cobra que no
+   primeiro sexto da rampa o interior já é legível.
+3. `opacity={rosto}` e `opacity={tinta}` revertidos no `Stage` → o e2e cai medindo 0,176
+   onde a spec cobra mais de 0,4.
+4. O CSS voltando a `stroke-dasharray: 8 4` fixo → o e2e cai medindo vão 4.
+
+**A primeira dessas mutações reprovou o plano, não o código.** Na primeira versão, o property
+test do invariante usava desigualdade frouxa (`<=`), e uma implementação **constante** o
+satisfazia — 500 sorteios passando por cima de uma função que não mexia nada. O invariante
+passou a cobrar **movimento**: com folga real entre os dois pontos sorteados, as três
+grandezas têm de ter mudado. Só então a mutação da constante o derruba. Um teste que parece
+proteção e não é vale menos que teste nenhum, porque desencoraja escrever o de verdade.
+
+### Duas correções que o plano não previu, achadas pela execução
+
+- **O `more inside` nunca sai do DOM.** Ele vive dentro do mesmo `<g class="dui-stage__rosto">`
+  que carrega título e rótulo, e cede por opacidade. O teste do plano cobrava
+  `toHaveCount(0)`, que testaria uma implementação que este palco nunca teve; a asserção
+  virou a opacidade computada do rosto, que é a afirmação visual correta.
+- **Um filho fechado tem, com razão, o seu próprio `more inside`.** Visto através do interior
+  aberto do pai, ele contava na conta e não é a contradição sob teste. O seletor passou a
+  ignorar marcas de dentro de `.dui-stage__interior`.
+
+### O que fica pendente, e é decisão de desenho
+
+**Os nomes das caixas somem cedo agora.** O rosto sai em `PONTO_LEGIVEL ≈ 0,13`, contra 0,5
+de antes — que é o que resolve o título caindo em cima do próprio interior, e é o que a spec
+§3.3 pede. O efeito colateral é que, no enquadramento do SDK, não dá mais para dizer qual
+caixa é o `TracerProvider` e qual é o `MeterProvider` olhando só o desenho. O conserto
+honesto é o nome **migrar para fora da caixa**, e isso é rodada própria: mexer nele junto
+esconderia qual das duas mudanças causou o quê.
+
+**E uma fragilidade que fica anotada, não resolvida:** numa de três execuções cheias,
+`gates-lab.spec.ts:343` falhou e não reproduziu. Ele depende de presença de `data-fechado`,
+ordem no DOM e `stroke` — e esta rodada mexe em `stroke-dasharray`, `fill-opacity` e
+opacidade de grupo. Sem ligação visível no código, mas o encadeamento de duplo-clique com
+`.first()` é frágil por construção.
+
+**Estado:** 947 testes unitários, 212 e2e (20 pulados), typecheck, boundaries (81 arquivos),
+catálogo (13 arquivos) e build (33 páginas) verdes.
