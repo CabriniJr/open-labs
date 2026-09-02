@@ -179,19 +179,33 @@ describe("as duas metades da mesma ligação andam juntas", () => {
     O invariante da spec §4. Ele não cobra números; cobra que não exista ponto
     algum da rampa em que a moldura diga uma coisa e o interior mostre outra.
   */
-  it("onde a tinta sobe, a marca de fechada cai", () => {
+  it("onde a tinta sobe, a marca de fechada cai — e as duas de fato se mexem", () => {
+    /*
+      A desigualdade frouxa (`<=`) não bastava: uma implementação constante a
+      satisfaz sem mover nada, e foi exatamente isso que o teste de mutação
+      mostrou. Com folga real entre os dois pontos, o invariante passa a cobrar
+      movimento — que é a coisa que ele existe para garantir.
+
+      A folga de 0,05 é o que sobrevive ao arredondamento de duas casas do
+      tracejado: ela move o vão em 0,2, muito acima da granularidade do traço.
+    */
     fc.assert(
       fc.property(
         fc.double({ min: 0, max: 1, noNaN: true }),
         fc.double({ min: 0, max: 1, noNaN: true }),
         (x, y) => {
           const [menor, maior] = x <= y ? [x, y] : [y, x];
-          const tintaSobe = tintaDoInterior(maior) >= tintaDoInterior(menor);
-          const vaoCai =
-            Number(notacaoDeFechada(maior).tracejado.split(" ")[1]) <=
-            Number(notacaoDeFechada(menor).tracejado.split(" ")[1]);
-          const preenchimentoCede =
-            notacaoDeFechada(maior).preenchimento <= notacaoDeFechada(menor).preenchimento;
+          const vao = (a: number): number => Number(notacaoDeFechada(a).tracejado.split(" ")[1]);
+          const folgaReal = maior - menor >= 0.05;
+
+          const tintaSobe = folgaReal
+            ? tintaDoInterior(maior) > tintaDoInterior(menor)
+            : tintaDoInterior(maior) >= tintaDoInterior(menor);
+          const vaoCai = folgaReal ? vao(maior) < vao(menor) : vao(maior) <= vao(menor);
+          const preenchimentoCede = folgaReal
+            ? notacaoDeFechada(maior).preenchimento < notacaoDeFechada(menor).preenchimento
+            : notacaoDeFechada(maior).preenchimento <= notacaoDeFechada(menor).preenchimento;
+
           return tintaSobe && vaoCai && preenchimentoCede;
         },
       ),
