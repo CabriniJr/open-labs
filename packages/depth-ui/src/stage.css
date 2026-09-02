@@ -155,9 +155,24 @@
   stroke-dasharray: 6 4;
 }
 
+/*
+ * A ponta da seta toma a cor do fio, e isso precisa de `context-stroke`.
+ *
+ * O conteúdo de um `<marker>` **não herda** do elemento que o referencia: ele
+ * herda de onde está no documento, que é o `<defs>`. `currentColor` ali resolvia
+ * uma cor só para o desenho inteiro — medido na tela: a ponta saía na tinta do
+ * dado enquanto o fio de controle estava na tinta viva. Toda linha vermelha
+ * terminava numa ponta da cor do dado, e um fio aceso não acendia a ponta.
+ *
+ * `context-stroke` é o mecanismo que o SVG tem exatamente para isto: a ponta
+ * pinta com o traço de quem a chamou. O `currentColor` fica antes como reserva —
+ * navegador que não conheça o valor novo ignora a segunda linha e mantém a
+ * primeira, e uma ponta de cor única é pior que a certa, não é quebrado.
+ */
 .dui-stage__fio marker path,
 .dui-stage #dui-seta path {
   fill: currentColor;
+  fill: context-stroke;
 }
 
 .dui-stage__fio {
@@ -202,6 +217,33 @@
   filter: drop-shadow(0 0 5px color-mix(in oklab, var(--dui-sinal) 60%, transparent));
 }
 
+/*
+ * O descarte. Ele toma a tinta da linha que morre nele — um descarte de dado é
+ * dado que some, e um de sinal é sinal que some —, e o traço é o de fim de
+ * linha do esquemático: curto, transversal, sem seta. Sem seta de propósito:
+ * seta aponta para um destino, e o descarte é a ausência de um.
+ */
+.dui-stage__descarte path {
+  stroke: var(--dui-dado);
+  stroke-width: 2;
+  opacity: 0.75;
+  fill: none;
+}
+
+.dui-stage__fio[data-linha="control"] .dui-stage__descarte path {
+  stroke: var(--dui-sinal);
+}
+
+.dui-stage__descarte text {
+  fill: var(--ink-faint);
+  font-size: 9px;
+  letter-spacing: 0.04em;
+}
+
+.dui-stage__fio[data-descarte="true"] .dui-stage__trilho {
+  opacity: 0.7;
+}
+
 .dui-stage__largura {
   fill: var(--ink-faint);
   font-size: 9px;
@@ -242,11 +284,35 @@
  * dentro do motor. Quem numera as espécies é o domínio; o palco só sabe que
  * duas cargas são diferentes, e não o que elas são.
  */
-.dui-stage__carga[data-especie="1"] { fill: var(--dui-especie-1); }
-.dui-stage__carga[data-especie="2"] { fill: var(--dui-especie-2); }
-.dui-stage__carga[data-especie="3"] { fill: var(--dui-especie-3); }
-.dui-stage__carga[data-especie="4"] { fill: var(--dui-especie-4); }
-.dui-stage__carga[data-especie="5"] { fill: var(--dui-especie-5); }
+/*
+ * A espécie é declarada no GRUPO — é lá que o domínio a responde —, e a tinta
+ * pinta a carga lá dentro. O seletor pedia o atributo na própria carga, e o
+ * atributo nunca esteve nela: as cinco espécies existiam no DOM e o desenho
+ * pintava todas da mesma cor, calado, desde que a regra nasceu.
+ */
+.dui-stage__carga-grupo[data-especie="1"] .dui-stage__carga { fill: var(--dui-especie-1); }
+.dui-stage__carga-grupo[data-especie="2"] .dui-stage__carga { fill: var(--dui-especie-2); }
+.dui-stage__carga-grupo[data-especie="3"] .dui-stage__carga { fill: var(--dui-especie-3); }
+.dui-stage__carga-grupo[data-especie="4"] .dui-stage__carga { fill: var(--dui-especie-4); }
+.dui-stage__carga-grupo[data-especie="5"] .dui-stage__carga { fill: var(--dui-especie-5); }
+
+/*
+ * O pacote: o que atravessa um canal sai serializado do outro lado, e por isso
+ * ele deixa de ser "as coisas" e passa a ser "o documento que as carrega". A
+ * dobra e as linhas são o que fazem ler como papel em vez de mais um bloco — e
+ * elas tomam a cor do fundo, porque são vazio recortado no documento, não tinta.
+ */
+.dui-stage__carga--pacote path {
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.dui-stage__carga-dobra,
+.dui-stage__carga-linhas {
+  fill: none;
+  stroke: var(--paper);
+  stroke-width: 1.1;
+}
 
 /* ---------- objetos ---------- */
 
@@ -393,9 +459,15 @@
   transition: y var(--dui-tick) linear, height var(--dui-tick) linear;
 }
 
+/*
+ * O tipo do palco é medido em UNIDADES DA VISTA, e por isso ele encolhe junto
+ * com a projeção. Numa vista de mil e duzentas unidades projetada num laptop, um
+ * rótulo de 11 chegava com menos de cinco pixels. Doze não resolve sozinho — a
+ * tela cheia é que resolve —, mas é a folga que existe sem apertar as caixas.
+ */
 .dui-stage__rotulo {
   fill: var(--ink);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
 }
 

@@ -23,7 +23,7 @@ export default defineWorkspace([
     test: {
       name: "dom",
       environment: "jsdom",
-      include: ["packages/depth-ui/src/**/*.test.tsx"],
+      include: ["packages/depth-ui/src/**/*.test.tsx", "apps/site/src/**/*.test.tsx"],
     },
   },
 ]);

@@ -1,0 +1,314 @@
+---
+import { EXERCICIOS_DOS_PROVEDORES, MAL_ENTENDIDOS } from "@ovh/otel-domain";
+import { Exercicio } from "../../components/Exercicio.tsx";
+import { Predicao } from "../../components/Predicao.tsx";
+import { ProvidersLab } from "../../components/ProvidersLab.tsx";
+import SiteFooter from "../../components/SiteFooter.astro";
+import SiteNav from "../../components/SiteNav.astro";
+import Base from "../../layouts/Base.astro";
+import { montarExercicio } from "../../lib/exercicios";
+import { url } from "../../lib/urls";
+import "../../styles/docs.css";
+import "../../components/ProvidersLab.css";
+import "../../components/Predicao.css";
+import "../../components/Exercicio.css";
+import "@ovh/depth-ui/src/stage.css";
+import "../../components/Explorer.css";
+
+// A extração roda AQUI, no build: o frontmatter do Astro executa em Node. A ilha
+// recebe o resultado pronto e nunca toca no sistema de arquivos.
+const exercicios = EXERCICIOS_DOS_PROVEDORES.map(montarExercicio);
+---
+
+<Base
+  domain="otel"
+  title="The three providers — OpenLabs"
+  description="You called tracer.startSpan. Who decides whether it ever leaves the process? The resource, the sampler, the processors, the limits and the flush — and the OTLP envelope is the same tree seen from the other side."
+>
+  <SiteNav current="labs" />
+
+  <main id="content">
+    <section class="lab-head editorial">
+      <div class="prose">
+        <p class="lab-head__eyebrow mono">
+          <a href={url("handbooks/otel")}>OpenTelemetry Visual Handbook</a> · lab
+        </p>
+        <h1>You called <code>startSpan</code>. Who decides whether it leaves?</h1>
+        <p>
+          Not the tracer. A <code>Tracer</code> has no configuration at all — it
+          holds an instrumentation scope and nothing else. Everything that
+          decides the fate of a span is on the <b>provider</b>: the resource
+          stamped on it, the sampler consulted before it exists, the processors
+          it passes through, the limits it is trimmed to, and the moment
+          somebody calls flush.
+        </p>
+        <p>
+          There is a second thing this lab shows, and it is the reason it is the
+          first one in this handbook. Open the envelope on the right while the
+          simulation runs: <code>ResourceSpans → ScopeSpans → Span</code> is,
+          field for field, <b>provider → tracer → span</b>. The OTLP payload is
+          not a serialization of the SDK — it <em>is</em> the SDK&rsquo;s object
+          graph, written down. That is why <code>service.name</code> sits one
+          layer above the spans, and why nobody can put it on a span.
+        </p>
+      </div>
+      <aside class="lab-head__note mono">
+        <p>Three providers, one process.</p>
+        <p>One tick is one second, so the spec&rsquo;s defaults fit unchanged.</p>
+      </aside>
+    </section>
+
+    <section class="lab-stage">
+      <ProvidersLab client:only="react" />
+    </section>
+
+    <section class="lab-prosa editorial">
+      <div class="prose">
+        <h2>Break it</h2>
+        <p>
+          Four perturbations, and none of them is scripted — each one is the same
+          run with one control moved.
+        </p>
+        <ol>
+          <li>
+            <b>Drag the sampling ratio down and tick <em>RECORD_ONLY</em>.</b> The
+            middle outlet lights up. Those spans are created, recorded and
+            readable inside the process, and the exporter never sees one of them.
+            Almost nobody knows that outlet exists.
+          </li>
+          <li>
+            <b>Set <code>maxQueueSize</code> to 4 and let it run.</b> The queue
+            refuses. The drop is a fact in the model, not a silence — it leaves
+            by its own outlet and it is counted.
+          </li>
+          <li>
+            <b>Kill the process, then kill it again with <code>ForceFlush</code>.</b>
+            Same run, one parameter. Without the flush the queue dies with the
+            process; with it, one control line descends to every registered
+            processor and the batch leaves first. That is why spans vanish at the
+            end of a short job.
+          </li>
+          <li>
+            <b>Turn on <code>trace_based</code>, then drop sampling to zero.</b>
+            Logs stop arriving. The only thing joining those two facts is a single
+            dashed line crossing from one provider into another.
+          </li>
+        </ol>
+
+        <h2>Predict before you look</h2>
+        <p>
+          Answer first, then run it. Predicting and being wrong is what makes the
+          answer stick; watching and recognising is not the same thing.
+        </p>
+      </div>
+      <div class="lab-predicao">
+        <Predicao
+          client:visible
+          pergunta="A sampler returns RECORD_ONLY for a span. What reaches the exporter?"
+          opcoes={[
+            "Nothing — the processor is called, the exporter is not",
+            "The span, without attributes",
+            "Nothing — the processor is never called either",
+          ]}
+          correta={0}
+          revelacao="The spec's reaction table is explicit: with RECORD_ONLY the SpanProcessor's OnStart and OnEnd are invoked, and the span is not exported. It exists, it is recorded, it is readable in-process, and it never leaves — which is exactly why 'dropped' and 'not sampled' are not the same thing."
+        />
+      </div>
+    </section>
+
+    <section class="lab-prosa editorial">
+      <div class="prose">
+        <h2>Instrument it</h2>
+        <p>
+          Two decisions from the file that actually runs in
+          <code>labs/providers/</code>. The correct block is not written here — it is
+          lifted out of that file, so it cannot drift from the code that compiles.
+          The wrong ones are real: both of them ship to production regularly.
+        </p>
+      </div>
+      <div class="lab-exercicios">
+        {exercicios.map((exercicio) => (
+          <Exercicio client:visible exercicio={exercicio} />
+        ))}
+      </div>
+    </section>
+
+    <section class="lab-prosa editorial">
+      <div class="prose">
+        <h2>What people get wrong</h2>
+        <p>
+          Every row below is a belief worth naming, because the drawing above is
+          arranged to take it apart. The right column is the spec, with the link.
+        </p>
+      </div>
+      <div class="lab-mal-entendidos">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">What people believe</th>
+              <th scope="col">What the spec says</th>
+            </tr>
+          </thead>
+          <tbody>
+            {MAL_ENTENDIDOS.map((m) => (
+              <tr>
+                <td>{m.crenca}</td>
+                <td>
+                  {m.spec}{" "}
+                  <a href={m.fonte} rel="noopener">spec&nbsp;→</a>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="lab-prosa editorial">
+      <div class="prose">
+        <h2>What is deliberately not here</h2>
+        <p>
+          The channel out of the process is <b>opaque</b>, and it says so when you
+          click it. HTTP/2 framing, length prefixes and stream ids are real, and
+          they answer a different question than this lab asks — they are the
+          <i>gRPC over HTTP/2</i> annex and the Collector pipeline lab. What
+          happens <em>inside</em> the Collector is not modelled here either: it is
+          another program, it is drawn outside the process for that reason, and
+          drawing it as an empty box would be worse than saying so.
+        </p>
+        <p>
+          Retry is missing on purpose too, and its absence is content: the spec
+          says the default SDK must <b>not</b> implement retry, because the logic
+          depends on the protocol. Modelling it here would be a lie about the SDK.
+        </p>
+
+        <h2>Check yourself</h2>
+        <ol>
+          <li>
+            Two <code>TracerProvider</code>s in one process, with different
+            resources. What fails? <b>Nothing.</b> You get two
+            <code>resourceSpans</code> with different <code>service.name</code>,
+            no error anywhere, and a backend that quietly stops correlating them.
+          </li>
+          <li>
+            The queue is full and the metric store is at its cardinality limit.
+            Do they lose data the same way? <b>No.</b> The queue refuses and the
+            span is gone; the store collapses the excess into a single
+            <code>otel.metric.overflow</code> row and the sum is preserved. Same
+            problem — finite memory — two different lies.
+          </li>
+          <li>
+            Your SDK never came up. What is the first symptom? <b>Silence.</b> No
+            exception, no warning, a no-op provider swallowing spans. It is the
+            most common first-instrumentation failure, and the only way to teach
+            it is to put a number on it.
+          </li>
+        </ol>
+      </div>
+    </section>
+  </main>
+
+  <SiteFooter />
+</Base>
+
+<style>
+  .lab-exercicios {
+    display: grid;
+    gap: var(--space-2);
+    grid-column: 1 / -1;
+    margin-block-start: var(--space-2);
+  }
+
+  .lab-head {
+    padding-block: var(--space-4) var(--space-2);
+  }
+
+  .lab-head__eyebrow {
+    margin: 0 0 var(--space-1);
+    color: var(--accent);
+    font-size: var(--size-step--1);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  h1 {
+    margin: 0 0 var(--space-2);
+    font-size: var(--size-step-2);
+    max-width: 24ch;
+  }
+
+  .lab-head__note {
+    align-self: end;
+    color: var(--ink-muted);
+    font-size: var(--size-step--1);
+  }
+
+  .lab-head__note p {
+    margin: 0 0 0.35rem;
+  }
+
+  /*
+    O lab é a peça mais larga da página de propósito: o texto do desenho é
+    medido em unidades da vista, então cada pixel de largura que o palco ganha
+    vira texto legível. O limite antigo, de 96rem, deixava mil pixels de tela
+    sobrando num monitor grande enquanto o desenho ficava espremido.
+  */
+  .lab-stage {
+    max-width: 118rem;
+    margin-inline: auto;
+    padding: 0 var(--space-3) var(--space-4);
+  }
+
+  .lab-prosa {
+    padding-block: var(--space-2) var(--space-3);
+  }
+
+  .lab-prosa h2 {
+    margin: var(--space-3) 0 var(--space-1);
+    font-size: var(--size-step-1);
+  }
+
+  .lab-prosa ol {
+    max-width: var(--measure);
+    line-height: 1.7;
+  }
+
+  .lab-prosa li {
+    margin-block-end: var(--space-1);
+  }
+
+  .lab-predicao {
+    align-self: start;
+  }
+
+  .lab-mal-entendidos {
+    grid-column: 1 / -1;
+    overflow-x: auto;
+    margin-block-start: var(--space-2);
+  }
+
+  .lab-mal-entendidos table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--size-step--1);
+  }
+
+  .lab-mal-entendidos th {
+    text-align: left;
+    padding: 0.4rem 0.6rem;
+    border-block-end: 1px solid var(--rule);
+    color: var(--ink-muted);
+    font-weight: 600;
+  }
+
+  .lab-mal-entendidos td {
+    padding: 0.5rem 0.6rem;
+    border-block-end: 1px solid var(--rule);
+    line-height: 1.6;
+    vertical-align: top;
+  }
+
+  .lab-mal-entendidos td:first-child {
+    color: var(--ink-muted);
+  }
+</style>

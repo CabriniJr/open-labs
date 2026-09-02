@@ -257,3 +257,10 @@ a.roadmap__node-title:hover {
     height: 26px;
   }
 }
+
+.roadmap__placar {
+  display: block;
+  margin-block-start: 0.15rem;
+  color: var(--ink-faint);
+  font-size: var(--size-step--1);
+}

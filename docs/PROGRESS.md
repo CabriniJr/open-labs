@@ -1174,3 +1174,372 @@ Espaguete do lab novo: **7 cruzamentos, 0 sobreposições cegas**, teto cravado 
 
 Estado: 773 testes unitários, 179 e2e, typecheck, boundaries (81 arquivos), catálogo (10
 arquivos) e build (29 páginas) verdes.
+
+---
+
+## Entrega 4 — O lab dos provedores, o primeiro do `otel.model` ✅
+
+**Data:** 2026-08-31/09-01. Branch `main`.
+**Spec:** `docs/superpowers/specs/2026-08-31-provedores-otel-design.md`
+**Plano:** `docs/superpowers/plans/2026-08-31-lab-provedores-otel.md`
+(os dois vieram das PRs `kiro/lab-provedores-otel` e `kiro/curriculo-otel`).
+
+**O que ficou pronto.** `packages/otel-domain/src/providers/` — a árvore
+`host → process → {tracer,logger,meter}-provider`, com o `collector` filho do **host**
+e não do processo. `labs/providers` no ar, na fase 3 do mapa, pareado com o artigo
+`who-owns-the-pipeline`.
+
+**A tese, provada por teste e não por prosa:** o envelope do OTLP é a árvore de objetos
+do SDK. `envelope.test.ts` cobra o invariante nas duas metades — (⊆) o envelope não
+inventa campo, (⊇) nenhuma placa deixa de aparecer nele — e ele passou por **teste de
+mutação**: zerando o recurso sobre o qual o exportador fecha, três testes caem.
+
+**Nenhum `kind` novo nasceu.** O catálogo de onze cobriu o SDK inteiro, e há teste
+cobrando isso. O `Resource` é `static` — placa não tem porta e não é fiada, e por isso
+ele chega ao envelope porque a fábrica do exportador **fecha** sobre ele, que é o que o
+SDK faz.
+
+**O risco nº 1 do plano caiu:** `validateWorld` aceita a linha de controle entre o
+`sampler` do `tracer-provider` e o `trace-gate` do `logger-provider`. É a única linha do
+lab que cruza fronteira de provider, e é a que ensina que baixar a amostragem de traces
+apaga logs.
+
+**Um tick é um segundo neste mundo.** É o que faz os padrões da spec caberem na tela sem
+serem reescritos: `scheduledDelayMillis` 5 000 são 5 ticks, `exportIntervalMillis` 60 000
+são 60, e o 12× de F4 é `exportInterval / scheduledDelay` — número da spec, não número
+escolhido para a demonstração.
+
+**Cinco fenômenos, nenhum roteirizado**, todos `otelWorld` mais um parâmetro. O que vale
+guardar de F4: a fila cheia **recusa** e o span morre; o banco de pontos **colapsa** e a
+soma é conservada. Mesmo problema — memória finita —, duas mentiras diferentes, e cada
+uma tem forma própria no desenho.
+
+### Três defeitos que só a tela pegou
+
+Auditoria visual depois de o lab estar verde em tudo. Nenhum dos três tinha teste que os
+pegasse, e o primeiro é da classe que o projeto trata como inaceitável.
+
+1. **O descarte não era desenhado.** `@drop` não está na árvore, então o fio inteiro sumia
+   do palco — e isso faz **descarte deliberado e fio esquecido virarem o mesmo desenho**.
+   Um amostrador de três saídas aparecia com duas. Consertado no motor (`Stage.tsx`), com
+   terminal próprio, sem seta — seta aponta para um destino, e descarte é a ausência de um.
+   Nenhum outro domínio fia para `DROP`, então o desenho dos outros três labs não mudou.
+2. **A linha de controle entre dois providers contornava o desenho inteiro pela direita.**
+   A folga entre as molduras era 8, e o roteador só desce pela borda com **mais** de 8.
+   Passou a 16.
+3. **Não havia como alternar entre as três views de provider** sem saber clicar duas vezes
+   na caixa certa — e a comparação por superposição (R3) é o que entrega F4.
+
+### Mais dois, e os piores: a carga não era desenhada
+
+Achados na segunda auditoria de tela, com o lab já verde em tudo.
+
+4. **Vinte e um fios na tela e zero bolinhas.** O motor entrega na **folha de entrada** de
+   um contêiner; o desenho conhece as **caixas da vista**. Ninguém traduzia de um para o
+   outro, então a chave do trilho nunca casava e a carga simplesmente não era desenhada.
+   Só funcionava em vista cujos objetos são todos folha — que é o caso dos três labs
+   antigos, e por isso o defeito viveu escondido. `InFlight` ganhou `port` para o descarte
+   saber por qual terminal a carga morre.
+5. **A cor por espécie nunca aplicou.** O `data-especie` está no grupo; o seletor pedia o
+   atributo na própria carga. As cinco espécies existiam no DOM e o desenho pintava todas
+   da mesma cor, calado, desde que a regra nasceu. Testado por mutação: com o seletor
+   antigo, o teste de tinta cai.
+
+### A carga muda de forma no caminho
+
+Pedido do Luigi, e ele nomeia o que o lab existe para mostrar: *"a bolinha vai se
+modificando no caminho — passa por um batch processor e vira um conjunto de bolinhas,
+passa no exporter e vira um file"*.
+
+A forma sai de **três fatos que o motor já tem**, e de nenhum vocabulário de domínio:
+
+| Fato do motor | Forma | O que ela afirma |
+|---|---|---|
+| o fio declara largura | barra | N vias em paralelo — a notação do esquemático |
+| a aresta é um **canal** | documento | o que atravessa um canal sai serializado: é o envelope |
+| `weight > 1` | punhado de pontos | várias coisas viajando juntas porque alguém decidiu |
+| nada disso | ponto | uma coisa |
+
+Um lote não é um círculo maior — isso diria "um span mais gordo". É **vários pontos**,
+que é a lição inteira do processador em lote. E o `×N` ao lado dá a conta exata, porque
+sete é o teto do que se lê como punhado.
+
+A espécie foi remapeada pela régua do catálogo, que diz que o número é **proeminência** e
+não categoria: o descarte vem primeiro (num lab sobre quem decide o que sai, a carga que
+morre é o que não se pode perder de vista), e **span e lote dividem a tinta**, porque um
+lote *é* spans e a forma já os separa — a cor que sobra vai para o envelope, que dali para
+a frente não é mais spans.
+
+### Um conserto de medida, e não de folga
+
+O espaguete passou a medir **por escopo**. Um interior é um espaço de coordenadas próprio,
+então dois fios de caixas diferentes podem ter o mesmo `d` e não se tocarem na tela. As três
+views de provider compartilham moldura de propósito — é R3 —, então os interiores saem com
+paths idênticos, e a medida sem escopo acusava dezoito sobreposições cegas onde não há uma.
+Os quatro tetos antigos foram remedidos com a mudança e **não mexeram** (15, 4, 4, 7). O do
+lab novo é **1 cruzamento, 0 sobreposições cegas**, cravado no medido.
+
+### Dois defeitos herdados das PRs do Kiro
+
+Nenhum dos dois era visível enquanto o handbook de OTel não tinha lab publicado — que é o
+jeito ruim de achar defeito.
+
+1. `landing.spec.ts` cravava `"0 of 13"` e a trilha cresceu para 18. O total passa a sair do
+   próprio mapa: uma fonte só por fato.
+2. `OTEL_LABS` não copiava o `href` do mapa. O teste de "item pronto tem para onde levar" só
+   tem o que cobrar quando existe um item pronto — é a mesma classe que a lista escrita à mão
+   do lado da CPU já tinha tido.
+
+### O que ficou pendente
+
+- **Bloco E — a contraparte real (`labs/providers/` com compose e fixture OTLP).** É o
+  princípio 3 da spec do handbook, e sem ele o lab não está *pronto* pela régua do projeto.
+  O modelo está honesto contra a spec escrita; falta a prova mecânica contra tráfego real.
+- **Task 16 — `docs/authoring.md` continua desatualizado**, mandando escrever `Scenario<S>`,
+  que o `depth-core` marca como andaime proibido em código novo.
+- **As duas saídas do amostrador que vão para o mesmo destino se desenham por cima.**
+  `sampled` e `recorded` entram ambas no `span-processors`, e o roteador dá o mesmo caminho
+  para as duas. Não é sobreposição cega (compartilham as duas pontas) e a contagem do painel
+  separa as três decisões — mas no desenho a porta do meio só se distingue pelo terminal de
+  descarte da terceira. Resolver pede borne nomeado na `pipeline`, ou o roteador sabendo
+  separar fios irmãos com o mesmo par de pontas.
+- **O LOD tem um teto para três molduras empilhadas**: `min(w/W, h/H)` não passa de ~0,30
+  com três caixas na vertical, então o interior delas aparece a ~22% na vista do processo.
+  A comparação de verdade é pelos botões de enquadramento.
+
+### A rodada da auditoria visual do Luigi
+
+Ele olhou o lab rodando e a lista que saiu dali é o que este registro existe para guardar.
+
+**A costura API ↔ SDK virou desenho.** O `app` era uma caixa só. Agora há uma moldura
+`application` — o código e a **API** que ele chama, os dois do mesmo lado da costura — e
+uma moldura `sdk` com os três provedores. A API é `channel`, porque ela transporta e nunca
+altera: é literalmente o que ela faz. Trocar tudo o que está à direita não muda uma linha
+do que está à esquerda, e é por isso que uma biblioteca pode ser instrumentada sem escolher
+o SDK de ninguém — e é a explicação do silêncio de F5: sem SDK, a moldura da direita não
+existe, e do lado de cá **ninguém sabe disso**.
+
+**Contrapressão, e ela é uma aresta.** Um parâmetro corta o canal para o Collector. O
+exportador exporta um lote por vez e espera; com o outro lado mudo ele não termina, e avisa
+a fila por uma linha de **controle que anda contra o fluxo** — a única do lab. A fila para
+de entregar, enche, e a partir daí recusa. **A perda começa três peças antes de onde o
+problema está**, que é por que ela surpreende. Nem o `ForceFlush` passa por cima. E há a
+distinção que o painel mostra com número dos dois lados: o que o exportador segura está
+**preso**, não perdido, e volta a andar quando o canal volta; o que a fila recusou não volta.
+
+**A fila enche e esvazia na tela** (`fills`), e o banco de pontos usa a mesma barra contra o
+limite de cardinalidade — é ali que o contraste de F4 fica físico: um transborda e recusa, o
+outro colapsa.
+
+**A carga de geração é modulável** (spans, logs e medições por segundo), que é o que permite
+passar do que o pipeline drena e ver a contrapressão acontecer.
+
+**O descarte virou o terra do esquemático** — três traços que encurtam. É o símbolo mais
+universal que existe para "aqui acaba, e não continua em lugar nenhum", que é o que o
+descarte é. A palavra fica junto porque isto é material de ensino.
+
+### A porta e o fio, e o preço de dizer a verdade
+
+Achado dele: *"as setas dos fluxos não estão se conectando à entrada deles"*. Estava certo,
+e era estrutural: as portas eram distribuídas em alturas iguais pela borda e o roteador
+escolhia a altura por conta própria. **O desenho mostrava uma entrada e uma linha que não a
+tocava.**
+
+A correção passou por três tentativas, e as duas primeiras ensinam:
+
+1. **desenhar a porta onde o fio chega** — conserta o alinhamento e esconde o defeito de
+   baixo: três portas diferentes ligando as mesmas duas caixas miram o mesmo ponto, saem na
+   mesma altura, e viram **uma linha só**. O teste de junção do espaguete pegou;
+2. **a porta manda no fio** — quebrou o somador (4 → 27 cruzamentos), porque a mira ordena o
+   leque e foi ela que levou aquele desenho de 28 para 4. Regra nova não revoga regra que
+   pagou;
+3. **desvio em torno da mira**, e só quando o par de caixas tem mais de uma porta — que é a
+   única situação em que há empate a desfazer. A mira continua mandando na ordem; o desvio
+   só separa quem ela empatou.
+
+O somador foi de 4 para **5** cruzamentos, e o número subiu porque o desenho passou a dizer
+a verdade: as duas parcelas que entram em cada bit eram desenhadas uma por cima da outra, e
+o leitor via uma ligação onde existem duas. Um cruzamento a mais, quatro ligações que
+existiam e não podiam ser vistas. Os outros três labs não mexeram (15, 4, 7), e o lab dos
+provedores foi para **0**.
+
+### A rodada do fluxo entre níveis, e o que a investigação salvou
+
+Ele disse que os fluxos entre níveis, as animações, as setas e os fios ainda estavam
+errados, e autorizou mexer no motor. A investigação veio antes de qualquer conserto, e o
+primeiro achado foi um **falso positivo**: medindo na aba de automação, a carga aparecia
+congelada em `offset-distance: 0%` com a animação "running" e `currentTime` parado. Parecia
+defeito grave. Não era: `requestAnimationFrame` não dispara naquela aba, porque ela não
+pinta — a linha do tempo do documento está parada. **Um "conserto" ali teria mexido em
+código que funciona.** Screenshot força pintura; medição de tempo naquela aba não vale.
+
+**O defeito real, e ele é da pior espécie do projeto: a vista de fora discordava do próprio
+interior.** Medido na tela: uma linha chegava na moldura do SDK em y≈817, e lá dentro
+nasciam **três** entradas, em 734, 818 e 902. Duas nasciam do nada, a oitenta e oito
+unidades de qualquer linha existente.
+
+A causa era a regra de agregação: duas folhas dentro das mesmas duas caixas viravam uma
+aresta só. A regra é certa — trinta e dois filhos idênticos não viram trinta e duas linhas
+—, mas a chave dela não distinguia **travessias diferentes**. Confirmado nos dois labs, e o
+segundo caso só se prova no modelo: as quatro linhas de controle que entram na lógica
+combinacional do caminho de dados pousam em **quatro peças diferentes** (`ula`,
+`mux-operando`, `mux-escrita`, `desvio`), e eram desenhadas como uma. Latente, porque
+naquele zoom o interior está fechado.
+
+Duas tentativas erradas antes da certa, e as duas ensinam:
+
+1. **pôr a porta na chave** — desagrega os três sinais, e leva o caminho de dados de 15 para
+   26 cruzamentos, porque desagrega também o que não precisava;
+2. **a porta mandar no fio** (rodada anterior) — quebrou o somador de 4 para 27, porque a
+   mira ordena o leque e foi ela que o levou de 28 para 4.
+
+A resposta é deixar o **nível de detalhe** responder, como ele já responde por todo o resto
+do palco: com o interior **aberto**, cada travessia é uma linha e pousa na peça em que de
+fato entra; com o interior **fechado**, uma linha só, marcada como **feixe de N** — a mesma
+notação que o esquemático usa para um barramento. De longe o desenho informa a conta em vez
+de esconder a diferença; de perto o feixe se abre nos fios que o compõem. Os quatro labs
+antigos não mexeram um cruzamento (15, 5, 4, 7).
+
+E o que fecha a continuidade: **a linha de fora passou a mirar a peça em que ela entra lá
+dentro**. Os dois pontos já eram conhecidos — a travessia os usava para continuar a linha —
+enquanto o traço de fora era roteado sem saber deles. Duas metades da mesma ligação
+desenhadas por dois critérios diferentes. Agora as três linhas terminam exatamente em 734,
+818 e 902, que é onde as três entradas do interior começam.
+
+**A seta apontava a cor errada em todo fio de controle.** O conteúdo de um `<marker>` não
+herda do elemento que o referencia — ele herda do `<defs>` —, então `currentColor` resolvia
+uma tinta só para o desenho inteiro. Toda linha vermelha terminava numa ponta da cor do
+dado, e fio aceso não acendia a ponta. `context-stroke` é o mecanismo que o SVG tem para
+isso, com `currentColor` antes como reserva.
+
+O invariante virou `apps/site/tests/travessia.spec.ts`, e ele cobra **geometria**: cada
+linha que chega numa moldura aberta termina onde uma entrada do interior começa, e as duas
+contagens batem. Provado por mutação — voltando a agregar, ele cai dizendo qual moldura e
+quantas linhas. E o lab dos provedores é obrigado a ter moldura aberta, senão os dez casos
+pulariam e o invariante ficaria sem guarda, calado.
+
+O lab dos provedores foi de 0 para **1** cruzamento: o leque de três precisa cruzar uma vez.
+Um cruzamento pelo preço de duas ligações que existiam e não podiam ser vistas.
+
+### O palco cabe o leitor — e o defeito que a mudança criou
+
+Pedido dele: *"o bloco dos fluxos precisa ser redimensionável, possível de abrir em tela
+cheia, os textos estão pequenos"*.
+
+O diagnóstico não era o óbvio. O texto do palco é medido em **unidades da vista**, então
+ele chega na tela multiplicado pela escala da projeção — e a escala era 0,62 num monitor de
+2560, porque o palco estava **preso pela largura**: 744 pixels de desenho espremidos entre a
+ficha (320) e o painel do lab (384). Altura sozinha não aumenta texto nenhum.
+
+Pior no caso que importa: num laptop de 1280 o mesmo rótulo chegava com **4,5 pixels**. A
+primeira medição foi no monitor grande e teria fechado a questão errado; foi o teste, rodando
+no viewport de 1280, que mostrou.
+
+O que entrou: altura própria e redimensionável pelo canto (`resize: vertical`), botão de
+**tela cheia** no Explorer inteiro — trilha e ficha vão junto, porque em tela cheia a pessoa
+continua precisando saber onde está —, ficha e painel do lab descendo até 96rem em vez de
+70rem, e o tipo do rótulo de 11 para 12 unidades. Resultado medido: 4,5 → **8,4px** no
+laptop, ~10,4px no monitor grande, e **~19px em tela cheia**.
+
+**E a mudança criou um defeito, que o teste do zoom da CPU pegou na mesma rodada.** Com
+altura própria, o `preserveAspectRatio` passa a deixar faixa vazia dos dois lados do desenho
+— e as contas do zoom e do arraste mapeavam a caixa **inteira** linearmente para o `viewBox`.
+Enquanto a altura saía da proporção, as duas formas eram iguais e a conta estava certa; com
+altura própria, deixou de estar, e a roda do mouse passou a ampliar um ponto em que o cursor
+não está. O somador da ULA parava em 7% de abertura.
+
+A conta estava escrita **duas vezes** — uma no zoom, outra no arraste — e havia ainda uma
+terceira cópia em `noDesenho`, que não era usada por ninguém. Agora é uma só
+(`encaixeDoQuadro`), e as três viraram uma.
+
+A legibilidade virou número em `apps/site/tests/palco-legivel.spec.ts`, e o piso é honesto
+sobre o que a página entrega sozinha: numa tela de 1280 por 720 uma vista de 1200 por 740
+ocupa quase o monitor inteiro, e nenhum arranjo põe o rótulo em nove pixels ali dentro. Oito
+é o que a página dá; a tela cheia leva o mesmo rótulo a dezoito.
+
+### O que ficou pendente desta rodada
+
+- **Arrastar processadores para a `pipeline`** e ver a ordem de registro importar. É a
+  decisão "parâmetro vs composição" da spec do handbook §4 levada a sério, e é rodada
+  própria: mexe no palco (arrastar), no modelo (mundo que muda de forma sem recomeçar) e
+  no currículo (a `pipeline` nasce com um filho, e ordem só ensina com dois).
+- **A estampa da compressão mudando a forma do item.** A forma hoje sai de três fatos que o
+  motor já tem — largura declarada, aresta que é canal, peso maior que um — e nenhum deles
+  é compressão. O caminho honesto é uma primitiva nova e neutra: `Message` ganhar **quanto
+  ela pesa na linha**, separado de **quantos itens ela leva**. Aí comprimir é o mesmo `×N`
+  num pacote menor, e vale para qualquer domínio. Meia medida aqui seria o domínio
+  escolhendo forma, que é a porta dos fundos que o catálogo existe para fechar.
+
+Estado: 911 testes unitários, 201 e2e, typecheck, boundaries (81 arquivos), catálogo (12
+arquivos) e build (33 páginas) verdes.
+
+---
+
+## Entrega 5 — Os exercícios de instrumentação ✅
+
+**Data:** 2026-09-01/02. Branch `entrega-5/exercicios-de-instrumentacao`.
+**Spec:** `docs/superpowers/specs/2026-09-01-exercicios-de-instrumentacao-design.md`
+**Plano:** `docs/superpowers/plans/2026-09-01-exercicios-de-instrumentacao.md`
+
+**A resposta certa não está escrita em lugar nenhum.** É o fato central desta entrega, e
+tudo o mais decorre dele. O tipo `DefinicaoDeExercicio` **não tem campo para o código
+correto**: ele tem o arquivo, o nome do trecho e o porquê. O código sai de
+`labs/providers/app/src/main/java/checkout/Checkout.java`, recortado entre os marcadores
+`<handbook:trecho>` e `<handbook:lacuna>` no momento do build. Um exercício não pode
+divergir do código que compila porque não existe a segunda cópia de onde divergir — e essa
+é a diferença entre este exercício e o exercício de tutorial que envelhece calado.
+
+**O teste de mutação da extração, medido em 02/09/2026:** apagada a primeira linha
+`// <handbook:lacuna>` do `Checkout.java`, `exercicios.test.ts` cai em **2 testes**, e a
+mensagem nomeia o exercício e o trecho — *`exercício "onde-mora-o-service-name": o trecho
+"onde-mora-o-service-name" não tem lacuna`*. Restaurada a linha, volta a passar. O teste
+cobra o arquivo real, não uma cópia de teste.
+
+**A contraparte real existe e roda:** `labs/providers/` com aplicação Java (SDK fixado por
+consulta ao `maven-metadata.xml`, não por memória), `Dockerfile` multi-stage, um Collector
+que recebe OTLP e imprime, e um `compose.yaml` com as **mesmas duas variáveis** que o lab da
+tela tem. A CI não compila Java, e é decisão: o que o CI precisa saber daquele arquivo é que
+os marcadores estão lá, e isso é teste de Node.
+
+**A peça: botão primeiro, arraste depois.** Cada bloco é um `<button>`; arrastar é camada por
+cima e some sem prejuízo. Se o arraste fosse o único caminho, metade dos leitores ficaria de
+fora. O veredito é **atributo** (`data-veredito`), não só cor — leitor de tela não lê borda.
+E a explicação **só entra no DOM depois da resposta**: escondê-la com CSS a deixaria legível
+no inspetor e, pior, para quem usa leitor de tela.
+
+**O placar conta o acerto de primeira, e não o acerto.** Chave própria (`ovh:placar:v1`),
+porque `ovh:progress:v1` guarda o que já foi lido e mexer nela apagaria o progresso de quem
+já leu. Errar e acertar em seguida **não promove** — premiar a segunda tentativa ensinaria a
+tentar até ficar verde. No nó do mapa isso vira `n/m first try`, e o `m` sai da **lista de
+exercícios**, nunca de uma segunda lista escrita à mão; nó sem exercício não mostra `0/0`,
+porque zero de zero se lê como "você não fez" e a pessoa não deixou de fazer nada.
+
+### Dois defeitos que só o portão pegou
+
+**A raiz do repositório era contada em pastas, e o empacotador move o código.**
+`exercicios.ts` achava a raiz com `new URL("../../../../", import.meta.url)`. Certo no teste,
+que roda o arquivo onde ele está; errado no build, que empacota o módulo em
+`apps/site/dist/chunks/` — e lá os quatro níveis param em `apps/`. O `pnpm build` morreu com
+`ENOENT … /apps/labs/providers/…`. A raiz agora é achada **subindo até o
+`pnpm-workspace.yaml`**: o marcador não se move quando o empacotador move o código. Dois
+testes travam — acha a raiz a partir de uma subpasta que nem existe, e falha nomeando o que
+procurou quando não há repo acima.
+
+**A tecla caía no vão entre o HTML do servidor e o React.** O e2e do caminho por teclado
+falhava, e o do clique passava — porque `expect(...).toBeDisabled()` reexecuta e uma tecla
+mandada uma vez, não. O HTML servido e o hidratado são idênticos, então nada na tela
+distinguia um botão que já responde de um que ainda não. A peça agora diz que está viva
+(`data-vivo`), e o teste espera por isso. Foi o e2e que pegou; o teste de unidade em jsdom
+não podia — lá a hidratação já aconteceu quando o `render` retorna.
+
+### A fraqueza que fica
+
+**As explicações são autorais.** O código correto é extraído e não pode envelhecer sem que a
+suíte perceba, mas o *porquê* de cada bloco — e o porquê dos distratores — é texto escrito à
+mão, ancorado num link para a spec. Se a spec mudar a semântica de um ponto ancorado, o link
+continua resolvendo e a explicação passa a mentir, sem que nada reprove. É a mesma classe do
+defeito da mentira silenciosa, e aqui ela está **declarada, não fechada**: fechá-la exigiria
+verificar a asserção contra a spec, e isso não é teste, é leitura.
+
+**Estado:** 934 testes unitários, 212 e2e (20 pulados), typecheck, boundaries (81 arquivos),
+catálogo (13 arquivos) e build (33 páginas) verdes.

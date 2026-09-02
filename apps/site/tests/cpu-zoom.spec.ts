@@ -24,6 +24,11 @@ test("o somador de 32 bits abre dentro da caixa da ULA", async ({ page }) => {
     page.locator(".dui-stage__interior").first().evaluate((el) => Number(el.getAttribute("opacity")));
   expect(await opacidade()).toBeLessThan(0.6);
 
+  // O palco passou a ter altura própria e ficou mais alto, então a caixa pode
+  // nascer abaixo da dobra. A roda precisa cair SOBRE o desenho: fora dele o
+  // navegador rola a página e a câmera não se mexe — que é como este teste
+  // falhava, com a opacidade parada no valor de longe.
+  await somador.scrollIntoViewIfNeeded();
   const caixa = await somador.boundingBox();
   const janela = page.viewportSize();
   if (caixa === null || janela === null) throw new Error("o somador não está na tela");

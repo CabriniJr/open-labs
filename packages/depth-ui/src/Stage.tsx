@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   borneNode,
   bornePort,
+  DROP,
   emissoesPorPorta,
   entryLeaf,
   familyOf,
@@ -10,6 +11,7 @@ import {
 import type {
   EmissaoDaPorta,
   Family,
+  InFlight,
   Message,
   TreeIndex,
   Wire,
@@ -26,11 +28,11 @@ import {
   quantoAparece,
   tabelaLegivel,
 } from "./lod.js";
-import { caminho, retasDe } from "./roteador.js";
+import { caminho, pontasDe, retasDe } from "./roteador.js";
 import type { Ponto } from "./roteador.js";
 import { travessia } from "./travessia.js";
 import { juncoes } from "./espaguete.js";
-import { portasDaCaixa, posicaoDaPorta } from "./portas.js";
+import { PORTA_ANONIMA, portasDaCaixa, posicaoDaPorta } from "./portas.js";
 import { dilatarPara, relogioDaCamada } from "./tempo.js";
 
 /**
@@ -312,16 +314,69 @@ function Engrenagem({ x, y, r }: { x: number; y: number; r: number }) {
  * 8 há uma lição, entre 24 e 32 não há nenhuma, e linear faria a carga de 32
  * atravessar a tela inteira.
  */
+/**
+ * Onde o desenho **de fato** está dentro do elemento, e com que escala.
+ *
+ * `preserveAspectRatio` encaixa o `viewBox` pelo lado que aperta e centraliza,
+ * então sobra faixa vazia dos dois lados sempre que a caixa e a vista não têm a
+ * mesma forma. Enquanto o palco tirava a altura da proporção, as duas formas
+ * eram iguais e mapear a caixa inteira linearmente estava certo; com altura
+ * própria, deixou de estar — e a roda do mouse passou a ampliar um ponto em que
+ * o cursor não está.
+ *
+ * Mora aqui, e é uma só, porque a conta estava escrita duas vezes: uma no zoom e
+ * outra no arraste. Duas cópias da mesma conta divergem no dia em que alguém
+ * corrige uma delas.
+ */
+export function encaixeDoQuadro(
+  caixa: { readonly width: number; readonly height: number },
+  quadro: { readonly largura: number; readonly altura: number },
+): { readonly escala: number; readonly margemX: number; readonly margemY: number } | undefined {
+  if (caixa.width <= 0 || caixa.height <= 0) return undefined;
+  if (quadro.largura <= 0 || quadro.altura <= 0) return undefined;
+  const escala = Math.min(caixa.width / quadro.largura, caixa.height / quadro.altura);
+  if (!(escala > 0)) return undefined;
+  return {
+    escala,
+    margemX: (caixa.width - quadro.largura * escala) / 2,
+    margemY: (caixa.height - quadro.altura * escala) / 2,
+  };
+}
+
 export function comprimentoDaCarga(largura: number | undefined, raio: number): number {
   if (largura === undefined || largura <= 1) return 0;
   return Math.min(raio * 5, raio * Math.log2(largura));
 }
+
+/**
+ * Onde os pontos de um feixe ficam, em múltiplos do raio.
+ *
+ * Um lote não é uma coisa maior: é **várias coisas juntas**, e a diferença é a
+ * lição inteira do processador em lote. Um círculo maior diria "um span mais
+ * gordo"; um punhado de pontos diz "quinhentos spans que viajam juntos porque
+ * alguém decidiu que viajassem juntos".
+ *
+ * Sete é o teto do que se lê: acima disso vira uma mancha, e o número exato já
+ * está escrito ao lado, em `×N`. O desenho diz a espécie; o rótulo diz a conta.
+ */
+const FEIXE: readonly (readonly [number, number])[] = [
+  [0, 0],
+  [-1.05, -0.8],
+  [1.05, -0.8],
+  [-1.05, 0.8],
+  [1.05, 0.8],
+  [-2, 0],
+  [2, 0],
+];
+
+const MAXIMO_DO_FEIXE = FEIXE.length;
 
 function Carga({
   mensagem,
   leitura,
   raio,
   largura,
+  emPacote = false,
   de,
   para,
 }: {
@@ -329,10 +384,36 @@ function Carga({
   leitura: string | undefined;
   raio: number;
   largura?: number | undefined;
+  /** A carga atravessa um canal: ela vai empacotada, e não solta. */
+  emPacote?: boolean | undefined;
   de: string;
   para: string;
 }) {
   const comprimento = comprimentoDaCarga(largura, raio);
+  const quantos = Math.min(MAXIMO_DO_FEIXE, Math.max(1, Math.round(mensagem.weight)));
+  /**
+   * A forma, em ordem de precedência — e cada uma responde uma pergunta
+   * diferente sobre a **mesma** carga:
+   *
+   * - **barra**, quando o fio declara largura: o esquemático já tem notação
+   *   para "isto são N vias em paralelo", e ela ganha de tudo;
+   * - **pacote**, quando a aresta é um canal: o que atravessa um canal sai
+   *   serializado do outro lado. Deixa de ser "as coisas" e passa a ser "o
+   *   documento que as carrega" — é o envelope, e ele tem cara de documento;
+   * - **feixe**, quando a carga pesa mais de um: várias coisas viajando juntas;
+   * - **unidade**, o resto.
+   *
+   * Nada disso é vocabulário de domínio: peso, largura e canal são os três
+   * fatos que o motor já tem. O desenho decide como cada um aparece — o
+   * domínio nunca escolhe forma, exatamente como nunca escolhe cor.
+   */
+  const forma =
+    comprimento > 0 ? "barra" : emPacote ? "pacote" : quantos > 1 ? "feixe" : "unidade";
+  // O documento é maior que o ponto de propósito: ele não é "uma coisa", é o
+  // continente de várias. Do mesmo tamanho, a troca de forma passaria batida.
+  const largo = raio * 2.4;
+  const alto = raio * 3;
+  const dobra = raio * 1;
   return (
     <>
       {/* O hover é o mesmo gesto que já responde "o que é esta peça?": bateu a
@@ -342,7 +423,7 @@ function Carga({
           mensagem.weight > 1 ? `\n${mensagem.weight} itens` : ""
         }`}
       </title>
-      {comprimento > 0 ? (
+      {forma === "barra" ? (
         <rect
           className="dui-stage__carga"
           x={-comprimento}
@@ -351,9 +432,41 @@ function Carga({
           height={raio * 2}
           rx={raio}
         />
-      ) : (
-        <circle className="dui-stage__carga" r={raio} />
-      )}
+      ) : null}
+      {forma === "pacote" ? (
+        // Um documento: retângulo com a ponta dobrada e duas linhas de conteúdo.
+        // A dobra é o que o faz ler como "papel" e não como "caixa" — e é a
+        // diferença entre um envelope e mais um bloco no desenho.
+        <g className="dui-stage__carga dui-stage__carga--pacote">
+          <path
+            d={`M ${-largo / 2} ${-alto / 2} H ${largo / 2 - dobra} L ${largo / 2} ${
+              -alto / 2 + dobra
+            } V ${alto / 2} H ${-largo / 2} Z`}
+          />
+          <path
+            className="dui-stage__carga-dobra"
+            d={`M ${largo / 2 - dobra} ${-alto / 2} V ${-alto / 2 + dobra} H ${largo / 2}`}
+          />
+          <path
+            className="dui-stage__carga-linhas"
+            d={`M ${-largo / 2 + 1.6} ${-0.2} H ${largo / 2 - 1.6} M ${-largo / 2 + 1.6} ${
+              alto / 2 - 2
+            } H ${largo / 2 - 2.6}`}
+          />
+        </g>
+      ) : null}
+      {forma === "feixe"
+        ? FEIXE.slice(0, quantos).map(([dx, dy], i) => (
+            <circle
+              key={i}
+              className="dui-stage__carga"
+              cx={dx * raio * 0.78}
+              cy={dy * raio * 0.78}
+              r={raio * 0.62}
+            />
+          ))
+        : null}
+      {forma === "unidade" ? <circle className="dui-stage__carga" r={raio} /> : null}
       {leitura === undefined ? null : (
         // Ao lado, e não em cima: por cima do ponto o valor fica ilegível
         // justamente quando a linha está acesa, que é quando se quer lê-lo.
@@ -703,6 +816,35 @@ function Camada({
     return anda(destino, porta);
   };
 
+  /**
+   * O descarte, desenhado.
+   *
+   * Ele não era desenhado: `@drop` não está na árvore, então o fio inteiro
+   * sumia do palco. E o que isso produz na tela é a pior coisa que este projeto
+   * pode produzir — **descarte deliberado e fio esquecido viram o mesmo
+   * desenho**. Um amostrador com três saídas aparecia com duas; uma fila que
+   * recusa aparecia como uma fila que não recusa; e o leitor não tinha como
+   * saber que faltava alguma coisa.
+   *
+   * O descarte não é objeto e não vira um: ele é a **ausência de destino, dita
+   * em voz alta**, e por isso é um terminal curto ao lado de quem descarta, com
+   * o traço de fim que um esquemático usa para uma linha que não vai a lugar
+   * nenhum. Dois descartes da mesma caixa recebem alturas diferentes — são dois
+   * motivos diferentes de a carga morrer, e empilhá-los diria que é um só.
+   */
+  const descartesPorFonte = new Map<string, number>();
+  const terminalDeDescarte = (vizinho: NodePlacement): NodePlacement => {
+    const n = descartesPorFonte.get(vizinho.id) ?? 0;
+    descartesPorFonte.set(vizinho.id, n + 1);
+    return {
+      id: `__descarte-${vizinho.id}-${n}`,
+      x: Math.min(view.width - 3, vizinho.x + vizinho.w + 46),
+      y: vizinho.y + vizinho.h * 0.62 + n * 24,
+      w: 2,
+      h: 16,
+    };
+  };
+
   /** A margem da moldura, na altura de quem ela serve. */
   const margem = (lado: "entra" | "sai", vizinho: NodePlacement): NodePlacement => ({
     id: lado === "entra" ? ANCORA_ENTRA : ANCORA_SAI,
@@ -717,10 +859,126 @@ function Camada({
   // fios na mesma coluna. Acumula na ordem das arestas, que é estável.
   const ocupadas = new Set<string>();
 
+  /**
+   * As duas caixas desta vista que uma aresta liga — ou `null` quando ela não é
+   * desta vista.
+   *
+   * Extraída porque duas coisas precisam da mesma resposta e nenhuma delas pode
+   * ter a sua própria: o roteamento, e a conta de **quantas portas diferentes
+   * ligam o mesmo par de caixas**. Duas resoluções em paralelo divergiriam, e a
+   * divergência apareceria como uma porta desenhada onde nenhum fio passa.
+   */
+  const pontasDaAresta = (
+    wire: Wire,
+  ): { readonly de: NodePlacement; readonly para: NodePlacement } | null => {
+    if (String(wire.to) === DROP) return null;
+    const bruto = ondeCai(wire.from);
+    const fonte = emissoes[`${wire.from}.${wire.port}`]?.fonte;
+    const a = bruto === FORA && fonte !== undefined ? (dentroDoFoco(fonte) ?? FORA) : bruto;
+    const brutoDestino = ondeCai(String(wire.to));
+    const b =
+      brutoDestino === FORA ? (entradaNoFoco(String(wire.to), wire.toPort) ?? FORA) : brutoDestino;
+    if (a === undefined || b === undefined) return null;
+    if (a === FORA && b === FORA) return null;
+    const para = b === FORA ? margem("sai", a as NodePlacement) : b;
+    const de = a === FORA ? margem("entra", para) : a;
+    if (de.id === para.id && wire.from !== String(wire.to)) return null;
+    return { de, para };
+  };
+
+  /**
+   * Qual travessia de fronteira esta aresta é, na granularidade que o INTERIOR
+   * mostra: de qual peça de dentro ela sai, e em qual peça de dentro ela entra.
+   *
+   * É a chave da agregação, e ela precisa ser esta e não a porta. Medido nos
+   * dois labs: na vista do processo, três sinais saem da API para três
+   * provedores distintos; no caminho de dados, quatro linhas de controle entram
+   * na lógica combinacional e pousam em quatro peças diferentes — a ULA, os dois
+   * multiplexadores e a unidade de desvio. Agregadas, as duas viravam **uma
+   * linha**, e o interior continuava mostrando três e quatro entradas.
+   */
+  const cruzamentoDe = (wire: Wire, de: NodePlacement, para: NodePlacement): string => {
+    // A âncora de margem NÃO é objeto: ela é a moldura dizendo que a ligação
+    // continua fora daqui, e perguntar à árvore por ela lança. Do lado da
+    // margem, o que distingue uma travessia da outra é a peça do lado de cá.
+    const dentro = (caixa: NodePlacement, alvo: string): string => {
+      if (!tree.byId.has(caixa.id)) return `@${alvo}`;
+      const quem = visibleChild(tree, caixa.id, alvo);
+      return quem.at === "child" ? quem.id : quem.at;
+    };
+    const fonte = emissoes[`${wire.from}.${wire.port}`]?.fonte ?? wire.from;
+    const alvo = borneDeEntrada(String(wire.to), wire.toPort) ?? String(wire.to);
+    return `${dentro(de, fonte)}|${dentro(para, alvo)}`;
+  };
+
+  /**
+   * As portas distintas que ligam **o mesmo par de caixas**.
+   *
+   * É a única situação em que a posição da porta tem de mandar no fio. Três
+   * saídas diferentes indo para a mesma caixa miram todas o mesmo ponto, saem na
+   * mesma altura e são desenhadas uma por cima da outra: o leitor vê uma ligação
+   * onde existem três, e a caixa parece ter uma porta só.
+   *
+   * Fora daí, quem manda é a mira — o fio que vai mais para cima sai mais para
+   * cima —, e ela não se toca aqui de propósito: foi ela que levou o somador de
+   * vinte e oito cruzamentos para quatro, e um leque sem ordem tranca sozinho.
+   */
+  const saidasDoPar = new Map<string, string[]>();
+  const entradasDoPar = new Map<string, string[]>();
+  /**
+   * Quantas travessias distintas cada par de caixas agrega.
+   *
+   * Com o interior fechado, elas viram uma linha só — e a linha **diz quantas
+   * são**, pela mesma marca de feixe que o esquemático usa para um barramento.
+   * É o que impede a vista de longe de mentir sem transformá-la numa meada:
+   * de longe o feixe informa a conta, e de perto ele se abre nos fios que o
+   * compõem, que é como todo o resto deste palco já funciona.
+   */
+  const cruzamentosDoPar = new Map<string, Set<string>>();
+  for (const wire of wires) {
+    const pontas = pontasDaAresta(wire);
+    if (pontas === null) continue;
+    if (pontas.de.id !== wire.from || pontas.para.id !== String(wire.to)) {
+      const par = `${pontas.de.id}>${pontas.para.id}>${wire.line ?? "data"}`;
+      const conjunto = cruzamentosDoPar.get(par) ?? new Set<string>();
+      conjunto.add(cruzamentoDe(wire, pontas.de, pontas.para));
+      cruzamentosDoPar.set(par, conjunto);
+      continue;
+    }
+    const par = `${pontas.de.id}->${pontas.para.id}`;
+    const saidas = saidasDoPar.get(par) ?? [];
+    if (!saidas.includes(wire.port)) saidas.push(wire.port);
+    saidasDoPar.set(par, saidas);
+    const entrada = wire.toPort ?? PORTA_ANONIMA;
+    const entradas = entradasDoPar.get(par) ?? [];
+    if (!entradas.includes(entrada)) entradas.push(entrada);
+    entradasDoPar.set(par, entradas);
+  }
+
+  /**
+   * O afastamento de uma porta em torno da mira — só quando o par tem mais de
+   * uma, porque só aí há empate a desfazer.
+   *
+   * O passo é limitado pela altura da caixa: numa caixa baixa, espalhar as
+   * portas as jogaria para fora dela.
+   */
+  const desvioNoPar = (
+    caixa: NodePlacement,
+    portas: readonly string[] | undefined,
+    porta: string,
+  ): number | undefined => {
+    if (portas === undefined || portas.length < 2) return undefined;
+    const i = portas.indexOf(porta);
+    if (i < 0) return undefined;
+    const passo = Math.min(14, caixa.h / (portas.length + 1));
+    return (i - (portas.length - 1) / 2) * passo;
+  };
+
   /** Fios desenháveis: cada ponta cai numa caixa da vista ou na margem dela. */
   const arestas = wires
     .map((wire, i) => {
-      const destino = typeof wire.to === "string" ? String(wire.to) : undefined;
+      const paraODescarte = String(wire.to) === DROP;
+      const destino = paraODescarte ? undefined : typeof wire.to === "string" ? String(wire.to) : undefined;
 
       // Fora do foco, ainda pode ser desta vista: quem emitiu de verdade pode
       // morar aqui dentro, e quem vai receber também.
@@ -728,6 +986,37 @@ function Camada({
       const fonte = emissoes[`${wire.from}.${wire.port}`]?.fonte;
       const a =
         bruto === FORA && fonte !== undefined ? (dentroDoFoco(fonte) ?? FORA) : bruto;
+
+      if (paraODescarte) {
+        if (a === undefined || a === FORA) return null;
+        // O descarte é desenhado onde quem descarta está desenhado. Vindo de
+        // dentro de uma caixa fechada, ele é **interior** — e pendurá-lo na
+        // borda da moldura diria que a moldura inteira descarta, quando quem
+        // descarta é uma peça lá dentro que este enquadramento não mostra.
+        if (lugares.get(wire.from) !== a) return null;
+        const fim = terminalDeDescarte(a);
+        const trilho = caminho(a, fim, 18 + (i % 3) * 12, obstaculos, ocupadas);
+        for (const reta of retasDe(trilho)) ocupadas.add(reta);
+        return {
+          marca: { x: a.x + a.w + 6, y: a.y + a.h / 2 - 6 },
+          chave: `${a.id}.${wire.port}->drop${fim.id}`,
+          to: fim.id,
+          d: trilho,
+          traco: trilho,
+          linha: (wire.line ?? "data") as typeof wire.line extends undefined ? "data" : NonNullable<typeof wire.line>,
+          timing: wire.timing ?? "clocked",
+          width: wire.width,
+          acesa: (mudou[`out:${wire.from}.${wire.port}`] ?? 0) > 0,
+          from: a.id,
+          deLugar: a,
+          paraLugar: fim,
+          ancora: undefined,
+          descarte: true as const,
+          canal: wire.channel,
+          port: wire.port,
+          toPort: undefined,
+        };
+      }
 
       const brutoDestino = destino === undefined ? undefined : ondeCai(destino);
       const b =
@@ -755,14 +1044,42 @@ function Camada({
       */
       if (de.id === para.id && wire.from !== String(wire.to)) return null;
 
-      // Duas folhas dentro das mesmas duas caixas produzem a mesma aresta
-      // agregada. Desenhá-la trinta e duas vezes engrossa a linha sem dizer
-      // nada — a multiplicidade quem conta é a marca de réplicas.
-      const chaveVisual = `${de.id}>${para.id}>${wire.line ?? "data"}`;
-      if (de.id !== wire.from || para.id !== String(wire.to)) {
+      /*
+        A agregação de fronteira, e ela tem duas respostas — uma por zoom.
+
+        Duas folhas dentro das mesmas duas caixas produzem a mesma aresta
+        agregada, e desenhá-la trinta e duas vezes engrossa a linha sem dizer
+        nada. Mas agregar **travessias distintas** numa linha só é a vista de
+        fora contradizendo o próprio interior, que é a pior espécie de defeito
+        que este projeto conhece. Medido nos dois labs: três sinais da API para
+        três provedores viravam uma linha; quatro linhas de controle para quatro
+        peças dentro da lógica combinacional viravam uma. Zoom in e o interior
+        mostrava três e quatro entradas nascendo do nada.
+
+        A saída não é escolher um dos dois: é deixar o **nível de detalhe**
+        responder, como ele já responde por todo o resto deste palco.
+
+        - **interior aberto** — cada travessia é uma linha, e ela pousa na peça
+          em que de fato entra. É o que faz o fluxo continuar entre os níveis em
+          vez de morrer na moldura;
+        - **interior fechado** — uma linha só, marcada como **feixe de N**. De
+          longe o desenho informa a conta em vez de esconder a diferença, e é a
+          mesma notação que o esquemático usa para um barramento.
+      */
+      const parVisual = `${de.id}>${para.id}>${wire.line ?? "data"}`;
+      const agregada = de.id !== wire.from || para.id !== String(wire.to);
+      const aberta = dentroDe2.has(de.id) || dentroDe2.has(para.id);
+      const cruzamentos = cruzamentosDoPar.get(parVisual)?.size ?? 1;
+      const chaveVisual = aberta
+        ? `${parVisual}>${cruzamentoDe(wire, de, para)}`
+        : parVisual;
+      if (agregada) {
         if (vistos.has(chaveVisual)) return null;
         vistos.add(chaveVisual);
       }
+      /** Quantas travessias esta linha representa quando ela representa várias. */
+      const feixe =
+        agregada && !aberta && cruzamentos >= 2 ? cruzamentos : undefined;
       const linha = wire.line ?? "data";
       /*
         O roteador lembra por onde os fios anteriores passaram.
@@ -776,7 +1093,33 @@ function Camada({
         com a coluna mais central, e quem vem depois se afasta. Um sorteio aqui
         faria o desenho mudar entre dois carregamentos da mesma página.
       */
-      const traco = caminho(de, para, 18 + (i % 3) * 12, obstaculos, ocupadas);
+      /*
+        Onde esta ligação de fato sai e entra, quando o interior está aberto.
+
+        Calculado ANTES de rotear, e não depois: eram estes dois pontos que a
+        travessia usava para continuar a linha lá dentro, enquanto o traço de
+        fora era roteado sem saber deles. As duas metades da mesma ligação eram
+        desenhadas por dois critérios diferentes, e o resultado é o que se via —
+        a linha morrendo na moldura e o interior começando em outro lugar.
+      */
+      const emissaoDaqui = emissoes[`${wire.from}.${wire.port}`];
+      const saiDe = emissaoDaqui === undefined ? undefined : pontoDentro(de, emissaoDaqui.fonte);
+      const alvoDeEntrada = borneDeEntrada(String(wire.to), wire.toPort);
+      const chegaEm = alvoDeEntrada === undefined ? undefined : pontoDentro(para, alvoDeEntrada);
+
+      const par = `${de.id}->${para.id}`;
+      const traco = caminho(de, para, 18 + (i % 3) * 12, obstaculos, ocupadas, {
+        alvoSaida: saiDe?.y,
+        alvoEntrada: chegaEm?.y,
+        // A âncora só vale quando a ponta é a própria caixa: se o fio nasce lá
+        // no fundo e sai pela moldura, a porta que ele usa não é a da moldura.
+        desvioSaida:
+          de.id === wire.from ? desvioNoPar(de, saidasDoPar.get(par), wire.port) : undefined,
+        desvioEntrada:
+          para.id === String(wire.to)
+            ? desvioNoPar(para, entradasDoPar.get(par), wire.toPort ?? PORTA_ANONIMA)
+            : undefined,
+      });
       for (const reta of retasDe(traco)) ocupadas.add(reta);
 
       /*
@@ -791,10 +1134,6 @@ function Camada({
         Quem recebe é dito pelos bornes de entrada; quem emite, pela resolução
         das emissões. Nada é escolhido pelo desenho.
       */
-      const emissao = emissoes[`${wire.from}.${wire.port}`];
-      const saiDe = emissao === undefined ? undefined : pontoDentro(de, emissao.fonte);
-      const alvo = borneDeEntrada(String(wire.to), wire.toPort);
-      const chegaEm = alvo === undefined ? undefined : pontoDentro(para, alvo);
       const d = travessia(traco, saiDe, chegaEm);
       const marca = { x: de.x + de.w + 6, y: de.y + de.h / 2 - 6 };
       return {
@@ -807,7 +1146,9 @@ function Camada({
         traco,
         linha,
         timing: wire.timing ?? "clocked",
-        width: wire.width,
+        // A largura declarada pelo modelo ganha da marca de agregação: se o
+        // domínio disse que a linha é um barramento de 32, ela é de 32.
+        width: wire.width ?? feixe,
         // Uma emissão na porta acende todos os fios que saem dela: é o leque,
         // e mostrar só o primeiro seria voltar a mentir sobre o percurso.
         acesa: (mudou[`out:${wire.from}.${wire.port}`] ?? 0) > 0,
@@ -817,7 +1158,14 @@ function Camada({
         // A âncora não é objeto: ela é a moldura dizendo que a ligação
         // continua fora daqui.
         ancora: de.id === ANCORA_ENTRA ? ("entra" as const) : para.id === ANCORA_SAI ? ("sai" as const) : undefined,
+        descarte: false as const,
+        /** O canal que esta aresta É, quando ela é um. A carga que o atravessa
+         *  vai empacotada: um canal é transporte, e o que entra nele sai
+         *  serializado do outro lado. */
+        canal: wire.channel,
         port: wire.port,
+        /** Em que porta do destino esta ligação chega. Ausente é a entrada anônima. */
+        toPort: wire.toPort,
       };
     })
     .filter((a): a is NonNullable<typeof a> => a !== null);
@@ -825,16 +1173,84 @@ function Camada({
   // A carga em voo só sabe de onde veio e para onde vai; o fio que a leva é o
   // primeiro que liga os dois. Com leque, as cópias são itens distintos, cada
   // uma com o seu destino, então nenhuma some no caminho de outra.
+  /**
+   * Onde cada porta de fato está: a ponta do caminho que a usa.
+   *
+   * A porta é **a ligação, desenhada** — e por isso a posição dela sai do fio,
+   * e não de uma distribuição uniforme pela borda. Enquanto as duas coisas eram
+   * calculadas em separado, o desenho mostrava uma entrada num lugar e a linha
+   * chegando em outro, o que é a mesma espécie de mentira da linha que
+   * atravessa uma caixa: o leitor lê uma ligação onde ela não está.
+   *
+   * Porta que nenhum fio desta vista usa continua caindo na distribuição
+   * uniforme — ela existe (o objeto a declarou) e o enquadramento é que não
+   * mostra quem a usa.
+   */
+  const pontoDaPorta = new Map<string, Ponto>();
+
   const trilhoEntre = new Map<string, string>();
   // A largura declarada do fio, para a carga em voo poder tomar a forma dele.
   const larguraEntre = new Map<string, number>();
+  /** Se a aresta é um canal: a carga que a atravessa vai empacotada. */
+  const canalEntre = new Map<string, boolean>();
+  /** O terminal de descarte de cada porta, para a carga descartada ter para onde ir. */
+  const descarteDaPorta = new Map<string, string>();
   for (const aresta of arestas) {
     const chave = `${aresta.from}->${aresta.to}`;
+    const pontas = pontasDe(aresta.traco);
+    if (aresta.ancora !== "entra") {
+      pontoDaPorta.set(`${aresta.from}.${aresta.port}`, pontas.inicio);
+    }
+    if (!aresta.descarte && aresta.ancora !== "sai") {
+      pontoDaPorta.set(`${aresta.to}.${aresta.toPort ?? PORTA_ANONIMA}`, pontas.fim);
+    }
+    if (aresta.descarte) descarteDaPorta.set(`${aresta.from}.${aresta.port}`, aresta.d);
     if (!trilhoEntre.has(chave)) trilhoEntre.set(chave, aresta.d);
     if (aresta.width !== undefined && !larguraEntre.has(chave)) {
       larguraEntre.set(chave, aresta.width);
     }
+    if (aresta.canal !== undefined) canalEntre.set(chave, true);
   }
+
+  /**
+   * O trilho de uma carga em voo.
+   *
+   * As pontas que o motor entrega são **folhas** — ele entrega no terminal que
+   * de fato recebe —, e as pontas que o desenho tem são as **caixas desta
+   * vista**. Sem traduzir de uma para a outra, a chave nunca casava e a carga
+   * simplesmente não era desenhada: o lab dos provedores tinha vinte e um fios
+   * na tela e nenhuma bolinha, porque todo fio dele entra num contêiner e o
+   * motor entrega na folha de entrada dele.
+   *
+   * É a mesma tradução que os fios já fazem — `ondeCai` mais a margem —, e
+   * fazê-la aqui também é o que faz "seguir a carga" ser possível em qualquer
+   * enquadramento, e não só naquele em que todo objeto é folha.
+   */
+  const caixaDaCarga = (id: string): string | undefined =>
+    (lugares.get(id) ?? caixaQueContem(id))?.id;
+
+  const trilhoDaCarga = (item: InFlight): { readonly d: string; readonly chave: string } | undefined => {
+    const de = caixaDaCarga(item.from);
+    if (de === undefined) {
+      // Nasceu fora do foco e entra por aqui: a margem responde.
+      const para = caixaDaCarga(String(item.to));
+      if (para === undefined) return undefined;
+      const chave = `${ANCORA_ENTRA}->${para}`;
+      const d = trilhoEntre.get(chave);
+      return d === undefined ? undefined : { d, chave };
+    }
+    if (String(item.to) === DROP) {
+      const d = descarteDaPorta.get(`${de}.${item.port}`);
+      return d === undefined ? undefined : { d, chave: `${de}->descarte` };
+    }
+    const para = caixaDaCarga(String(item.to));
+    // As duas pontas na mesma caixa: a travessia é interior, e quem a desenha é
+    // o interior dela, no espaço de coordenadas dele.
+    if (para === de) return undefined;
+    const chave = para === undefined ? `${de}->${ANCORA_SAI}` : `${de}->${para}`;
+    const d = trilhoEntre.get(chave);
+    return d === undefined ? undefined : { d, chave };
+  };
 
   const identificador = (chave: string): string =>
     `dui-fio-${chave.replace(/[^a-zA-Z0-9-]/g, "_")}`;
@@ -907,6 +1323,7 @@ function Camada({
             data-linha={aresta.linha}
             data-timing={aresta.timing}
             data-acesa={aresta.acesa ? "true" : undefined}
+            data-descarte={aresta.descarte ? "true" : undefined}
           >
             {/*
               O canal é uma esteira, e não um risco.
@@ -938,6 +1355,35 @@ function Camada({
                 />
               </path>
             ) : null}
+            {aresta.descarte
+              ? (() => {
+                  /*
+                    O terra do esquemático, deitado.
+
+                    Três traços que encurtam é o símbolo mais universal que a
+                    eletrônica tem para "aqui acaba, e não continua em lugar
+                    nenhum" — que é exatamente o que o descarte é. Uma barra
+                    sozinha pareceria um fio cortado pela moldura, e fio cortado
+                    é acidente; descarte é decisão. A palavra fica junto porque
+                    isto é material de ensino: quem não conhece o símbolo
+                    aprende os dois de uma vez.
+                  */
+                  const x = aresta.paraLugar.x;
+                  const y = aresta.paraLugar.y + aresta.paraLugar.h / 2;
+                  return (
+                    <g className="dui-stage__descarte">
+                      <path
+                        d={`M ${x} ${y - 7} V ${y + 7} M ${x + 3.5} ${y - 4.5} V ${y + 4.5} M ${
+                          x + 7
+                        } ${y - 2} V ${y + 2}`}
+                      />
+                      <text x={x + 11} y={y + 3}>
+                        drop
+                      </text>
+                    </g>
+                  );
+                })()
+              : null}
             {aresta.width !== undefined ? (
               // Ao lado da saída, e não sobre o traço: seguindo o caminho, a
               // marca sai de cabeça para baixo em todo fio que volta.
@@ -1217,6 +1663,11 @@ function Camada({
                   <g clipPath={`url(#dui-dentro-${identificador(place.id)})`}>
                   <g
                     className="dui-stage__interior"
+                    /* De quem é este interior. O desenho já dizia; quem mede de
+                       fora não tinha como saber, e um interior é um ESPAÇO DE
+                       COORDENADAS próprio: duas figuras de caixas diferentes
+                       podem ter o mesmo `d` sem se tocarem na tela. */
+                    data-dentro={place.id}
                     opacity={aparece}
                     transform={`translate(${place.x + (dentro?.dx ?? 0)} ${
                       place.y + (dentro?.dy ?? 0)
@@ -1321,11 +1772,14 @@ function Camada({
               */}
               <g className="dui-stage__portas">
                 {portas.entradas.map((porta, i) => {
-                  const cy = place.y + place.h * posicaoDaPorta(i, portas.entradas.length);
+                  const noFio = pontoDaPorta.get(`${place.id}.${porta}`);
+                  const cx = noFio?.x ?? place.x;
+                  const cy =
+                    noFio?.y ?? place.y + place.h * posicaoDaPorta(i, portas.entradas.length);
                   return (
                     <g key={`e${porta}`} className="dui-stage__porta" data-lado="entrada">
                       <title>{`in · ${porta}`}</title>
-                      <rect x={place.x - 6} y={cy - 8} width={12} height={16} rx={2} />
+                      <rect x={cx - 6} y={cy - 8} width={12} height={16} rx={2} />
                       {aparece > 0.5 ? (
                         <text className="dui-stage__porta-nome" x={place.x + 10} y={cy + 3}>
                           {porta}
@@ -1337,14 +1791,17 @@ function Camada({
                 {portas.saidas.map((porta, i) => {
                   // No trapézio a saída fica no bico, e não espalhada pela
                   // borda: é ali que a linha realmente sai.
+                  const noFio = pontoDaPorta.get(`${place.id}.${porta}`);
+                  const cx = noFio?.x ?? place.x + place.w;
                   const cy =
-                    node?.kind === "router"
+                    noFio?.y ??
+                    (node?.kind === "router"
                       ? place.y + place.h / 2
-                      : place.y + place.h * posicaoDaPorta(i, portas.saidas.length);
+                      : place.y + place.h * posicaoDaPorta(i, portas.saidas.length));
                   return (
                     <g key={`s${porta}`} className="dui-stage__porta" data-lado="saida">
                       <title>{`out · ${porta}`}</title>
-                      <rect x={place.x + place.w - 6} y={cy - 8} width={12} height={16} rx={2} />
+                      <rect x={cx - 6} y={cy - 8} width={12} height={16} rx={2} />
                       {aparece > 0.5 ? (
                         <text
                           className="dui-stage__porta-nome"
@@ -1529,8 +1986,9 @@ function Camada({
                 <Carga
                   mensagem={mensagem}
                   leitura={leituraDaCarga?.(mensagem)}
-                  raio={4}
+                  raio={5.5}
                   largura={aresta.width}
+                  emPacote={aresta.canal !== undefined}
                   de={aresta.from}
                   para={aresta.to}
                 />
@@ -1541,8 +1999,9 @@ function Camada({
       {/* a carga em voo: cada item é uma coisa, e viaja pelo fio que o leva */}
       <g className="dui-stage__cargas">
         {state.flight.map((item) => {
-          const trilho = trilhoEntre.get(`${item.from}->${String(item.to)}`);
-          if (trilho === undefined) return null;
+          const achado = trilhoDaCarga(item);
+          if (achado === undefined) return null;
+          const { d: trilho, chave } = achado;
           const andou = (state.tick - item.sent) / edgeTicks;
           return (
             <g
@@ -1561,8 +2020,12 @@ function Camada({
               <Carga
                 mensagem={item.message}
                 leitura={leituraDaCarga?.(item.message)}
-                raio={5}
-                largura={larguraEntre.get(`${item.from}->${String(item.to)}`)}
+                /* O item na esteira é o que se está seguindo com o olho, e ele
+                   competia com a moldura por atenção. O herói da landing tem a
+                   proporção certa: a bolinha é a figura, o resto é cenário. */
+                raio={7}
+                largura={larguraEntre.get(chave)}
+                emPacote={canalEntre.get(chave) === true}
                 de={item.from}
                 para={String(item.to)}
               />
@@ -1686,11 +2149,14 @@ export function Stage(props: StageProps) {
             y: Math.min(view.height - a / 2, Math.max(a / 2, y)),
           };
         };
-        if (caixa.width === 0 || caixa.height === 0) return limitar(escala, atual.x, atual.y);
+        const encaixe = encaixeDoQuadro(caixa, { largura: lq, altura: aq });
+        if (encaixe === undefined) return limitar(escala, atual.x, atual.y);
         // Aproximar onde o cursor está: o ponto sob ele tem que ficar parado,
         // senão o leitor aponta para uma coisa e recebe outra no meio da tela.
-        const alvoX = atual.x - lq / 2 + ((e.clientX - caixa.left) / caixa.width) * lq;
-        const alvoY = atual.y - aq / 2 + ((e.clientY - caixa.top) / caixa.height) * aq;
+        // A margem de encaixe entra na conta — sem ela, "onde o cursor está" é
+        // um lugar que o cursor não visitou.
+        const alvoX = atual.x - lq / 2 + (e.clientX - caixa.left - encaixe.margemX) / encaixe.escala;
+        const alvoY = atual.y - aq / 2 + (e.clientY - caixa.top - encaixe.margemY) / encaixe.escala;
         const k = atual.escala / escala;
         return limitar(escala, alvoX + (atual.x - alvoX) * k, alvoY + (atual.y - alvoY) * k);
       });
@@ -1753,15 +2219,7 @@ export function Stage(props: StageProps) {
     };
   };
 
-  /** Onde o cursor está, nas coordenadas da view. */
-  const noDesenho = (clientX: number, clientY: number) => {
-    const caixa = svgRef.current?.getBoundingClientRect();
-    if (caixa === undefined || caixa.width === 0 || caixa.height === 0) return undefined;
-    return {
-      x: daVista.x - larguraDoQuadro / 2 + ((clientX - caixa.left) / caixa.width) * larguraDoQuadro,
-      y: daVista.y - alturaDoQuadro / 2 + ((clientY - caixa.top) / caixa.height) * alturaDoQuadro,
-    };
-  };
+
 
   return (
     <svg
@@ -1779,9 +2237,15 @@ export function Stage(props: StageProps) {
         const partiu = { x: e.clientX, y: e.clientY, camera: daVista };
         const arrastar = (ev: PointerEvent) => {
           const caixa = alvo.getBoundingClientRect();
-          if (caixa.width === 0) return;
-          const dx = ((ev.clientX - partiu.x) / caixa.width) * (view.width / partiu.camera.escala);
-          const dy = ((ev.clientY - partiu.y) / caixa.height) * (view.height / partiu.camera.escala);
+          // O mesmo encaixe do zoom: arrastar tem de mover o desenho exatamente
+          // o que o dedo andou, e a faixa vazia não é desenho.
+          const encaixe = encaixeDoQuadro(caixa, {
+            largura: view.width / partiu.camera.escala,
+            altura: view.height / partiu.camera.escala,
+          });
+          if (encaixe === undefined) return;
+          const dx = (ev.clientX - partiu.x) / encaixe.escala;
+          const dy = (ev.clientY - partiu.y) / encaixe.escala;
           setCamera({
             ...enquadrar(partiu.camera.escala, partiu.camera.x - dx, partiu.camera.y - dy),
             vista: view.id,

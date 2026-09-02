@@ -7,6 +7,7 @@ export { FAMILIAS, KINDS, resumoDoKind } from "./kinds.js";
 export type { Descricao } from "./kinds.js";
 export { toDot } from "./dot.js";
 export { meada, segmentos } from "./espaguete.js";
+export { pontasDe } from "./roteador.js";
 export type { Meada, Segmento } from "./espaguete.js";
 export { Legenda } from "./Legenda.js";
 export type { LegendaProps } from "./Legenda.js";

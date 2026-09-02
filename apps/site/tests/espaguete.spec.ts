@@ -17,13 +17,38 @@ import { meada } from "@ovh/depth-ui";
  * a mesma espécie da linha que atravessa uma caixa e parece entrar nela.
  */
 
+/**
+ * O escopo de um fio: a pilha de interiores em que ele foi desenhado.
+ *
+ * Um interior é um **espaço de coordenadas próprio** — ele é escalado e
+ * transladado para dentro da caixa dona. Dois fios de caixas diferentes podem
+ * ter o mesmo `d` e não se tocarem na tela, e medi-los juntos não mede o
+ * desenho: mede um encontro que só existe na string.
+ *
+ * Isso não era hipotético. A vista do processo do lab dos provedores desenha os
+ * três provedores, e as três views de provider compartilham moldura, faixas e
+ * colunas de propósito — é a regra R3, e é ela que entrega a assimetria por
+ * superposição. O preço é que os interiores saem com paths idênticos, e a
+ * medida sem escopo acusava dezoito sobreposições cegas onde não há uma.
+ */
 async function fios(page: import("@playwright/test").Page) {
   const lidos = await page.locator(".dui-stage__fio").evaluateAll((nos) =>
-    nos.map((n) => ({
-      de: n.getAttribute("data-de") ?? "",
-      para: n.getAttribute("data-para") ?? "",
-      d: n.querySelector(".dui-stage__trilho")?.getAttribute("d") ?? "",
-    })),
+    nos.map((n) => {
+      const escopo: string[] = [];
+      let cursor: Element | null = n.parentElement;
+      while (cursor !== null) {
+        if (cursor.classList.contains("dui-stage__interior")) {
+          escopo.push(cursor.getAttribute("data-dentro") ?? "?");
+        }
+        cursor = cursor.parentElement;
+      }
+      return {
+        de: n.getAttribute("data-de") ?? "",
+        para: n.getAttribute("data-para") ?? "",
+        d: n.querySelector(".dui-stage__trilho")?.getAttribute("d") ?? "",
+        escopo: escopo.join("/"),
+      };
+    }),
   );
   const uteis = lidos.filter((f) => f.d !== "");
   expect(uteis.length, "nenhum fio na tela: a medida não mediu nada").toBeGreaterThan(0);
@@ -39,14 +64,34 @@ async function fios(page: import("@playwright/test").Page) {
  * têm a ver andando pela mesma reta é ambiguidade pura — nenhum ponto explica
  * aquilo, e o leitor lê uma ligação que não existe.
  */
-function cegas(medidos: readonly { de: string; para: string; d: string }[]): number {
+interface FioMedido {
+  readonly de: string;
+  readonly para: string;
+  readonly d: string;
+  readonly escopo: string;
+}
+
+/** Os fios agrupados pelo espaço de coordenadas em que foram desenhados. */
+function porEscopo(medidos: readonly FioMedido[]): readonly (readonly FioMedido[])[] {
+  const grupos = new Map<string, FioMedido[]>();
+  for (const fio of medidos) {
+    const lista = grupos.get(fio.escopo) ?? [];
+    lista.push(fio);
+    grupos.set(fio.escopo, lista);
+  }
+  return [...grupos.values()];
+}
+
+function cegas(medidos: readonly FioMedido[]): number {
   let cegas = 0;
-  for (let i = 0; i < medidos.length; i += 1) {
-    for (let j = i + 1; j < medidos.length; j += 1) {
-      const a = medidos[i]!;
-      const b = medidos[j]!;
-      if (a.de === b.de || a.para === b.para || a.de === b.para || a.para === b.de) continue;
-      cegas += meada([a.d, b.d]).sobreposicoes;
+  for (const grupo of porEscopo(medidos)) {
+    for (let i = 0; i < grupo.length; i += 1) {
+      for (let j = i + 1; j < grupo.length; j += 1) {
+        const a = grupo[i]!;
+        const b = grupo[j]!;
+        if (a.de === b.de || a.para === b.para || a.de === b.para || a.para === b.de) continue;
+        cegas += meada([a.d, b.d]).sobreposicoes;
+      }
     }
   }
   return cegas;
@@ -64,9 +109,19 @@ function cegas(medidos: readonly { de: string; para: string; d: string }[]): num
  */
 const TETOS = [
   { lab: "labs/cpu/", nome: "o caminho de dados inteiro", cruzamentos: 15 },
-  { lab: "labs/gates/", nome: "o somador de quatro bits", cruzamentos: 4 },
+  // Cinco, e não quatro: as duas parcelas que entram em cada bit eram
+  // desenhadas uma por cima da outra, e viravam uma linha só. Separá-las
+  // acrescentou UM cruzamento e tirou quatro ligações que o leitor não podia
+  // ver — o número subiu porque o desenho passou a dizer a verdade sobre
+  // quantas linhas existem.
+  { lab: "labs/gates/", nome: "o somador de quatro bits", cruzamentos: 5 },
   { lab: "labs/rpn/", nome: "a máquina de pilha", cruzamentos: 4 },
   { lab: "labs/micro/", nome: "o sistema do genérico", cruzamentos: 7 },
+  // Um, e não zero: os três sinais que saem da API para os três provedores eram
+  // desenhados como UMA linha, e o interior mostrava três entradas nascendo do
+  // nada. Abertos, os três se abrem em leque e um deles cruza. Um cruzamento é o
+  // preço de duas ligações que existiam e não podiam ser vistas.
+  { lab: "labs/providers/", nome: "o processo instrumentado", cruzamentos: 1 },
 ] as const;
 
 for (const teto of TETOS) {
@@ -82,15 +137,22 @@ for (const teto of TETOS) {
       .toBeGreaterThan(0);
 
     const medidos = await fios(page);
-    const { cruzamentos } = meada(medidos.map((f) => f.d));
+    // Cruzamento também é por escopo, e pelo mesmo motivo: duas linhas de
+    // espaços de coordenadas diferentes não se cruzam na tela.
+    const cruzamentos = porEscopo(medidos).reduce(
+      (total, grupo) => total + meada(grupo.map((f) => f.d)).cruzamentos,
+      0,
+    );
 
     expect(cegas(medidos), "fios sem ponta em comum andando pela mesma reta").toBe(0);
     expect(cruzamentos, `cruzamentos em ${teto.nome}`).toBeLessThanOrEqual(teto.cruzamentos);
 
     // Onde há tronco compartilhado, tem de haver ponto: é o que separa
     // "ligados" de "só passando por cima".
-    const compartilham = medidos.some((a, i) =>
-      medidos.slice(i + 1).some((b) => a.de === b.de && meada([a.d, b.d]).sobreposicoes > 0),
+    const compartilham = porEscopo(medidos).some((grupo) =>
+      grupo.some((a, i) =>
+        grupo.slice(i + 1).some((b) => a.de === b.de && meada([a.d, b.d]).sobreposicoes > 0),
+      ),
     );
     if (compartilham) {
       // Existência, e não visibilidade: um `<circle>` de raio 2.6 dentro de um

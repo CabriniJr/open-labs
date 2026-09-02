@@ -32,6 +32,78 @@
   color: var(--ink-faint);
 }
 
+.explorer__cheia {
+  margin-inline-start: var(--space-1);
+  padding: 0.1rem 0.5rem;
+  background: var(--paper-raised);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-1);
+  color: var(--ink-muted);
+  font: inherit;
+  cursor: pointer;
+}
+
+.explorer__cheia:hover {
+  border-color: var(--accent);
+  color: var(--ink);
+}
+
+/* ---------- o palco: altura própria, e redimensionável ---------- */
+
+/*
+ * A altura era a proporção da vista, e a largura era o que sobrava depois da
+ * ficha e do painel do lab. Resultado medido: setecentos e quarenta e quatro
+ * pixels de desenho num viewport de dois mil e quinhentos — e o texto do palco,
+ * que é medido em unidades da vista, chegava na tela pequeno demais para ler.
+ *
+ * Agora a altura é dela, o canto arrasta, e a tela cheia existe. `overflow`
+ * precisa não ser `visible` para o `resize` funcionar; `hidden` mantém o
+ * desenho recortado na moldura, que é o que se quer.
+ */
+.explorer__palco {
+  /*
+    72vh é o ponto em que a conta fecha nos dois extremos: num laptop de 720 o
+    rótulo passa de oito pixels, e os controles ficam logo abaixo da dobra em vez
+    de fora da página. O teto em 42rem impede que num monitor alto o palco vire
+    uma parede.
+  */
+  block-size: var(--explorer-altura, min(72vh, 42rem));
+  min-block-size: 14rem;
+  overflow: hidden;
+  resize: vertical;
+}
+
+/* Preenche a altura que o palco der, em vez de derivá-la da proporção. */
+.explorer__palco > .dui-stage {
+  block-size: 100%;
+}
+
+/*
+ * Em tela cheia o palco deixa de ter altura fixa e passa a tomar o que sobra:
+ * a trilha e a ficha continuam ali, e todo o resto é desenho.
+ */
+.explorer[data-cheia="true"] {
+  display: flex;
+  flex-direction: column;
+  block-size: 100%;
+  padding: var(--space-2);
+  background: var(--paper);
+}
+
+.explorer[data-cheia="true"] .explorer__corpo {
+  flex: 1;
+  min-block-size: 0;
+}
+
+.explorer[data-cheia="true"] .explorer__palco {
+  block-size: 100%;
+  resize: none;
+}
+
+.explorer[data-cheia="true"] .ficha {
+  max-block-size: none;
+}
+
 /* ---------- corpo: o palco e a ficha lado a lado ---------- */
 
 .explorer__corpo[data-com-ficha="true"] {
@@ -41,7 +113,15 @@
   align-items: start;
 }
 
-@media (max-width: 70rem) {
+/*
+ * A ficha desce cedo, e o número mudou de 70rem para 96rem por medida.
+ *
+ * Num laptop de 1280 o palco ficava com 488 pixels — a ficha levava 320 e o
+ * painel do lab, 384 — e o rótulo do desenho chegava com quatro pixels e meio.
+ * A ficha é útil e quase sempre vazia até alguém clicar; a largura do desenho
+ * não é negociável do mesmo jeito.
+ */
+@media (max-width: 96rem) {
   .explorer__corpo[data-com-ficha="true"] {
     grid-template-columns: minmax(0, 1fr);
   }

@@ -1,0 +1,22 @@
+# Quatro variáveis, e a correspondência com os controles do lab da tela é
+# parcial nas duas direções. Qual bate com qual, e o que sobra de cada lado,
+# está no README — aqui ficaria a mesma lista em outra língua, e uma das duas
+# envelheceria primeiro.
+services:
+  collector:
+    image: otel/opentelemetry-collector-contrib:0.159.0
+    command: ["--config=/etc/collector.yaml"]
+    volumes:
+      # O `z` deixa o runtime rotular o arquivo para SELinux. Sem ele, o
+      # Collector morre num `permission denied` ao ler a própria config em host
+      # com SELinux; onde não há SELinux a opção é ignorada.
+      - ./collector.yaml:/etc/collector.yaml:ro,z
+
+  checkout:
+    build: ./app
+    depends_on: [collector]
+    environment:
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://collector:4317
+      OTEL_TRACES_SAMPLER_ARG: "1.0"
+      OTEL_BSP_SCHEDULE_DELAY: "5000"
+      OTEL_BSP_MAX_QUEUE_SIZE: "2048"

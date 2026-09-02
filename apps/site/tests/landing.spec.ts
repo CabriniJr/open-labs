@@ -1,4 +1,16 @@
 import { expect, test, type Page } from "@playwright/test";
+import { MAPA_OTEL } from "../src/data/roadmap.js";
+import { MAPA_CPU } from "../src/data/roadmap-cpu.js";
+
+/**
+ * O total do contador sai do mapa, e não de um número escrito aqui. Escrito à
+ * mão ele é uma segunda fonte do mesmo fato: acrescentar um lab passa a exigir
+ * lembrar deste arquivo, e quem esquecer descobre no CI — que foi o que
+ * aconteceu quando a trilha do OTel cresceu de treze para dezoito nós.
+ */
+const TOTAL_CPU = MAPA_CPU.labs.length;
+const TOTAL_OTEL = MAPA_OTEL.labs.length;
+
 
 /**
  * O herói é uma ilha `client:visible`: o HTML vem pronto do servidor, mas os
@@ -85,17 +97,17 @@ test.describe.serial("progresso do mapa", () => {
     const roadmap = page.locator(".roadmap");
     await roadmap.scrollIntoViewIfNeeded();
 
-    await expect(roadmap.locator(".roadmap__progress-count")).toHaveText("0 of 6");
+    await expect(roadmap.locator(".roadmap__progress-count")).toHaveText(`0 of ${TOTAL_CPU}`);
 
     const marcar = page.getByRole("button", { name: /Mark The whole cycle in one tick as done/i });
     await marcar.click();
 
-    await expect(roadmap.locator(".roadmap__progress-count")).toHaveText("1 of 6");
+    await expect(roadmap.locator(".roadmap__progress-count")).toHaveText(`1 of ${TOTAL_CPU}`);
 
     await page.reload();
     await roadmap.scrollIntoViewIfNeeded();
 
-    await expect(roadmap.locator(".roadmap__progress-count")).toHaveText("1 of 6");
+    await expect(roadmap.locator(".roadmap__progress-count")).toHaveText(`1 of ${TOTAL_CPU}`);
     await expect(
       page.getByRole("button", { name: /Mark The whole cycle in one tick as done/i }),
     ).toHaveAttribute("aria-pressed", "true");
@@ -111,14 +123,14 @@ test.describe.serial("progresso do mapa", () => {
     // depois de a ilha hidratar e ler o armazenamento. Clicar antes disso
     // marca no estado inicial e o clique se perde na hidratação — falha
     // intermitente, e só sob carga.
-    await expect(page.locator(".roadmap__progress-count")).toHaveText("0 of 6");
+    await expect(page.locator(".roadmap__progress-count")).toHaveText(`0 of ${TOTAL_CPU}`);
     const marcar = page.getByRole("button", { name: /Mark The whole cycle in one tick as done/i });
     await marcar.scrollIntoViewIfNeeded();
     await marcar.click();
-    await expect(page.locator(".roadmap__progress-count")).toHaveText("1 of 6");
+    await expect(page.locator(".roadmap__progress-count")).toHaveText(`1 of ${TOTAL_CPU}`);
 
     await page.goto("handbooks/otel/");
-    await expect(page.locator(".roadmap__progress-count")).toHaveText("0 of 13");
+    await expect(page.locator(".roadmap__progress-count")).toHaveText(`0 of ${TOTAL_OTEL}`);
   });
 });
 
