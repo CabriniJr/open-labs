@@ -53,5 +53,7 @@ export {
   EXPORT_INTERVAL_MS_PADRAO,
   LIMITE_DE_CARDINALIDADE_PADRAO,
 } from "./providers/metrics.js";
+export { EXERCICIOS_DOS_PROVEDORES } from "./exercicios/providers.js";
+export type { DefinicaoDeExercicio, Distrator } from "./exercicios/tipos.js";
 export { decidir, PORTA_DA_DECISAO } from "./providers/sampler.js";
 export type { Amostrador, Decisao } from "./providers/sampler.js";
