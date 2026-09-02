@@ -1,7 +1,7 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { EXERCICIOS_DOS_PROVEDORES } from "@ovh/otel-domain";
-import { montarExercicio } from "./exercicios.js";
+import { montarExercicio, raizDoRepo } from "./exercicios.js";
 
 describe("o recorte sai do arquivo que roda", () => {
   it.each(EXERCICIOS_DOS_PROVEDORES.map((e) => [e.id, e] as const))(
@@ -52,3 +52,17 @@ function lerArquivo(caminho: string): string {
   // pacote é `"type": "module"`.
   return readFileSync(new URL(`../../../../${caminho}`, import.meta.url), "utf8");
 }
+
+describe("a raiz do repo não depende de onde o código foi parar", () => {
+  // O build empacota este módulo em `apps/site/dist/chunks/`, e contar pastas a
+  // partir do arquivo apontava para `apps/`. O marcador da raiz não se move.
+  it("acha a raiz subindo de uma subpasta qualquer", () => {
+    expect(existsSync(new URL("pnpm-workspace.yaml", raizDoRepo("apps/site/dist/chunks")))).toBe(
+      true,
+    );
+  });
+
+  it("fora do repo, falha dizendo o que procurou", () => {
+    expect(() => raizDoRepo("/")).toThrow(/pnpm-workspace\.yaml/u);
+  });
+});

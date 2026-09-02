@@ -1,4 +1,5 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
+import { pathToFileURL } from "node:url";
 import type { DefinicaoDeExercicio, Distrator } from "@ovh/otel-domain";
 
 /**
@@ -9,8 +10,32 @@ import type { DefinicaoDeExercicio, Distrator } from "@ovh/otel-domain";
  * no sistema de arquivos — o que é obrigatório, porque ela roda no navegador.
  */
 
-/** A raiz do repositório, a partir deste arquivo: lib → src → site → apps → raiz. */
-const RAIZ = new URL("../../../../", import.meta.url);
+/**
+ * A raiz do repositório, achada **subindo até o `pnpm-workspace.yaml`**.
+ *
+ * Contar pastas a partir de `import.meta.url` funciona no teste e quebra no build:
+ * o Astro empacota este módulo em `apps/site/dist/chunks/`, e lá os quatro níveis
+ * apontam para `apps/`. O marcador da raiz não se move quando o empacotador move
+ * o código.
+ */
+const MARCADOR_DA_RAIZ = "pnpm-workspace.yaml";
+
+export function raizDoRepo(partida: string = process.cwd()): URL {
+  let atual = pathToFileURL(`${partida}/`);
+  for (;;) {
+    if (existsSync(new URL(MARCADOR_DA_RAIZ, atual))) return atual;
+    const acima = new URL("../", atual);
+    if (acima.pathname === atual.pathname) {
+      throw new Error(
+        `não achei a raiz do repositório (${MARCADOR_DA_RAIZ}) subindo a partir de ${partida} — ` +
+          "a extração lê arquivos do repo, e sem a raiz não há de onde ler",
+      );
+    }
+    atual = acima;
+  }
+}
+
+const RAIZ = raizDoRepo();
 
 export interface BlocoDeCodigo {
   readonly id: string;
