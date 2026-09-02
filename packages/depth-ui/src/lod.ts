@@ -153,3 +153,25 @@ export function notacaoDeFechada(aparece: number): NotacaoDeFechada {
     preenchimento: 1 - a,
   };
 }
+
+/**
+ * O ponto da rampa em que o interior passa a ser legível.
+ *
+ * É `TINTA_LEGIVEL` lido de trás para frente pela curva, e não um segundo
+ * número escolhido à parte: dois números independentes dizendo a mesma coisa é
+ * como duas listas de labs escritas à mão divergem.
+ */
+export const PONTO_LEGIVEL = TINTA_LEGIVEL ** (1 / EXPOENTE_DA_TINTA);
+
+/**
+ * O rosto da caixa — o título e o `more inside` — cedendo lugar ao interior.
+ *
+ * Ele tem de chegar a zero **antes** de o interior ficar legível, e não depois.
+ * A regra de hoje (`1 - aparece * 2`) o mantinha na tela até o interior estar
+ * com 73% de tinta: a caixa prometia "tem mais aqui dentro" por cima do dentro
+ * já desenhado, que é a tela contradizendo a si mesma.
+ */
+export function opacidadeDoRosto(aparece: number): number {
+  const a = Math.max(0, Math.min(1, aparece));
+  return Math.max(0, 1 - a / PONTO_LEGIVEL);
+}

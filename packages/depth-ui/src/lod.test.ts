@@ -1,11 +1,14 @@
+import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 import {
   EXPOENTE_DA_TINTA,
   LIMIAR_CHEIO,
   LIMIAR_ENTRA,
+  PONTO_LEGIVEL,
   TINTA_LEGIVEL,
   encaixar,
   notacaoDeFechada,
+  opacidadeDoRosto,
   quantoAparece,
   tabelaLegivel,
   tintaDoInterior,
@@ -168,5 +171,52 @@ describe("a notação de fechada se desfaz na rampa", () => {
   it("fora da faixa, não inventa notação", () => {
     expect(notacaoDeFechada(-1).preenchimento).toBe(1);
     expect(notacaoDeFechada(2).preenchimento).toBe(0);
+  });
+});
+
+describe("as duas metades da mesma ligação andam juntas", () => {
+  /*
+    O invariante da spec §4. Ele não cobra números; cobra que não exista ponto
+    algum da rampa em que a moldura diga uma coisa e o interior mostre outra.
+  */
+  it("onde a tinta sobe, a marca de fechada cai", () => {
+    fc.assert(
+      fc.property(
+        fc.double({ min: 0, max: 1, noNaN: true }),
+        fc.double({ min: 0, max: 1, noNaN: true }),
+        (x, y) => {
+          const [menor, maior] = x <= y ? [x, y] : [y, x];
+          const tintaSobe = tintaDoInterior(maior) >= tintaDoInterior(menor);
+          const vaoCai =
+            Number(notacaoDeFechada(maior).tracejado.split(" ")[1]) <=
+            Number(notacaoDeFechada(menor).tracejado.split(" ")[1]);
+          const preenchimentoCede =
+            notacaoDeFechada(maior).preenchimento <= notacaoDeFechada(menor).preenchimento;
+          return tintaSobe && vaoCai && preenchimentoCede;
+        },
+      ),
+      { numRuns: 500 },
+    );
+  });
+
+  it("nas pontas não há contradição", () => {
+    // Fechada de verdade: nenhuma tinta no interior, notação de fechada inteira.
+    expect(tintaDoInterior(0)).toBe(0);
+    expect(notacaoDeFechada(0).preenchimento).toBe(1);
+    // Aberta de verdade: interior inteiro, nenhuma marca de fechada.
+    expect(tintaDoInterior(1)).toBe(1);
+    expect(notacaoDeFechada(1).preenchimento).toBe(0);
+    expect(Number(notacaoDeFechada(1).tracejado.split(" ")[1])).toBe(0);
+  });
+
+  it("o `more inside` sai antes de o interior ficar legível", () => {
+    /*
+      O critério da spec §3.3, e ele é o que resolve a contradição na tela: uma
+      promessa de que há algo dentro, sobreposta ao dentro já desenhado, é a
+      tela dizendo o contrário do que mostra.
+    */
+    expect(opacidadeDoRosto(PONTO_LEGIVEL)).toBe(0);
+    expect(tintaDoInterior(PONTO_LEGIVEL)).toBeCloseTo(TINTA_LEGIVEL, 6);
+    expect(opacidadeDoRosto(0)).toBe(1);
   });
 });
