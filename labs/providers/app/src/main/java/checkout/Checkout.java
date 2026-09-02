@@ -35,10 +35,11 @@ public final class Checkout {
             .setEndpoint(variavel("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4317"))
             .build();
 
-    // Os mesmos controles que o lab da tela tem, e eles são lidos de verdade:
-    // um botão que não muda nada ensina menos que botão nenhum. A fila é o que
-    // o terminal não deixa ver — mas encolher `maxQueueSize` abaixo da taxa de
-    // chegada faz o descarte silencioso acontecer aqui também.
+    // Controles lidos de verdade: um botão que não muda nada ensina menos que
+    // botão nenhum. Mas o `maxQueueSize` é um botão honesto que não revela o
+    // que se esperaria dele — neste ritmo de um span por segundo a fila não
+    // transborda nem com capacidade 2 (medido: 10 spans criados, 10 entregues).
+    // Por que não transborda, e o que seria preciso para ver, está no README.
     BatchSpanProcessor lote =
         BatchSpanProcessor.builder(exportador)
             .setScheduleDelay(

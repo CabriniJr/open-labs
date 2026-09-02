@@ -26,9 +26,14 @@ docker compose up --build
 The first build downloads Maven and the JDK layers, so it takes a couple of minutes. The app
 exits on its own after sixty spans; `Ctrl+C`, then `docker compose down`.
 
-Four environment variables in `compose.yaml` are the same knobs the lab on screen has, and
-the app reads all four for real — nothing here is set up by autoconfigure, so each one is
-wired by hand in `Checkout.java`:
+Four environment variables in `compose.yaml`, and the app reads all four for real — nothing
+here is set up by autoconfigure, so each one is wired by hand in `Checkout.java`. Three of
+them are controls the lab on screen also has, which is what makes this a counterpart: change
+one here and on screen, and the story has to come out the same. The endpoint is the odd one
+out — it exists only here, because on screen there is no network to point at. The
+correspondence does not close in the other direction either: the screen lab exposes controls
+this app has no equivalent for (record-only, cardinality limit, trace-based sampling, a
+severed channel):
 
 | Variable | Default here | What it changes |
 |---|---|---|
@@ -75,14 +80,23 @@ Two things, and they are the reason the lab on screen exists at all.
 inside the batch processor. The terminal shows a batch only once it has already left — you
 never see the queue at depth 3, or 4, or full. `OTEL_BSP_MAX_QUEUE_SIZE` is a real knob
 here, but turning it down does not reveal the queue either: at `2` this app still loses
-nothing, because one span per second never outruns the exporter, and a queue that never
-fills never drops. That was measured, not assumed: with the queue at `2`, ten spans created
-came out as ten spans printed. To make an overflow happen you would have to produce spans
-faster than gRPC can drain them, and then the only evidence would be spans that never
-arrive — from the terminal, indistinguishable from spans that were never created. Either
-way you are reading absence.
-The lab draws the queue itself, with a depth you can watch move and an overflow you can
-watch happen.
+nothing. That was measured, not assumed: with the queue at `2`, ten spans created came out
+as ten spans printed. The reason is that the queue is not where spans wait. The batch
+worker drains it into the pending batch continuously, far faster than one span per second,
+so the queue sits at or near empty no matter how small you make it — and a queue that never
+fills never drops. To make an overflow happen you would have to produce spans faster than
+that worker drains, and then the only evidence would be spans that never arrive — from the
+terminal, indistinguishable from spans that were never created. Either way you are reading
+absence. The lab draws the queue itself, with a depth you can watch move and an overflow
+you can watch happen.
+
+Turning that knob down does change the other exit, though, and nothing warns you: a batch
+also leaves when it reaches `maxExportBatchSize`, which defaults to 512 and is not exposed
+here. Set the queue below 512 and the queue becomes the binding limit instead — measured at
+`2`, the ten spans came out as five batches of two, two seconds apart, and the five-second
+timer never got to fire once. So shrinking the queue to look at it does not disable the
+size exit the next section describes; it quietly moves it, from 512 down to whatever you
+set, and the run you are then watching is no longer the run the defaults produce.
 
 **Why the batch left.** A batch flushes on whichever comes first: the timer, or the queue
 reaching the export batch size. Nothing in the printed batch records which condition tripped
@@ -94,8 +108,9 @@ exits are drawn as two different paths, and you can starve one to watch the othe
 One thing you *can* see here, and it is worth staying for the last two seconds: the app
 closes the SDK before it exits, so the final partial batch leaves on shutdown rather than
 on the timer. Watch the last two `ResourceSpans` timestamps — the gap is shorter than five
-seconds. Remove that `close()` and the batch worker, which is a daemon thread, dies with the
-JVM and takes the queue with it. That contrast is `ForceFlush`, one of the five phenomena
-the lab teaches, seen from the other side.
+seconds. The other half of that contrast is reasoned, not measured: the batch worker is a
+daemon thread, so without the `close()` the JVM should exit and take the pending batch with
+it, unlogged. Only the flush above was observed. That pair is `ForceFlush`, one of the five
+phenomena the lab teaches, seen from the other side.
 
 Everything else the terminal shows, it shows *after the fact*. That is the whole argument.
