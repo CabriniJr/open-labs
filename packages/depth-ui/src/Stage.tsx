@@ -1844,8 +1844,10 @@ function Camada({
                 O rosto da caixa cede lugar ao interior, e cede **antes** de o
                 interior chegar inteiro: um rótulo "more inside" por cima do
                 inside já visível diz ao leitor o contrário do que ele está
-                vendo. Some na metade da rampa; o interior termina de subir com
-                o campo livre.
+                vendo. Sai em `PONTO_LEGIVEL` — cerca de um oitavo da rampa, e
+                não metade dela, como esta regra dizia enquanto o rosto ainda
+                convivia com um interior a 73% de tinta. O interior termina de
+                subir com o campo livre.
               */}
               <g className="dui-stage__rosto" opacity={rosto}>
               {fam === "container" || molduras.has(place.id) ? (
