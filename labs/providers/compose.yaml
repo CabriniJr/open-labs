@@ -1,4 +1,4 @@
-# Duas variáveis, e são as duas que o lab da tela também tem. Mexer nelas aqui e
+# Quatro variáveis, e são as mesmas que o lab da tela expõe. Mexer nelas aqui e
 # no lab tem de produzir a mesma história — é isso que "contraparte real"
 # significa.
 services:
@@ -6,7 +6,10 @@ services:
     image: otel/opentelemetry-collector-contrib:0.159.0
     command: ["--config=/etc/collector.yaml"]
     volumes:
-      - ./collector.yaml:/etc/collector.yaml:ro
+      # O `z` deixa o runtime rotular o arquivo para SELinux. Sem ele, o
+      # Collector morre num `permission denied` ao ler a própria config em host
+      # com SELinux; onde não há SELinux a opção é ignorada.
+      - ./collector.yaml:/etc/collector.yaml:ro,z
 
   checkout:
     build: ./app
@@ -15,3 +18,4 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: http://collector:4317
       OTEL_TRACES_SAMPLER_ARG: "1.0"
       OTEL_BSP_SCHEDULE_DELAY: "5000"
+      OTEL_BSP_MAX_QUEUE_SIZE: "2048"

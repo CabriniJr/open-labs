@@ -25,7 +25,7 @@ public final class Checkout {
     return valor == null || valor.isBlank() ? padrao : valor;
   }
 
-  private static OpenTelemetry instalarSdk() {
+  private static OpenTelemetrySdk instalarSdk() {
     // Sem o `sdk-extension-autoconfigure` ninguém lê `OTEL_*` por nós: o
     // exportador construído à mão vai para `localhost:4317` e o span some sem
     // erro visível do lado de quem instrumentou. Custou o primeiro `up` deste
@@ -35,12 +35,15 @@ public final class Checkout {
             .setEndpoint(variavel("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4317"))
             .build();
 
-    // As duas variáveis que o lab da tela também tem. Elas são lidas de
-    // verdade: um botão que não muda nada ensina menos que botão nenhum.
+    // Os mesmos controles que o lab da tela tem, e eles são lidos de verdade:
+    // um botão que não muda nada ensina menos que botão nenhum. A fila é o que
+    // o terminal não deixa ver — mas encolher `maxQueueSize` abaixo da taxa de
+    // chegada faz o descarte silencioso acontecer aqui também.
     BatchSpanProcessor lote =
         BatchSpanProcessor.builder(exportador)
             .setScheduleDelay(
                 Duration.ofMillis(Long.parseLong(variavel("OTEL_BSP_SCHEDULE_DELAY", "5000"))))
+            .setMaxQueueSize(Integer.parseInt(variavel("OTEL_BSP_MAX_QUEUE_SIZE", "2048")))
             .build();
 
     Sampler amostrador =
@@ -81,10 +84,20 @@ public final class Checkout {
   }
 
   public static void main(String[] args) throws InterruptedException {
-    OpenTelemetry otel = instalarSdk();
-    for (int i = 0; i < 60; i++) {
-      atender(otel);
-      Thread.sleep(1000);
+    OpenTelemetrySdk otel = instalarSdk();
+    try {
+      for (int i = 0; i < 60; i++) {
+        atender(otel);
+        Thread.sleep(1000);
+      }
+    } finally {
+      // Não é higiene de fim de programa: é o `ForceFlush` que o lab da tela
+      // ensina, visto do outro lado. O worker do lote é thread daemon, então
+      // sair da `main` mata a fila com o que ela tiver — até cinco segundos de
+      // spans sumindo sem uma linha de log, que é exatamente o descarte
+      // silencioso que este lab existe para tornar visível. O `close()` faz o
+      // shutdown em cascata e o último lote parte antes da JVM.
+      otel.close();
     }
   }
 }
