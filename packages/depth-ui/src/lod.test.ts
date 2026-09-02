@@ -1,5 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { LIMIAR_CHEIO, LIMIAR_ENTRA, encaixar, quantoAparece, tabelaLegivel } from "./lod.js";
+import {
+  EXPOENTE_DA_TINTA,
+  LIMIAR_CHEIO,
+  LIMIAR_ENTRA,
+  TINTA_LEGIVEL,
+  encaixar,
+  quantoAparece,
+  tabelaLegivel,
+  tintaDoInterior,
+} from "./lod.js";
 
 describe("quanto do interior aparece", () => {
   it("longe, o interior não existe", () => {
@@ -81,5 +90,43 @@ describe("uma tabela dentro de uma caixa", () => {
     // Um quadro de dez mil unidades é o desenho inteiro visto de muito longe:
     // ali a linha tem menos de um pixel, e desenhá-la seria sujeira.
     expect(tabelaLegivel(10_000)).toBe(false);
+  });
+});
+
+describe("a tinta do interior sobe rápido, e sem degrau", () => {
+  /*
+    O piso está proibido pela spec §2: se o interior nunca descesse abaixo de
+    0,4, ele saltaria de 0 para 0,4 no instante em que a rampa começa. Um piso é
+    um degrau com outro nome, e degrau é justamente o que não pode existir.
+  */
+  it("as pontas não mentem", () => {
+    expect(tintaDoInterior(0)).toBe(0);
+    expect(tintaDoInterior(1)).toBe(1);
+  });
+
+  it("no primeiro sexto da rampa o interior já é legível", () => {
+    // É a afirmação de legibilidade virando número: sem isto, "sobe rápido" é
+    // opinião.
+    expect(tintaDoInterior(0.15)).toBeGreaterThanOrEqual(TINTA_LEGIVEL);
+  });
+
+  it("cresce sem voltar atrás", () => {
+    let anterior = -1;
+    for (let a = 0; a <= 1; a += 0.01) {
+      const agora = tintaDoInterior(a);
+      expect(agora).toBeGreaterThanOrEqual(anterior);
+      anterior = agora;
+    }
+  });
+
+  it("fora da faixa, não inventa tinta", () => {
+    expect(tintaDoInterior(-1)).toBe(0);
+    expect(tintaDoInterior(2)).toBe(1);
+  });
+
+  it("o expoente é o que faz a curva subir, e ele é menor que 1", () => {
+    // Com expoente 1 a curva é a reta de hoje, e o platô do fantasma volta.
+    expect(EXPOENTE_DA_TINTA).toBeLessThan(1);
+    expect(EXPOENTE_DA_TINTA).toBeGreaterThan(0);
   });
 });

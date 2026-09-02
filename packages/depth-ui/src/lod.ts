@@ -89,3 +89,33 @@ export const FRACAO_LEGIVEL = 0.009;
 export function tabelaLegivel(unidadesPorQuadro: number): boolean {
   return ALTURA_DA_LINHA / unidadesPorQuadro >= FRACAO_LEGIVEL;
 }
+
+/**
+ * O expoente da curva da tinta.
+ *
+ * Menor que 1 de propósito: é o que faz a tinta subir depressa no começo da
+ * rampa. Com 1 a curva é a reta de hoje, e a reta é o que produz o platô de
+ * fantasma — a caixa passa metade da descida desenhando um interior que existe
+ * e não se lê. O número foi escolhido para satisfazer a legibilidade cobrada em
+ * `TINTA_LEGIVEL`, e é o teste que o segura, não o gosto.
+ */
+export const EXPOENTE_DA_TINTA = 0.45;
+
+/** Onde o interior deixa de ser fantasma e passa a ser desenho. */
+export const TINTA_LEGIVEL = 0.4;
+
+/**
+ * De quanto do interior aparece para quanta tinta ele recebe.
+ *
+ * `quantoAparece` é medida — responde "quanto do quadro esta caixa ocupa" — e
+ * não muda. Esta função é **desenho**: ela decide com que força aquela medida
+ * chega ao papel. Separar as duas é o que permite melhorar a leitura sem
+ * mexer no instrumento, que é o erro de ajustar a régua para o gráfico ficar
+ * bonito.
+ *
+ * Contínua nas duas pontas, e por isso não é um piso: sai de zero em zero.
+ */
+export function tintaDoInterior(aparece: number): number {
+  const a = Math.max(0, Math.min(1, aparece));
+  return a ** EXPOENTE_DA_TINTA;
+}
