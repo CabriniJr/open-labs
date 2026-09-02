@@ -55,6 +55,13 @@
   </dependencies>
 
   <build>
+    <!--
+      Nome fixo, sem versão: o Dockerfile copia `target/app.jar` e não precisa
+      saber em que versão o pom está. Sem isto, subir a versão aqui quebra o
+      build com `COPY failed: no source files were specified` — mensagem que
+      não menciona versão nenhuma e manda procurar no lugar errado.
+    -->
+    <finalName>app</finalName>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>

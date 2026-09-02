@@ -16,13 +16,60 @@ import java.time.Duration;
 
 import static io.opentelemetry.semconv.ServiceAttributes.SERVICE_NAME;
 
-/** O checkout: uma rota, instrumentada à mão. */
+/**
+ * O checkout: uma rota, instrumentada à mão.
+ *
+ * <p><b>Comentário aqui tem duas línguas, e a fronteira é o marcador.</b> Tudo
+ * que está entre um marcador `handbook:trecho` e o seu fechamento é extraído
+ * verbatim para a página do site, então é texto que o leitor vê: vai em
+ * <b>inglês</b>. Fora dos trechos vale a regra de sempre do repo, e o
+ * comentário vai em português. Quem mover uma linha para dentro ou para fora de
+ * um trecho move também a língua dela.
+ *
+ * <p>Este parágrafo escreve o nome do marcador sem os sinais de menor e maior
+ * de propósito: a extração varre o arquivo atrás deles, e uma menção em prosa
+ * viraria um trecho fantasma.
+ */
 public final class Checkout {
 
-  /** O ambiente lido à mão, porque quem monta o SDK à mão não ganha isso de graça. */
+  /**
+   * O ambiente lido à mão, porque quem monta o SDK à mão não ganha isso de
+   * graça. Variável ausente e variável vazia são a mesma coisa aqui: as duas
+   * caem no padrão, e nenhuma é erro — `FOO=` num compose é jeito comum de
+   * desligar um override sem apagar a linha.
+   */
   private static String variavel(String nome, String padrao) {
     String valor = System.getenv(nome);
     return valor == null || valor.isBlank() ? padrao : valor;
+  }
+
+  /**
+   * Falhar alto está certo; falhar mudo é que não. O `parseInt` cru diz
+   * `For input string: "5s"` sem dizer de qual variável — e `5s` é o engano
+   * plausível, porque metade das configurações de OTel aceita sufixo de
+   * duração e esta não aceita.
+   */
+  private static int inteiro(String nome, int padrao) {
+    String valor = variavel(nome, String.valueOf(padrao));
+    try {
+      return Integer.parseInt(valor.trim());
+    } catch (NumberFormatException e) {
+      throw new IllegalArgumentException(
+          nome + "=\"" + valor + "\": esperava um número inteiro em milissegundos ou unidades,"
+              + " sem sufixo (\"5000\", não \"5s\")",
+          e);
+    }
+  }
+
+  /** O irmão do `inteiro` para a razão de amostragem, e pelo mesmo motivo. */
+  private static double decimal(String nome, double padrao) {
+    String valor = variavel(nome, String.valueOf(padrao));
+    try {
+      return Double.parseDouble(valor.trim());
+    } catch (NumberFormatException e) {
+      throw new IllegalArgumentException(
+          nome + "=\"" + valor + "\": esperava um número entre 0 e 1 (\"1.0\", \"0.25\")", e);
+    }
   }
 
   private static OpenTelemetrySdk instalarSdk() {
@@ -42,13 +89,11 @@ public final class Checkout {
     // Por que não transborda, e o que seria preciso para ver, está no README.
     BatchSpanProcessor lote =
         BatchSpanProcessor.builder(exportador)
-            .setScheduleDelay(
-                Duration.ofMillis(Long.parseLong(variavel("OTEL_BSP_SCHEDULE_DELAY", "5000"))))
-            .setMaxQueueSize(Integer.parseInt(variavel("OTEL_BSP_MAX_QUEUE_SIZE", "2048")))
+            .setScheduleDelay(Duration.ofMillis(inteiro("OTEL_BSP_SCHEDULE_DELAY", 5000)))
+            .setMaxQueueSize(inteiro("OTEL_BSP_MAX_QUEUE_SIZE", 2048))
             .build();
 
-    Sampler amostrador =
-        Sampler.traceIdRatioBased(Double.parseDouble(variavel("OTEL_TRACES_SAMPLER_ARG", "1.0")));
+    Sampler amostrador = Sampler.traceIdRatioBased(decimal("OTEL_TRACES_SAMPLER_ARG", 1.0));
 
     // <handbook:trecho id="onde-mora-o-service-name">
     Resource recurso =
@@ -66,7 +111,18 @@ public final class Checkout {
             .build();
     // </handbook:trecho>
 
-    return OpenTelemetrySdk.builder().setTracerProvider(provider).buildAndRegisterGlobal();
+    // `build()`, e não `buildAndRegisterGlobal()`: nada neste arquivo lê o
+    // `GlobalOpenTelemetry`, e o SDK chega em `atender` por parâmetro. Registrar
+    // um global que ninguém consulta ensinaria, por presença, que é assim que se
+    // acha um tracer — enquanto o código ao lado demonstra injeção.
+    //
+    // O que se ganha em troca é um fenômeno de verdade: sem global registrado,
+    // `GlobalOpenTelemetry.getTracer(...)` devolve um tracer no-op. Os spans
+    // continuam sendo criados, o código não muda, nada estoura — e nada é
+    // exportado. É o "sem SDK, silêncio" que o lab da tela ensina, e agora vale
+    // literalmente aqui. Se você chegou a este arquivo depois de errar o
+    // exercício que usa essa chamada como distrator: era isto.
+    return OpenTelemetrySdk.builder().setTracerProvider(provider).build();
   }
 
   private static void atender(OpenTelemetry otel) {
@@ -76,6 +132,13 @@ public final class Checkout {
     // </handbook:lacuna>
 
     Span span = tracer.spanBuilder("GET /checkout").startSpan();
+    // `makeCurrent()` changes nothing you can observe in this method: there is
+    // no child span to pick up the parent, nobody reads the Context, and
+    // `end()` runs in the `finally`, outside the scope. It is here because it
+    // is the gesture real instrumentation cannot skip — the moment a library
+    // downstream starts its own span, this is what makes it a child instead of
+    // a second root. Attributes and `end()` work through the `span` reference
+    // and would work identically without it.
     try (var escopo = span.makeCurrent()) {
       span.setAttribute("http.route", "/checkout");
     } finally {
@@ -87,7 +150,13 @@ public final class Checkout {
   public static void main(String[] args) throws InterruptedException {
     OpenTelemetrySdk otel = instalarSdk();
     try {
-      for (int i = 0; i < 60; i++) {
+      // 63, e não 60, para que o fim não seja uma corrida: com o prazo padrão
+      // de 5 s o último tique do lote cai perto de 60 e sobra um lote parcial
+      // para o `close()` despachar. Em 60 iterações o encerramento e o tique
+      // chegavam juntos, e quem ganhava dependia da deriva do `sleep` — que é
+      // a mesma deriva que faz o tamanho desse último lote variar de um entre
+      // execuções.
+      for (int i = 0; i < 63; i++) {
         atender(otel);
         Thread.sleep(1000);
       }

@@ -1,9 +1,7 @@
-# Quatro variáveis, e três delas — razão de amostragem, prazo do lote e tamanho
-# da fila — são controles que o lab da tela também tem: mexer nelas aqui e lá
-# tem de produzir a mesma história, e é isso que "contraparte real" significa. O
-# endpoint é a quarta, e existe só aqui: na tela não há rede para apontar. O
-# caminho inverso também não fecha — a tela expõe controles (record-only,
-# cardinalidade, trace_based, canal cortado) que este app não tem.
+# Quatro variáveis, e a correspondência com os controles do lab da tela é
+# parcial nas duas direções. Qual bate com qual, e o que sobra de cada lado,
+# está no README — aqui ficaria a mesma lista em outra língua, e uma das duas
+# envelheceria primeiro.
 services:
   collector:
     image: otel/opentelemetry-collector-contrib:0.159.0
