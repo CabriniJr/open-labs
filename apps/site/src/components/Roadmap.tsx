@@ -1,4 +1,6 @@
+import { EXERCICIOS_DOS_PROVEDORES } from "@ovh/otel-domain";
 import { useEffect, useState } from "react";
+import { lerPlacar } from "../lib/placar.js";
 import { url } from "../lib/urls.js";
 import {
   ANNEX_W,
@@ -85,6 +87,20 @@ export function Roadmap({ mapa }: { readonly mapa: RoadmapMap }) {
   useEffect(() => {
     setDone(readProgress(storageKey));
   }, [storageKey]);
+
+  /**
+   * Quantos exercícios cada lab tem sai da LISTA DE EXERCÍCIOS, e de nenhum outro
+   * lugar. Uma segunda lista escrita à mão é o defeito que este repo já teve duas
+   * vezes — o catálogo de labs, e o `href` do mapa.
+   */
+  const exerciciosPorLab = new Map<string, string[]>();
+  for (const e of EXERCICIOS_DOS_PROVEDORES) {
+    exerciciosPorLab.set(e.lab, [...(exerciciosPorLab.get(e.lab) ?? []), e.id]);
+  }
+
+  // Mesma razão do `done`: o HTML do servidor não conhece o placar do leitor.
+  const [placar, setPlacar] = useState<Readonly<Record<string, string>>>({});
+  useEffect(() => setPlacar(lerPlacar()), []);
 
   const toggle = (id: string): void => {
     const next = done.includes(id) ? done.filter((d) => d !== id) : [...done, id];
@@ -212,6 +228,18 @@ export function Roadmap({ mapa }: { readonly mapa: RoadmapMap }) {
                     </svg>
                   </button>
                 )}
+                {(() => {
+                  const desteLab = exerciciosPorLab.get(lab.id) ?? [];
+                  // Nó sem exercício não mostra `0/0`: zero de zero se lê como "você
+                  // não fez", e a pessoa não deixou de fazer nada.
+                  if (desteLab.length === 0) return null;
+                  const dePrimeira = desteLab.filter((id) => placar[id] === "primeira").length;
+                  return (
+                    <span className="roadmap__placar mono">
+                      {dePrimeira}/{desteLab.length} first try
+                    </span>
+                  );
+                })()}
               </div>
             );
           })}
