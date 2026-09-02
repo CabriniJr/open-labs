@@ -1,16 +1,23 @@
 ---
-import { MAL_ENTENDIDOS } from "@ovh/otel-domain";
+import { EXERCICIOS_DOS_PROVEDORES, MAL_ENTENDIDOS } from "@ovh/otel-domain";
+import { Exercicio } from "../../components/Exercicio.tsx";
 import { Predicao } from "../../components/Predicao.tsx";
 import { ProvidersLab } from "../../components/ProvidersLab.tsx";
 import SiteFooter from "../../components/SiteFooter.astro";
 import SiteNav from "../../components/SiteNav.astro";
 import Base from "../../layouts/Base.astro";
+import { montarExercicio } from "../../lib/exercicios";
 import { url } from "../../lib/urls";
 import "../../styles/docs.css";
 import "../../components/ProvidersLab.css";
 import "../../components/Predicao.css";
+import "../../components/Exercicio.css";
 import "@ovh/depth-ui/src/stage.css";
 import "../../components/Explorer.css";
+
+// A extração roda AQUI, no build: o frontmatter do Astro executa em Node. A ilha
+// recebe o resultado pronto e nunca toca no sistema de arquivos.
+const exercicios = EXERCICIOS_DOS_PROVEDORES.map(montarExercicio);
 ---
 
 <Base
@@ -111,6 +118,23 @@ import "../../components/Explorer.css";
 
     <section class="lab-prosa editorial">
       <div class="prose">
+        <h2>Instrument it</h2>
+        <p>
+          Two decisions from the file that actually runs in
+          <code>labs/providers/</code>. The correct block is not written here — it is
+          lifted out of that file, so it cannot drift from the code that compiles.
+          The wrong ones are real: both of them ship to production regularly.
+        </p>
+      </div>
+      <div class="lab-exercicios">
+        {exercicios.map((exercicio) => (
+          <Exercicio client:visible exercicio={exercicio} />
+        ))}
+      </div>
+    </section>
+
+    <section class="lab-prosa editorial">
+      <div class="prose">
         <h2>What people get wrong</h2>
         <p>
           Every row below is a belief worth naming, because the drawing above is
@@ -188,6 +212,13 @@ import "../../components/Explorer.css";
 </Base>
 
 <style>
+  .lab-exercicios {
+    display: grid;
+    gap: var(--space-2);
+    grid-column: 1 / -1;
+    margin-block-start: var(--space-2);
+  }
+
   .lab-head {
     padding-block: var(--space-4) var(--space-2);
   }
