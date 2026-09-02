@@ -8,6 +8,18 @@ const ARQUIVO = "labs/providers/app/src/main/java/checkout/Checkout.java";
  * Cada distrator é **um mal-entendido nomeado** — a mesma régua da tabela
  * `MAL_ENTENDIDOS`, e escrito para quem já acredita nele. Nenhum deles é um erro
  * bobo: os dois aparecem em código de produção.
+ *
+ * <p><b>O alcance desta mecânica, e por que ela divide o trabalho com a tabela
+ * de mal-entendidos.</b> Um distrator ocupa a lacuna, e a lacuna é um lugar
+ * concreto num arquivo que compila. Então esta mecânica só alcança mal-entendido
+ * que seja <i>expressável como código válido naquele lugar</i>. O
+ * `span.setAttribute("service.name", …)` — o mal-entendido nº 1 da tabela — não
+ * é: não existe `span` no escopo onde o recurso é montado, e o bloco nem
+ * compilaria ali. Forçá-lo para dentro do exercício entregaria a resposta pelo
+ * formato, que é justamente o que a regra da mesma forma existe para impedir.
+ * Ele fica com `MAL_ENTENDIDOS`, que aparece na mesma página e não precisa
+ * caber em lugar nenhum. As duas peças se dividem por isso, e não por acaso: a
+ * lacuna cobre o que o compilador aceita, a tabela cobre o resto.
  */
 export const EXERCICIOS_DOS_PROVEDORES: readonly DefinicaoDeExercicio[] = [
   {
@@ -61,30 +73,40 @@ export const EXERCICIOS_DOS_PROVEDORES: readonly DefinicaoDeExercicio[] = [
     cenario:
       "The same service, at start-up. Everything it exports has to say which service it " +
       "came from.",
-    pergunta: "Where does service.name belong?",
+    pergunta: "What does the provider's Resource have to carry?",
     porqueCerto:
-      "It is a Resource attribute, and the Resource belongs to the provider. That is why " +
-      "it sits one layer above the spans in the OTLP envelope — and why every span, " +
-      "metric and log this process produces carries it without anyone setting it twice.",
+      "service.name is a Resource attribute, and the Resource belongs to the provider — " +
+      "which is why it sits one layer above the spans in the OTLP envelope, and why " +
+      "every span, metric and log this process produces carries it without anyone " +
+      "setting it twice. The merge is the other half: getDefault() is what the SDK " +
+      "fills in about itself (telemetry.sdk.name, .language, .version), and yours goes " +
+      "on top of it rather than in place of it.",
     fonteCerto: "https://opentelemetry.io/docs/specs/otel/resource/sdk/",
     distratores: [
       {
-        id: "onde-mora-o-service-name-no-span",
-        codigo: 'span.setAttribute("service.name", "checkout");',
+        id: "onde-mora-o-service-name-sem-o-padrao",
+        codigo:
+          "Resource recurso =\n" +
+          '    Resource.create(Attributes.of(SERVICE_NAME, "checkout"));',
         porque:
-          "The single most common way to get this wrong. It sets a span attribute that " +
-          "happens to be spelled service.name — and backends read the one on the " +
-          "resource, one layer above. Your spans look annotated and stay unattributed.",
-        fonte: "https://opentelemetry.io/docs/specs/otel/trace/api/#set-attributes",
+          "Right layer, and it compiles and runs — the spans do go out named checkout. " +
+          "What left with them is the default Resource: telemetry.sdk.name, " +
+          "telemetry.sdk.language and telemetry.sdk.version are gone, because this " +
+          "replaces the default instead of merging over it. Nothing fails; the backend " +
+          "just no longer knows what produced the data, and that is the question you ask " +
+          "on the day one SDK version starts dropping spans.",
+        fonte: "https://opentelemetry.io/docs/specs/otel/resource/sdk/",
       },
       {
-        id: "onde-mora-o-service-name-no-escopo",
-        codigo: 'Tracer tracer = otel.getTracer("checkout");',
+        id: "onde-mora-o-service-name-so-o-padrao",
+        codigo: "Resource recurso =\n    Resource.getDefault();",
         porque:
-          "The instrumentation scope names the library that produced the telemetry, not " +
-          "the service that ran it. It is the middle layer of the envelope, and putting " +
-          "the service there leaves the resource empty.",
-        fonte: "https://opentelemetry.io/docs/specs/otel/glossary/#instrumentation-scope",
+          "The merge that merges nothing. If you have ever opened a backend and found a " +
+          "service called unknown_service:java without knowing where it came from: this " +
+          "is where it comes from. The default Resource already carries a service.name, " +
+          "and that is the value. Leaving yours out does not leave the field empty — it " +
+          "leaves the SDK's placeholder in it.",
+        fonte: "https://opentelemetry.io/docs/specs/otel/resource/sdk/",
       },
     ],
   },

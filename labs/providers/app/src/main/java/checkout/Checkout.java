@@ -96,12 +96,10 @@ public final class Checkout {
     Sampler amostrador = Sampler.traceIdRatioBased(decimal("OTEL_TRACES_SAMPLER_ARG", 1.0));
 
     // <handbook:trecho id="onde-mora-o-service-name">
+    // <handbook:lacuna>
     Resource recurso =
-        Resource.getDefault().merge(
-            // <handbook:lacuna>
-            Resource.create(Attributes.of(SERVICE_NAME, "checkout"))
-            // </handbook:lacuna>
-        );
+        Resource.getDefault().merge(Resource.create(Attributes.of(SERVICE_NAME, "checkout")));
+    // </handbook:lacuna>
 
     SdkTracerProvider provider =
         SdkTracerProvider.builder()
