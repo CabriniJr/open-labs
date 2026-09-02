@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { ExercicioMontado } from "../lib/exercicios.js";
 import { registrar } from "../lib/placar.js";
 
@@ -21,6 +21,17 @@ export function Exercicio({ exercicio }: ExercicioProps) {
   const [escolhido, setEscolhido] = useState<string | null>(null);
   const respondeu = escolhido !== null;
 
+  /**
+   * O marcador de que a peça está **viva**.
+   *
+   * O HTML do servidor e o da ilha hidratada são idênticos, então nada na tela
+   * distingue um botão que já responde de um que ainda não. Sem este sinal, quem
+   * testa (e quem automatiza) manda a tecla no vão entre os dois e não acontece
+   * nada — que foi exatamente o que o e2e pegou.
+   */
+  const [vivo, setVivo] = useState(false);
+  useEffect(() => setVivo(true), []);
+
   const escolher = (id: string): void => {
     if (respondeu) return;
     setEscolhido(id);
@@ -38,7 +49,11 @@ export function Exercicio({ exercicio }: ExercicioProps) {
     : undefined;
 
   return (
-    <div className="exercicio" data-respondeu={respondeu ? "true" : undefined}>
+    <div
+      className="exercicio"
+      data-respondeu={respondeu ? "true" : undefined}
+      data-vivo={vivo ? "true" : undefined}
+    >
       <p className="exercicio__cenario">{exercicio.cenario}</p>
       <p className="exercicio__pergunta">{exercicio.pergunta}</p>
 
