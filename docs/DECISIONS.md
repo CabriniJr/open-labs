@@ -127,6 +127,20 @@ top-down?" era três perguntas, e por isso não tinha resposta.
 
 E o currículo bottom-up se implementa **movendo a raiz do lab**, sem tocar no motor.
 
+**Uma grandeza só comanda a profundidade — regra fechada em 02/09/2026.** Quem fala de
+profundidade no desenho deriva de `aparece`, e de nada mais. Qualquer marca que diga "isto
+está fechado", "isto está aberto" ou "há mais aqui dentro" tem de sair daquele número.
+
+A regra nasceu de um defeito: `aparece` comandava a opacidade do interior enquanto a borda
+da caixa era pintada por um booleano. Metade da ligação andava numa grandeza contínua e a
+outra metade era um interruptor, e o resultado na tela era a moldura anunciando "fechada"
+por cima de um interior aberto e desenhado dentro dela, com um `more inside` embaixo. Três
+marcas, duas contradizendo o que o leitor via.
+
+Corolário, e é o que impede a repetição: **piso é degrau com outro nome.** Quando a leitura
+de uma faixa da rampa for ruim, o conserto é a curva, nunca o piso — um piso faz a grandeza
+saltar no instante em que a rampa começa, e continuidade é o valor central do zoom.
+
 ### 2.6 O teste de refinamento
 
 Trocar uma folha aproximada por uma subárvore exige equivalência **na fronteira**, com a mesma

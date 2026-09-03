@@ -20,6 +20,19 @@ export type { FlowEdgeView, FlowNodeView, FlowView } from "./types.js";
 export { Stage } from "./Stage.js";
 export type { StageProps } from "./Stage.js";
 export { familiesOf, interiorDisagreement, viewDisagreement } from "./view.js";
-export { ALTURA_DA_LINHA, encaixar, fracaoDoQuadro, quantoAparece, tabelaLegivel } from "./lod.js";
+export {
+  ALTURA_DA_LINHA,
+  EXPOENTE_DA_TINTA,
+  PONTO_LEGIVEL,
+  TINTA_LEGIVEL,
+  encaixar,
+  fracaoDoQuadro,
+  notacaoDeFechada,
+  opacidadeDoRosto,
+  quantoAparece,
+  tabelaLegivel,
+  tintaDoInterior,
+} from "./lod.js";
+export type { NotacaoDeFechada } from "./lod.js";
 export type { NodePlacement, View } from "./view.js";
 export { autoView, pathTo } from "./auto-view.js";

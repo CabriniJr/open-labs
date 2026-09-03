@@ -25,8 +25,11 @@ import {
   ZOOM_MAXIMO,
   encaixar,
   fracaoDoQuadro,
+  notacaoDeFechada,
+  opacidadeDoRosto,
   quantoAparece,
   tabelaLegivel,
+  tintaDoInterior,
 } from "./lod.js";
 import { caminho, pontasDe, retasDe } from "./roteador.js";
 import type { Ponto } from "./roteador.js";
@@ -1446,6 +1449,14 @@ function Camada({
               : undefined;
           const aparece =
             interior === undefined ? 0 : quantoAparece(fracaoDoQuadro(place, quadro));
+          /*
+            As três traduções do mesmo número. `aparece` é medida; o que vai ao
+            papel é desenho, e é aqui que uma coisa vira a outra — num lugar só,
+            para que a moldura e o interior não possam divergir.
+          */
+          const tinta = tintaDoInterior(aparece);
+          const fechamento = notacaoDeFechada(aparece);
+          const rosto = opacidadeDoRosto(aparece);
           // Escala uniforme, pelo lado que aperta: esticar o interior para
           // preencher a caixa distorceria o esquemático, e num esquemático a
           // proporção é informação — uma rede em paralelo esticada deixa de
@@ -1467,7 +1478,19 @@ function Camada({
               data-ativo={agindo ? "true" : undefined}
               data-alto={aceso ? "true" : undefined}
               data-conduz={node?.kind === "switch" ? (passa(place.id) ? "true" : "false") : undefined}
-              style={{ ["--dui-atraso" as string]: `${atraso}ms` }}
+              /*
+                A notação de fechada vai por propriedade CSS, e não por regra
+                por forma: `.dui-stage__caixa` é cinco desenhos diferentes
+                (retângulo, trapézio, estante, pista, moldura), e uma regra por
+                forma seria a mesma decisão escrita cinco vezes. E vai calculada
+                daqui, e não com `calc()` na folha: `calc()` dentro de
+                `stroke-dasharray` é terreno instável entre navegadores.
+              */
+              style={{
+                ["--dui-atraso" as string]: `${atraso}ms`,
+                ["--dui-fechada-tracejado" as string]: fechamento.tracejado,
+                ["--dui-fechada-preenchimento" as string]: String(fechamento.preenchimento),
+              }}
               data-fechado={place.collapsed === true ? "true" : undefined}
               data-selecionado={place.id === selected ? "true" : undefined}
               tabIndex={0}
@@ -1668,7 +1691,7 @@ function Camada({
                        COORDENADAS próprio: duas figuras de caixas diferentes
                        podem ter o mesmo `d` sem se tocarem na tela. */
                     data-dentro={place.id}
-                    opacity={aparece}
+                    opacity={tinta}
                     transform={`translate(${place.x + (dentro?.dx ?? 0)} ${
                       place.y + (dentro?.dy ?? 0)
                     }) scale(${dentro?.escala ?? 1})`}
@@ -1821,10 +1844,12 @@ function Camada({
                 O rosto da caixa cede lugar ao interior, e cede **antes** de o
                 interior chegar inteiro: um rótulo "more inside" por cima do
                 inside já visível diz ao leitor o contrário do que ele está
-                vendo. Some na metade da rampa; o interior termina de subir com
-                o campo livre.
+                vendo. Sai em `PONTO_LEGIVEL` — cerca de um oitavo da rampa, e
+                não metade dela, como esta regra dizia enquanto o rosto ainda
+                convivia com um interior a 73% de tinta. O interior termina de
+                subir com o campo livre.
               */}
-              <g className="dui-stage__rosto" opacity={Math.max(0, 1 - aparece * 2)}>
+              <g className="dui-stage__rosto" opacity={rosto}>
               {fam === "container" || molduras.has(place.id) ? (
                 <text className="dui-stage__titulo" x={place.x + 12} y={place.y + 18}>
                   {rotulo}

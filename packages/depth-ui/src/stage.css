@@ -495,8 +495,20 @@
   letter-spacing: 0.04em;
 }
 
+/*
+ * Fechada é uma questão de GRAU, e não um interruptor.
+ *
+ * O `8 4` de antes era categórico: a borda anunciava "fechada" o caminho
+ * inteiro enquanto o interior subia desenhado dentro dela. Agora os dois valores
+ * chegam calculados do palco, do mesmo `aparece` que move o interior — e o fim
+ * da rampa é contorno e nada mais, que é a `moldura` logo abaixo.
+ *
+ * A posição desta regra importa: ela vem DEPOIS de `[data-ativo]`, que tem a
+ * mesma especificidade. Movida para cima, ela deixa de valer e nada avisa.
+ */
 .dui-stage__objeto[data-fechado="true"] > .dui-stage__caixa {
-  stroke-dasharray: 8 4;
+  stroke-dasharray: var(--dui-fechada-tracejado, 8 4);
+  fill-opacity: var(--dui-fechada-preenchimento, 1);
 }
 
 /*
@@ -779,15 +791,22 @@
 /*
  * O canal atravessando a fronteira.
  *
- * Mais fino e mais apagado que o trilho de fora, de propósito: ele não é uma
- * ligação nova, é a **mesma** ligação vista um nível abaixo. Desenhá-lo com o
- * mesmo peso sugeriria dois canais onde há um.
+ * Mais fino que o trilho de fora, de propósito: ele não é uma ligação nova, é a
+ * **mesma** ligação vista um nível abaixo. Desenhá-lo com o mesmo peso sugeriria
+ * dois canais onde há um. Já a versão apagada dele sugeria coisa nenhuma — some
+ * junto com a informação, e foi o defeito que esta rodada consertou.
  */
 .dui-stage__travessia {
   fill: none;
-  stroke: color-mix(in oklab, var(--dui-dado) 35%, transparent);
-  stroke-width: 1;
-  stroke-dasharray: 3 3;
+  /*
+    O canal é ESTRUTURA, e estrutura não sussurra. A 35% e pontilhado, ele já
+    nascia fraco — e multiplicado pela tinta do interior virava nada, justamente
+    a linha que responde "o que entrou aqui vai parar onde lá dentro?".
+    Ele continua dizendo "sou a MESMA ligação um nível abaixo" por ser mais fino
+    que o trilho de fora (1,25 contra 1,6). Fino é notação; apagado é sumiço.
+  */
+  stroke: color-mix(in oklab, var(--dui-dado) 85%, transparent);
+  stroke-width: 1.25;
   vector-effect: non-scaling-stroke;
   pointer-events: none;
 }

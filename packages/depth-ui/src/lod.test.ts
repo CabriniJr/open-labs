@@ -1,5 +1,18 @@
+import fc from "fast-check";
 import { describe, expect, it } from "vitest";
-import { LIMIAR_CHEIO, LIMIAR_ENTRA, encaixar, quantoAparece, tabelaLegivel } from "./lod.js";
+import {
+  EXPOENTE_DA_TINTA,
+  LIMIAR_CHEIO,
+  LIMIAR_ENTRA,
+  PONTO_LEGIVEL,
+  TINTA_LEGIVEL,
+  encaixar,
+  notacaoDeFechada,
+  opacidadeDoRosto,
+  quantoAparece,
+  tabelaLegivel,
+  tintaDoInterior,
+} from "./lod.js";
 
 describe("quanto do interior aparece", () => {
   it("longe, o interior não existe", () => {
@@ -81,5 +94,143 @@ describe("uma tabela dentro de uma caixa", () => {
     // Um quadro de dez mil unidades é o desenho inteiro visto de muito longe:
     // ali a linha tem menos de um pixel, e desenhá-la seria sujeira.
     expect(tabelaLegivel(10_000)).toBe(false);
+  });
+});
+
+describe("a tinta do interior sobe rápido, e sem degrau", () => {
+  /*
+    O piso está proibido pela spec §2: se o interior nunca descesse abaixo de
+    0,4, ele saltaria de 0 para 0,4 no instante em que a rampa começa. Um piso é
+    um degrau com outro nome, e degrau é justamente o que não pode existir.
+  */
+  it("as pontas não mentem", () => {
+    expect(tintaDoInterior(0)).toBe(0);
+    expect(tintaDoInterior(1)).toBe(1);
+  });
+
+  it("no primeiro sexto da rampa o interior já é legível", () => {
+    // É a afirmação de legibilidade virando número: sem isto, "sobe rápido" é
+    // opinião.
+    expect(tintaDoInterior(0.15)).toBeGreaterThanOrEqual(TINTA_LEGIVEL);
+  });
+
+  it("cresce sem voltar atrás", () => {
+    let anterior = -1;
+    for (let a = 0; a <= 1; a += 0.01) {
+      const agora = tintaDoInterior(a);
+      expect(agora).toBeGreaterThanOrEqual(anterior);
+      anterior = agora;
+    }
+  });
+
+  it("fora da faixa, não inventa tinta", () => {
+    expect(tintaDoInterior(-1)).toBe(0);
+    expect(tintaDoInterior(2)).toBe(1);
+  });
+
+  it("o expoente é o que faz a curva subir, e ele é menor que 1", () => {
+    // Com expoente 1 a curva é a reta de hoje, e o platô do fantasma volta.
+    expect(EXPOENTE_DA_TINTA).toBeLessThan(1);
+    expect(EXPOENTE_DA_TINTA).toBeGreaterThan(0);
+  });
+});
+
+describe("a notação de fechada se desfaz na rampa", () => {
+  it("no começo, é exatamente o que existe hoje", () => {
+    const n = notacaoDeFechada(0);
+    expect(n.tracejado).toBe("8 4");
+    expect(n.preenchimento).toBe(1);
+  });
+
+  it("no fim, não resta marca de fechada nenhuma", () => {
+    // Vão zero é traço contínuo, e preenchimento zero é contorno e nada mais:
+    // a caixa chegou na `moldura`, que é uma forma que o sistema já tem.
+    const n = notacaoDeFechada(1);
+    expect(n.tracejado.split(" ")[1]).toBe("0");
+    expect(n.preenchimento).toBe(0);
+  });
+
+  it("o vão do tracejado só encolhe", () => {
+    let anterior = Number.POSITIVE_INFINITY;
+    for (let a = 0; a <= 1; a += 0.01) {
+      const vao = Number(notacaoDeFechada(a).tracejado.split(" ")[1]);
+      expect(vao).toBeLessThanOrEqual(anterior);
+      anterior = vao;
+    }
+  });
+
+  it("o preenchimento só cede", () => {
+    let anterior = Number.POSITIVE_INFINITY;
+    for (let a = 0; a <= 1; a += 0.01) {
+      const p = notacaoDeFechada(a).preenchimento;
+      expect(p).toBeLessThanOrEqual(anterior);
+      anterior = p;
+    }
+  });
+
+  it("fora da faixa, não inventa notação", () => {
+    expect(notacaoDeFechada(-1).preenchimento).toBe(1);
+    expect(notacaoDeFechada(2).preenchimento).toBe(0);
+  });
+});
+
+describe("as duas metades da mesma ligação andam juntas", () => {
+  /*
+    O invariante da spec §4. Ele não cobra números; cobra que não exista ponto
+    algum da rampa em que a moldura diga uma coisa e o interior mostre outra.
+  */
+  it("onde a tinta sobe, a marca de fechada cai — e as duas de fato se mexem", () => {
+    /*
+      A desigualdade frouxa (`<=`) não bastava: uma implementação constante a
+      satisfaz sem mover nada, e foi exatamente isso que o teste de mutação
+      mostrou. Com folga real entre os dois pontos, o invariante passa a cobrar
+      movimento — que é a coisa que ele existe para garantir.
+
+      A folga de 0,05 é o que sobrevive ao arredondamento de duas casas do
+      tracejado: ela move o vão em 0,2, muito acima da granularidade do traço.
+    */
+    fc.assert(
+      fc.property(
+        fc.double({ min: 0, max: 1, noNaN: true }),
+        fc.double({ min: 0, max: 1, noNaN: true }),
+        (x, y) => {
+          const [menor, maior] = x <= y ? [x, y] : [y, x];
+          const vao = (a: number): number => Number(notacaoDeFechada(a).tracejado.split(" ")[1]);
+          const folgaReal = maior - menor >= 0.05;
+
+          const tintaSobe = folgaReal
+            ? tintaDoInterior(maior) > tintaDoInterior(menor)
+            : tintaDoInterior(maior) >= tintaDoInterior(menor);
+          const vaoCai = folgaReal ? vao(maior) < vao(menor) : vao(maior) <= vao(menor);
+          const preenchimentoCede = folgaReal
+            ? notacaoDeFechada(maior).preenchimento < notacaoDeFechada(menor).preenchimento
+            : notacaoDeFechada(maior).preenchimento <= notacaoDeFechada(menor).preenchimento;
+
+          return tintaSobe && vaoCai && preenchimentoCede;
+        },
+      ),
+      { numRuns: 500 },
+    );
+  });
+
+  it("nas pontas não há contradição", () => {
+    // Fechada de verdade: nenhuma tinta no interior, notação de fechada inteira.
+    expect(tintaDoInterior(0)).toBe(0);
+    expect(notacaoDeFechada(0).preenchimento).toBe(1);
+    // Aberta de verdade: interior inteiro, nenhuma marca de fechada.
+    expect(tintaDoInterior(1)).toBe(1);
+    expect(notacaoDeFechada(1).preenchimento).toBe(0);
+    expect(Number(notacaoDeFechada(1).tracejado.split(" ")[1])).toBe(0);
+  });
+
+  it("o `more inside` sai antes de o interior ficar legível", () => {
+    /*
+      O critério da spec §3.3, e ele é o que resolve a contradição na tela: uma
+      promessa de que há algo dentro, sobreposta ao dentro já desenhado, é a
+      tela dizendo o contrário do que mostra.
+    */
+    expect(opacidadeDoRosto(PONTO_LEGIVEL)).toBe(0);
+    expect(tintaDoInterior(PONTO_LEGIVEL)).toBeCloseTo(TINTA_LEGIVEL, 6);
+    expect(opacidadeDoRosto(0)).toBe(1);
   });
 });

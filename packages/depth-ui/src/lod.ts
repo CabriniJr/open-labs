@@ -89,3 +89,89 @@ export const FRACAO_LEGIVEL = 0.009;
 export function tabelaLegivel(unidadesPorQuadro: number): boolean {
   return ALTURA_DA_LINHA / unidadesPorQuadro >= FRACAO_LEGIVEL;
 }
+
+/**
+ * O expoente da curva da tinta.
+ *
+ * Menor que 1 de propósito: é o que faz a tinta subir depressa no começo da
+ * rampa. Com 1 a curva é a reta de hoje, e a reta é o que produz o platô de
+ * fantasma — a caixa passa metade da descida desenhando um interior que existe
+ * e não se lê. O número foi escolhido para satisfazer a legibilidade cobrada em
+ * `TINTA_LEGIVEL`, e é o teste que o segura, não o gosto.
+ */
+export const EXPOENTE_DA_TINTA = 0.45;
+
+/** Onde o interior deixa de ser fantasma e passa a ser desenho. */
+export const TINTA_LEGIVEL = 0.4;
+
+/**
+ * De quanto do interior aparece para quanta tinta ele recebe.
+ *
+ * `quantoAparece` é medida — responde "quanto do quadro esta caixa ocupa" — e
+ * não muda. Esta função é **desenho**: ela decide com que força aquela medida
+ * chega ao papel. Separar as duas é o que permite melhorar a leitura sem
+ * mexer no instrumento, que é o erro de ajustar a régua para o gráfico ficar
+ * bonito.
+ *
+ * Contínua nas duas pontas, e por isso não é um piso: sai de zero em zero.
+ */
+export function tintaDoInterior(aparece: number): number {
+  const a = Math.max(0, Math.min(1, aparece));
+  return a ** EXPOENTE_DA_TINTA;
+}
+
+/** O traço e o preenchimento de uma caixa que está deixando de estar fechada. */
+export interface NotacaoDeFechada {
+  /** O `stroke-dasharray`, já pronto para ir ao SVG. */
+  readonly tracejado: string;
+  /** O `fill-opacity`: 1 é a caixa de hoje, 0 é contorno e nada mais. */
+  readonly preenchimento: number;
+}
+
+/**
+ * A caixa fechada virando moldura, continuamente.
+ *
+ * O defeito que isto conserta: `aparece` comandava a opacidade do interior e a
+ * borda era pintada por um booleano. Metade da ligação andava numa grandeza
+ * contínua e a outra metade era um interruptor — então a moldura anunciava
+ * "fechada" com o interior aberto e desenhado dentro dela.
+ *
+ * O fim da rampa não é um estado novo: **contorno e nada mais** é a definição
+ * da `moldura`, que o palco já desenha para o objeto enquadrado. A caixa não
+ * vira outra coisa; ela chega onde já estava escrito que se chega.
+ *
+ * O vão do tracejado encolhendo até zero é o que dá continuidade sem degrau:
+ * `8 4` (fechada) → `48 0`, e vão zero **é** linha contínua.
+ */
+export function notacaoDeFechada(aparece: number): NotacaoDeFechada {
+  const a = Math.max(0, Math.min(1, aparece));
+  // Duas casas bastam para o traço e evitam despejar `21.320000000000004` no
+  // atributo: o SVG aceita, e quem inspeciona o desenho lê ruído.
+  const duasCasas = (n: number): string => String(Math.round(n * 100) / 100);
+  return {
+    tracejado: `${duasCasas(8 + 40 * a)} ${duasCasas(4 - 4 * a)}`,
+    preenchimento: 1 - a,
+  };
+}
+
+/**
+ * O ponto da rampa em que o interior passa a ser legível.
+ *
+ * É `TINTA_LEGIVEL` lido de trás para frente pela curva, e não um segundo
+ * número escolhido à parte: dois números independentes dizendo a mesma coisa é
+ * como duas listas de labs escritas à mão divergem.
+ */
+export const PONTO_LEGIVEL = TINTA_LEGIVEL ** (1 / EXPOENTE_DA_TINTA);
+
+/**
+ * O rosto da caixa — o título e o `more inside` — cedendo lugar ao interior.
+ *
+ * Ele tem de chegar a zero **antes** de o interior ficar legível, e não depois.
+ * A regra de hoje (`1 - aparece * 2`) o mantinha na tela até o interior estar
+ * com 73% de tinta: a caixa prometia "tem mais aqui dentro" por cima do dentro
+ * já desenhado, que é a tela contradizendo a si mesma.
+ */
+export function opacidadeDoRosto(aparece: number): number {
+  const a = Math.max(0, Math.min(1, aparece));
+  return Math.max(0, 1 - a / PONTO_LEGIVEL);
+}
