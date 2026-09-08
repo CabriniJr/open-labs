@@ -128,6 +128,18 @@ dela mudar ao atravessar o `transform` — tudo por smoke automatizado.
 
 ---
 
+### As vistas fundas passaram a ser medidas — 2026-09-08
+
+`profundidade.spec.ts` mede o espaguete **um nível abaixo** de cada lab, que é onde ele
+estava: a vista da ULA tinha 342 cruzamentos e 2345 sobreposições enquanto o lab passava com
+teto quinze. Três causas, e a pior era a `key` do React repetida entre fios agregados — nó
+órfão acumulando a cada tick, invisível para toda medida que olhava o modelo em vez da tela.
+Registro em `docs/PROGRESS.md` (Entrega 9).
+
+**Próximo alvo do desenho:** a porta lógica é desenhada com o trapézio do seletor e não
+seleciona nada; a forma tem de seguir o leque real. E o processador do micro, com 42
+cruzamentos, é a vista mais cara que sobrou.
+
 ### A linguagem visual ganhou o túnel — 2026-09-08
 
 Onde dois fios se cruzam, um mergulha e reaparece, com uma boca em cada ponta. Fecha a

@@ -1747,3 +1747,83 @@ arquivos) e build (36 páginas) verdes.
 
 Soltar os pesos do roteador continua sendo a próxima — e agora com mais razão: com o
 circuito noutro plano e o cruzamento tunelado, cruzar é barato de verdade.
+
+## Entrega 9 — As vistas fundas, e o nó órfão que ninguém media ✅
+
+08/09/2026. O Luigi mandou uma captura de uma vista funda com a pergunta certa: *"eae irmão,
+isso é entregue para você?"*. Não era. O que o desenho mostrava ali era uma mancha branca de
+peças amontoadas na borda, fio atravessando caixa e um monte de coisa cortada.
+
+**A primeira descoberta é sobre a medida, e não sobre o desenho:** `espaguete.spec.ts` mede a
+**vista de abertura** de cada lab. A bagunça foi morar exatamente onde ninguém olhava.
+Medido: a vista da ULA tinha **342 cruzamentos e 2345 sobreposições** enquanto o lab dela
+passava com teto quinze.
+
+### Três causas, e nenhuma delas era o roteador
+
+**1. O interior invisível recebia linha uma a uma.** O interior do somador de 32 bits era
+desenhado a **sete por cento de opacidade** — um borrão — e mesmo assim recebia trinta e duas
+linhas individuais, uma por bit, pousando em entradas que ninguém enxerga. A pergunta que o
+código fazia era "há interior?"; a certa é "**dá para ler o que tem lá dentro?**", e ela já
+tinha resposta na rampa do nível de detalhe. Nasceu o `LIMIAR_LEGIVEL`: abaixo dele a ligação
+é **uma linha marcada com o feixe de N**, que é a notação do barramento e a mesma que o palco
+já usava com o interior fechado.
+
+**2. O interior invisível desenhava os próprios fios.** Noventa e seis deles, a sete por cento,
+cruzando-se centenas de vezes. Agora uma camada abaixo do limiar é **fantasma**: desenha as
+formas e cala os fios. Forma antes de linha é a ordem em que o olho lê.
+
+**3. E a que explica a mancha: a chave do fio era do PAR DE CAIXAS.** Com trinta e dois bits
+agregados numa caixa só, as trinta e duas ligações nasciam com a mesma `key` do React — e duas
+crianças com a mesma chave fazem a reconciliação errar: **os nós velhos não saem, e cada tick
+empilha mais um**. A vista de um bit da ULA tinha **noventa e nove** fios no documento para
+desenhar oito. O grupo dizia `8` e tinha `55` filhos.
+
+Este é o defeito mais puro da coleção: o desenho dizendo uma coisa que o modelo não disse, em
+silêncio, e **invisível para toda medida existente** — porque todas mediam o que o modelo
+mandou desenhar, e não o que sobrou na tela. A chave passou a ser do fio, e há teste cobrando
+que nenhum fio apareça duas vezes no mesmo grupo, com o relógio andando (o defeito era
+cumulativo: uma foto do primeiro quadro não o via).
+
+### O roteador, que era o pedido
+
+Duas mudanças, e as duas com a mesma disciplina — **a rota canônica é tentada primeiro, e as
+alternativas só entram quando ela repete a reta de alguém**:
+
+- **a volta para trás** era a única espécie de caminho que não olhava para os outros fios:
+  coluna fixa, altura fixa. Duas caixas lado a lado mandando para trás produziam dois
+  caminhos idênticos — sete sobreposições cegas na vista do processador do micro, e nenhum
+  teste falando delas, porque teto de cruzamento não fala de sobreposição;
+- **o corredor ganhou trilhos** (±7), tomados só quando o do meio já está ocupado.
+
+Duas tentativas foram medidas e **descartadas**, e valem o registro: abandonar a mira quando
+ela custa alguma coisa levou o lab das portas de 5 para **26** cruzamentos — a mira é o que
+ordena o leque, e ela não se toca; e oferecer os trilhos de saída, em vez de como segunda
+tentativa, mexia em fios sem motivo e trocava sobreposição por cruzamento.
+
+### O que a suíte passa a cobrar
+
+`apps/site/tests/profundidade.spec.ts`, novo: cinco vistas fundas medidas por escopo **e por
+plano**, com teto de cruzamento e **sobreposição cega em zero — sem teto, porque ambiguidade
+não se orça**; a marca de feixe conferida (o somador de 32 anuncia os 32); e o teste do nó
+órfão acima.
+
+| Vista | Antes | Depois |
+| --- | --- | --- |
+| ULA | 169 fios · 342 cruz. · 2345 sobrep. | 11 fios · 2 cruz. · 0 cegas |
+| um bit da ULA | 99 fios no documento para 8 | 8 fios |
+| processador do micro | 28 cruz. · **7 cegas** | 42 cruz. · **0 cegas** |
+| caminho de dados (abertura) | 15 | 15 |
+| sistema do genérico (abertura) | 7 | **5** (teto baixado) |
+
+O número do micro **subiu** e isso é honesto: as sete sobreposições cegas escondiam fios
+inteiros, e fio escondido não cruza nada. É o próximo alvo, e está declarado.
+
+Estado: 984 testes unitários, 247 e2e, typecheck, boundaries, catálogo e build verdes.
+
+### O que fica
+
+A porta lógica é desenhada com o **trapézio do seletor**, e ela não seleciona nada — combina
+duas entradas numa saída. A forma está dizendo a coisa errada, e o conserto não é um `kind`
+novo: é a forma seguir o leque real (uma entrada e várias saídas abre; várias entradas e uma
+saída fecha). Fica nomeado para a próxima rodada.
