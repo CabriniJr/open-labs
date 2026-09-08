@@ -55,3 +55,7 @@ export {
 } from "./providers/metrics.js";
 export { decidir, PORTA_DA_DECISAO } from "./providers/sampler.js";
 export type { Amostrador, Decisao } from "./providers/sampler.js";
+
+// Os exercícios de instrumentação: definição, sem a resposta certa.
+export { EXERCICIOS_DOS_PROVEDORES } from "./exercicios/providers.js";
+export type { DefinicaoDeExercicio, Distrator } from "./exercicios/tipos.js";
