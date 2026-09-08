@@ -351,27 +351,52 @@ export function comprimentoDaCarga(largura: number | undefined, raio: number): n
 }
 
 /**
- * Onde os pontos de um feixe ficam, em múltiplos do raio.
+ * O teto do feixe: quantos itens se leem antes de virar mancha.
  *
- * Um lote não é uma coisa maior: é **várias coisas juntas**, e a diferença é a
- * lição inteira do processador em lote. Um círculo maior diria "um span mais
- * gordo"; um punhado de pontos diz "quinhentos spans que viajam juntos porque
- * alguém decidiu que viajassem juntos".
- *
- * Sete é o teto do que se lê: acima disso vira uma mancha, e o número exato já
- * está escrito ao lado, em `×N`. O desenho diz a espécie; o rótulo diz a conta.
+ * Sete. Acima disso o número exato já está escrito ao lado, em `×N`: o desenho
+ * diz a espécie, o rótulo diz a conta.
  */
-const FEIXE: readonly (readonly [number, number])[] = [
-  [0, 0],
-  [-1.05, -0.8],
-  [1.05, -0.8],
-  [-1.05, 0.8],
-  [1.05, 0.8],
-  [-2, 0],
-  [2, 0],
-];
+const MAXIMO_DO_FEIXE = 7;
 
-const MAXIMO_DO_FEIXE = FEIXE.length;
+/**
+ * Onde cada item de um feixe fica, **ao longo da esteira**.
+ *
+ * Um lote não é uma coisa maior: é várias coisas juntas, e a diferença é a lição
+ * inteira do processador em lote. Um círculo maior diria "um span mais gordo".
+ *
+ * Eles eram uma roseta — um punhado no mesmo ponto — e agora andam **em fila**,
+ * como numa esteira. A roseta dizia "são vários"; a fila diz também que eles
+ * ocupam comprimento, que é o que torna a esteira cheia uma figura possível.
+ * Quem os põe na direção da viagem é o `offset-rotate: auto` do grupo: o item
+ * anda deitado no fio, e o eixo x local é o sentido da marcha.
+ */
+export function fila(quantos: number, raio: number): readonly number[] {
+  const passo = raio * 1.55;
+  const meio = ((quantos - 1) * passo) / 2;
+  return Array.from({ length: quantos }, (_, i) => i * passo - meio);
+}
+
+/**
+ * A forma da carga, em ordem de precedência.
+ *
+ * Mora fora do componente porque **duas pessoas precisam da resposta**: quem
+ * desenha o item, e o grupo que o carrega — que só gira junto com a esteira
+ * quando a carga é um feixe. Calculada duas vezes, uma delas ficaria para trás.
+ */
+export function formaDaCarga(opcoes: {
+  readonly comprimento: number;
+  readonly emPacote: boolean;
+  readonly quantos: number;
+}): "barra" | "pacote" | "feixe" | "unidade" {
+  if (opcoes.comprimento > 0) return "barra";
+  if (opcoes.emPacote) return "pacote";
+  return opcoes.quantos > 1 ? "feixe" : "unidade";
+}
+
+/** Quantos itens deste peso cabem no desenho. */
+export function itensDoFeixe(peso: number): number {
+  return Math.min(MAXIMO_DO_FEIXE, Math.max(1, Math.round(peso)));
+}
 
 function Carga({
   mensagem,
@@ -392,7 +417,7 @@ function Carga({
   para: string;
 }) {
   const comprimento = comprimentoDaCarga(largura, raio);
-  const quantos = Math.min(MAXIMO_DO_FEIXE, Math.max(1, Math.round(mensagem.weight)));
+  const quantos = itensDoFeixe(mensagem.weight);
   /**
    * A forma, em ordem de precedência — e cada uma responde uma pergunta
    * diferente sobre a **mesma** carga:
@@ -409,8 +434,7 @@ function Carga({
    * fatos que o motor já tem. O desenho decide como cada um aparece — o
    * domínio nunca escolhe forma, exatamente como nunca escolhe cor.
    */
-  const forma =
-    comprimento > 0 ? "barra" : emPacote ? "pacote" : quantos > 1 ? "feixe" : "unidade";
+  const forma = formaDaCarga({ comprimento, emPacote, quantos });
   // O documento é maior que o ponto de propósito: ele não é "uma coisa", é o
   // continente de várias. Do mesmo tamanho, a troca de forma passaria batida.
   const largo = raio * 2.4;
@@ -458,13 +482,13 @@ function Carga({
         </g>
       ) : null}
       {forma === "feixe"
-        ? FEIXE.slice(0, quantos).map(([dx, dy], i) => (
+        ? fila(quantos, raio).map((dx, i) => (
             <circle
               key={i}
               className="dui-stage__carga"
-              cx={dx * raio * 0.78}
-              cy={dy * raio * 0.78}
-              r={raio * 0.62}
+              cx={dx}
+              cy={0}
+              r={raio * 0.6}
             />
           ))
         : null}
@@ -2194,6 +2218,11 @@ function Camada({
                 key={`${aresta.chave}:${state.tick}`}
                 className="dui-stage__carga-grupo dui-stage__carga-grupo--acomodada"
                 data-carga={aresta.chave}
+                data-forma={formaDaCarga({
+                  comprimento: comprimentoDaCarga(aresta.width, 5.5),
+                  emPacote: aresta.canal !== undefined,
+                  quantos: itensDoFeixe(mensagem.weight),
+                })}
                 data-especie={especieDaCarga?.(mensagem)}
                 data-linha={aresta.linha}
                 style={{
@@ -2227,6 +2256,14 @@ function Camada({
               key={`${item.id}:${state.tick}`}
               className="dui-stage__carga-grupo dui-stage__carga-grupo--voo"
               data-carga={item.id}
+              /* O feixe anda em fila, e fila tem direção: só ele gira junto com
+                 a esteira. Um envelope ou uma barra girando ficariam de cabeça
+                 para baixo na volta do fio, sem ganhar nada com isso. */
+              data-forma={formaDaCarga({
+                comprimento: comprimentoDaCarga(larguraEntre.get(chave), 7),
+                emPacote: canalEntre.get(chave) === true,
+                quantos: itensDoFeixe(item.message.weight),
+              })}
               data-especie={especieDaCarga?.(item.message)}
               data-sinal={item.signalPort !== undefined ? "true" : undefined}
               style={{

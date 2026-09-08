@@ -767,6 +767,18 @@
   opacity: 0;
 }
 
+/*
+ * O feixe é o único que gira com a esteira.
+ *
+ * Ele é uma FILA de itens, e fila tem direção: deitada no fio, o eixo x local é
+ * o sentido da marcha. As outras formas ficam de pé — um envelope girando
+ * chegaria de cabeça para baixo do outro lado de um cotovelo, e ninguém ganha
+ * nada com isso.
+ */
+.dui-stage__carga-grupo[data-forma="feixe"] {
+  offset-rotate: auto;
+}
+
 .dui-stage__carga-grupo--acomodada {
   animation: dui-esteira var(--dui-travessia, 220ms) linear var(--dui-atraso, 0ms) both;
 }
