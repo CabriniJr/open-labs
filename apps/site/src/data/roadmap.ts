@@ -101,7 +101,7 @@ export const labs: readonly RoadmapLab[] = [
   // "available" com href "#": o nó abria como link e não levava a lugar nenhum.
   // A Entrega 2 mudou de rumo e este lab nunca foi construído — então ele é
   // caminho declarado, como os outros, e é assim que tem que aparecer.
-  { id: "anatomy-of-a-trace", title: "Anatomy of a Trace", href: "#", status: "coming", side: "left", y: 244, phase: 2 },
+  { id: "anatomy-of-a-trace", title: "Anatomy of a Trace", href: "labs/anatomy-of-a-trace", status: "available", side: "left", y: 244, phase: 2 },
   { id: "hard-context-and-baggage", title: "Hard context and baggage", href: "#", status: "coming", side: "right", y: 244, phase: 2 },
   { id: "reading-an-otlp-payload", title: "Reading an OTLP payload", href: "#", status: "coming", side: "left", y: 300, phase: 2 },
   // A fase 2 prometia "the shape the data has" e modelava um sinal só: três nós

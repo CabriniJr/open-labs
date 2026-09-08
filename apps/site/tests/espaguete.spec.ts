@@ -125,6 +125,13 @@ const TETOS = [
   // nada. Abertos, os três se abrem em leque e um deles cruza. Um cruzamento é o
   // preço de duas ligações que existiam e não podiam ser vistas.
   { lab: "labs/providers/", nome: "o processo instrumentado", cruzamentos: 1 },
+  /*
+   * Os dois labs novos da apostila v1. O da anatomia tem quatro cruzamentos e
+   * eles são estruturais: quatro serviços exportando para um backend que fica
+   * embaixo de todos é um leque que converge, e leque que converge cruza.
+   */
+  { lab: "labs/three-pillars/", nome: "os três gravadores", cruzamentos: 0 },
+  { lab: "labs/anatomy-of-a-trace/", nome: "a anatomia de um trace", cruzamentos: 4 },
 ] as const;
 
 for (const teto of TETOS) {

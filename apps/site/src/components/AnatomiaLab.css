@@ -1,0 +1,181 @@
+/*
+  Sem hexadecimal: `pnpm catalogo` reprova tinta escrita fora do catálogo. Cor
+  sai de token, e a do desenho sai do catálogo de `depth-ui/src/stage.css`.
+*/
+.anatomia-lab {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.anatomia-lab__palco {
+  min-width: 0;
+}
+
+.anatomia-lab__controles {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-2);
+  margin-block-start: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-2);
+  background: var(--paper-raised);
+  font-size: var(--size-step--1);
+}
+
+.anatomia-lab__tick {
+  color: var(--ink-faint);
+}
+
+.anatomia-lab__campo {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.anatomia-lab__campo span {
+  color: var(--ink-muted);
+}
+
+.anatomia-lab__switch {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--ink-muted);
+}
+
+/*
+  A pergunta, e as três respostas.
+
+  Ela é a peça central da página e não um rodapé: o lab existe para que ela seja
+  feita. Por isso ela tem moldura própria e vem depois do palco, na largura da
+  leitura — o leitor acabou de ver os três guardarem coisas diferentes.
+*/
+.anatomia-lab__pergunta {
+  padding: var(--space-2);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-3);
+  background: var(--paper-raised);
+}
+
+.anatomia-lab__pergunta h3 {
+  margin: 0 0 var(--space-1);
+  font-size: var(--size-step-1);
+}
+
+.anatomia-lab__verdade {
+  margin: 0 0 var(--space-2);
+  color: var(--ink-muted);
+  font-size: var(--size-step--1);
+}
+
+.anatomia-lab__respostas {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+}
+
+.anatomia-lab__respostas div {
+  display: grid;
+  grid-template-columns: 6rem minmax(0, 1fr);
+  gap: var(--space-1);
+  padding: 0.5rem 0.7rem;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-1);
+}
+
+/*
+  Quem responde e quem não responde se lê de relance — e é FIGURA, não só cor:
+  quem responde tem a borda do acento e um traço à esquerda; quem não responde
+  fica apagado. Cor sozinha não é canal.
+*/
+.anatomia-lab__respostas div[data-responde="true"] {
+  border-color: var(--accent);
+  border-left-width: 3px;
+}
+
+.anatomia-lab__respostas div[data-responde="false"] {
+  color: var(--ink-muted);
+  border-style: dashed;
+}
+
+.anatomia-lab__respostas dt {
+  font-weight: 600;
+}
+
+.anatomia-lab__respostas dd {
+  margin: 0;
+  max-width: var(--measure);
+  line-height: 1.6;
+}
+
+.anatomia-lab__erros dl {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+}
+
+.anatomia-lab__erros div {
+  padding: 0.6rem 0.8rem;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-1);
+  background: var(--paper-raised);
+}
+
+.anatomia-lab__erros dt {
+  margin-bottom: 0.2rem;
+  font-weight: 600;
+}
+
+.anatomia-lab__erros dd {
+  margin: 0;
+  max-width: var(--measure);
+  color: var(--ink-muted);
+  font-size: var(--size-step--1);
+  line-height: 1.6;
+}
+
+@media (min-width: 60rem) {
+  .anatomia-lab__respostas div {
+    grid-template-columns: 8rem minmax(0, 1fr);
+  }
+}
+
+/* A árvore montada: indentação é hierarquia, e o órfão se marca. */
+.anatomia-lab__galhos {
+  margin: 0 0 var(--space-1);
+  padding: 0;
+  list-style: none;
+  font-size: var(--size-step--1);
+  line-height: 1.7;
+}
+
+.anatomia-lab__trace {
+  color: var(--ink-faint);
+}
+
+.anatomia-lab__id {
+  color: var(--ink-faint);
+}
+
+.anatomia-lab__galhos li[data-orfao="true"] {
+  color: var(--ink-warn);
+}
+
+/* Duas árvores para uma requisição é o defeito, e ele se lê de relance. */
+.anatomia-lab__resumo[data-arvores="1"] {
+  color: var(--ink-muted);
+}
+
+.anatomia-lab__resumo:not([data-arvores="1"]) {
+  color: var(--ink-warn);
+  font-weight: 600;
+}
+
+.anatomia-lab__nota {
+  margin: var(--space-1) 0 0;
+  max-width: var(--measure);
+  color: var(--ink-faint);
+  font-size: var(--size-step--1);
+  line-height: 1.6;
+}

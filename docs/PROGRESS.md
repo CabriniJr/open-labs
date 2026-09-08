@@ -1967,3 +1967,63 @@ quantas requisições o log não mencionou — a ausência de uma linha não é 
 Estado: 1062 testes unitários, 259 e2e, typecheck, boundaries, catálogo e build (37 páginas)
 verdes. A espinha da v1: `three-pillars` ✅ · `anatomy-of-a-trace` · `providers` ✅ ·
 `manual-spans` · `head-vs-tail-sampling`.
+
+## Entrega 13 — `anatomy-of-a-trace`, a fase 2 da apostila ✅
+
+08/09/2026. Desenho: `docs/superpowers/specs/2026-09-08-apostila-v1-espinha-otel-design.md` §4.2.
+Três dos cinco nós da espinha estão de pé.
+
+A tese: **a árvore não existe durante o run**. Cada span carrega uma aresta só — a que aponta
+para o pai — e cada processo exporta por conta própria; a árvore é o fecho transitivo dessas
+arestas, calculado depois por quem as recolheu.
+
+### O desenho é a tese, antes do texto
+
+Quatro serviços numa **fileira**: a chamada anda para frente, de um para o outro, levando o
+`traceparent`; o span de cada um sai **para baixo**, sozinho, até o backend. Quatro fios
+descendo em paralelo dizem "ninguém manda árvore para lugar nenhum" sem uma palavra.
+
+E os três primeiros serviços são **trapézios que abrem** — uma entrada, duas saídas: o
+trabalho continua por um lado, a telemetria sai pelo outro. O `ledger`, que é o fim da
+cadeia, é um retângulo. A regra do leque, de novo, dizendo a verdade sozinha.
+
+### O que o lab cobra são as conclusões ERRADAS
+
+É incomum e é o ponto: os testes exigem que **derrubar um cabeçalho não dê erro**. Tem de dar
+**duas árvores completas e plausíveis** para uma requisição, cada uma com sua raiz, nenhuma se
+sabendo metade de alguma coisa. E um serviço sem instrumentação **não pode faltar** na
+árvore: ele repassa o cabeçalho, o filho se pendura no avô, e a árvore fecha com um salto a
+menos parecendo completa. Se um dia isso deixar de acontecer, o lab parou de ensinar o que
+acontece de verdade.
+
+### O achado da rodada: não existe evento de fim de trace
+
+O painel precisava escolher **qual** requisição desenhar, e a mais recente está sempre com um
+span no fio — desenhá-la mostraria uma árvore pela metade e acusaria um defeito que não
+existe. Tentei duas regras erradas antes de ver que a resposta certa já estava no assunto:
+**o backend espera e desiste.**
+
+Não existe evento de "trace terminou", e não poderia existir — emiti-lo exigiria alguém que
+conhecesse a árvore inteira, que é justamente o que não há. Então o backend carimba a chegada
+de cada span e dá o trace por encerrado depois de dois ticks de silêncio. É a mesma coisa que
+um backend de verdade faz, e é a razão de amostragem de cauda precisar de janela e de teto de
+memória. O que era um detalhe de painel virou uma afirmação do lab, com teste.
+
+### A contraparte real: quatro processos de verdade
+
+`labs/anatomy-of-a-trace/`: o **mesmo programa** rodando quatro vezes com nomes diferentes —
+numa cadeia real ninguém é especial —, falando HTTP entre si, com o propagador W3C de verdade.
+Rodado: **480 spans, 61 de cada serviço**, e um `Trace ID` aparecendo em **quatro
+`ResourceSpans` separados**, um por processo. O Collector é o primeiro lugar do sistema onde
+os quatro se encontram, que é exatamente o que a tese diz.
+
+As duas variáveis do compose são os dois defeitos do lab: `ANATOMY_STRIP_HEADER` no
+`checkout` e `ANATOMY_UNINSTRUMENTED` no `payments`.
+
+Estado: 1076 testes unitários, 271 e2e, typecheck, boundaries, catálogo e build (38 páginas)
+verdes. Os tetos de espaguete dos dois labs novos entraram medidos: 0 no `three-pillars`, 4 na
+anatomia — e os quatro são estruturais, porque quatro serviços exportando para um backend que
+fica embaixo de todos é um leque que converge.
+
+Espinha: `three-pillars` ✅ · `anatomy-of-a-trace` ✅ · `providers` ✅ · `manual-spans` ·
+`head-vs-tail-sampling`.

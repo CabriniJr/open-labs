@@ -1,0 +1,162 @@
+---
+import { AnatomiaLab } from "../../components/AnatomiaLab.tsx";
+import { Predicao } from "../../components/Predicao.tsx";
+import SiteFooter from "../../components/SiteFooter.astro";
+import SiteNav from "../../components/SiteNav.astro";
+import Base from "../../layouts/Base.astro";
+import { url } from "../../lib/urls";
+import "../../styles/docs.css";
+import "../../components/AnatomiaLab.css";
+import "../../components/Predicao.css";
+import "@ovh/depth-ui/src/stage.css";
+import "../../components/Explorer.css";
+---
+
+<Base
+  domain="otel"
+  title="Anatomy of a trace — OpenLabs"
+  description="One request crosses four processes. Each one carries a header, creates a span, and exports on its own — and the tree exists nowhere until a backend builds it out of what arrived. Drop the header, or leave a service uninstrumented, and nothing errors."
+>
+  <SiteNav current="labs" />
+
+  <main id="content">
+    <section class="lab-head editorial">
+      <div class="prose">
+        <p class="lab-head__eyebrow mono">
+          <a href={url("handbooks/otel")}>OpenTelemetry Visual Handbook</a> · lab
+        </p>
+        <h1>The waterfall you look at does not exist until you ask for it</h1>
+        <p>
+          A trace is not an object that lives somewhere while the request runs.
+          Each span knows <b>one edge</b> — its parent — and carries it wherever
+          it goes; each process exports on its own schedule; and the tree is the
+          transitive closure of those edges, computed after the fact by whoever
+          collected them.
+        </p>
+        <p>
+          Below, one request crosses four processes. Watch the calls move
+          <em>forward</em> and the spans leave <em>downward</em>, one per
+          service, each on its own wire. Then break it: drop the header at a
+          boundary, or take the instrumentation out of a service in the middle.
+          Nothing errors. You get a different conclusion.
+        </p>
+      </div>
+      <aside class="lab-head__note mono">
+        <p>One tick is one second.</p>
+        <p>Nobody allocates the ids — so nobody has the list.</p>
+      </aside>
+    </section>
+
+    <section class="lab-palco">
+      <AnatomiaLab client:only="react" />
+    </section>
+
+    <section class="lab-prosa editorial">
+      <div class="prose">
+        <h2>Break it</h2>
+        <p>Three moves, and none of them produces an error anywhere.</p>
+        <ol>
+          <li>
+            <b>Drop the header at <code>checkout → payments</code>.</b> The panel
+            goes from one trace to <b>two</b>, both complete, both plausible,
+            neither containing the other. In production this is a proxy that
+            strips unknown headers, a client that rebuilds the request, or a
+            queue that carries only the payload.
+          </li>
+          <li>
+            <b>Take the instrumentation out of <code>payments</code>.</b> It
+            still forwards the header, so <code>ledger</code> attaches to
+            <code>checkout</code> — its grandparent. The tree closes with one hop
+            missing and still looks complete, and the time of the vanished hop is
+            attributed to whoever is above it.
+          </li>
+          <li>
+            <b>Let downstream services decide sampling on their own</b>, then drop
+            head sampling to 50%. You do not get more data: you get
+            <b>fragments</b>, half-trees that look like evidence. That is why the
+            decision travels in the header, and why the default sampler respects
+            the one that arrived.
+          </li>
+        </ol>
+
+        <h2>Predict before you look</h2>
+        <p>Answer first, then run it.</p>
+      </div>
+      <div class="lab-predicao">
+        <Predicao
+          client:visible
+          pergunta="A proxy between two of your services strips the traceparent header. What does the backend show?"
+          opcoes={[
+            "Two complete traces for one request, and no error anywhere",
+            "One trace with a gap where the missing hop was",
+            "An error: the downstream SDK rejects the request without a parent",
+          ]}
+          correta={0}
+          revelacao="Nothing fails. Without a context to extract, the next service starts a new trace — it is the correct behaviour, and it is indistinguishable from a request that genuinely began there. Both traces have their own root, both close, and neither one knows it is half of something. The only trace of the problem inside the process is a root span in a service that should never have produced one."
+        />
+      </div>
+    </section>
+
+    <section class="lab-prosa editorial">
+      <div class="prose">
+        <h2>Read the theory</h2>
+        <p>
+          <a href={url("handbooks/otel/articles/a-trace-is-a-tree-nobody-owns")}
+            >A trace is a tree nobody owns</a
+          > is the prose version of this lab: no allocator, no completeness signal,
+          and a structure that degrades instead of failing. For what carries the
+          edge across a process boundary, read
+          <a href={url("handbooks/otel/articles/context-is-the-product")}
+            >Context is the product</a
+          >.
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <SiteFooter />
+</Base>
+
+<style>
+  .lab-head {
+    padding-block: var(--space-4) var(--space-2);
+  }
+
+  .lab-head__eyebrow {
+    margin: 0 0 var(--space-1);
+    color: var(--accent);
+    font-size: var(--size-step--1);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  h1 {
+    margin: 0 0 var(--space-2);
+    font-size: var(--size-step-2);
+    max-width: 24ch;
+  }
+
+  .lab-head__note {
+    align-self: end;
+    color: var(--ink-muted);
+    font-size: var(--size-step--1);
+  }
+
+  .lab-head__note p {
+    margin: 0 0 0.35rem;
+  }
+
+  .lab-palco {
+    margin-block: var(--space-2) var(--space-4);
+  }
+
+  .lab-prosa {
+    padding-block-end: var(--space-4);
+  }
+
+  .lab-predicao {
+    grid-column: 1 / -1;
+    margin-block-start: var(--space-2);
+    max-width: var(--measure);
+  }
+</style>

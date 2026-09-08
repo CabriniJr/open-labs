@@ -1,0 +1,18 @@
+# Recebe os spans dos quatro processos. Eles chegam SEPARADOS, cada um por
+# conta do seu serviço — e é o Collector, aqui na ponta, o primeiro lugar do
+# sistema onde os quatro se encontram.
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+
+exporters:
+  debug:
+    verbosity: detailed
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      exporters: [debug]
