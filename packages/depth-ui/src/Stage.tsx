@@ -31,7 +31,9 @@ import {
 import { caminho, pontasDe, retasDe } from "./roteador.js";
 import type { Ponto } from "./roteador.js";
 import { travessia } from "./travessia.js";
-import { juncoes } from "./espaguete.js";
+import { juncoes, segmentos } from "./espaguete.js";
+import { tuneis } from "./tunel.js";
+import type { Lacuna } from "./tunel.js";
 import { PORTA_ANONIMA, portasDaCaixa, posicaoDaPorta } from "./portas.js";
 import { dilatarPara, relogioDaCamada } from "./tempo.js";
 
@@ -480,6 +482,64 @@ function Carga({
         </text>
       ) : null}
     </>
+  );
+}
+
+/** A caixa que contém um caminho, com folga para a máscara não cortar a ponta. */
+function caixaDoCaminho(d: string): { x: number; y: number; w: number; h: number } {
+  const partes = segmentos(d);
+  const xs = partes.flatMap((s) => [s.x1, s.x2]);
+  const ys = partes.flatMap((s) => [s.y1, s.y2]);
+  const margem = 20;
+  const minX = Math.min(...xs);
+  const minY = Math.min(...ys);
+  return {
+    x: minX - margem,
+    y: minY - margem,
+    w: Math.max(...xs) - minX + margem * 2,
+    h: Math.max(...ys) - minY + margem * 2,
+  };
+}
+
+/**
+ * O vazio do túnel é uma **máscara**, e não um `d` partido.
+ *
+ * Partir o caminho limparia a tela e cegaria a medida: `meada()` lê os `d` que a
+ * página desenhou, e dois trechos que não se tocam não se cruzam — o caminho de
+ * dados passaria de quinze cruzamentos para perto de zero sem que uma linha
+ * tivesse melhorado, e o teto viraria a descrição de um estrago que ninguém mais
+ * vê.
+ *
+ * Com máscara, o `d` continua inteiro e a medida lê o mesmo de antes. Não existe
+ * caminho pelo qual o túnel encoste no número.
+ */
+function MascaraDoTunel({
+  id,
+  d,
+  lacunas,
+}: {
+  readonly id: string;
+  readonly d: string;
+  readonly lacunas: readonly Lacuna[];
+}) {
+  const caixa = caixaDoCaminho(d);
+  // Mais grosso que o traço mais grosso do palco (o barramento, 3.5) com folga
+  // para o halo: o buraco tem de atravessar o fio inteiro.
+  const espessura = 9;
+  return (
+    <mask id={id} maskUnits="userSpaceOnUse">
+      <rect x={caixa.x} y={caixa.y} width={caixa.w} height={caixa.h} fill="white" />
+      {lacunas.map((lacuna) => (
+        <rect
+          key={`${lacuna.x},${lacuna.y}`}
+          x={lacuna.horizontal ? lacuna.x - lacuna.folga : lacuna.x - espessura / 2}
+          y={lacuna.horizontal ? lacuna.y - espessura / 2 : lacuna.y - lacuna.folga}
+          width={lacuna.horizontal ? lacuna.folga * 2 : espessura}
+          height={lacuna.horizontal ? espessura : lacuna.folga * 2}
+          fill="black"
+        />
+      ))}
+    </mask>
   );
 }
 
@@ -1170,6 +1230,24 @@ function Camada({
     })
     .filter((a): a is NonNullable<typeof a> => a !== null);
 
+  /**
+   * Onde cada fio mergulha.
+   *
+   * Sai da MESMA função que acha os cruzamentos, então não existe desenho
+   * tunelando num lugar enquanto a conta conta em outro.
+   */
+  const lacunas = tuneis(
+    arestas.map((a) => ({
+      chave: a.chave,
+      d: a.traco,
+      ...(a.width === undefined ? {} : { width: a.width }),
+    })),
+  );
+  const lacunasDe = new Map<string, Lacuna[]>();
+  for (const lacuna of lacunas) {
+    lacunasDe.set(lacuna.chave, [...(lacunasDe.get(lacuna.chave) ?? []), lacuna]);
+  }
+
   // A carga em voo só sabe de onde veio e para onde vai; o fio que a leva é o
   // primeiro que liga os dois. Com leque, as cópias são itens distintos, cada
   // uma com o seu destino, então nenhuma some no caminho de outra.
@@ -1316,6 +1394,11 @@ function Camada({
           <g
             key={aresta.chave}
             className="dui-stage__fio"
+            mask={
+              (lacunasDe.get(aresta.chave)?.length ?? 0) > 0
+                ? `url(#${identificador(`tunel-${aresta.chave}`)})`
+                : undefined
+            }
             /* As duas pontas, nomeadas: é o que permite conferir de fora que
                nenhum fio atravessa uma caixa que não é ponta dele. */
             data-de={aresta.from}
@@ -1333,6 +1416,13 @@ function Camada({
               circuito denso — e era o que estava acontecendo dentro do somador,
               onde o fluxo interno existia e não dava para acompanhar.
             */}
+            {(lacunasDe.get(aresta.chave)?.length ?? 0) > 0 ? (
+              <MascaraDoTunel
+                id={identificador(`tunel-${aresta.chave}`)}
+                d={aresta.traco}
+                lacunas={lacunasDe.get(aresta.chave) ?? []}
+              />
+            ) : null}
             <path className="dui-stage__leito" d={aresta.traco} />
             <path
               id={identificador(aresta.chave)}
@@ -1953,6 +2043,55 @@ function Camada({
             </text>
           </g>
         ))}
+      </g>
+
+      {/*
+        As bocas do túnel.
+
+        Duas por lacuna, sempre do mesmo tamanho e do mesmo lado — é o par que o
+        olho usa para reconstituir a linha. Uma boca sozinha é um fio que parece
+        ter acabado, que é a "quebra" que este round mata.
+
+        Elas ficam FORA do grupo mascarado: lá dentro a máscara as apagaria junto
+        com o pedaço de fio que elas existem para explicar.
+
+        A cor não é própria: `data-linha` faz a boca herdar o token do fio a que
+        ela pertence, senão um túnel de linha de controle sairia preto e diria
+        que ali passa dado.
+      */}
+      <g className="dui-stage__tuneis">
+        {lacunas.flatMap((lacuna) => {
+          const dona = arestas.find((a) => a.chave === lacuna.chave);
+          const lado = 4.5;
+          // As duas apontam para o mesmo lado, o do fluxo: entra no chão andando
+          // e sai andando. Uma contra a outra diria que o trecho encolheu.
+          const giro = lacuna.horizontal
+            ? lacuna.sentido > 0
+              ? 0
+              : 180
+            : lacuna.sentido > 0
+              ? 90
+              : 270;
+          const bocas = lacuna.horizontal
+            ? [
+                { x: lacuna.x - lacuna.folga, y: lacuna.y, giro },
+                { x: lacuna.x + lacuna.folga, y: lacuna.y, giro },
+              ]
+            : [
+                { x: lacuna.x, y: lacuna.y - lacuna.folga, giro },
+                { x: lacuna.x, y: lacuna.y + lacuna.folga, giro },
+              ];
+          return bocas.map((boca, i) => (
+            <polygon
+              key={`${lacuna.chave}-${lacuna.x}-${lacuna.y}-${i}`}
+              className="dui-stage__boca"
+              data-tunel={lacuna.chave}
+              data-linha={dona?.linha}
+              points={`0,${-lado} ${lado},0 0,${lado}`}
+              transform={`translate(${boca.x} ${boca.y}) rotate(${boca.giro})`}
+            />
+          ));
+        })}
       </g>
 
       <g className="dui-stage__travessias">

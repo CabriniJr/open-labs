@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { meada } from "@ovh/depth-ui";
+import { cruzamentos as cruzamentosDe, meada } from "@ovh/depth-ui";
 
 /**
  * Quanto espaguete cada figura tem, medido no que foi desenhado.
@@ -162,6 +162,83 @@ for (const teto of TETOS) {
         await page.locator(".dui-stage__juncao").count(),
         "tronco compartilhado sem ponto de junção",
       ).toBeGreaterThan(0);
+    }
+  });
+}
+
+/**
+ * As bocas do túnel, no espaço de coordenadas em que foram desenhadas.
+ *
+ * Mesma leitura de escopo dos fios, e pelo mesmo motivo: uma boca de dentro de
+ * um interior não explica um cruzamento de fora, por mais que os números
+ * batam.
+ */
+async function bocas(page: import("@playwright/test").Page) {
+  return page.locator(".dui-stage__boca").evaluateAll((nos) =>
+    nos.map((n) => {
+      const escopo: string[] = [];
+      let cursor: Element | null = n.parentElement;
+      while (cursor !== null) {
+        if (cursor.classList.contains("dui-stage__interior")) {
+          escopo.push(cursor.getAttribute("data-dentro") ?? "?");
+        }
+        cursor = cursor.parentElement;
+      }
+      const t = n.getAttribute("transform") ?? "";
+      const m = /translate\(([-\d.]+) ([-\d.]+)\)/u.exec(t);
+      return {
+        tunel: n.getAttribute("data-tunel") ?? "",
+        x: Number(m?.[1] ?? Number.NaN),
+        y: Number(m?.[2] ?? Number.NaN),
+        escopo: escopo.join("/"),
+      };
+    }),
+  );
+}
+
+/*
+ * O túnel: onde dois fios se cruzam, um mergulha e reaparece.
+ *
+ * A convenção que respondia isto antes era a AUSÊNCIA do pontinho de junção —
+ * certa, e muda para quem não a conhece. Estes dois testes cobram a troca da
+ * ausência por uma figura, e cobram o par: uma boca sozinha é um fio que parece
+ * ter acabado, que é a "quebra" que o round veio matar.
+ *
+ * Note o que eles NÃO fazem: mexer nos tetos acima. Túnel resolve a leitura, não
+ * o orçamento — se ele abatesse, a saída barata para uma vista embaralhada
+ * passaria a ser tunelar em vez de reorganizar. E, como o vazio é máscara e o
+ * `d` continua inteiro, a medida lá em cima nem fica sabendo que ele existe.
+ */
+for (const teto of TETOS) {
+  test(`${teto.nome}: nenhum cruzamento fica nu`, async ({ page }) => {
+    await page.goto(teto.lab);
+    await expect(page.locator(".dui-stage")).toBeVisible({ timeout: 15_000 });
+    await expect
+      .poll(async () => page.locator(".dui-stage__trilho").count(), { timeout: 10_000 })
+      .toBeGreaterThan(0);
+
+    const medidos = await fios(page);
+    const desenhadas = await bocas(page);
+
+    for (const grupo of porEscopo(medidos)) {
+      const escopo = grupo[0]?.escopo ?? "";
+      const daqui = desenhadas.filter((b) => b.escopo === escopo);
+      for (const c of cruzamentosDe(grupo.map((f) => f.d))) {
+        // A boca fica a até uma folga do cruzamento, e a folga vale no máximo o
+        // meio-túnel mais a distância entre dois cruzamentos que se juntaram.
+        const cobre = daqui.some((b) => Math.abs(b.x - c.x) <= 24 && Math.abs(b.y - c.y) <= 24);
+        expect(cobre, `cruzamento nu em ${c.x},${c.y} de ${teto.nome}`).toBe(true);
+      }
+    }
+
+    // Boca vem em par. Uma sozinha é a quebra.
+    const porTunel = new Map<string, number>();
+    for (const b of desenhadas) {
+      const chave = `${b.escopo}|${b.tunel}`;
+      porTunel.set(chave, (porTunel.get(chave) ?? 0) + 1);
+    }
+    for (const [tunel, quantas] of porTunel) {
+      expect(quantas % 2, `o túnel de ${tunel} tem ${quantas} bocas`).toBe(0);
     }
   });
 }

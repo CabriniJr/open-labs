@@ -32,6 +32,14 @@ export interface Lacuna {
   readonly horizontal: boolean;
   /** Metade do comprimento do buraco: do centro até cada boca. */
   readonly folga: number;
+  /**
+   * Para que lado o fio anda neste trecho: `1` para a direita/para baixo.
+   *
+   * As duas bocas apontam para o MESMO lado, o do fluxo — é o belt subterrâneo,
+   * que entra no chão andando e sai andando. Apontando uma para a outra elas
+   * diriam que o trecho foi encolhido, que é outra coisa.
+   */
+  readonly sentido: 1 | -1;
 }
 
 /** Do centro até a boca, quando há espaço. */
@@ -77,15 +85,23 @@ function trechoNoPonto(
   x: number,
   y: number,
   horizontal: boolean,
-): { readonly de: number; readonly ate: number } | undefined {
+): { readonly de: number; readonly ate: number; readonly sentido: 1 | -1 } | undefined {
   for (const s of segmentos(fio.d)) {
     const deitado = s.y1 === s.y2;
     if (deitado !== horizontal) continue;
     if (deitado && s.y1 === y && x > Math.min(s.x1, s.x2) && x < Math.max(s.x1, s.x2)) {
-      return { de: Math.min(s.x1, s.x2), ate: Math.max(s.x1, s.x2) };
+      return {
+        de: Math.min(s.x1, s.x2),
+        ate: Math.max(s.x1, s.x2),
+        sentido: s.x2 > s.x1 ? 1 : -1,
+      };
     }
     if (!deitado && s.x1 === x && y > Math.min(s.y1, s.y2) && y < Math.max(s.y1, s.y2)) {
-      return { de: Math.min(s.y1, s.y2), ate: Math.max(s.y1, s.y2) };
+      return {
+        de: Math.min(s.y1, s.y2),
+        ate: Math.max(s.y1, s.y2),
+        sentido: s.y2 > s.y1 ? 1 : -1,
+      };
     }
   }
   return undefined;
@@ -94,6 +110,7 @@ function trechoNoPonto(
 interface Acumulado {
   readonly chave: string;
   readonly horizontal: boolean;
+  readonly sentido: 1 | -1;
   /** A coordenada fixa do trecho: o `y` de quem está deitado, o `x` de quem está em pé. */
   readonly fixa: number;
   readonly limites: { readonly de: number; readonly ate: number };
@@ -131,6 +148,7 @@ export function tuneis(fios: readonly FioDesenhado[]): readonly Lacuna[] {
       porTrecho.set(id, {
         chave: escolhido.fio.chave,
         horizontal: escolhido.horizontal,
+        sentido: trecho.sentido,
         fixa,
         limites: trecho,
         posicoes: [posicao],
@@ -155,6 +173,7 @@ export function tuneis(fios: readonly FioDesenhado[]): readonly Lacuna[] {
       saida.push({
         chave: acumulado.chave,
         horizontal: acumulado.horizontal,
+        sentido: acumulado.sentido,
         x: acumulado.horizontal ? centro : acumulado.fixa,
         y: acumulado.horizontal ? acumulado.fixa : centro,
         folga,

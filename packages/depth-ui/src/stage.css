@@ -555,6 +555,26 @@
   stroke: none;
 }
 
+/*
+ * A boca do túnel: a figura que diz "este fio passa por baixo, e volta ali".
+ *
+ * A junção acima resolve metade da pergunta por PRESENÇA, e a outra metade por
+ * ausência — e ausência é muda para quem não conhece a convenção. A boca troca
+ * a ausência por uma figura: onde não há pontinho E há duas bocas, os dois fios
+ * não se falam, e dá para ver por quê.
+ *
+ * A cor sai do fio dono, e não daqui: túnel de linha de controle é vermelho
+ * porque a linha é de controle, e um triângulo preto ali diria que passa dado.
+ */
+.dui-stage__boca {
+  fill: color-mix(in oklab, var(--dui-dado) 85%, var(--ink));
+  stroke: none;
+}
+
+.dui-stage__boca[data-linha="control"] {
+  fill: color-mix(in oklab, var(--dui-sinal) 65%, var(--rule));
+}
+
 .dui-stage__chave-via,
 .dui-stage__chave-lamina {
   stroke: color-mix(in oklab, var(--dui-dado) 70%, var(--ink));
