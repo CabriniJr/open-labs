@@ -1472,3 +1472,94 @@ ocupa quase o monitor inteiro, e nenhum arranjo põe o rótulo em nove pixels al
 
 Estado: 911 testes unitários, 201 e2e, typecheck, boundaries (81 arquivos), catálogo (12
 arquivos) e build (33 páginas) verdes.
+
+## Entrega 5 — Os exercícios de instrumentação, e a contraparte real ✅
+
+Plano: `docs/superpowers/plans/2026-09-01-exercicios-de-instrumentacao.md`, desenho em
+`docs/superpowers/specs/2026-09-01-exercicios-de-instrumentacao-design.md`. Executado em
+08/09/2026 na `entrega-4/lab-provedores-otel`.
+
+O handbook tinha duas coisas, e as duas são receptivas: o mecanismo rodando e a teoria ao
+lado. Faltava a terceira — **a pessoa decidir e descobrir que estava errada**, e não sobre o
+assunto, e sim *no meio do código em que a decisão é tomada*.
+
+### A contraparte real veio primeiro, e ela roda
+
+`labs/providers/`: um `checkout` em Java instrumentado à mão contra o SDK fixado no
+`pom.xml` (BOM **1.65.0**; `opentelemetry-semconv` **1.43.0**, que é a exceção fora do BOM),
+um Collector imprimindo, e um `compose.yaml` de duas peças. Rodado de verdade antes de
+qualquer linha do exercício: **56 spans**, em lotes de cinco segundos, com o
+`service.name: checkout` no bloco de recurso — uma camada acima dos spans — e
+`InstrumentationScope checkout.http` entre os dois. É o envelope da tese, impresso por um
+programa de terceiro.
+
+O README daquele lab diz também **o que não dá para ver ali**: a fila enchendo, e o lote
+partindo por tempo em vez de tamanho. As duas são o que o lab da tela mostra e o terminal
+não, e é o argumento do projeto inteiro em duas linhas.
+
+### A resposta certa não é escrita: ela é extraída
+
+O `Checkout.java` carrega marcadores (`<handbook:trecho id="…">`, `<handbook:lacuna>`), e
+`apps/site/src/lib/exercicios.ts` recorta no **build** — o frontmatter do Astro roda em Node,
+a ilha recebe o resultado pronto e nunca toca no sistema de arquivos. O tipo
+`DefinicaoDeExercicio` **não tem campo para o código certo**: não existe como escrevê-lo
+errado, nem como ele envelhecer em silêncio. Mude o arquivo e o exercício muda junto.
+
+**Teste de mutação, feito à mão:** apagando a linha `// <handbook:lacuna>` do arquivo Java,
+três testes caem nomeando o exercício e dizendo o que falta (`o trecho
+"onde-mora-o-service-name" não tem lacuna`); restaurada, sete voltam a passar. Sem essa
+verificação, "a resposta é extraída" seria promessa.
+
+### Três defeitos que só rodar de verdade achou
+
+1. **As variáveis do `compose.yaml` não faziam nada.** `OTEL_EXPORTER_OTLP_ENDPOINT`,
+   `OTEL_BSP_SCHEDULE_DELAY` e `OTEL_TRACES_SAMPLER_ARG` são lidas pelo módulo de
+   autoconfiguração — que este lab não usa de propósito, porque o assunto é o provedor
+   montado à mão. O app exportava para `localhost:4317` e não alcançava o Collector, com as
+   três variáveis declaradas ao lado. Um arquivo prometendo o que não faz é a mentira
+   silenciosa de sempre, agora em YAML. Agora o Java as lê à mão, e o que o compose diz é o
+   que acontece.
+2. **O volume não montava sob SELinux** (`permission denied` em `/etc/collector.yaml`, com o
+   Collector morrendo na largada): faltava o sufixo `:z`.
+3. **A raiz do repositório contada por pastas quebrava no build.** `import.meta.url` menos
+   quatro níveis funciona no vitest e aponta para `apps/labs/` no `astro build`, porque lá o
+   módulo está empacotado em `dist/chunks/`. A âncora passou a ser um arquivo que só existe
+   na raiz (`pnpm-workspace.yaml`), com erro que diz o que procurava.
+
+### Duas mudanças conscientes em cima do plano
+
+- **Os distratores do E2 mudaram de forma.** O plano dava
+  `span.setAttribute("service.name", …)` e `otel.getTracer("checkout")` como blocos —
+  sentenças inteiras para uma lacuna que é uma **expressão** dentro de
+  `Resource.getDefault().merge(…)`. Um distrator que não compila naquele lugar entrega a
+  resposta pela forma, que é exatamente o que a §4.1 da spec proíbe. Os dois
+  mal-entendidos continuam nomeados, agora dentro da forma da lacuna: deixar o recurso no
+  padrão (e pôr o nome no span), e nomear o serviço com o nome do escopo.
+- **O teste "o lab existe no mapa" mora em `apps/site`**, e não no pacote de domínio: o mapa
+  é do site, e `otel-domain` importando `apps/site/src` inverteria a dependência dos
+  projetos do TypeScript e furaria o `rootDir` do pacote.
+
+### O placar
+
+`ovh:placar:v1`, chave própria — `ovh:progress:v1` guarda o que o leitor já leu, e mexer nela
+apagaria isso. Guarda **acerto de primeira**, e nada mais: contar acertos totais premiaria
+tentar até ficar verde, que é o hábito que este handbook não quer ensinar. O nó do mapa
+mostra `n/m first try`, e **só onde há exercício** — `0/0` se lê como "você não fez", e a
+pessoa não deixou de fazer nada. Quantos exercícios um lab tem sai da lista de exercícios, e
+de nenhum outro lugar.
+
+### O que fica de fraqueza, declarado
+
+O veredito é escrito à mão (D1 da spec). A resposta certa foi tirada disso — ela vem do
+arquivo —, e toda âncora é obrigatória e testada. Sobra que **as explicações são autorais e
+podem envelhecer sem ninguém ser avisado**. Aceito, e escrito aqui para não ser esquecido.
+
+Uma observação de suíte: numa rodada completa do e2e, o teste "os dois handbooks contam o
+progresso separado" falhou **uma vez** e passou em vinte reexecuções seguintes, incluindo
+uma varredura de cinco rodadas dirigida a ele. A hipótese é a corrida de hidratação que o
+próprio teste documenta, sob carga de dois workers. Fica anotado em vez de dado por
+resolvido.
+
+Estado: 944 testes unitários, 212 e2e (6 novos), typecheck, boundaries (81 arquivos),
+catálogo (13 arquivos) e build (33 páginas) verdes. A contraparte real rodou à mão; a CI
+não compila Java, e isso é decisão.

@@ -137,9 +137,14 @@ Aqui o projeto deixa de ser motor e passa a ser produto.
 `labs/providers` publicado: os três provedores do SDK, com L0, L1 e L3, e o invariante do
 envelope provado por property test mais teste de mutação. A linha "árvore fiel do
 TracerProvider" da tabela abaixo está **feita**; o importador de manifesto, a leitura da
-configuração nativa e o contrato de fidelidade no CI continuam abertos, e a validação
-contra o real é a pendência declarada do round (bloco E do plano). Registro em
+configuração nativa e o contrato de fidelidade no CI continuam abertos. Registro em
 `docs/PROGRESS.md`.
+
+**A contraparte real deixou de ser pendência — 2026-09-08.** `labs/providers/` existe e
+roda: app Java com o SDK fixado (BOM 1.65.0), Collector imprimindo, `compose.yaml`. Foi
+rodada de verdade — 56 spans em lotes de cinco segundos, `service.name` chegando uma camada
+acima dos spans, escopo `checkout.http` no meio. Com ela veio a seção **Instrument it**, e
+o bloco certo de cada exercício é **extraído** daquele arquivo, nunca escrito ao lado.
 
 O retorno de motor deste round: o `router` estava descrito de um lado só — o texto do
 catálogo descreve o mux, que escolhe qual **entrada** responde, e um amostrador é o espelho

@@ -11,8 +11,11 @@ que faz o segundo handbook custar menos que o primeiro.
 Todo handbook tem a mesma anatomia: **roadmap** (a ordem em que os conceitos se
 sustentam), **artigos** e **labs**.
 
-**https://otel-visual-handbook.vercel.app** — o site canônico, servido na raiz.
-Espelho no GitHub Pages: **https://cabrinijr.github.io/otel-visual-handbook**
+**No ar:** https://openlabs-guaxinims-projects.vercel.app — o último deploy da `main`,
+servido na raiz. O projeto na Vercel se chama `openlabs`; o endereço antigo
+(`otel-visual-handbook.vercel.app`) não responde mais, e `openlabs.vercel.app` é de
+outra conta. O espelho no GitHub Pages foi desligado — a Vercel é a única verdade
+sobre o que está no ar.
 
 ## Why
 
@@ -61,7 +64,7 @@ O caminho-base não é constante: quem chama o build declara onde o site vai ser
 | Destino | Comando | Onde serve |
 |---|---|---|
 | Vercel (canônico) | `pnpm build` | raiz do domínio |
-| GitHub Pages (espelho) | `PUBLIC_BASE_PATH=/otel-visual-handbook/ PUBLIC_SITE_URL=https://cabrinijr.github.io pnpm build` | `/otel-visual-handbook/` |
+| GitHub Pages (espelho, desligado) | `PUBLIC_BASE_PATH=/otel-visual-handbook/ PUBLIC_SITE_URL=https://cabrinijr.github.io pnpm build` | `/otel-visual-handbook/` |
 
 A Vercel usa o `vercel.json` da raiz (`framework: null`, porque o autodetect erra o
 diretório num monorepo pnpm). O Pages sai de `.github/workflows/deploy.yml`, que passa as
