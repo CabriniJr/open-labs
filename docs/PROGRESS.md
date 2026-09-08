@@ -1740,7 +1740,7 @@ surge — **e some** quando a fila volta para 2048. Esse último é o que impede
 virar decoração de fundo: alerta que fica depois que o problema passou é a porta acesa por um
 valor que já foi.
 
-Estado: 979 testes unitários, 230 e2e, typecheck, boundaries (83 arquivos), catálogo (13
+Estado: 976 testes unitários, 230 e2e, typecheck, boundaries (83 arquivos), catálogo (13
 arquivos) e build (36 páginas) verdes.
 
 ### O que sobrou da rodada
