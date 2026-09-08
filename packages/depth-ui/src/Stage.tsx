@@ -35,7 +35,7 @@ import { travessia } from "./travessia.js";
 import { juncoes, segmentos } from "./espaguete.js";
 import { tuneis } from "./tunel.js";
 import type { Lacuna } from "./tunel.js";
-import { PORTA_ANONIMA, portasDaCaixa, posicaoDaPorta } from "./portas.js";
+import { lequeDaCaixa, PORTA_ANONIMA, portasDaCaixa, posicaoDaPorta } from "./portas.js";
 import { dilatarPara, relogioDaCamada } from "./tempo.js";
 
 /**
@@ -1741,6 +1741,8 @@ function Camada({
           // parecer paralela.
           const dentro = interior === undefined ? undefined : encaixar(place, interior);
           const portas = portasDaCaixa(tree, wires, place.id);
+          /** Para que lado o leque desta caixa abre. A forma sai daqui. */
+          const leque = lequeDaCaixa(tree, wires, place.id);
           return (
             <g
               key={place.id}
@@ -1757,6 +1759,10 @@ function Camada({
               data-alto={aceso ? "true" : undefined}
               /* Cheia é estado, e estado se lê de relance: daqui em diante o
                  que chegar é recusado, e é a causa do descarte que sai ao lado. */
+              /* Para que lado o leque abre, dito no documento: é o que permite
+                 cobrar de fora que a forma não está afirmando o contrário do
+                 que o modelo diz. */
+              data-leque={node?.kind === "router" && fam !== "controller" ? leque : undefined}
               data-cheia={cheio !== undefined && cheio >= 1 ? "true" : undefined}
               data-alerta={descartando ? "true" : undefined}
               data-conduz={node?.kind === "switch" ? (passa(place.id) ? "true" : "false") : undefined}
@@ -1895,20 +1901,42 @@ function Camada({
                     y2={place.y + 18}
                   />
                 </>
-              ) : node?.kind === "router" && fam !== "controller" ? (
-                // O trapézio é a notação de um seletor, e ela é universal:
-                // largo do lado das entradas, estreito do lado da saída. Só
-                // vale para quem está NO caminho: quem só manda sinal não
-                // seleciona nada, e um trapézio deitado sobre a largura do
-                // desenho vira uma seta gigante apontando para lugar nenhum.
-                //
-                // A forma **é** a explicação — muitas entram, uma sai —, e um
-                // retângulo a esconde atrás de um rótulo que ninguém lê.
+              ) : node?.kind === "router" && fam !== "controller" && leque !== "reto" ? (
+                /*
+                  O trapézio é a notação do **leque**, e ela é universal: largo
+                  do lado em que são muitos, estreito do lado em que é um.
+
+                  Ele era desenhado sempre do mesmo jeito — largo à esquerda —
+                  para todo `router`, com a descrição do mux: muitas entram, uma
+                  sai. Só que metade dos `router` do acervo é o espelho disso: o
+                  amostrador tem uma entrada e três saídas; o dispersor da ULA
+                  tem uma e sessenta e quatro. Neles a forma afirmava o
+                  **contrário** do que o modelo diz — e forma afirma antes de
+                  qualquer rótulo ser lido.
+
+                  Sem leque nenhum não há trapézio: ele afirmaria um que não
+                  existe, e a caixa cai na forma comum.
+
+                  O que a forma não diz é se a caixa **escolhe** ou **combina**:
+                  as duas convergem, e a porta lógica é a prova. Quem separa é a
+                  linha de controle — quem escolhe é comandado —, e desde a
+                  separação dos planos ela é desenhada por cima, noutra altura.
+                */
                 <path
                   className="dui-stage__caixa"
-                  d={`M ${place.x} ${place.y} L ${place.x + place.w} ${place.y + place.h * 0.2} L ${
-                    place.x + place.w
-                  } ${place.y + place.h * 0.8} L ${place.x} ${place.y + place.h} Z`}
+                  d={
+                    leque === "fecha"
+                      ? `M ${place.x} ${place.y} L ${place.x + place.w} ${
+                          place.y + place.h * 0.2
+                        } L ${place.x + place.w} ${place.y + place.h * 0.8} L ${place.x} ${
+                          place.y + place.h
+                        } Z`
+                      : `M ${place.x} ${place.y + place.h * 0.2} L ${place.x + place.w} ${
+                          place.y
+                        } L ${place.x + place.w} ${place.y + place.h} L ${place.x} ${
+                          place.y + place.h * 0.8
+                        } Z`
+                  }
                 />
               ) : (
                 <rect
@@ -2165,8 +2193,14 @@ function Camada({
                 {(portasCabem(place.h, portas.entradas.length) ? portas.entradas : []).map((porta, i) => {
                   const noFio = pontoDaPorta.get(`${place.id}.${porta}`);
                   const cx = noFio?.x ?? place.x;
+                  // No trapézio que ABRE, a entrada é o bico: é dali que a
+                  // linha entra, e espalhá-la pela borda alta desmentiria a
+                  // forma que a caixa acabou de afirmar.
                   const cy =
-                    noFio?.y ?? place.y + place.h * posicaoDaPorta(i, portas.entradas.length);
+                    noFio?.y ??
+                    (leque === "abre" && node?.kind === "router" && fam !== "controller"
+                      ? place.y + place.h / 2
+                      : place.y + place.h * posicaoDaPorta(i, portas.entradas.length));
                   return (
                     <g key={`e${porta}`} className="dui-stage__porta" data-lado="entrada">
                       <title>{`in · ${porta}`}</title>
@@ -2186,7 +2220,7 @@ function Camada({
                   const cx = noFio?.x ?? place.x + place.w;
                   const cy =
                     noFio?.y ??
-                    (node?.kind === "router"
+                    (node?.kind === "router" && leque !== "abre"
                       ? place.y + place.h / 2
                       : place.y + place.h * posicaoDaPorta(i, portas.saidas.length));
                   return (

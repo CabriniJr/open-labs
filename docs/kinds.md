@@ -75,6 +75,7 @@ O que já existe em `packages/depth-core/src/model.ts`, relido sob a gramática 
 | `source` | Processador | Mantém. Ganha regime "limitada" quando o backpressure chega |
 | `sink` | Processador | **Precisa encolher**: hoje "consome e opcionalmente transforma". Transformar sai para `transform` |
 | `router` | Processador | Mantém |
+| `router` (forma) | Processador | **A forma segue o leque desde 08/09/2026**: largo do lado em que são muitos, estreito do lado em que é um. Antes o trapézio era sempre largo à esquerda, e nos `router` que abrem (uma entrada, várias saídas) ele afirmava o contrário do que o modelo diz. Sem leque, não há trapézio. O leque é contado nas **ligações**, e não nos nomes de porta: trinta e dois fios numa entrada anônima ainda são trinta e dois |
 | `switch` | Processador | **Novo (30/08/2026)**: deixa o caminho passar ou não, sob comando. Não é escolha entre entradas — é uma quebra em UM caminho. Entrou porque o transistor era `router` e herdava o trapézio do seletor com a descrição do mux, no nível mais didático do modelo. Vale igual para válvula e relé |
 | `buffer` | Processador | **Precisa dividir**: hoje acumula *e* agrupa. Agrupar sai para `batch` |
 | `pipeline` | Composição | Mantém |

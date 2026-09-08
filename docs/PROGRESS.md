@@ -1827,3 +1827,41 @@ A porta lógica é desenhada com o **trapézio do seletor**, e ela não selecion
 duas entradas numa saída. A forma está dizendo a coisa errada, e o conserto não é um `kind`
 novo: é a forma seguir o leque real (uma entrada e várias saídas abre; várias entradas e uma
 saída fecha). Fica nomeado para a próxima rodada.
+
+## Entrega 10 — A forma segue o leque ✅
+
+08/09/2026, fechando o que a Entrega 9 deixou nomeado. Pedido dele: *"a forma tem que seguir
+o leque"*.
+
+O trapézio era desenhado **sempre do mesmo jeito** — largo à esquerda, estreito à direita —
+para todo `router`, com a descrição do mux no catálogo: muitas entram, uma sai. Só que metade
+dos `router` do acervo é o espelho disso. O **dispersor** da ULA recebe uma palavra de 32 e
+entrega bit a bit: uma entrada, sessenta e quatro saídas. Nele a forma afirmava o **contrário**
+do que o modelo diz — e forma afirma antes de qualquer rótulo ser lido.
+
+Agora são três, e saem do modelo:
+
+- **fecha** — várias entram, uma sai: o mux, o coletor, a porta lógica;
+- **abre** — uma entra, várias saem: o dispersor;
+- **reto** — não há leque, e o trapézio afirmaria um que não existe. A `logic unit` da ULA era
+  um trapézio e virou caixa: naquele nível ela tem uma entrada e uma saída.
+
+**O leque é contado nas ligações, e não nos nomes de porta.** O coletor recebe trinta e dois
+fios numa entrada anônima só: pelos nomes ele não teria leque nenhum; pelo que o leitor vê,
+trinta e duas linhas chegam e uma sai. Foi o primeiro teste a falhar, e ele estava certo.
+
+E a porta do bico acompanha: quem fecha entrega no bico da saída (era assim), quem abre
+**recebe** no bico da entrada — espalhar a entrada pela borda alta desmentiria a forma que a
+caixa acabou de afirmar.
+
+**O que a forma não diz, e é deliberado:** se a caixa escolhe ou combina. As duas convergem, e
+a porta lógica é a prova — um XOR fecha igual a um mux. Quem separa é a **linha de controle**:
+quem escolhe é comandado, e desde a Entrega 8 ela é desenhada noutro plano, por cima. O texto
+do catálogo foi reescrito para dizer isso, e a guarda de fronteira pegou a primeira versão
+dele citando vocabulário de domínio — corretamente.
+
+`cpu-zoom.spec.ts` cobra os dois sentidos, e cobra **geometria**: no dispersor, o lado direito
+do trapézio tem de ser mais alto que o esquerdo. Um atributo `data-leque` não bastaria — foi
+o CSS que não pintava, uma vez, com o atributo certo.
+
+Estado: 990 testes unitários, 247 e2e, typecheck, boundaries, catálogo e build verdes.

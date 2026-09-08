@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { indexTree } from "@ovh/depth-core";
 import type { AnyObject, Wire } from "@ovh/depth-core";
-import { PORTA_ANONIMA, portasDaCaixa, posicaoDaPorta } from "./portas.js";
+import { lequeDaCaixa, lequeDe, PORTA_ANONIMA, portasDaCaixa, posicaoDaPorta } from "./portas.js";
 
 const folha = (id: string): AnyObject => ({
   id,
@@ -90,5 +90,75 @@ describe("onde a porta fica na borda", () => {
   it("a ordem na borda é a ordem da lista", () => {
     expect(posicaoDaPorta(0, 3)).toBeLessThan(posicaoDaPorta(1, 3));
     expect(posicaoDaPorta(1, 3)).toBeLessThan(posicaoDaPorta(2, 3));
+  });
+});
+
+describe("para que lado o leque abre", () => {
+  it("várias entram e uma sai: fecha, que é o mux e é a porta lógica", () => {
+    expect(lequeDe(2, 1)).toBe("fecha");
+    expect(lequeDe(8, 1)).toBe("fecha");
+  });
+
+  it("uma entra e várias saem: abre, que é o amostrador e é o dispersor", () => {
+    // Aqui a forma antiga afirmava o CONTRÁRIO do que o modelo diz, e forma
+    // afirma antes de qualquer rótulo ser lido.
+    expect(lequeDe(1, 3)).toBe("abre");
+    expect(lequeDe(1, 64)).toBe("abre");
+  });
+
+  it("sem leque, nada de trapézio: ele afirmaria um que não existe", () => {
+    expect(lequeDe(1, 1)).toBe("reto");
+    expect(lequeDe(2, 2)).toBe("reto");
+    expect(lequeDe(0, 0)).toBe("reto");
+  });
+});
+
+describe("o leque contado nas ligações", () => {
+  const mundo = (wires: readonly Wire[]) => {
+    const raiz: AnyObject = {
+      id: "mundo",
+      kind: "composite",
+      role: "node",
+      children: [
+        { id: "dispersor", kind: "router", role: "node", leaf: true },
+        { id: "coletor", kind: "router", role: "node", leaf: true },
+      ],
+    } as unknown as AnyObject;
+    return { tree: indexTree(raiz), wires };
+  };
+
+  it("trinta e dois fios numa entrada anônima ainda são um leque que fecha", () => {
+    // Pelos NOMES de porta o coletor tem uma entrada e uma saída — leque
+    // nenhum. Pelo que o leitor vê, trinta e duas linhas chegam e uma sai.
+    const wires = [
+      ...Array.from({ length: 32 }, (_, i) => ({
+        from: `peso${i}`,
+        port: "out",
+        to: "coletor",
+      })),
+      { from: "coletor", port: "out", to: "fora" },
+    ] as unknown as Wire[];
+    const { tree } = mundo(wires);
+    expect(lequeDaCaixa(tree, wires, "coletor")).toBe("fecha");
+  });
+
+  it("uma entrada e sessenta e quatro saídas abre", () => {
+    const wires = [
+      { from: "fora", port: "out", to: "dispersor" },
+      ...Array.from({ length: 64 }, (_, i) => ({
+        from: "dispersor",
+        port: `a${i}`,
+        to: `bit${i}`,
+      })),
+    ] as unknown as Wire[];
+    const { tree } = mundo(wires);
+    expect(lequeDaCaixa(tree, wires, "dispersor")).toBe("abre");
+  });
+
+  it("fora do enquadramento, a forma vem do que o objeto declarou", () => {
+    // Sem fio na vista não há o que contar — e uma caixa fora do quadro não
+    // perde a forma que ela tem.
+    const { tree } = mundo([]);
+    expect(lequeDaCaixa(tree, [], "dispersor")).toBe("reto");
   });
 });
