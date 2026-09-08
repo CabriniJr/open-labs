@@ -1668,3 +1668,82 @@ Aprovadas junto, para depois: carga na esteira item a item, esteira entupida (co
 visível), alerta na máquina, e a camada de circuito para a linha de controle. A régua vale
 para as quatro — **toda figura tem de sair de um fato que o modelo já tem**, senão é enfeite,
 e enfeite ensina errado.
+
+## Entrega 8 — As quatro figuras do Factorio ✅
+
+08/09/2026. Spec: `docs/superpowers/specs/2026-09-08-quatro-figuras-do-factorio-design.md`.
+
+A régua da rodada, e ela é o que separa isto de enfeite: **toda figura tem de sair de um fato
+que o modelo já tem**. Nenhuma das quatro precisou de `kind` novo, e em nenhuma delas o
+domínio escolhe forma — ele entrega **números**, como já fazia com `especieDaCarga` e
+`conteudo`.
+
+### O circuito virou plano
+
+As arestas de controle saíram do laço das esteiras e foram para um grupo próprio, desenhado
+**depois** — e é a ordem no documento, e não a cor, que as põe por cima. Traço mais fino,
+porque comando não tem volume, e uma sombra curta, que é como o olho lê "está mais perto".
+
+Antes disso a diferença entre as duas redes era **só a cor**, que é um canal só, e o pior
+deles para quem tem dificuldade com vermelho e preto. Metade do diagrama de blocos da CPU é
+vermelha; agora essa metade tem altura própria.
+
+**A consequência, e ela está escrita para não passar calada:** cruzamento entre planos deixa
+de precisar de túnel — dois planos que se cruzam não se confundem. O invariante "nenhum
+cruzamento fica nu" passa a valer **entre iguais**, e a contagem **não** muda: `meada()`
+continua contando todo cruzamento e os cinco tetos continuam onde estavam. Um cruzamento
+entre planos continua sendo um cruzamento; ele só não é uma ambiguidade.
+
+`apps/site/tests/planos.spec.ts` segura a altura: nenhuma linha de controle fora do circuito,
+nenhuma esteira dentro dele, e o grupo do circuito **depois** do das esteiras no documento.
+Sem esse último, uma reordenação apaga a figura inteira sem quebrar teste nenhum.
+
+### O feixe anda em fila
+
+Peso maior que um era uma **roseta**: até sete bolinhas agrupadas no mesmo ponto. Ela dizia
+"são vários" e mais nada. Agora eles andam **em fila**, ao longo da direção de viagem, e é o
+`offset-rotate: auto` — ligado só para o feixe — que os deita no fio. Um envelope ou uma
+barra girando chegariam de cabeça para baixo do outro lado de um cotovelo, e não ganhariam
+nada com isso.
+
+O ganho não é estético: fila tem **comprimento**, e comprimento é o que torna "a esteira
+encheu" uma figura possível. Na tela, o lote de quatro saindo da fila agora é quatro coisas
+andando juntas, e não uma marca com `×4` ao lado.
+
+`formaDaCarga` saiu de dentro do componente porque duas pessoas precisam da resposta — quem
+desenha o item e o grupo que o carrega, que só gira quando a carga é feixe. Calculada duas
+vezes, uma das duas ficaria para trás.
+
+### A fila com casas, e a máquina que avisa
+
+A barra de nível respondia **quanto**; ela não respondia **quantos**. Com a capacidade
+declarada (`capacidades`, números, sem vocabulário) o palco troca a barra por **casas** —
+uma por item — e casa cheia é item, um por um, como numa esteira parada. Acima de 24 a barra
+continua: mil casas viram textura.
+
+`data-cheia` endurece o contorno da caixa no limite. É a **causa** do descarte que sai ao
+lado; até aqui o palco mostrava só o resultado, que é a mesma diferença que o README da
+contraparte real aponta entre o terminal e o lab.
+
+E o **alerta**: um triângulo sobre a máquina que está perdendo dado **agora**, no canto de
+cima à esquerda (o da direita é da engrenagem, e duas figuras no mesmo canto se estorvam).
+Sai do mesmo lugar da animação — a diferença do livro-caixa entre dois ticks, a mesma que já
+acende a aresta de descarte.
+
+**Desvio consciente da spec:** ela previa uma propriedade nova `ocupacao(id)`. Não foi
+preciso: `fills` já entregava o nível, e o que faltava era só **de quantos cabe**. Uma
+propriedade a menos, e o número que já existia não passou a ser escrito em dois lugares.
+
+`apps/site/tests/fila-cheia.spec.ts` anda o caminho inteiro: no padrão da spec (2048) não há
+casa nenhuma e a barra responde; com a fila em 4 as casas aparecem, ela enche, o alerta
+surge — **e some** quando a fila volta para 2048. Esse último é o que impede o alerta de
+virar decoração de fundo: alerta que fica depois que o problema passou é a porta acesa por um
+valor que já foi.
+
+Estado: 979 testes unitários, 230 e2e, typecheck, boundaries (83 arquivos), catálogo (13
+arquivos) e build (36 páginas) verdes.
+
+### O que sobrou da rodada
+
+Soltar os pesos do roteador continua sendo a próxima — e agora com mais razão: com o
+circuito noutro plano e o cruzamento tunelado, cruzar é barato de verdade.

@@ -57,9 +57,23 @@ test("a fila mostra casa a casa, enche, e a máquina avisa que está perdendo", 
     })
     .toBeGreaterThan(0);
 
-  // Alerta é sobre AGORA: ele mora no mesmo objeto que está descartando, e o
-  // objeto que descarta tem aresta de descarte acesa. Um alerta perdido em
-  // outra caixa seria pior que nenhum.
+  // Alerta é sobre AGORA: ele mora no objeto que está descartando, e some no
+  // tick em que ele para. Um alerta que ficasse depois de o problema passar
+  // seria a porta acesa por causa de um valor que já foi — e é o defeito que
+  // este projeto trata como o pior, agora em forma de figura.
   const comAlerta = page.locator('.dui-stage__objeto[data-alerta="true"]').first();
   await expect(comAlerta).toHaveAttribute("data-id", /.+/u);
+
+  await page
+    .locator(".providers-lab__campo")
+    .filter({ hasText: "maxQueueSize" })
+    .getByRole("combobox")
+    .selectOption("2048");
+
+  await expect
+    .poll(async () => page.locator('.dui-stage__objeto[data-alerta="true"]').count(), {
+      timeout: 30_000,
+      intervals: [250],
+    })
+    .toBe(0);
 });
