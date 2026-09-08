@@ -40,6 +40,15 @@ test("a escolha não se refaz, e o placar do mapa conta o de primeira", async ({
   const secao = page.locator(".exercicio").first();
   await secao.scrollIntoViewIfNeeded();
 
+  // A mesma espera do teste de teclado, e pela mesma razão: a ilha é
+  // `client:visible`, e a checagem de ação do Playwright não sabe de
+  // hidratação. Sem isto o clique acontece no botão que ainda não escuta
+  // ninguém — falha rara, e só sob carga.
+  await expect(page.locator("astro-island:has(.exercicio)").first()).not.toHaveAttribute(
+    "ssr",
+    /.*/u,
+  );
+
   const escolhido = secao.locator(".exercicio__bloco").first();
   await escolhido.click();
   await expect(escolhido).toBeDisabled();

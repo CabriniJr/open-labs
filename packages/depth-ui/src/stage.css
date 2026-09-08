@@ -556,6 +556,19 @@
 }
 
 /*
+ * A borda que é feixe: as portas não cabiam, e a marca diz quantas são.
+ *
+ * A porta existe para dizer POR ONDE a coisa entra. Sessenta e cinco delas
+ * empilhadas numa borda de noventa unidades dizem o contrário — a caixa parece
+ * ter uma porta gigante —, e aí a marca do barramento é a resposta honesta.
+ */
+.dui-stage__porta--feixe rect {
+  fill: color-mix(in oklab, var(--dui-dado) 45%, var(--paper));
+  stroke: color-mix(in oklab, var(--dui-dado) 70%, var(--ink));
+  stroke-width: 0.8;
+}
+
+/*
  * A boca do túnel: a figura que diz "este fio passa por baixo, e volta ali".
  *
  * A junção acima resolve metade da pergunta por PRESENÇA, e a outra metade por

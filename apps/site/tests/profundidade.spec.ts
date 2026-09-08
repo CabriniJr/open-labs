@@ -148,3 +148,52 @@ test("a vista funda que agrega diz quantas ligações ela agrega", async ({ page
     .evaluateAll((nos) => nos.map((n) => Number(n.getAttribute("data-feixe") ?? "0")));
   expect(feixes.filter((n) => n === 32).length, "o somador de 32 bits não anuncia os 32").toBeGreaterThanOrEqual(2);
 });
+
+/**
+ * Nenhum fio desenhado duas vezes — e nenhum nó órfão no documento.
+ *
+ * A chave de um fio era do **par de caixas** (`somador.soma->pesos`), e com
+ * trinta e dois bits agregados numa caixa só as trinta e duas ligações nasciam
+ * com a mesma chave. Duas crianças com a mesma `key` fazem a reconciliação do
+ * React errar: os nós velhos não saem, e cada tick empilha mais um. A vista de
+ * um bit da ULA tinha **noventa e nove** fios no documento para desenhar oito —
+ * e o excesso era a mancha branca na borda, que nenhuma medida via porque todas
+ * mediam o que o modelo mandou desenhar, e não o que sobrou na tela.
+ *
+ * É a espécie de defeito que este projeto trata como a pior: o desenho dizendo
+ * uma coisa que o modelo não disse, em silêncio.
+ */
+const ONDE = [
+  { nome: "o caminho de dados", lab: "labs/cpu/", passos: [] as readonly string[] },
+  { nome: "a ULA", lab: "labs/cpu/", passos: ["logica", "ula"] },
+  { nome: "um bit do somador", lab: "labs/gates/", passos: ["bit1"] },
+  { nome: "o processador do micro", lab: "labs/micro/", passos: ["cpu"] },
+] as const;
+
+for (const onde of ONDE) {
+  test(`${onde.nome}: nenhum fio aparece duas vezes no documento`, async ({ page }) => {
+    test.setTimeout(60_000);
+    await page.goto(onde.lab);
+    await expect(page.locator(".dui-stage")).toBeVisible({ timeout: 15_000 });
+    await expect
+      .poll(async () => page.locator(".dui-stage__trilho").count(), { timeout: 10_000 })
+      .toBeGreaterThan(0);
+    for (const passo of onde.passos) {
+      await page.locator(`.dui-stage__objeto[data-id="${passo}"]`).first().dblclick();
+      await page.waitForTimeout(1_500);
+    }
+    // Alguns ticks: o defeito era cumulativo, e uma foto do primeiro quadro não
+    // o via. Ele aparecia com o relógio andando, que é como o leitor vê.
+    await page.waitForTimeout(2_500);
+
+    const repetidos = await page.evaluate(() => {
+      const conta = new Map<string, number>();
+      for (const fio of document.querySelectorAll(".dui-stage__fio")) {
+        const chave = `${fio.parentElement?.className.toString()}|${fio.getAttribute("data-chave")}`;
+        conta.set(chave, (conta.get(chave) ?? 0) + 1);
+      }
+      return [...conta.entries()].filter(([, n]) => n > 1).map(([chave, n]) => `${chave} ×${n}`);
+    });
+    expect(repetidos, "o mesmo fio desenhado mais de uma vez no mesmo grupo").toEqual([]);
+  });
+}

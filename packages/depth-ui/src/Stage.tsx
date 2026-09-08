@@ -533,6 +533,27 @@ function Carga({
   );
 }
 
+/** A altura do desenho de uma porta. Duas mais perto que isto se estorvam. */
+const ALTURA_DA_PORTA = 16;
+
+/**
+ * As portas de um lado cabem na borda?
+ *
+ * O `dispersor` da ULA declara **sessenta e cinco** portas numa caixa de
+ * noventa unidades de altura: sessenta e cinco retângulos de dezesseis
+ * empilhados em noventa, e o que sai é um borrão branco no lugar de uma borda.
+ * A caixa parece ter uma porta gigante, que é a mentira oposta à que a porta
+ * existe para desfazer.
+ *
+ * Quando não cabem, o desenho faz o que o esquemático faz com um barramento:
+ * uma marca só, dizendo **quantas são**. A ligação continua pousando na altura
+ * dela — quem manda no fio é a geometria da ligação, e isso não muda.
+ */
+export function portasCabem(altura: number, quantas: number): boolean {
+  if (quantas <= 1) return true;
+  return altura / (quantas + 1) >= ALTURA_DA_PORTA;
+}
+
 /** Acima disto, casas viram textura e a barra de nível diz mais. */
 const CASAS_QUE_SE_CONTAM = 24;
 
@@ -1109,7 +1130,7 @@ function Camada({
   };
 
   /** Fios desenháveis: cada ponta cai numa caixa da vista ou na margem dela. */
-  const arestas = wires
+  let arestas = wires
     .map((wire, i) => {
       const paraODescarte = String(wire.to) === DROP;
       const destino = paraODescarte ? undefined : typeof wire.to === "string" ? String(wire.to) : undefined;
@@ -1283,7 +1304,18 @@ function Camada({
       const marca = { x: de.x + de.w + 6, y: de.y + de.h / 2 - 6 };
       return {
         marca,
-        chave: `${de.id}.${wire.port}->${para.id}`,
+        /*
+          A chave é do FIO, e não do par de caixas.
+
+          Era `${de.id}.${wire.port}->${para.id}` — e com trinta e dois bits
+          agregados numa caixa só, as trinta e duas ligações nasciam com a
+          **mesma chave**. Duas crianças com a mesma `key` fazem a reconciliação
+          do React errar: os nós antigos não saem, e cada tick empilha mais um.
+          O grupo dizia oito fios e tinha cinquenta e cinco filhos no documento
+          — a mancha branca na borda do desenho era isso, e nenhuma medida a
+          via, porque ela media o que o modelo mandou desenhar.
+        */
+        chave: `${de.id}.${wire.port}->${para.id}#${i}`,
         to: para.id,
         d,
         // O traço fica na borda; a travessia é desenhada por cima das caixas,
@@ -1318,6 +1350,43 @@ function Camada({
     .filter((a): a is NonNullable<typeof a> => a !== null);
 
   /**
+   * Esteiras desenhadas **exatamente por cima** de outra viram uma só, com a conta.
+   *
+   * A agregação de travessia decide por *intenção* — por onde a ligação
+   * atravessa a moldura —, e o traço sai da *geometria*. Os dois discordam
+   * quando os alvos de dentro caem no mesmo lugar: na vista de um bit da ULA, o
+   * mesmo traço era desenhado **oito vezes**, e a tela tinha noventa e nove
+   * fios para mostrar cinco portas — a mancha branca que o Luigi viu na borda.
+   *
+   * Quem dá a última palavra é o que foi desenhado, que é a regra da medida de
+   * espaguete: oito linhas idênticas são **uma** linha para o leitor. A esteira
+   * é desenhada uma vez e carrega a marca do feixe; as travessias, que
+   * continuam dentro da moldura e pousam em peças diferentes, seguem todas —
+   * elas é que fazem a vista de fora não discordar do interior.
+   */
+  const chaveDoTraco = (a: (typeof arestas)[number]): string =>
+    `${a.from}|${a.to}|${a.linha}|${a.traco}`;
+  const porTraco = new Map<string, number>();
+  for (const a of arestas) porTraco.set(chaveDoTraco(a), (porTraco.get(chaveDoTraco(a)) ?? 0) + 1);
+
+  /** Quantas ligações esta esteira representa, contando as que caíram por cima. */
+  const feixeDe = (a: (typeof arestas)[number]): number | undefined => {
+    const total = Math.max(a.feixe ?? 0, porTraco.get(chaveDoTraco(a)) ?? 1);
+    return total > 1 ? total : undefined;
+  };
+
+  /** Uma esteira por traço: as repetidas seriam tinta por cima de tinta. */
+  const esteirasUnicas = (lista: readonly (typeof arestas)[number][]) => {
+    const vistas = new Set<string>();
+    return lista.filter((a) => {
+      const chave = chaveDoTraco(a);
+      if (vistas.has(chave)) return false;
+      vistas.add(chave);
+      return true;
+    });
+  };
+
+  /**
    * Os dois planos do palco.
    *
    * A esteira carrega coisa; o circuito carrega comando. São as duas redes que
@@ -1326,8 +1395,8 @@ function Camada({
    * e preto. O circuito é desenhado depois, então ele passa POR CIMA, e um
    * cruzamento entre planos deixa de ser ambiguidade: são duas alturas.
    */
-  const daEsteira = arestas.filter((a) => a.linha !== "control");
-  const doCircuito = arestas.filter((a) => a.linha === "control");
+  const daEsteira = esteirasUnicas(arestas.filter((a) => a.linha !== "control"));
+  const doCircuito = esteirasUnicas(arestas.filter((a) => a.linha === "control"));
 
   /**
    * Onde cada fio mergulha, **por plano**.
@@ -1500,6 +1569,7 @@ function Camada({
           <g
             key={aresta.chave}
             className="dui-stage__fio"
+            data-chave={aresta.chave}
             mask={
               (lacunasDe.get(aresta.chave)?.length ?? 0) > 0
                 ? `url(#${identificador(`tunel-${aresta.chave}`)})`
@@ -1514,7 +1584,7 @@ function Camada({
                várias. É o que permite conferir de fora que a agregação não
                escondeu a diferença: a marca tem de bater com o que o interior
                desenha. */
-            data-feixe={aresta.feixe}
+            data-feixe={feixeDe(aresta)}
             data-timing={aresta.timing}
             data-acesa={aresta.acesa ? "true" : undefined}
             data-descarte={aresta.descarte ? "true" : undefined}
@@ -1585,11 +1655,16 @@ function Camada({
                   );
                 })()
               : null}
-            {aresta.width !== undefined ? (
+            {(aresta.width ?? feixeDe(aresta)) !== undefined ? (
               // Ao lado da saída, e não sobre o traço: seguindo o caminho, a
               // marca sai de cabeça para baixo em todo fio que volta.
+              //
+              // A largura declarada manda; na falta dela, a marca é a conta das
+              // ligações que esta linha representa — sem ela, oito ligações
+              // desenhadas como uma seriam uma agregação escondendo a diferença,
+              // que é a mentira que este palco existe para não contar.
               <text className="dui-stage__largura" x={aresta.marca.x} y={aresta.marca.y}>
-                {`/${aresta.width}`}
+                {`/${aresta.width ?? feixeDe(aresta)}`}
               </text>
             ) : null}
           </g>
@@ -2053,7 +2128,41 @@ function Camada({
                 um circuito flutuando, sem saber de onde a coisa veio.
               */}
               <g className="dui-stage__portas">
-                {portas.entradas.map((porta, i) => {
+                {/*
+                  Não cabendo, uma marca só — com a conta. Sessenta e cinco
+                  retângulos de dezesseis empilhados em noventa unidades viram um
+                  borrão, e um borrão diz menos que um número.
+                */}
+                {portasCabem(place.h, portas.entradas.length) ? null : (
+                  <g className="dui-stage__porta dui-stage__porta--feixe" data-lado="entrada">
+                    <title>{`in · ${portas.entradas.length} ports`}</title>
+                    <rect x={place.x - 3} y={place.y + 8} width={6} height={place.h - 16} rx={3} />
+                    <text className="dui-stage__porta-nome" x={place.x + 10} y={place.y + 14}>
+                      {`/${portas.entradas.length}`}
+                    </text>
+                  </g>
+                )}
+                {portasCabem(place.h, portas.saidas.length) ? null : (
+                  <g className="dui-stage__porta dui-stage__porta--feixe" data-lado="saida">
+                    <title>{`out · ${portas.saidas.length} ports`}</title>
+                    <rect
+                      x={place.x + place.w - 3}
+                      y={place.y + 8}
+                      width={6}
+                      height={place.h - 16}
+                      rx={3}
+                    />
+                    <text
+                      className="dui-stage__porta-nome"
+                      x={place.x + place.w - 10}
+                      y={place.y + 14}
+                      textAnchor="end"
+                    >
+                      {`/${portas.saidas.length}`}
+                    </text>
+                  </g>
+                )}
+                {(portasCabem(place.h, portas.entradas.length) ? portas.entradas : []).map((porta, i) => {
                   const noFio = pontoDaPorta.get(`${place.id}.${porta}`);
                   const cx = noFio?.x ?? place.x;
                   const cy =
@@ -2070,7 +2179,7 @@ function Camada({
                     </g>
                   );
                 })}
-                {portas.saidas.map((porta, i) => {
+                {(portasCabem(place.h, portas.saidas.length) ? portas.saidas : []).map((porta, i) => {
                   // No trapézio a saída fica no bico, e não espalhada pela
                   // borda: é ali que a linha realmente sai.
                   const noFio = pontoDaPorta.get(`${place.id}.${porta}`);
