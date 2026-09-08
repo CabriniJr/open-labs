@@ -38,10 +38,15 @@ telemetria, quando o motor é justamente **o que não sabe o que é um span**.
   span e pipeline. O que o `cpu.model` pedir ao motor e o `otel.model` não usar é
   suspeito de ser domínio vazado
 
-**O que não muda:** o repositório segue `otel-visual-handbook` e os pacotes seguem no
-escopo `@ovh/`. Renomear quebra links, CI e o deploy publicado por um ganho só de
-fachada; o nome que o leitor vê já está certo. A renomeação técnica sai de graça quando
-o motor for para repositório próprio — a decisão aberta nº 7 da §7.
+**O que não muda:** os pacotes seguem no escopo `@ovh/`. Renomear quebra CI e imports por
+um ganho só de fachada; o nome que o leitor vê já está certo. A renomeação técnica sai de
+graça quando o motor for para repositório próprio — a decisão aberta nº 7 da §7.
+
+**O que mudou:** o repositório passou a se chamar `CabriniJr/open-labs` (o nome antigo
+redireciona, e o clone local ainda se chama `otel-visual-handbook` — pasta é nome de
+pasta). Os links que o **site publica** apontam para o nome novo, e há teste cobrando isso:
+link que o leitor clica não pode depender de redirecionamento de terceiro continuar
+existindo.
 
 **Onde isto poderia mentir em silêncio:** o catálogo
 (`apps/site/src/data/handbooks.ts`) é a promessa da capa, e um artigo ou lab apontando

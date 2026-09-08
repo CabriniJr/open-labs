@@ -12,10 +12,17 @@ Todo handbook tem a mesma anatomia: **roadmap** (a ordem em que os conceitos se
 sustentam), **artigos** e **labs**.
 
 **No ar:** https://openlabs-guaxinims-projects.vercel.app — o último deploy da `main`,
-servido na raiz. O projeto na Vercel se chama `openlabs`; o endereço antigo
-(`otel-visual-handbook.vercel.app`) não responde mais, e `openlabs.vercel.app` é de
-outra conta. O espelho no GitHub Pages foi desligado — a Vercel é a única verdade
-sobre o que está no ar.
+servido na raiz do domínio. É o **único** endereço do projeto: a Vercel é a única verdade
+sobre o que está publicado, e o espelho no GitHub Pages foi desligado.
+
+> ⚠️ **A proteção de deploy da Vercel está ligada**, então esse endereço responde `302`
+> para o SSO e ninguém de fora consegue abrir o site. Desligar fica em
+> *Settings › Deployment Protection*. Enquanto estiver assim, o projeto está no ar e
+> invisível — que é o pior dos dois mundos.
+
+Dois endereços vizinhos **não** são nossos e custam tempo a quem testa:
+`otel-visual-handbook.vercel.app` é o nome antigo e responde `404`;
+`openlabs.vercel.app` é de outra conta e redireciona para `/en`.
 
 ## Why
 
@@ -63,13 +70,15 @@ O caminho-base não é constante: quem chama o build declara onde o site vai ser
 
 | Destino | Comando | Onde serve |
 |---|---|---|
-| Vercel (canônico) | `pnpm build` | raiz do domínio |
-| GitHub Pages (espelho, desligado) | `PUBLIC_BASE_PATH=/otel-visual-handbook/ PUBLIC_SITE_URL=https://cabrinijr.github.io pnpm build` | `/otel-visual-handbook/` |
+| Vercel (o único hoje) | `pnpm build` | raiz do domínio |
+| Qualquer subdiretório | `PUBLIC_BASE_PATH=/sub/ PUBLIC_SITE_URL=https://exemplo.dev pnpm build` | `/sub/` |
 
 A Vercel usa o `vercel.json` da raiz (`framework: null`, porque o autodetect erra o
-diretório num monorepo pnpm). O Pages sai de `.github/workflows/deploy.yml`, que passa as
-duas variáveis acima. Toda URL interna do site precisa passar por `import.meta.env.BASE_URL`
-— caminho absoluto cravado funciona local e quebra no espelho.
+diretório num monorepo pnpm). O espelho no GitHub Pages **não existe mais** — não há
+workflow de deploy, e com um só destino não há mais duas verdades sobre o que está no ar.
+A alavanca do caminho-base continua porque a decisão de onde servir é de quem chama o
+build; toda URL interna do site precisa passar por `import.meta.env.BASE_URL`, e caminho
+absoluto cravado funciona local e quebra em qualquer subdiretório.
 
 Writing a lab: see [`docs/authoring.md`](docs/authoring.md).
 

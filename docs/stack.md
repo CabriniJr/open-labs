@@ -379,3 +379,34 @@ time tenta abrir. Desligar fica em **Settings › Deployment Protection**.
 
 E `main` é protegida por regra de repositório: mudanças só entram por pull
 request. O fast-forward direto é recusado com `GH013`.
+
+### Um endereço só, e a guarda que o mantém assim — 08/09/2026
+
+O projeto chegou a ter **quatro** endereços vivos ao mesmo tempo na cabeça de quem lia o
+repositório, e três deles não levavam a lugar nenhum:
+
+| Endereço | O que ele faz hoje |
+| --- | --- |
+| `openlabs-guaxinims-projects.vercel.app` | **é o nosso**, e é o único |
+| `otel-visual-handbook.vercel.app` | 404 — nome antigo do projeto na Vercel |
+| `cabrinijr.github.io/otel-visual-handbook` | 404 — o espelho foi desligado, e não há mais workflow de deploy |
+| `openlabs.vercel.app` | responde, redireciona para `/en`, **é de outra conta** |
+
+O README apontava para o segundo e para o terceiro. Quem abrisse concluiria que o projeto
+está fora do ar — e ele não está; está atrás do SSO, que é outro problema e tem outra
+resposta (*Settings › Deployment Protection*).
+
+O conserto não foi só trocar os links: eles voltam. `apps/site/src/lib/enderecos.test.ts`
+varre **a superfície viva** — o que o site publica e o que o README promete — e reprova
+qualquer um dos três endereços mortos. Provado por mutação: um link do `SiteNav` trocado
+pelo do Pages derruba a suíte nomeando o arquivo.
+
+Duas fronteiras deliberadas nessa guarda. Ela **não** varre `docs/superpowers/`: spec e
+plano são registro datado, e reescrever histórico para calar um teste é pior que o defeito.
+E ela não acusa os dois testes que precisam citar o endereço morto para poder proibi-lo —
+guarda que morde a própria guarda não sobrevive à primeira semana.
+
+O rodapé, a navegação e o "editar esta página" passaram a apontar para
+`github.com/CabriniJr/open-labs`, que é como o repositório se chama. O nome antigo
+redireciona; um link que o leitor clica não pode depender de o redirecionamento de um
+terceiro continuar existindo.
