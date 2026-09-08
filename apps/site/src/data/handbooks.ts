@@ -150,10 +150,28 @@ const OTEL: Handbook = {
       phase: 1,
       href: "handbooks/otel/articles/what-a-signal-is",
     },
-    { id: "the-seam-between-signals", title: "The seam between the signals", status: "coming", phase: 1 },
+    {
+      id: "the-seam-between-signals",
+      title: "The seam between the signals",
+      status: "available",
+      phase: 1,
+      href: "handbooks/otel/articles/the-seam-between-signals",
+    },
 
-    { id: "a-trace-is-a-tree-nobody-owns", title: "A trace is a tree nobody owns", status: "coming", phase: 2 },
-    { id: "context-is-the-product", title: "Context is the product", status: "coming", phase: 2 },
+    {
+      id: "a-trace-is-a-tree-nobody-owns",
+      title: "A trace is a tree nobody owns",
+      status: "available",
+      phase: 2,
+      href: "handbooks/otel/articles/a-trace-is-a-tree-nobody-owns",
+    },
+    {
+      id: "context-is-the-product",
+      title: "Context is the product",
+      status: "available",
+      phase: 2,
+      href: "handbooks/otel/articles/context-is-the-product",
+    },
     { id: "what-a-metric-remembers", title: "What a metric remembers", status: "coming", phase: 2 },
     {
       id: "the-envelope-is-the-object-graph",

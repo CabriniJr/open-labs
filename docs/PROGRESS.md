@@ -1563,3 +1563,28 @@ resolvido.
 Estado: 933 testes unitários (22 novos), 212 e2e (6 novos), typecheck, boundaries (81 arquivos),
 catálogo (13 arquivos) e build (33 páginas) verdes. A contraparte real rodou à mão; a CI
 não compila Java, e isso é decisão.
+
+## Entrega 6 — Três artigos, e a fase 1 fechada
+
+08/09/2026, mesma branch. O currículo de 31/08 previa 14 artigos e tinha três escritos; a
+teoria estava adiantada só onde havia lab. Entraram três, todos com fonte primária e
+âncora nos dois sentidos (fonte listada é citada, citação aponta para fonte que existe):
+
+- **`the-seam-between-signals`** (fase 1) — fecha a fase de entrada. A tese é que a
+  dificuldade não está em nenhum dos três sinais e sim na **junta**, e que junta é um
+  campo concreto que precisa existir e ser escrito igual dos dois lados: o `TraceId` no
+  registro de log, o **exemplar** (o único caminho mecânico do agregado para a requisição),
+  e o recurso, que é a junta que sai de graça e é a mais quebrada à mão. Tempo **não** é
+  junta — é palpite com cara de gráfico.
+- **`a-trace-is-a-tree-nobody-owns`** (fase 2) — ninguém aloca id, ninguém guarda a árvore,
+  e não existe evento de "trace completo" porque o protocolo agrupa por recurso e escopo,
+  nunca por trace. Daí sai o resto: o trace **degrada** em vez de falhar (órfão que parece
+  completo), a decisão de amostragem tem de viajar, e o link existe porque paternidade
+  nem sempre é a verdade.
+- **`context-is-the-product`** (fase 2) — o `Context` é definido sem uma palavra de
+  telemetria dentro, e é por isso que serve aos três sinais. Contexto segue a execução só
+  onde alguém o carrega; e o baggage não vai para a telemetria sozinho, o que é decisão de
+  privacidade e não esquecimento.
+
+Estado: 954 testes unitários, 212 e2e, typecheck, boundaries, catálogo e build (36 páginas)
+verdes. Faltam oito artigos do currículo; a fase 1 está inteira.
