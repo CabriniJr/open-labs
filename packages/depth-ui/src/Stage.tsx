@@ -25,6 +25,7 @@ import {
   ZOOM_MAXIMO,
   encaixar,
   fracaoDoQuadro,
+  LIMIAR_LEGIVEL,
   quantoAparece,
   tabelaLegivel,
 } from "./lod.js";
@@ -206,6 +207,16 @@ interface CamadaProps extends StageProps {
    * a cada quadro.
    */
   readonly emissoes: Readonly<Record<string, EmissaoDaPorta>>;
+  /**
+   * Esta camada é um **fantasma**: ela aparece abaixo do limiar de legibilidade,
+   * e por isso desenha as formas e **não** os fios.
+   *
+   * O interior do somador de 32 bits era desenhado a sete por cento de
+   * opacidade com noventa e seis fios dentro — invisíveis, e mesmo assim
+   * cruzando-se centenas de vezes. Forma antes de linha é a ordem em que o olho
+   * lê, e é a ordem em que o desenho deve pagar.
+   */
+  readonly fantasma?: boolean | undefined;
 }
 
 /** O que mudou no livro-caixa entre dois estados. É a fonte de todo movimento. */
@@ -628,6 +639,7 @@ function Camada({
   profundidade,
   dilatacao,
   emissoes,
+  fantasma = false,
 }: CamadaProps) {
   const reduzido = usaMovimentoReduzido();
   const mudou = delta(state, previous);
@@ -1190,7 +1202,18 @@ function Camada({
       */
       const parVisual = `${de.id}>${para.id}>${wire.line ?? "data"}`;
       const agregada = de.id !== wire.from || para.id !== String(wire.to);
-      const aberta = dentroDe2.has(de.id) || dentroDe2.has(para.id);
+      /*
+        Aberta o bastante para receber linha uma a uma.
+
+        Era `tem interior desenhado`, e isso incluía o interior a sete por cento
+        de opacidade: trinta e duas linhas pousando em entradas que ninguém vê.
+        A pergunta certa não é "há interior?" e sim "dá para ler o que tem lá
+        dentro?" — e ela já tem resposta, que é a mesma rampa do nível de
+        detalhe.
+      */
+      const legivel = (id: string): boolean =>
+        (dentroDe2.get(id)?.aparece ?? 0) >= LIMIAR_LEGIVEL;
+      const aberta = legivel(de.id) || legivel(para.id);
       const cruzamentos = cruzamentosDoPar.get(parVisual)?.size ?? 1;
       const chaveVisual = aberta
         ? `${parVisual}>${cruzamentoDe(wire, de, para)}`
@@ -1271,6 +1294,8 @@ function Camada({
         // A largura declarada pelo modelo ganha da marca de agregação: se o
         // domínio disse que a linha é um barramento de 32, ela é de 32.
         width: wire.width ?? feixe,
+        /** Quantas ligações esta linha agrega, quando agrega. */
+        feixe,
         // Uma emissão na porta acende todos os fios que saem dela: é o leque,
         // e mostrar só o primeiro seria voltar a mentir sobre o percurso.
         acesa: (mudou[`out:${wire.from}.${wire.port}`] ?? 0) > 0,
@@ -1485,6 +1510,11 @@ function Camada({
             data-de={aresta.from}
             data-para={aresta.to}
             data-linha={aresta.linha}
+            /* Quantas ligações esta linha representa quando ela representa
+               várias. É o que permite conferir de fora que a agregação não
+               escondeu a diferença: a marca tem de bater com o que o interior
+               desenha. */
+            data-feixe={aresta.feixe}
             data-timing={aresta.timing}
             data-acesa={aresta.acesa ? "true" : undefined}
             data-descarte={aresta.descarte ? "true" : undefined}
@@ -1567,9 +1597,7 @@ function Camada({
 
   return (
     <>
-      <g className="dui-stage__fios">
-        {daEsteira.map(desenharFio)}
-      </g>
+      <g className="dui-stage__fios">{fantasma ? null : daEsteira.map(desenharFio)}</g>
 
       {/*
         As junções.
@@ -1584,7 +1612,7 @@ function Camada({
         junção é a ponta de um fio caindo no meio do trecho de outro.
       */}
       <g className="dui-stage__juncoes">
-        {juncoes(daEsteira.map((a) => a.traco)).map((ponto) => (
+        {(fantasma ? [] : juncoes(daEsteira.map((a) => a.traco))).map((ponto) => (
           <circle
             key={`${ponto.x},${ponto.y}`}
             className="dui-stage__juncao"
@@ -1942,6 +1970,11 @@ function Camada({
                       emissoes={emissoes}
                       unidadesPorQuadro={unidadesPorQuadro / (dentro?.escala ?? 1)}
                       profundidade={profundidade + 1}
+                      /* Abaixo do limiar de legibilidade o interior mostra as
+                         formas e cala os fios: noventa e seis linhas a sete por
+                         cento de opacidade são custo puro, e é delas que sai a
+                         mancha que a vista da ULA tinha no lugar de um desenho. */
+                      fantasma={aparece < LIMIAR_LEGIVEL}
                       dilatacao={dilatarPara(dilatacao, dentro?.escala ?? 1)}
                     />
                   </g>
@@ -2219,7 +2252,7 @@ function Camada({
         que ali passa dado.
       */}
       <g className="dui-stage__tuneis">
-        {lacunas
+        {(fantasma ? [] : lacunas)
           .filter((l) => daEsteira.some((a) => a.chave === l.chave))
           .flatMap((lacuna) => {
           const dona = arestas.find((a) => a.chave === lacuna.chave);
@@ -2256,7 +2289,7 @@ function Camada({
       </g>
 
       <g className="dui-stage__travessias">
-        {arestas
+        {(fantasma ? [] : arestas)
           .filter((a) => a.d !== a.traco)
           .map((a) => (
             <path key={`t${a.chave}`} className="dui-stage__travessia" d={a.d} />
@@ -2273,8 +2306,8 @@ function Camada({
         de precisar de túnel: quem passa por baixo já está noutra altura.
       */}
       <g className="dui-stage__circuito">
-        {doCircuito.map(desenharFio)}
-        {juncoes(doCircuito.map((a) => a.traco)).map((ponto) => (
+        {fantasma ? null : doCircuito.map(desenharFio)}
+        {(fantasma ? [] : juncoes(doCircuito.map((a) => a.traco))).map((ponto) => (
           <circle
             key={`c${ponto.x},${ponto.y}`}
             className="dui-stage__juncao"
@@ -2284,7 +2317,7 @@ function Camada({
             r={2.6}
           />
         ))}
-        {lacunas
+        {(fantasma ? [] : lacunas)
           .filter((l) => doCircuito.some((a) => a.chave === l.chave))
           .flatMap((lacuna) => {
             const lado = 4.5;

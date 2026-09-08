@@ -286,25 +286,45 @@ export function caminho(
     const corredores = [
       ...new Set([a.y, b.y, ...outros.flatMap((r) => [r.y - 12, r.y + r.h + 12])]),
     ];
-    const desvio = melhorEntre(
-      corredores.flatMap((lane) =>
+    /**
+     * O corredor ganha **trilhos** — mas só quando o do meio já está ocupado.
+     *
+     * Vários fios escolhem legitimamente o mesmo corredor: é para isso que ele
+     * existe, e corredor compartilhado é organização. O que não pode é os
+     * quatro correrem na MESMA reta, porque aí os quatro se leem como um.
+     *
+     * Os trilhos entram como segunda tentativa, e não como alternativa de
+     * primeira: oferecidos de saída, eles empatavam com o do meio e o roteador
+     * mudava fios que não tinham motivo para se mexer — o desenho ganhava
+     * cruzamento sem ganhar nada em troca.
+     */
+    const comTrilhos = (base: readonly number[]): readonly number[] => [
+      ...new Set(base.flatMap((c) => [c, c - 7, c + 7])),
+    ];
+    const rotaDesvio = (lanes: readonly number[]) =>
+      melhorEntre(
+        lanes.flatMap((lane) =>
         // O corredor já é o caminho torto: aqui a mira não se sustenta, e as
         // cinco alturas voltam porque o que importa é não atravessar ninguém.
-        alturasEm(de).flatMap((y1) =>
-          alturasEm(para).map((y2) => ({ lane, y1, y2, x0: saida.x + 14, x1: para.x - 14 })),
+          alturasEm(de).flatMap((y1) =>
+            alturasEm(para).map((y2) => ({ lane, y1, y2, x0: saida.x + 14, x1: para.x - 14 })),
+          ),
         ),
-      ),
-      ({ lane, y1, y2, x0, x1 }) =>
-        outros.filter((r) => cruzaHorizontal(y1, saida.x, x0, r)).length * MENTIRA +
-        outros.filter((r) => cruzaVertical(x0, y1, lane, r)).length * MENTIRA +
-        outros.filter((r) => cruzaHorizontal(lane, x0, x1, r)).length * MENTIRA +
-        outros.filter((r) => cruzaVertical(x1, lane, y2, r)).length * MENTIRA +
-        outros.filter((r) => cruzaHorizontal(y2, x1, para.x, r)).length * MENTIRA +
-        repetido(`h:${lane}`) +
-        repetido(`v:${x0}`) +
-        repetido(`v:${x1}`) +
-        (Math.abs(y1 - a.y) + Math.abs(y2 - b.y) + Math.abs(lane - a.y) / 8) / 10_000,
-    );
+        ({ lane, y1, y2, x0, x1 }) =>
+          outros.filter((r) => cruzaHorizontal(y1, saida.x, x0, r)).length * MENTIRA +
+          outros.filter((r) => cruzaVertical(x0, y1, lane, r)).length * MENTIRA +
+          outros.filter((r) => cruzaHorizontal(lane, x0, x1, r)).length * MENTIRA +
+          outros.filter((r) => cruzaVertical(x1, lane, y2, r)).length * MENTIRA +
+          outros.filter((r) => cruzaHorizontal(y2, x1, para.x, r)).length * MENTIRA +
+          repetido(`h:${lane}`) +
+          repetido(`v:${x0}`) +
+          repetido(`v:${x1}`) +
+          (Math.abs(y1 - a.y) + Math.abs(y2 - b.y) + Math.abs(lane - a.y) / 8) / 10_000,
+      );
+    const semTrilho = rotaDesvio(corredores);
+    const desvio = ocupadas.has(`h:${semTrilho.lane}`)
+      ? rotaDesvio(comTrilhos(corredores))
+      : semTrilho;
     return `M ${saida.x} ${desvio.y1} H ${desvio.x0} V ${desvio.lane} H ${desvio.x1} V ${desvio.y2} H ${para.x}`;
   }
 
@@ -379,14 +399,58 @@ export function caminho(
     ...outros.map((r) => r.y + r.h + 16),
   ].filter((c) => c > base - 12);
   const entradas = [b.x, para.x + para.w * 0.3, para.x + para.w * 0.7, para.x + 8, para.x + para.w - 8];
-  const volta = melhorEntre(
-    faixas.flatMap((lane) => entradas.map((x2) => ({ lane, x2 }))),
-    ({ lane, x2 }) =>
-      outros.filter((r) => cruzaVertical(coluna, saida.y, lane, r)).length * MENTIRA +
-      outros.filter((r) => cruzaHorizontal(lane, coluna, x2, r)).length * MENTIRA +
-      outros.filter((r) => cruzaVertical(x2, lane, para.y + para.h, r)).length * MENTIRA +
-      (Math.abs(x2 - b.x) + Math.abs(lane - base) / 8) / 10_000,
-  );
-  return `M ${saida.x} ${saida.y} H ${coluna} V ${volta.lane} H ${volta.x2} V ${para.y + para.h}`;
+  /*
+    A volta era a única espécie de caminho que **não olhava para os outros
+    fios**: coluna fixa em `saida.x + 14`, altura fixa no centro da caixa. Duas
+    caixas lado a lado na mesma fileira, mandando as duas para trás, produziam
+    dois caminhos idênticos — desenhados um por cima do outro, e lidos como um
+    só. Sete sobreposições cegas na vista do processador do micro, nenhuma
+    acusada: o teto de cruzamento não fala de sobreposição.
+
+    O conserto entra como **segunda tentativa**, e é a mesma disciplina do
+    corredor: a volta canônica é tentada primeiro e só perde a vez quando ela
+    repete a reta de alguém. Oferecer as alternativas de saída empatava com a
+    canônica e mexia em fios que não tinham motivo nenhum para se mexer.
+  */
+  const rotaVolta = (
+    colunas: readonly number[],
+    saidas: readonly number[],
+    lanes: readonly number[],
+  ) =>
+    melhorEntre(
+      lanes.flatMap((lane) =>
+        entradas.flatMap((x2) =>
+          colunas.flatMap((col) => saidas.map((y1) => ({ lane, x2, col, y1 }))),
+        ),
+      ),
+      ({ lane, x2, col, y1 }) =>
+        outros.filter((r) => cruzaHorizontal(y1, saida.x, col, r)).length * MENTIRA +
+        outros.filter((r) => cruzaVertical(col, y1, lane, r)).length * MENTIRA +
+        outros.filter((r) => cruzaHorizontal(lane, col, x2, r)).length * MENTIRA +
+        outros.filter((r) => cruzaVertical(x2, lane, para.y + para.h, r)).length * MENTIRA +
+        repetido(`h:${y1}`) +
+        repetido(`v:${col}`) +
+        repetido(`h:${lane}`) +
+        (Math.abs(y1 - saida.y) + Math.abs(col - coluna)) / 100 +
+        (Math.abs(x2 - b.x) + Math.abs(lane - base) / 8) / 10_000,
+    );
+  const canonica = rotaVolta([coluna], [saida.y], faixas);
+  /*
+    Só a **faixa longa** dispara a busca.
+
+    Dividir a reta curta que sai da caixa com quem entrou nela não engana
+    ninguém: são dois centímetros de traço com uma ponta em comum, e o pontinho
+    de junção já responde por eles. O que se lê como uma linha só é o trecho
+    comprido do corredor — e é ele, e só ele, que vale mexer no fio.
+  */
+  const repete = ocupadas.has(`h:${canonica.lane}`);
+  const volta = repete
+    ? rotaVolta(
+        [coluna, coluna + 8, coluna + 16, coluna - 6],
+        alturasEm(de),
+        [...new Set(faixas.flatMap((c) => [c, c - 7, c + 7]))],
+      )
+    : canonica;
+  return `M ${saida.x} ${volta.y1} H ${volta.col} V ${volta.lane} H ${volta.x2} V ${para.y + para.h}`;
 }
 

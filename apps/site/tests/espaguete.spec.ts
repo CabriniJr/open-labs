@@ -119,7 +119,7 @@ const TETOS = [
   // quantas linhas existem.
   { lab: "labs/gates/", nome: "o somador de quatro bits", cruzamentos: 5 },
   { lab: "labs/rpn/", nome: "a máquina de pilha", cruzamentos: 4 },
-  { lab: "labs/micro/", nome: "o sistema do genérico", cruzamentos: 7 },
+  { lab: "labs/micro/", nome: "o sistema do genérico", cruzamentos: 5 },
   // Um, e não zero: os três sinais que saem da API para os três provedores eram
   // desenhados como UMA linha, e o interior mostrava três entradas nascendo do
   // nada. Abertos, os três se abrem em leque e um deles cruza. Um cruzamento é o
