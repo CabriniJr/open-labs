@@ -567,6 +567,75 @@
  * porque a linha é de controle, e um triângulo preto ali diria que passa dado.
  */
 /*
+ * A fila com casas, e a casa ocupada.
+ *
+ * A barra de nível responde "quanto" e some quando as casas aparecem: duas
+ * respostas para a mesma pergunta, empilhadas, se leem como duas coisas.
+ */
+.dui-stage__casa {
+  fill: none;
+  stroke: color-mix(in oklab, var(--ink) 22%, transparent);
+  stroke-width: 0.8;
+}
+
+.dui-stage__casa[data-ocupada="true"] {
+  fill: color-mix(in oklab, var(--dui-dado) 55%, var(--paper));
+  stroke: color-mix(in oklab, var(--dui-dado) 70%, var(--ink));
+}
+
+/*
+ * Cheia: daqui em diante o que chegar é recusado.
+ *
+ * O contorno endurece — é a máquina dizendo que não cabe mais, e é a CAUSA do
+ * descarte que sai ao lado. Sem isto o palco mostrava só o resultado.
+ */
+.dui-stage__objeto[data-cheia="true"] .dui-stage__caixa {
+  stroke: color-mix(in oklab, var(--dui-descarte, var(--dui-sinal)) 70%, var(--ink));
+  stroke-width: 2.2;
+}
+
+/*
+ * O alerta: está perdendo dado agora.
+ *
+ * Figura e não cor — triângulo com barra —, porque cor sozinha não é canal.
+ * A pulsação é curta e para: alerta que pisca para sempre vira decoração de
+ * fundo, e o olho aprende a não ver.
+ */
+.dui-stage__alerta-corpo {
+  fill: var(--dui-sinal);
+  stroke: color-mix(in oklab, var(--dui-sinal) 55%, var(--ink));
+  stroke-width: 0.9;
+  stroke-linejoin: round;
+}
+
+.dui-stage__alerta-barra {
+  fill: var(--paper);
+  stroke: var(--paper);
+  stroke-width: 1.3;
+  stroke-linecap: round;
+}
+
+.dui-stage__alerta {
+  animation: dui-alerta 420ms ease-out 2;
+}
+
+@keyframes dui-alerta {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dui-stage__alerta {
+    animation: none;
+  }
+}
+
+/*
  * O circuito: a segunda rede da fábrica.
  *
  * Ela não carrega coisa, carrega comando — e fica num plano acima das esteiras.

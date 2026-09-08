@@ -62,6 +62,19 @@ export interface StageProps {
   readonly tickMs?: number;
   /** Quanto cada objeto está cheio, de 0 a 1. Quem sabe é o modelo. */
   readonly fills?: Readonly<Record<string, number>> | undefined;
+  /**
+   * De quantos cabe, quando o número é pequeno o bastante para se contar.
+   *
+   * A barra de nível responde "quanto"; ela não responde "quantos", e é o
+   * "quantos" que faz uma fila parecer uma fila. Com a capacidade na mão, o
+   * desenho troca a barra por **casas** — e casa cheia é item, um por um, como
+   * numa esteira parada.
+   *
+   * Número, sem vocabulário: quem sabe o que aquilo conta é o domínio. Acima do
+   * que se conta de relance a barra continua, porque doze casas se leem e mil
+   * viram textura.
+   */
+  readonly capacidades?: Readonly<Record<string, number>> | undefined;
   /** O valor que cada objeto mostra agora. Quem sabe é o modelo. */
   readonly readouts?: Readonly<Record<string, string>> | undefined;
   /**
@@ -509,6 +522,30 @@ function Carga({
   );
 }
 
+/** Acima disto, casas viram textura e a barra de nível diz mais. */
+const CASAS_QUE_SE_CONTAM = 24;
+
+/**
+ * As casas de uma fila: quantas existem, e quantas estão ocupadas.
+ *
+ * A barra de nível responde "quanto"; a casa responde "quantos", e é o
+ * "quantos" que faz a fila parecer uma fila — e que faz "ela encheu" ser uma
+ * figura em vez de uma barra encostando no topo.
+ *
+ * Devolve `undefined` quando não há capacidade declarada ou quando ela é grande
+ * demais para se contar de relance: aí a barra continua sendo a melhor resposta.
+ */
+export function casasDaFila(
+  cheio: number | undefined,
+  capacidade: number | undefined,
+): { readonly total: number; readonly ocupadas: number } | undefined {
+  if (capacidade === undefined || !Number.isFinite(capacidade)) return undefined;
+  const total = Math.round(capacidade);
+  if (total < 1 || total > CASAS_QUE_SE_CONTAM) return undefined;
+  const fracao = Math.max(0, Math.min(1, cheio ?? 0));
+  return { total, ocupadas: Math.min(total, Math.round(fracao * total)) };
+}
+
 /** A caixa que contém um caminho, com folga para a máscara não cortar a ponta. */
 function caixaDoCaminho(d: string): { x: number; y: number; w: number; h: number } {
   const partes = segmentos(d);
@@ -576,6 +613,7 @@ function Camada({
   edgeTicks = 1,
   tickMs = 700,
   fills,
+  capacidades,
   readouts,
   altos,
   conduzindo,
@@ -1562,6 +1600,16 @@ function Camada({
           const node = tree.byId.get(place.id);
           const fam = familia(place.id);
           const cheio = fills?.[place.id];
+          const casas = casasDaFila(cheio, capacidades?.[place.id]);
+          /**
+           * Está perdendo dado AGORA.
+           *
+           * Sai do mesmo lugar da animação: a diferença do livro-caixa entre
+           * dois ticks, que já acende a aresta de descarte. Alerta é sobre
+           * agora — um que ficasse depois de o problema passar seria a porta
+           * acesa por causa de um valor que já foi.
+           */
+          const descartando = arestas.some((a) => a.descarte && a.from === place.id && a.acesa);
           const leitura = readouts?.[place.id];
           const rotulo = place.label ?? node?.label ?? place.id;
           const agindo = ativo(place.id);
@@ -1604,6 +1652,10 @@ function Camada({
               data-registro={view.registro ?? "blocos"}
               data-ativo={agindo ? "true" : undefined}
               data-alto={aceso ? "true" : undefined}
+              /* Cheia é estado, e estado se lê de relance: daqui em diante o
+                 que chegar é recusado, e é a causa do descarte que sai ao lado. */
+              data-cheia={cheio !== undefined && cheio >= 1 ? "true" : undefined}
+              data-alerta={descartando ? "true" : undefined}
               data-conduz={node?.kind === "switch" ? (passa(place.id) ? "true" : "false") : undefined}
               style={{ ["--dui-atraso" as string]: `${atraso}ms` }}
               data-fechado={place.collapsed === true ? "true" : undefined}
@@ -1765,7 +1817,7 @@ function Camada({
                   rx={fam === "container" ? 14 : 8}
                 />
               )}
-              {cheio !== undefined ? (
+              {cheio !== undefined && casas === undefined ? (
                 <rect
                   className="dui-stage__nivel"
                   x={place.x + 2}
@@ -1774,6 +1826,65 @@ function Camada({
                   height={(place.h - 4) * Math.max(0, Math.min(1, cheio))}
                   rx={6}
                 />
+              ) : null}
+              {/*
+                A fila com casas: uma esteira parada, item a item.
+
+                A barra dizia "quanto"; a casa diz "quantos", e é o "quantos"
+                que transforma "encheu" numa figura — a última casa ocupada
+                encostando no fim da esteira — em vez de uma barra encostando no
+                topo. Só aparece quando a capacidade se conta de relance.
+              */}
+              {casas !== undefined
+                ? (() => {
+                    const dentroX = place.x + 6;
+                    const larguraUtil = place.w - 12;
+                    const passo = larguraUtil / casas.total;
+                    const alto = Math.min(9, Math.max(4, place.h * 0.12));
+                    const base = place.y + place.h - 6 - alto;
+                    return (
+                      <g className="dui-stage__casas">
+                        {Array.from({ length: casas.total }, (_, i) => (
+                          <rect
+                            key={i}
+                            className="dui-stage__casa"
+                            data-ocupada={i < casas.ocupadas ? "true" : undefined}
+                            x={dentroX + i * passo + 0.6}
+                            y={base}
+                            width={Math.max(1.2, passo - 1.2)}
+                            height={alto}
+                            rx={1.5}
+                          />
+                        ))}
+                      </g>
+                    );
+                  })()
+                : null}
+
+              {/*
+                O alerta.
+
+                O Factorio põe um ícone sobre a máquina que parou, e é assim que
+                se descobre que algo está errado sem varrer a fábrica. Aqui o
+                descarte já saía por uma porta lateral — que é o resultado —, e
+                quem não estivesse olhando para aquele canto não via perda de
+                dado acontecendo.
+
+                É figura, e não cor: triângulo com a barra dentro. E é do tick —
+                some no primeiro tick em que a máquina para de perder.
+              */}
+              {descartando ? (
+                <g
+                  className="dui-stage__alerta"
+                  /* No canto de cima à ESQUERDA: o de cima à direita já é da
+                     engrenagem, e duas figuras no mesmo canto se estorvam. */
+                  transform={`translate(${place.x + 4} ${place.y + 3})`}
+                >
+                  <title>losing data now</title>
+                  <path className="dui-stage__alerta-corpo" d="M 6 0 L 12 11 H 0 Z" />
+                  <path className="dui-stage__alerta-barra" d="M 6 4 V 7.4" />
+                  <circle className="dui-stage__alerta-barra" cx={6} cy={9.2} r={0.8} />
+                </g>
               ) : null}
 
               {interior !== undefined && aparece > 0 ? (

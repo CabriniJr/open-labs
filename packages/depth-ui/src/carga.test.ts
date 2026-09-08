@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { comprimentoDaCarga, fila, formaDaCarga, itensDoFeixe } from "./Stage.js";
+import { casasDaFila, comprimentoDaCarga, fila, formaDaCarga, itensDoFeixe } from "./Stage.js";
 
 /**
  * A forma da carga vem da largura do fio, que o modelo declara.
@@ -66,5 +66,28 @@ describe("qual forma a carga toma", () => {
   it("peso maior que um é feixe; um é unidade", () => {
     expect(formaDaCarga({ comprimento: 0, emPacote: false, quantos: 2 })).toBe("feixe");
     expect(formaDaCarga({ comprimento: 0, emPacote: false, quantos: 1 })).toBe("unidade");
+  });
+});
+
+describe("a fila com casas", () => {
+  it("sem capacidade declarada não há casa nenhuma — a barra continua", () => {
+    expect(casasDaFila(0.5, undefined)).toBeUndefined();
+  });
+
+  it("capacidade grande demais volta para a barra: mil casas viram textura", () => {
+    expect(casasDaFila(0.5, 2048)).toBeUndefined();
+    expect(casasDaFila(0.5, 24)).toBeDefined();
+  });
+
+  it("as ocupadas saem do nível, e nunca passam do total", () => {
+    expect(casasDaFila(0.5, 4)).toEqual({ total: 4, ocupadas: 2 });
+    expect(casasDaFila(1, 4)).toEqual({ total: 4, ocupadas: 4 });
+    expect(casasDaFila(3, 4)).toEqual({ total: 4, ocupadas: 4 });
+    expect(casasDaFila(0, 4)).toEqual({ total: 4, ocupadas: 0 });
+    expect(casasDaFila(undefined, 4)).toEqual({ total: 4, ocupadas: 0 });
+  });
+
+  it("capacidade zero não desenha casa: fila que não cabe nada não é fila", () => {
+    expect(casasDaFila(0, 0)).toBeUndefined();
   });
 });

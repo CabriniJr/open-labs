@@ -25,6 +25,7 @@ export interface ExplorerProps {
   readonly views: readonly View[];
   readonly inicial?: string | undefined;
   readonly fills?: Readonly<Record<string, number>> | undefined;
+  readonly capacidades?: Readonly<Record<string, number>> | undefined;
   readonly readouts?: Readonly<Record<string, string>> | undefined;
   /** Quem está com a saída em alto. Só o domínio sabe ler o valor que saiu. */
   readonly altos?: ReadonlySet<string> | undefined;
@@ -52,6 +53,7 @@ export function Explorer({
   views,
   inicial,
   fills,
+  capacidades,
   readouts,
   altos,
   conduzindo,
@@ -241,6 +243,7 @@ export function Explorer({
           {...(edgeTicks === undefined ? {} : { edgeTicks })}
           {...(tickMs === undefined ? {} : { tickMs })}
           fills={fills}
+          capacidades={capacidades}
           readouts={readouts}
           altos={altos}
           conduzindo={conduzindo}

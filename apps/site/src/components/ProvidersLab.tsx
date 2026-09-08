@@ -147,6 +147,22 @@ export function ProvidersLab() {
         points: Math.min(1, e.pontos.length / Math.max(1, controles["cardinality-limit"])),
       };
 
+  /**
+   * De quantos cabe, para a fila poder ser desenhada casa a casa.
+   *
+   * A barra dizia "quanto"; a casa diz "quantos", e é o "quantos" que faz a
+   * fila enchendo virar figura em vez de nível. Com a fila no padrão (2048) o
+   * número não se conta de relance e o palco volta à barra sozinho — mexer no
+   * controle para 4, que é o que o "Break it" pede, é o que faz as casas
+   * aparecerem, e aí a recusa tem causa visível.
+   */
+  const capacidades: Record<string, number> = semSdk
+    ? {}
+    : {
+        queue: controles["max-queue-size"],
+        points: controles["cardinality-limit"],
+      };
+
   const readouts: Record<string, string> = semSdk
     ? {
         created: numero(e.criados),
@@ -182,6 +198,7 @@ export function ProvidersLab() {
           inicial={foco}
           readouts={readouts}
           fills={fills}
+          capacidades={capacidades}
           leituraDaCarga={leituraDaCarga}
           especieDaCarga={especieDaCarga}
           comFicha
