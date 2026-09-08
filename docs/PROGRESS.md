@@ -1865,3 +1865,46 @@ do trapézio tem de ser mais alto que o esquerdo. Um atributo `data-leque` não 
 o CSS que não pintava, uma vez, com o atributo certo.
 
 Estado: 990 testes unitários, 247 e2e, typecheck, boundaries, catálogo e build verdes.
+
+## Entrega 11 — A identidade de cada handbook, declarada ✅
+
+08/09/2026. Pedido dele, junto com a virada para o OTel: *"prepare para cada handbook ter uma
+estilização personalizável; parte do projeto é estilizar por handbook"*.
+
+Havia tema por domínio desde o começo — `data-domain` no `<html>` e um arquivo CSS por
+handbook — e ele tinha dois buracos:
+
+1. **era uma segunda lista.** O handbook morava no catálogo; a identidade dele, num arquivo
+   CSS que ninguém obrigava a existir. Um handbook novo nascia com a cor da casa, parecendo
+   outro handbook, e a descoberta era abrindo a página;
+2. **ele parava na porta do palco.** Pintava acento e os quatro sinais da página; o desenho,
+   que é noventa por cento da tela, saía **igual nos três**.
+
+Agora o tema é campo do handbook (`tema: { claro, escuro }`) e o CSS sai dele. Um handbook
+novo nasce com identidade só de ser declarado.
+
+**O conjunto do que ele pinta é fechado, e é isso que separa "estilizável" de "tema livre":**
+o acento, os quatro sinais, e do palco só o que é identidade — a família que **processa**, a
+que **transporta**, e as quatro espécies de carga.
+
+O que fica de fora, e cada um por uma razão:
+
+- **fundo e tipografia são da casa.** Identidade que mexe no papel vira banner, que é o
+  anti-objetivo escrito na spec do handbook;
+- **a tinta viva** (controle, alimentação, a família controladora) é **convenção, não
+  identidade**: num diagrama de blocos a seta vermelha é controle em qualquer assunto, e o
+  livro-texto da CPU manda nisso tanto quanto o do OTel;
+- **o nível alto** é o valor que saiu da peça, pelo mesmo motivo.
+
+**Três testes seguram isso** (`lib/tema.test.ts`): o CSS gerado só escreve token da lista
+fechada; nenhum tema encosta em papel, tinta ou tipografia; e dois handbooks não têm o mesmo
+acento — numa aba só, o acento é tudo o que o leitor vê.
+
+E o contraste passou a ser cobrado nos **três** handbooks, nos dois papéis: `contrast.test.ts`
+lia o CSS do OTel e só dele. Identidade não pode custar legibilidade, e a dos outros dois não
+era verificada por ninguém. São 67 pares agora, e um handbook novo entra na tabela sozinho.
+
+Na tela: o handbook da CPU ficou verde-silício (as caixas eram azuis), o do OTel segue azul, e
+a linha de controle continua vermelha nos dois — que é exatamente o desenho da regra.
+
+Estado: 1042 testes unitários, 249 e2e, typecheck, boundaries, catálogo e build verdes.

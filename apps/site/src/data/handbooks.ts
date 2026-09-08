@@ -1,3 +1,4 @@
+import type { TemaCompleto } from "../lib/tema.js";
 import { MAPA_OTEL, type RoadmapMap } from "./roadmap.js";
 import { MAPA_CPU } from "./roadmap-cpu.js";
 import { labs as otelLabs, phases as otelPhases } from "./roadmap.js";
@@ -80,6 +81,15 @@ export interface Handbook {
   readonly labs: readonly HandbookItem[];
   /** De onde veio o modelo, quando ele não é nosso. */
   readonly reference?: HandbookReference;
+  /**
+   * A identidade visual, e ela mora aqui pelo mesmo motivo que o mapa mora:
+   * **uma fonte por fato**. Enquanto ela era um arquivo CSS por domínio, um
+   * handbook podia existir sem tema e ninguém descobria até abrir a página.
+   *
+   * O conjunto do que ela pinta é fechado — ver `lib/tema.ts`, que explica o
+   * que fica de fora e por quê.
+   */
+  readonly tema: TemaCompleto;
 }
 
 /**
@@ -109,6 +119,24 @@ const OTEL_PHASE_LINES: Record<number, string> = {
 
 const OTEL: Handbook = {
   id: "otel",
+  /**
+   * O rastro é azul, e o azul é o que este handbook tem de mais reconhecível.
+   * As espécies de carga saem do que o assunto move: span, métrica, registro e
+   * o que já foi empacotado para sair.
+   */
+  tema: {
+    claro: {
+      acento: "#425cc7",
+      fluxo: "#425cc7",
+      descarte: "#b8442a",
+      ok: "#3f7a52",
+      mutacao: "#f5a800",
+      processador: "#425cc7",
+      conduite: "#3f7a52",
+      especies: ["#7c5cd6", "#3f7a52", "#c2410c", "#0e7490"],
+    },
+    escuro: { acento: "#8fa2ee", processador: "#8fa2ee", especies: ["#a371f7", "#3fb950", "#f0883e", "#22d3ee"] },
+  },
   name: "OpenTelemetry Visual Handbook",
   subject: "OpenTelemetry",
   tagline: "Watch the telemetry move, then read the bytes that moved.",
@@ -238,6 +266,24 @@ const CPU_LABS: readonly HandbookItem[] = MAPA_CPU.labs.map((lab) => ({
 
 const CPU: Handbook = {
   id: "cpu",
+  /**
+   * O verde-azulado do silício. A tinta viva **não** entra aqui: seta vermelha
+   * é controle em qualquer diagrama de blocos, e isso é convenção, não
+   * identidade — o livro-texto manda nela.
+   */
+  tema: {
+    claro: {
+      acento: "#0f766e",
+      fluxo: "#0f766e",
+      descarte: "#b8442a",
+      ok: "#3f7a52",
+      mutacao: "#c2410c",
+      processador: "#0f766e",
+      conduite: "#3f7a52",
+      especies: ["#7c3aed", "#0f766e", "#b45309", "#be185d"],
+    },
+    escuro: { acento: "#5eddd0", fluxo: "#5eddd0", mutacao: "#fb923c", processador: "#5eddd0", especies: ["#a371f7", "#5eddd0", "#e3b341", "#db61a2"] },
+  },
   name: "CPU Visual Handbook",
   subject: "the CPU",
   tagline: "Type an instruction, watch the transistors settle.",
@@ -356,6 +402,24 @@ const CPU: Handbook = {
  */
 const ALGORITHMS: Handbook = {
   id: "algorithms",
+  /**
+   * Violeta, que é a distância que faz os três se distinguirem numa aba só. As
+   * espécies aqui são os itens que trocam de lugar, e a mais discreta é a que
+   * já está no lugar certo.
+   */
+  tema: {
+    claro: {
+      acento: "#6d28d9",
+      fluxo: "#6d28d9",
+      descarte: "#b8442a",
+      ok: "#3f7a52",
+      mutacao: "#c2410c",
+      processador: "#6d28d9",
+      conduite: "#3f7a52",
+      especies: ["#6d28d9", "#0e7490", "#b45309", "#3f7a52"],
+    },
+    escuro: { acento: "#c4a7f7", fluxo: "#c4a7f7", processador: "#c4a7f7", especies: ["#c4a7f7", "#22d3ee", "#e3b341", "#3fb950"] },
+  },
   name: "Algorithms Visual Handbook",
   subject: "algorithms",
   tagline: "An algorithm is a system of parts. Watch the items move.",

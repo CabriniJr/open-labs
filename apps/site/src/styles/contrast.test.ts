@@ -13,10 +13,7 @@ const CSS_TOKENS = readFileSync(
   fileURLToPath(new URL("./tokens.css", import.meta.url)),
   "utf8",
 );
-const CSS_TEMA = readFileSync(
-  fileURLToPath(new URL("./themes/otel.css", import.meta.url)),
-  "utf8",
-);
+import { HANDBOOKS } from "../data/handbooks.js";
 
 type Paleta = Record<string, string>;
 
@@ -36,19 +33,22 @@ const claroBase = bloco(CSS_TOKENS, ":root {");
 const escuroSistema = bloco(CSS_TOKENS, ':root:not([data-theme="light"]) {');
 const escuroExplicito = bloco(CSS_TOKENS, ':root[data-theme="dark"] {');
 
-const acentoClaro = bloco(CSS_TEMA, ':root[data-domain="otel"] {');
-const acentoEscuroSistema = bloco(
-  CSS_TEMA,
-  ':root[data-domain="otel"]:not([data-theme="light"]) {',
-);
-const acentoEscuroExplicito = bloco(CSS_TEMA, ':root[data-domain="otel"][data-theme="dark"] {');
-
-const CLARO: Paleta = { ...claroBase, ...acentoClaro };
-const ESCURO: Paleta = {
-  ...claroBase,
-  ...acentoClaro,
-  ...escuroSistema,
-  ...acentoEscuroSistema,
+/*
+ * O tema de cada handbook agora sai do CATÁLOGO, e não de um CSS escrito à mão
+ * — e por isso o contraste passou a ser cobrado nos **três**, e não só no da
+ * casa. Um handbook novo entra na tabela abaixo só de ser declarado, que é o
+ * ponto: a identidade não pode custar legibilidade, e antes ninguém verificava
+ * a dos outros dois.
+ */
+const acentoDe = (id: string): Paleta => {
+  const handbook = HANDBOOKS.find((h) => h.id === id);
+  if (handbook === undefined) throw new Error(`handbook "${id}" não está no catálogo`);
+  return { accent: handbook.tema.claro.acento };
+};
+const acentoEscuroDe = (id: string): Paleta => {
+  const handbook = HANDBOOKS.find((h) => h.id === id);
+  if (handbook === undefined) throw new Error(`handbook "${id}" não está no catálogo`);
+  return { accent: handbook.tema.escuro.acento ?? handbook.tema.claro.acento };
 };
 
 function canal(hex: string): [number, number, number] {
@@ -98,10 +98,15 @@ const PARES: readonly (readonly [string, string, string])[] = [
   ["paper", "accent", "texto do botão primário"],
 ];
 
-describe.each([
-  ["claro", CLARO],
-  ["escuro", ESCURO],
-])("contraste no tema %s", (_nome, paleta) => {
+const CASOS = HANDBOOKS.flatMap((h) => [
+  [`${h.id} · claro`, { ...claroBase, ...acentoDe(h.id) }] as const,
+  [
+    `${h.id} · escuro`,
+    { ...claroBase, ...acentoDe(h.id), ...escuroSistema, ...acentoEscuroDe(h.id) },
+  ] as const,
+]);
+
+describe.each(CASOS)("contraste no tema %s", (_nome, paleta) => {
   it.each(PARES)("--%s sobre --%s (%s) alcança 4,5:1", (frente, fundo, _uso) => {
     const razao = contraste(paleta[frente]!, paleta[fundo]!);
     expect(
@@ -113,9 +118,6 @@ describe.each([
 
 describe("os dois jeitos de pedir o escuro", () => {
   it("o bloco do sistema e o do atributo declaram a mesma paleta", () => {
-    expect({ ...escuroExplicito, ...acentoEscuroExplicito }).toEqual({
-      ...escuroSistema,
-      ...acentoEscuroSistema,
-    });
+    expect(escuroExplicito).toEqual(escuroSistema);
   });
 });

@@ -1,10 +1,19 @@
 ---
 import "../styles/tokens.css";
-import "../styles/themes/otel.css";
-import "../styles/themes/cpu.css";
-import "../styles/themes/algorithms.css";
 import "../styles/base.css";
 import "@ovh/depth-ui/src/depth-ui.css";
+import { HANDBOOKS } from "../data/handbooks";
+import { cssDosTemas } from "../lib/tema";
+
+/*
+  A identidade de cada handbook, saída do catálogo.
+
+  Eram três arquivos CSS escritos à mão, e nada obrigava um handbook novo a ter
+  o dele: ele nascia com a cor da casa e ninguém era avisado. Agora o tema é
+  campo do handbook, e este `<style>` é a tradução — a única, e ela não inventa
+  token: `lib/tema.ts` tem a lista fechada do que um tema pode pintar.
+*/
+const temas = cssDosTemas(HANDBOOKS);
 
 interface Props {
   title: string;
@@ -29,6 +38,9 @@ const { title, description, lang = "en", domain = "otel" } = Astro.props;
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    {/* A identidade do handbook, gerada do catálogo. Vem antes do resto do
+        cabeçalho porque é só declaração de token: ela não pinta nada sozinha. */}
+    <style is:global set:html={temas}></style>
     <title>{title}</title>
     <meta name="description" content={description} />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
