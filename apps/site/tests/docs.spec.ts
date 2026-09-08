@@ -31,7 +31,7 @@ test("o link de editar aponta para o arquivo real no GitHub", async ({ page }) =
 
   await expect(page.getByRole("link", { name: "Editar no GitHub" })).toHaveAttribute(
     "href",
-    "https://github.com/CabriniJr/otel-visual-handbook/edit/main/docs/theory.md",
+    "https://github.com/CabriniJr/open-labs/edit/main/docs/theory.md",
   );
 });
 
