@@ -1,0 +1,106 @@
+/*
+  Só token: a cor mora no catálogo do site e no do palco, e em lugar nenhum aqui.
+  A gramática do veredito é a mesma da Predicao.css de propósito — quem já
+  respondeu uma predição reconhece o certo e o errado sem reaprender.
+*/
+.exercicio {
+  padding: var(--space-2);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-3);
+  background: var(--paper-raised);
+}
+
+.exercicio__cenario {
+  max-width: var(--measure);
+  margin: 0 0 var(--space-1);
+  color: var(--ink-muted);
+  line-height: 1.6;
+}
+
+.exercicio__pergunta {
+  margin: 0 0 var(--space-1);
+  font-weight: 600;
+}
+
+.exercicio__codigo {
+  overflow-x: auto;
+  margin: 0 0 var(--space-2);
+  padding: var(--space-1);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-2);
+  background: var(--paper);
+  font-size: var(--size-step--1);
+  line-height: 1.7;
+}
+
+/* A lacuna é um lugar vazio que se vê: pontilhada enquanto espera, cheia depois. */
+.exercicio__lacuna {
+  display: inline-block;
+  min-width: 24ch;
+  padding: 0 0.3rem;
+  border: 1px dashed var(--accent);
+  border-radius: var(--radius-1);
+}
+
+.exercicio__lacuna[data-cheia="true"] {
+  border-style: solid;
+}
+
+.exercicio__blocos {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.exercicio__bloco {
+  width: 100%;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-1);
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: var(--size-step--1);
+  text-align: left;
+  cursor: grab;
+}
+
+.exercicio__bloco:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+.exercicio__bloco:disabled {
+  cursor: default;
+}
+
+/* O veredito é atributo, e não só cor: leitor de tela não lê borda. */
+.exercicio__bloco[data-veredito="certo"] {
+  border-color: var(--accent);
+  font-weight: 600;
+}
+
+.exercicio__bloco[data-veredito="errado"] {
+  border-color: var(--ink-muted);
+  text-decoration: line-through;
+}
+
+.exercicio__bloco[data-veredito="outro"] {
+  opacity: 0.6;
+}
+
+.exercicio__porque {
+  max-width: var(--measure);
+  margin: 0.35rem 0 0;
+  color: var(--ink-muted);
+  font-size: var(--size-step--1);
+  line-height: 1.6;
+}
+
+.exercicio__aviso,
+.exercicio__origem {
+  margin: var(--space-1) 0 0;
+  color: var(--ink-faint);
+  font-size: var(--size-step--1);
+}
