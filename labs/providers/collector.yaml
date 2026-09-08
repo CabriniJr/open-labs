@@ -1,0 +1,18 @@
+# O Collector mais simples que existe: recebe OTLP e imprime.
+# É a borda do lab, e ela é opaca de propósito — o que acontece DENTRO dele é o
+# lab `collector-pipeline`, e não este.
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+
+exporters:
+  debug:
+    verbosity: detailed
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      exporters: [debug]
