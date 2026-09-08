@@ -1,4 +1,4 @@
-# Duas variáveis, e são as duas que o lab da tela também tem. Mexer nelas aqui e
+# Três variáveis, e são as do lab da tela. Mexer nelas aqui e
 # no lab tem de produzir a mesma história — é isso que "contraparte real"
 # significa.
 services:
@@ -6,7 +6,7 @@ services:
     image: otel/opentelemetry-collector-contrib:0.160.0
     command: ["--config=/etc/collector.yaml"]
     volumes:
-      - ./collector.yaml:/etc/collector.yaml:ro
+      - ./collector.yaml:/etc/collector.yaml:ro,z
 
   checkout:
     build: ./app
