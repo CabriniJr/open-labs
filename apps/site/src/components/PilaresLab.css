@@ -1,0 +1,142 @@
+/*
+  Sem hexadecimal: `pnpm catalogo` reprova tinta escrita fora do catálogo. Cor
+  sai de token, e a do desenho sai do catálogo de `depth-ui/src/stage.css`.
+*/
+.pilares-lab {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.pilares-lab__palco {
+  min-width: 0;
+}
+
+.pilares-lab__controles {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-2);
+  margin-block-start: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-2);
+  background: var(--paper-raised);
+  font-size: var(--size-step--1);
+}
+
+.pilares-lab__tick {
+  color: var(--ink-faint);
+}
+
+.pilares-lab__campo {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.pilares-lab__campo span {
+  color: var(--ink-muted);
+}
+
+.pilares-lab__switch {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--ink-muted);
+}
+
+/*
+  A pergunta, e as três respostas.
+
+  Ela é a peça central da página e não um rodapé: o lab existe para que ela seja
+  feita. Por isso ela tem moldura própria e vem depois do palco, na largura da
+  leitura — o leitor acabou de ver os três guardarem coisas diferentes.
+*/
+.pilares-lab__pergunta {
+  padding: var(--space-2);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-3);
+  background: var(--paper-raised);
+}
+
+.pilares-lab__pergunta h3 {
+  margin: 0 0 var(--space-1);
+  font-size: var(--size-step-1);
+}
+
+.pilares-lab__verdade {
+  margin: 0 0 var(--space-2);
+  color: var(--ink-muted);
+  font-size: var(--size-step--1);
+}
+
+.pilares-lab__respostas {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+}
+
+.pilares-lab__respostas div {
+  display: grid;
+  grid-template-columns: 6rem minmax(0, 1fr);
+  gap: var(--space-1);
+  padding: 0.5rem 0.7rem;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-1);
+}
+
+/*
+  Quem responde e quem não responde se lê de relance — e é FIGURA, não só cor:
+  quem responde tem a borda do acento e um traço à esquerda; quem não responde
+  fica apagado. Cor sozinha não é canal.
+*/
+.pilares-lab__respostas div[data-responde="true"] {
+  border-color: var(--accent);
+  border-left-width: 3px;
+}
+
+.pilares-lab__respostas div[data-responde="false"] {
+  color: var(--ink-muted);
+  border-style: dashed;
+}
+
+.pilares-lab__respostas dt {
+  font-weight: 600;
+}
+
+.pilares-lab__respostas dd {
+  margin: 0;
+  max-width: var(--measure);
+  line-height: 1.6;
+}
+
+.pilares-lab__erros dl {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+}
+
+.pilares-lab__erros div {
+  padding: 0.6rem 0.8rem;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-1);
+  background: var(--paper-raised);
+}
+
+.pilares-lab__erros dt {
+  margin-bottom: 0.2rem;
+  font-weight: 600;
+}
+
+.pilares-lab__erros dd {
+  margin: 0;
+  max-width: var(--measure);
+  color: var(--ink-muted);
+  font-size: var(--size-step--1);
+  line-height: 1.6;
+}
+
+@media (min-width: 60rem) {
+  .pilares-lab__respostas div {
+    grid-template-columns: 8rem minmax(0, 1fr);
+  }
+}

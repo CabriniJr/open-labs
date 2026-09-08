@@ -59,3 +59,18 @@ export type { Amostrador, Decisao } from "./providers/sampler.js";
 // Os exercícios de instrumentação: definição, sem a resposta certa.
 export { EXERCICIOS_DOS_PROVEDORES } from "./exercicios/providers.js";
 export type { DefinicaoDeExercicio, Distrator } from "./exercicios/tipos.js";
+
+// O lab dos três pilares: as mesmas requisições, três gravadores.
+export { pilaresWorld, PARAMS_DOS_PILARES, latenciaDe } from "./pilares/world.js";
+export type {
+  EstadoMedidor,
+  EstadoRegistrador,
+  EstadoServico,
+  EstadoTracer,
+} from "./pilares/world.js";
+export { estadoDosPilares } from "./pilares/estado.js";
+export type { EstadoDosPilares, RespostaDoSinal } from "./pilares/estado.js";
+export { baldeDe, BALDES, chaveDaSerie } from "./pilares/carga.js";
+export type { Requisicao } from "./pilares/carga.js";
+export { ROTULOS_PILARES, MAL_ENTENDIDOS_DOS_PILARES } from "./pilares/labels.js";
+export { VIEW_PILARES, VIEWS_DOS_PILARES } from "./pilares/views.js";

@@ -1714,6 +1714,8 @@ function Camada({
            */
           const descartando = arestas.some((a) => a.descarte && a.from === place.id && a.acesa);
           const leitura = readouts?.[place.id];
+          /** Esta caixa mostra o que guarda? O rótulo desvia do que ela mostra. */
+          const temConteudo = (conteudo?.(place.id)?.length ?? 0) > 0;
           const rotulo = place.label ?? node?.label ?? place.id;
           const agindo = ativo(place.id);
           const aceso = alto(place.id);
@@ -1972,7 +1974,9 @@ function Camada({
                     const larguraUtil = place.w - 12;
                     const passo = larguraUtil / casas.total;
                     const alto = Math.min(9, Math.max(4, place.h * 0.12));
-                    const base = place.y + place.h - 6 - alto;
+                    // Sobe quando o rodapé é do rótulo: duas coisas no mesmo
+                    // lugar se estorvam, e a fila de casas perde para o nome.
+                    const base = place.y + place.h - 6 - alto - (temConteudo ? 34 : 0);
                     return (
                       <g className="dui-stage__casas">
                         {Array.from({ length: casas.total }, (_, i) => (
@@ -2098,7 +2102,9 @@ function Camada({
                 if (linhas === undefined || linhas.length === 0) return null;
                 if (!tabelaLegivel(unidadesPorQuadro)) return null;
                 const alturaDaLinha = ALTURA_DA_LINHA;
-                const cabem = Math.max(0, Math.floor((place.h - 26) / alturaDaLinha));
+                // Menos o rodapé, que agora é do rótulo: as linhas param antes
+                // dele em vez de passarem por baixo.
+                const cabem = Math.max(0, Math.floor((place.h - 26 - 22) / alturaDaLinha));
                 if (cabem < 1) return null;
                 const mostradas = linhas.slice(0, cabem);
                 return (
@@ -2294,10 +2300,25 @@ function Camada({
                       <Engrenagem x={place.x + place.w - 16} y={place.y + 16} r={6} />
                     )
                   ) : null}
+                  {/*
+                    O nome no meio da caixa, **menos** quando a caixa mostra o
+                    que guarda.
+
+                    Com conteúdo, o meio é onde as linhas estão: o rótulo saía
+                    por cima delas e as duas coisas ficavam ilegíveis ao mesmo
+                    tempo. Aí ele vai para o rodapé, que é o único lugar que o
+                    conteúdo não ocupa — as linhas começam no alto porque a
+                    primeira é a mais recente.
+                  */}
                   <text
                     className="dui-stage__rotulo"
+                    data-com-conteudo={temConteudo ? "true" : undefined}
                     x={place.x + place.w / 2}
-                    y={place.y + (leitura === undefined ? place.h / 2 + 4 : place.h / 2 - 3)}
+                    y={
+                      temConteudo
+                        ? place.y + place.h - (leitura === undefined ? 8 : 20)
+                        : place.y + (leitura === undefined ? place.h / 2 + 4 : place.h / 2 - 3)
+                    }
                     textAnchor="middle"
                   >
                     {rotulo}
@@ -2306,7 +2327,7 @@ function Camada({
                     <text
                       className="dui-stage__leitura"
                       x={place.x + place.w / 2}
-                      y={place.y + place.h / 2 + 13}
+                      y={temConteudo ? place.y + place.h - 7 : place.y + place.h / 2 + 13}
                       textAnchor="middle"
                     >
                       {leitura}

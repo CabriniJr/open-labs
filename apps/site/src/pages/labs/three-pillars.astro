@@ -1,0 +1,164 @@
+---
+import { PilaresLab } from "../../components/PilaresLab.tsx";
+import { Predicao } from "../../components/Predicao.tsx";
+import SiteFooter from "../../components/SiteFooter.astro";
+import SiteNav from "../../components/SiteNav.astro";
+import Base from "../../layouts/Base.astro";
+import { url } from "../../lib/urls";
+import "../../styles/docs.css";
+import "../../components/PilaresLab.css";
+import "../../components/Predicao.css";
+import "@ovh/depth-ui/src/stage.css";
+import "../../components/Explorer.css";
+---
+
+<Base
+  domain="otel"
+  title="Three pillars, one blind spot — OpenLabs"
+  description="Three recorders watch the same requests and keep different things. Ask them which requests were slow, and only one can answer — because a signal is a decision about what to throw away, and what is thrown away at write time cannot be asked for later."
+>
+  <SiteNav current="labs" />
+
+  <main id="content">
+    <section class="lab-head editorial">
+      <div class="prose">
+        <p class="lab-head__eyebrow mono">
+          <a href={url("handbooks/otel")}>OpenTelemetry Visual Handbook</a> · lab
+        </p>
+        <h1>Three recorders, one event, three different memories</h1>
+        <p>
+          Every introduction presents traces, metrics and logs as three kinds of
+          data. They are not. They are three decisions about <b>what to throw
+          away</b> — taken on the same event, at the moment it is written — and
+          what one of them discards, no backend can hand back to you later.
+        </p>
+        <p>
+          Below, one service handles requests. Three recorders watch the exact
+          same ones. Let it run, then ask the question at the bottom: <em>which
+          requests took longer than 250&nbsp;ms?</em> One of the three answers
+          with a list. One answers with a number, at best. One answers only if
+          the person who wrote the code happened to mention it.
+        </p>
+      </div>
+      <aside class="lab-head__note mono">
+        <p>One tick is one second.</p>
+        <p>Nothing here is scripted: every row is the run.</p>
+      </aside>
+    </section>
+
+    <section class="lab-palco">
+      <PilaresLab client:only="react" />
+    </section>
+
+    <section class="lab-prosa editorial">
+      <div class="prose">
+        <h2>Break it</h2>
+        <p>
+          Three moves, and each one is a thing that happens to real systems.
+        </p>
+        <ol>
+          <li>
+            <b>Turn off &ldquo;the code logs every request&rdquo;.</b> The log
+            keeps only failures, and the counter of requests it said nothing
+            about starts climbing. That number is the part of your traffic no
+            log will ever describe — and the decision was taken in the editor,
+            not in configuration.
+          </li>
+          <li>
+            <b>Add <code>user.id</code> to the metric attributes.</b> Watch the
+            series count climb: one attribute is not one more column, it is one
+            more series <em>per distinct value</em>. Then drop the cardinality
+            limit to 6 and watch the overflow row appear — nothing is lost and
+            nothing is double-counted, and the breakdown you wanted is gone.
+          </li>
+          <li>
+            <b>Ask for 300&nbsp;ms instead of 250.</b> The metric stops being
+            able to answer even <em>how many</em>: 300 falls inside a bucket, and
+            a bucket is a count, not a list. The buckets were chosen before the
+            first measurement — that is what makes the loss irreversible.
+          </li>
+        </ol>
+
+        <h2>Predict before you look</h2>
+        <p>
+          Answer first, then run it. Predicting and being wrong is what makes the
+          answer stick.
+        </p>
+      </div>
+      <div class="lab-predicao">
+        <Predicao
+          client:visible
+          pergunta="A histogram says 12 requests landed above 500 ms. You need to know which ones. Where do you get them?"
+          opcoes={[
+            "Nowhere — the metric never knew, and no backend can recover it",
+            "From the metric backend: it stores the raw values behind the buckets",
+            "From the metric, if you enable high-resolution storage",
+          ]}
+          correta={0}
+          revelacao="A histogram bucket holds a count. The values that produced it were discarded when the measurement was recorded — in the process, before anything was exported. That is not compression, so there is nothing to decompress: the only mechanical path from an aggregate back to an individual request is an exemplar, and it is a sample kept on purpose, not a recovery."
+        />
+      </div>
+    </section>
+
+    <section class="lab-prosa editorial">
+      <div class="prose">
+        <h2>Read the theory</h2>
+        <p>
+          <a href={url("handbooks/otel/articles/what-a-signal-is")}
+            >What a signal is</a
+          > argues the same thing in prose, from first principles — and
+          <a href={url("handbooks/otel/articles/the-seam-between-signals")}
+            >The seam between the signals</a
+          > picks up where this lab leaves off: once you know each signal has its
+          own blind spot, the work is the crossing between them.
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <SiteFooter />
+</Base>
+
+<style>
+  .lab-head {
+    padding-block: var(--space-4) var(--space-2);
+  }
+
+  .lab-head__eyebrow {
+    margin: 0 0 var(--space-1);
+    color: var(--accent);
+    font-size: var(--size-step--1);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  h1 {
+    margin: 0 0 var(--space-2);
+    font-size: var(--size-step-2);
+    max-width: 24ch;
+  }
+
+  .lab-head__note {
+    align-self: end;
+    color: var(--ink-muted);
+    font-size: var(--size-step--1);
+  }
+
+  .lab-head__note p {
+    margin: 0 0 0.35rem;
+  }
+
+  .lab-palco {
+    margin-block: var(--space-2) var(--space-4);
+  }
+
+  .lab-prosa {
+    padding-block-end: var(--space-4);
+  }
+
+  .lab-predicao {
+    grid-column: 1 / -1;
+    margin-block-start: var(--space-2);
+    max-width: var(--measure);
+  }
+</style>

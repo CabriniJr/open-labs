@@ -95,7 +95,7 @@ export const phases: readonly RoadmapPhase[] = [
  * do Collector dependem de o leitor já saber quem decide o que sai do processo.
  */
 export const labs: readonly RoadmapLab[] = [
-  { id: "three-pillars", title: "Three pillars, one blind spot", href: "#", status: "coming", side: "left", y: 110, phase: 1 },
+  { id: "three-pillars", title: "Three pillars, one blind spot", href: "labs/three-pillars", status: "available", side: "left", y: 110, phase: 1 },
   { id: "disconnected-signals", title: "The cost of disconnected signals", href: "#", status: "coming", side: "right", y: 110, phase: 1 },
 
   // "available" com href "#": o nó abria como link e não levava a lugar nenhum.

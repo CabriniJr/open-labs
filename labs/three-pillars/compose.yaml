@@ -1,0 +1,16 @@
+# Os três sinais saindo do mesmo evento, contra o SDK e o Collector de verdade.
+services:
+  collector:
+    image: otel/opentelemetry-collector-contrib:0.160.0
+    command: ["--config=/etc/collector.yaml"]
+    volumes:
+      - ./collector.yaml:/etc/collector.yaml:ro,z
+
+  pillars:
+    build: ./app
+    depends_on: [collector]
+    environment:
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://collector:4317
+      # As duas decisões que o lab da tela também oferece.
+      PILLARS_LOG_EVERYTHING: "false"
+      PILLARS_USER_ATTRIBUTE: "false"

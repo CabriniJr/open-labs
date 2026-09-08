@@ -1908,3 +1908,62 @@ Na tela: o handbook da CPU ficou verde-silício (as caixas eram azuis), o do OTe
 a linha de controle continua vermelha nos dois — que é exatamente o desenho da regra.
 
 Estado: 1042 testes unitários, 249 e2e, typecheck, boundaries, catálogo e build verdes.
+
+## Entrega 12 — `three-pillars`, o primeiro lab da apostila v1 ✅
+
+08/09/2026. Desenho: `docs/superpowers/specs/2026-09-08-apostila-v1-espinha-otel-design.md` §4.1.
+É o lab da **fase 1**, e com ele a espinha tem dois dos cinco nós.
+
+A tese, e ela vira run: *um sinal não é um tipo de dado; é a decisão sobre o que jogar fora
+na escrita — e o que se joga fora ali não se pede depois.*
+
+### O desenho carrega o argumento
+
+Uma fonte, um serviço e **três caixas do mesmo tamanho na mesma coluna**. O mesmo tamanho é
+afirmação, não estética: ninguém é o principal, e os três veem o mesmo evento. Se cada um
+tivesse a própria fonte, a demonstração seria um truque de montagem — e há teste cobrando os
+três tamanhos iguais e a mesma coluna.
+
+O serviço tem uma entrada e três saídas, então **o trapézio dele abre** — a regra do leque,
+entregue na rodada passada, paga na primeira vista nova sem ninguém escrever uma linha.
+
+Cada caixa mostra o que guarda, linha a linha: o tracer, uma requisição por linha com a
+duração; o medidor, **baldes com contagem** (e a ausência dos itens ao lado da contagem é o
+descarte desenhado); o registrador, as frases — e `said nothing: 34`, que é o tráfego sobre o
+qual o código não disse nada.
+
+### A pergunta é a peça, e as respostas saem do estado
+
+*Quais requisições passaram de 250 ms?* As três respostas são **derivadas**: o tracer responde
+porque tem as linhas; o medidor não responde porque só tem contagens; o registrador responde
+se o código escolheu falar. Nenhuma é texto dizendo ao leitor o que concluir — `data-responde`
+é fato do modelo, e o e2e cobra que **o medidor nunca responda**. Se um dia o modelo mudar e
+a métrica passar a guardar identidade, o teste cai, que é o que se quer.
+
+E há um degrau a mais que o modelo entrega de graça: perguntar por **300 ms** faz o medidor
+perder até a contagem — 300 cai dentro de um balde, e balde é contagem, não lista. A diferença
+entre "não sei quem" e "não sei nem quantos" é o histograma inteiro.
+
+### Dois defeitos de desenho que este lab achou
+
+1. **o rótulo da caixa saía por cima do conteúdo.** Com linhas dentro, o meio da caixa é onde
+   elas estão — e as duas coisas ficavam ilegíveis ao mesmo tempo. O rótulo foi para o rodapé,
+   que é o único lugar que o conteúdo não ocupa;
+2. **os baldes saíam fora de ordem**, na ordem em que a primeira medição de cada um chegou.
+   Um histograma fora de ordem vira tabela de números soltos, e a forma da distribuição — a
+   coisa que ele existe para mostrar — desaparece. A ordenação é do modelo, com teste.
+
+### A contraparte real roda
+
+`labs/three-pillars/`: um programa Java que registra **o mesmo evento** nos três, com a mesma
+função de latência do lab da tela — os dois lados precisam contar a mesma história, senão a
+contraparte não é contraparte de nada. Rodado: **180 spans**, histograma cumulativo com
+`ExplicitBounds`, e registros só das falhas (com `PILLARS_LOG_EVERYTHING` desligado). As duas
+variáveis do compose são as duas decisões que o lab oferece.
+
+O README diz o que **não** dá para ver ali: o instante em que a identidade é descartada, e
+quantas requisições o log não mencionou — a ausência de uma linha não é impressa.
+
+Estado: 1062 testes unitários, 259 e2e, typecheck, boundaries, catálogo e build (37 páginas)
+verdes. A espinha da v1: `three-pillars` ✅ · `anatomy-of-a-trace` · `providers` ✅ ·
+`manual-spans` · `head-vs-tail-sampling`.
