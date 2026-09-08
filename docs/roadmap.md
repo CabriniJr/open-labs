@@ -128,6 +128,17 @@ dela mudar ao atravessar o `transform` — tudo por smoke automatizado.
 
 ---
 
+### A linguagem visual ganhou o túnel — 2026-09-08
+
+Onde dois fios se cruzam, um mergulha e reaparece, com uma boca em cada ponta. Fecha a
+metade que a convenção do pontinho de junção respondia por ausência. O vazio é máscara e não
+`d` partido, então a medida de espaguete não perde um cruzamento de vista — os cinco tetos
+passaram sem mudar. Registro em `docs/PROGRESS.md` (Entrega 7).
+
+**A rodada seguinte do desenho** é soltar os pesos do roteador (com cruzamento legível,
+cruzar ficou barato) e as quatro figuras aprovadas: carga na esteira item a item, esteira
+entupida, alerta na máquina, camada de circuito.
+
 ## F4 — `otel` como primeiro pacote de modelo
 
 Aqui o projeto deixa de ser motor e passa a ser produto.

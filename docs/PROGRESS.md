@@ -1588,3 +1588,83 @@ teoria estava adiantada só onde havia lab. Entraram três, todos com fonte prim
 
 Estado: 954 testes unitários, 212 e2e, typecheck, boundaries, catálogo e build (36 páginas)
 verdes. Faltam oito artigos do currículo; a fase 1 está inteira.
+
+## Entrega 7 — Os túneis no cruzamento ✅
+
+08/09/2026. Spec: `docs/superpowers/specs/2026-09-08-tuneis-no-cruzamento-design.md`;
+plano: `docs/superpowers/plans/2026-09-08-tuneis-no-cruzamento.md`.
+
+O Luigi, olhando os labs: *"estamos tendo quebras e sobreposição de faixas, assim como
+Factorio, podemos resolver isso com figuras como 'túneis'"*. E a razão de fundo, que ele
+escreveu depois: *"grande parte da atratividade do nosso projeto é a visão gráfica e bonita
+que por sua natureza ensina"*.
+
+O desenho já tinha metade da resposta — **o T ganha pontinho e o X não** —, e essa metade é
+**muda por ausência**: quem não conhece a convenção não tem como saber que a falta do ponto
+significa alguma coisa. O túnel troca a ausência por uma figura. Onde dois fios se cruzam,
+um mergulha: some antes, reaparece depois, com uma boca em cada ponta apontando para o lado
+do fluxo — entra no chão andando e sai andando.
+
+### A decisão que sustenta o resto: o buraco é máscara
+
+A implementação óbvia é partir o caminho do fio que mergulha em dois `path`. Ela limparia a
+tela **e cegaria a medida**: `meada()` lê os `d` que a página desenhou, e dois trechos que
+não se tocam não se cruzam. O caminho de dados teria ido de quinze cruzamentos para perto de
+zero **sem uma linha ter melhorado**, e o teto viraria a descrição de um estrago que ninguém
+mais vê.
+
+Então o `d` continua inteiro e o vazio é uma `<mask>`. A medida lê o mesmo de antes, e não
+existe caminho pelo qual o túnel encoste no número — validação no ponto onde a violação é
+impossível, e não numa checagem que alguém tem de lembrar de escrever. **Prova:** os cinco
+tetos passaram sem mudar um dígito (15, 5, 4, 7, 1) com os túneis no ar.
+
+Os pontos de túnel saem da **mesma função** que acha os cruzamentos (`cruzamentos()`, que
+`meada()` também usa), pela mesma razão de sempre: um segundo detector discordaria do
+primeiro no dia em que um dos dois ficasse errado.
+
+### Quem mergulha, e a regra que o plano previu e não existe
+
+Duas regras: o fio **mais estreito** passa por baixo do mais largo (o barramento é a linha
+que o leitor está seguindo), e, empatados na largura, mergulha **o em pé**.
+
+O plano previa uma terceira — a ordem das chaves, para o empate também na orientação. Ela
+**não existe**: um cruzamento é, por construção, um trecho deitado com um em pé, que é o que
+`seCruzam` exige. A segunda regra sempre resolve, e a terceira teria sido código morto
+fingindo decidir alguma coisa.
+
+### Um túnel pode cobrir dois cruzamentos
+
+Cruzamentos vizinhos no mesmo trecho do mesmo fio viram **um** túnel, e não dois buracos
+colados — é o que o belt subterrâneo faz. Dois buracos colados se leem como fio picotado,
+que é exatamente a "quebra" que abriu o round. A spec falava em "um par de bocas por
+cruzamento"; o invariante implementado é o mais forte: **todo cruzamento coberto**, e
+nenhuma boca órfã.
+
+### O que a suíte cobra, e o que a mutação mostrou
+
+Dois invariantes novos por lab, em `apps/site/tests/espaguete.spec.ts`, ambos por escopo (um
+interior é espaço de coordenadas próprio, e uma boca de dentro não explica um cruzamento de
+fora): **nenhum cruzamento fica nu**, e **boca vem em par**.
+
+Teste de mutação, feito e conferido: apagando as bocas, cai o primeiro nomeando o ponto e o
+lab (`cruzamento nu em 375,385 de o caminho de dados inteiro`; `400,700 de o somador de
+quatro bits`); desenhando **uma** boca por lacuna em vez de duas, cai o segundo nomeando o
+túnel (`o túnel de |controle.op->logica tem 1 bocas`). Restaurados, os vinte voltam a passar.
+
+Túneis no ar: 14 no `cpu`, 7 no `micro`, 5 no `gates`.
+
+Estado: 966 testes unitários, 222 e2e, typecheck, boundaries (83 arquivos), catálogo (13
+arquivos) e build (36 páginas) verdes.
+
+### O que fica para a rodada seguinte, e é onde está o ganho
+
+Com o cruzamento legível, cruzar deixa de ser um defeito caro — e os pesos do roteador
+(`atravessar caixa` 100, `repetir reta` 1) podem ser reequilibrados para ele **organizar
+corredores** em vez de fugir deles, que é o que produz os contornos longos parecidos com
+quebra. Ficou separado de propósito: com o túnel entrando sozinho e os tetos parados, dá
+para ver o que o túnel fez.
+
+Aprovadas junto, para depois: carga na esteira item a item, esteira entupida (contrapressão
+visível), alerta na máquina, e a camada de circuito para a linha de controle. A régua vale
+para as quatro — **toda figura tem de sair de um fato que o modelo já tem**, senão é enfeite,
+e enfeite ensina errado.
