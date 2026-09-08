@@ -47,6 +47,7 @@ async function fios(page: import("@playwright/test").Page) {
         para: n.getAttribute("data-para") ?? "",
         d: n.querySelector(".dui-stage__trilho")?.getAttribute("d") ?? "",
         escopo: escopo.join("/"),
+        linha: n.getAttribute("data-linha") ?? "data",
       };
     }),
   );
@@ -69,6 +70,8 @@ interface FioMedido {
   readonly para: string;
   readonly d: string;
   readonly escopo: string;
+  /** Em que plano ele foi desenhado: a esteira, ou o circuito por cima dela. */
+  readonly linha: string;
 }
 
 /** Os fios agrupados pelo espaço de coordenadas em que foram desenhados. */
@@ -223,7 +226,13 @@ for (const teto of TETOS) {
     for (const grupo of porEscopo(medidos)) {
       const escopo = grupo[0]?.escopo ?? "";
       const daqui = desenhadas.filter((b) => b.escopo === escopo);
-      for (const c of cruzamentosDe(grupo.map((f) => f.d))) {
+      // Entre iguais, e só entre iguais: o túnel responde "estes dois se
+      // falam?", e essa pergunta não existe entre uma esteira e o circuito que
+      // passa por cima dela — ali são duas alturas, e a altura já respondeu.
+      // O cruzamento continua contado no teto acima; ele só não é ambiguidade.
+      const planos = [...new Set(grupo.map((f) => f.linha))];
+      for (const plano of planos)
+      for (const c of cruzamentosDe(grupo.filter((f) => f.linha === plano).map((f) => f.d))) {
         // A boca fica a até uma folga do cruzamento, e a folga vale no máximo o
         // meio-túnel mais a distância entre dois cruzamentos que se juntaram.
         const cobre = daqui.some((b) => Math.abs(b.x - c.x) <= 24 && Math.abs(b.y - c.y) <= 24);

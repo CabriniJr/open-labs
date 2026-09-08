@@ -1231,18 +1231,31 @@ function Camada({
     .filter((a): a is NonNullable<typeof a> => a !== null);
 
   /**
-   * Onde cada fio mergulha.
+   * Os dois planos do palco.
+   *
+   * A esteira carrega coisa; o circuito carrega comando. São as duas redes que
+   * uma fábrica tem, e desenhá-las no mesmo plano deixava a diferença por conta
+   * da cor — um canal só, e o pior deles para quem tem dificuldade com vermelho
+   * e preto. O circuito é desenhado depois, então ele passa POR CIMA, e um
+   * cruzamento entre planos deixa de ser ambiguidade: são duas alturas.
+   */
+  const daEsteira = arestas.filter((a) => a.linha !== "control");
+  const doCircuito = arestas.filter((a) => a.linha === "control");
+
+  /**
+   * Onde cada fio mergulha, **por plano**.
    *
    * Sai da MESMA função que acha os cruzamentos, então não existe desenho
-   * tunelando num lugar enquanto a conta conta em outro.
+   * tunelando num lugar enquanto a conta conta em outro. Por plano porque o
+   * túnel responde "estes dois se falam?", e essa pergunta só existe entre
+   * iguais: quem cruza o circuito por baixo já está noutra altura.
    */
-  const lacunas = tuneis(
-    arestas.map((a) => ({
-      chave: a.chave,
-      d: a.traco,
-      ...(a.width === undefined ? {} : { width: a.width }),
-    })),
-  );
+  const paraTunel = (a: (typeof arestas)[number]) => ({
+    chave: a.chave,
+    d: a.traco,
+    ...(a.width === undefined ? {} : { width: a.width }),
+  });
+  const lacunas = [...tuneis(daEsteira.map(paraTunel)), ...tuneis(doCircuito.map(paraTunel))];
   const lacunasDe = new Map<string, Lacuna[]>();
   for (const lacuna of lacunas) {
     lacunasDe.set(lacuna.chave, [...(lacunasDe.get(lacuna.chave) ?? []), lacuna]);
@@ -1387,10 +1400,16 @@ function Camada({
     })
     .filter((x): x is NonNullable<typeof x> => x !== null);
 
-  return (
-    <>
-      <g className="dui-stage__fios">
-        {arestas.map((aresta) => (
+  /**
+   * O desenho de um fio.
+   *
+   * Virou função porque o palco passou a ter **dois planos**: as esteiras, que
+   * carregam coisa, e o circuito, que carrega comando. Os dois se desenham
+   * igual e em lugares diferentes do documento — o circuito por cima —, e
+   * duplicar noventa linhas de JSX para isso seria pedir que as duas cópias
+   * divergissem.
+   */
+  const desenharFio = (aresta: (typeof arestas)[number]) => (
           <g
             key={aresta.chave}
             className="dui-stage__fio"
@@ -1482,7 +1501,12 @@ function Camada({
               </text>
             ) : null}
           </g>
-        ))}
+  );
+
+  return (
+    <>
+      <g className="dui-stage__fios">
+        {daEsteira.map(desenharFio)}
       </g>
 
       {/*
@@ -1498,7 +1522,7 @@ function Camada({
         junção é a ponta de um fio caindo no meio do trecho de outro.
       */}
       <g className="dui-stage__juncoes">
-        {juncoes(arestas.map((a) => a.traco)).map((ponto) => (
+        {juncoes(daEsteira.map((a) => a.traco)).map((ponto) => (
           <circle
             key={`${ponto.x},${ponto.y}`}
             className="dui-stage__juncao"
@@ -2060,7 +2084,9 @@ function Camada({
         que ali passa dado.
       */}
       <g className="dui-stage__tuneis">
-        {lacunas.flatMap((lacuna) => {
+        {lacunas
+          .filter((l) => daEsteira.some((a) => a.chave === l.chave))
+          .flatMap((lacuna) => {
           const dona = arestas.find((a) => a.chave === lacuna.chave);
           const lado = 4.5;
           // As duas apontam para o mesmo lado, o do fluxo: entra no chão andando
@@ -2100,6 +2126,60 @@ function Camada({
           .map((a) => (
             <path key={`t${a.chave}`} className="dui-stage__travessia" d={a.d} />
           ))}
+      </g>
+
+      {/*
+        O circuito.
+
+        A segunda rede da fábrica: ela não carrega coisa, carrega comando. Fica
+        num plano acima das esteiras — desenhada depois, então por cima —, e é
+        essa altura, e não a cor, que diz que as duas não se misturam. Um
+        cruzamento entre planos continua sendo contado como cruzamento, e deixa
+        de precisar de túnel: quem passa por baixo já está noutra altura.
+      */}
+      <g className="dui-stage__circuito">
+        {doCircuito.map(desenharFio)}
+        {juncoes(doCircuito.map((a) => a.traco)).map((ponto) => (
+          <circle
+            key={`c${ponto.x},${ponto.y}`}
+            className="dui-stage__juncao"
+            data-linha="control"
+            cx={ponto.x}
+            cy={ponto.y}
+            r={2.6}
+          />
+        ))}
+        {lacunas
+          .filter((l) => doCircuito.some((a) => a.chave === l.chave))
+          .flatMap((lacuna) => {
+            const lado = 4.5;
+            const giro = lacuna.horizontal
+              ? lacuna.sentido > 0
+                ? 0
+                : 180
+              : lacuna.sentido > 0
+                ? 90
+                : 270;
+            const bocas = lacuna.horizontal
+              ? [
+                  { x: lacuna.x - lacuna.folga, y: lacuna.y, giro },
+                  { x: lacuna.x + lacuna.folga, y: lacuna.y, giro },
+                ]
+              : [
+                  { x: lacuna.x, y: lacuna.y - lacuna.folga, giro },
+                  { x: lacuna.x, y: lacuna.y + lacuna.folga, giro },
+                ];
+            return bocas.map((boca, i) => (
+              <polygon
+                key={`${lacuna.chave}-${lacuna.x}-${lacuna.y}-${i}`}
+                className="dui-stage__boca"
+                data-tunel={lacuna.chave}
+                data-linha="control"
+                points={`0,${-lado} ${lado},0 0,${lado}`}
+                transform={`translate(${boca.x} ${boca.y}) rotate(${boca.giro})`}
+              />
+            ));
+          })}
       </g>
 
       {/*

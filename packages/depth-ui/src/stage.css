@@ -566,6 +566,22 @@
  * A cor sai do fio dono, e não daqui: túnel de linha de controle é vermelho
  * porque a linha é de controle, e um triângulo preto ali diria que passa dado.
  */
+/*
+ * O circuito: a segunda rede da fábrica.
+ *
+ * Ela não carrega coisa, carrega comando — e fica num plano acima das esteiras.
+ * O que diz isso é a ordem no documento (ela é desenhada depois) mais duas
+ * pistas de leitura: traço mais fino, porque comando não tem volume, e uma
+ * sombra curta, que é como o olho lê "está mais perto de mim".
+ */
+.dui-stage__circuito .dui-stage__trilho {
+  stroke-width: 1.4;
+}
+
+.dui-stage__circuito {
+  filter: drop-shadow(0 1px 1px color-mix(in oklab, var(--ink) 18%, transparent));
+}
+
 .dui-stage__boca {
   fill: color-mix(in oklab, var(--dui-dado) 85%, var(--ink));
   stroke: none;
