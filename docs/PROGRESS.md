@@ -1560,6 +1560,6 @@ uma varredura de cinco rodadas dirigida a ele. A hipótese é a corrida de hidra
 próprio teste documenta, sob carga de dois workers. Fica anotado em vez de dado por
 resolvido.
 
-Estado: 944 testes unitários, 212 e2e (6 novos), typecheck, boundaries (81 arquivos),
+Estado: 933 testes unitários (22 novos), 212 e2e (6 novos), typecheck, boundaries (81 arquivos),
 catálogo (13 arquivos) e build (33 páginas) verdes. A contraparte real rodou à mão; a CI
 não compila Java, e isso é decisão.
