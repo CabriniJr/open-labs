@@ -166,6 +166,7 @@ Somam-se aos cinco princípios da spec do handbook, não os substituem.
 | **Se precisa de condicional no YAML, precisa de um `kind`** | Impede o formato de virar linguagem de programação |
 | **Fenômeno que precisou de roteiro deve ser zero** | O dia em que um precisar, é animação e não simulação |
 | **`model` que não cabe num handbook é dois `model`** | Trava contra escopo inflado |
+| **Fluxo com camadas usa o motor; o resto vira lab separado** | O motor é pilar, não obrigação. Ver §9 |
 
 ---
 
@@ -214,7 +215,7 @@ que exige o motor.
 
 Nomenclatura · a ferramenta ensina e não opera · `model` é ilha com porto · reuso não é
 requisito · playground é editor de grafo com regras · segue com o motor · a gramática ·
-os quatro níveis como tipos de coisa · **o projeto é OpenLabs, e cada handbook é um
+os quatro níveis como tipos de coisa · **o motor é pilar e não é obrigatório** (§9) · **o projeto é OpenLabs, e cada handbook é um
 `.model` com roadmap, artigos e labs** (o enquadramento, no topo).
 
 ### Abertas, e nesta ordem de urgência
@@ -246,3 +247,56 @@ os quatro níveis como tipos de coisa · **o projeto é OpenLabs, e cada handboo
    o caso real
 3. **`docs/authoring.md` como interface pública.** O teste de "ser base para outros handbooks"
    é um handbook escrito por outra pessoa, e o que habilita isso é o guia, não o motor
+
+---
+
+## 9. O motor é um pilar — e não é obrigatório
+
+*Decidido em 2026-09-08, no meio da rodada que ia migrar a landing para o motor novo.*
+
+Duas afirmações que só valem juntas. Separadas, cada uma vira um erro que o projeto já
+esteve perto de cometer.
+
+**A primeira: o `depth-core` é pilar do projeto, e não infraestrutura.** Ele é um motor de
+**grafos com profundidade** — representar fluxo de forma dinâmica, com camadas de abstração,
+e descer de uma para a de baixo sem que as duas sejam desenhos diferentes da mesma coisa.
+Isso, *nesta forma e com estes conceitos*, **não existe no mercado**. É por isso que ele
+recebe atenção desproporcional ao tamanho: cada rodada de refino nele (o túnel, as vistas
+fundas, o roteador, a gramática do Factorio) é investimento no único ativo do projeto que
+ninguém mais tem. Ele nunca é "o jeito rápido de fazer o lab"; ele é o motivo de o projeto
+existir.
+
+**A segunda: nem todo assunto é um fluxo com camadas.** O motor foi construído para grafo e
+profundidade, e há assunto que simplesmente não é isso. O caso que trouxe a decisão à tona
+é a **escada fixa de quatro níveis na anatomia de um trace**: abrir uma CPU até o fio é uma
+descida de verdade, e um trace não tem *dentro* — ele tem uma árvore espalhada por quatro
+processos que só se encontram no Collector. Forçar o assunto na forma do motor produziria um
+lab pior que um lab simples, e ainda mentiria sobre o assunto.
+
+### A regra, e ela decide sozinha
+
+> **O assunto é um fluxo com camadas de abstração e lógica?**
+> **Sim** → usa o motor. Sem discussão, sem "seria mais rápido à mão": é para isto que
+> pagamos as rodadas de refino.
+> **Não** → **lab separado**, enxuto, exclusivo do assunto — uma experiência mais *mockada*
+> mesmo, desde que **represente melhor**. Mais perto do PhET do que do Factorio.
+
+O critério de qualidade **não cai** no segundo caso: pequeno e dedicado não é rascunho. Um
+lab PhET-like continua devendo o mesmo que qualquer outro — uma pergunta concreta, resposta
+derivada do estado e não de texto, o mal-entendido que ele desfaz, contraparte real quando
+ele afirma algo sobre o mundo, e teste que cai quando o lab para de ensinar o que promete.
+O que ele **não** deve é profundidade: sem árvore de composição, sem palco, sem `kinds`.
+
+### O que isto revoga, e o que não
+
+Não revoga nada da §3: "só precisa ser simulado o que vai ser apresentado" e "`model` que
+não cabe num handbook é dois `model`" continuam valendo, e esta regra é irmã das duas.
+Revoga uma expectativa que nunca foi escrita mas estava no ar — a de que **todo** lab de
+todo handbook nasceria do `.model`. Não nasce. O handbook é a casa; o motor é o inquilino
+principal, não o único.
+
+**Onde isto poderia mentir em silêncio:** um lab PhET-like desenhado à mão pode afirmar o
+que nenhum modelo sustenta, que é o defeito mais caro do projeto. A trava é a mesma dos
+outros: **contraparte real**. Se o lab diz algo sobre o mundo, o repositório tem de ter como
+conferir contra a coisa de verdade — e sem modelo por baixo, essa dívida fica *maior*, não
+menor.
