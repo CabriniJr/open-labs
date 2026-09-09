@@ -1639,7 +1639,47 @@ test("nothing on the site still sells the four fixed levels", async () => {
 });
 ```
 
-- [ ] **Step 2: Descobrir os seletores reais do palco**
+- [ ] **Step 2: O contraste da trilha, nos dois papéis**
+
+A spec cobra contraste nos dois papéis, e na trilha o que carrega significado é o acento: a estação que mudou alguma coisa tem de se distinguir da que não mudou — **nos dois temas**, e não por acaso num deles.
+
+Copie o jeito que já existe: `apps/site/tests/gates-lab.spec.ts:157` tem `noTema()`, que troca pelo **botão do próprio site** e prova, no fim, que a troca aconteceu. Um laço de temas que não troca o tema é um teste que finge cobrir dois casos e cobre um.
+
+Acrescente a `landing.spec.ts`:
+
+```typescript
+test("na trilha, a parada que mudou algo se distingue da que não mudou, nos dois temas", async ({
+  page,
+}) => {
+  await page.goto("");
+  await aguardarHidratacao(page);
+
+  const trilha = page.locator(".hero-sim .dui-trilha");
+  const mudou = trilha.locator(".dui-trilha__estacao[data-mudou] .dui-trilha__delta").first();
+  const igual = trilha
+    .locator(".dui-trilha__estacao:not([data-mudou]) .dui-trilha__delta")
+    .first();
+  await expect(mudou).toBeVisible({ timeout: 20_000 });
+  await expect(igual).toBeVisible();
+
+  const fundoPorTema: string[] = [];
+  for (const tema of ["light", "dark"] as const) {
+    await noTema(page, tema);
+    fundoPorTema.push(await page.evaluate(() => getComputedStyle(document.body).backgroundColor));
+    const a = await mudou.evaluate((el) => getComputedStyle(el).color);
+    const b = await igual.evaluate((el) => getComputedStyle(el).color);
+    // Se as duas tintas forem iguais, o acento não está dizendo nada, e a
+    // trilha vira uma lista de nomes com um enfeite.
+    expect(a, `o delta que mudou se distingue no tema ${tema}`).not.toBe(b);
+  }
+  // A prova de que o laço acima trocou mesmo de tema.
+  expect(fundoPorTema[0], "o tema mudou de verdade").not.toBe(fundoPorTema[1]);
+});
+```
+
+`noTema` mora hoje em `gates-lab.spec.ts`. **Não copie a função**: mova-a para um arquivo compartilhado (`apps/site/tests/tema.ts`) e importe nos dois. Duas cópias divergem, e a que divergir vai fingir que troca o tema.
+
+- [ ] **Step 3: Descobrir os seletores reais do palco**
 
 Os seletores `.dui-stage`, `[data-objeto="collector"]` e o `aria-label` do palco são o que o `Stage` publica hoje — **confirme antes de rodar**:
 
@@ -1647,7 +1687,7 @@ Run: `grep -n "className=\"dui-stage\|aria-label\|data-objeto" packages/depth-ui
 
 Se os nomes forem outros, use os que existem e **não** invente atributo novo no `Stage` só para o teste: um atributo que só o teste usa é um segundo fato sobre a mesma coisa.
 
-- [ ] **Step 3: Rodar os e2e da landing**
+- [ ] **Step 4: Rodar os e2e da landing**
 
 Run: `pnpm --filter @ovh/site test:e2e -g "hero"`
 Expected: PASS.
@@ -1655,10 +1695,10 @@ Expected: PASS.
 Run: `pnpm --filter @ovh/site test:e2e`
 Expected: PASS, suíte inteira.
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 5: Commit**
 
 ```bash
-git add apps/site/tests/landing.spec.ts
+git add apps/site/tests/landing.spec.ts apps/site/tests/tema.ts apps/site/tests/gates-lab.spec.ts
 git commit -m "test(site): os testes do herói cobram o que pode quebrar em silêncio
 
 Rodar sozinho é o desenho MUDAR, e não existir — o HTML do servidor já traz o
@@ -1811,6 +1851,6 @@ isso, ela está aqui."
 | §5 `labs/hero/scenario.ts` apagado | 6 |
 | §6 seção `.levels` → o pilar; textos do herói | 7 |
 | §7 herança em `three-pillars` e `anatomy-of-a-trace` | 4 |
-| §8 quatro testes da Trilha | 2 |
-| §8 quatro e2e do herói + varredura | 8 |
+| §8 testes da Trilha, com o leque | 2 |
+| §8 e2e do herói, varredura e contraste nos dois papéis | 8 |
 | §8 teto de espaguete medido | 9 |
