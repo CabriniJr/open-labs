@@ -1,17 +1,13 @@
-import { PARADAS_NO_PAINEL } from "@ovh/depth-core";
+import { Trilha } from "@ovh/depth-ui";
 import type { Parada } from "@ovh/depth-core";
-import { Inspector } from "@ovh/depth-ui";
 
 /**
- * O painel de quem está seguindo uma carga.
+ * O painel lateral de quem está seguindo uma carga num lab.
  *
- * Duas coisas, e a segunda é a que faltava no projeto inteiro: **o corpo agora**
- * e **o trajeto até aqui**, com o que cada parada mudou. É o enriquecimento
- * acontecendo — o cabeçalho reescrito a cada salto, o campo que some quando um
- * proxy o derruba —, e não uma legenda dizendo que ele acontece.
- *
- * O `Inspector` é o mesmo do herói da landing, com os caminhos alterados
- * marcados. Ele existia desde o primeiro dia e nunca tinha entrado num lab.
+ * O que ele desenha é a `Trilha` — a mesma peça que o herói usa. O painel só
+ * acrescenta a moldura e o botão de parar: nos labs o protagonista continua
+ * sendo a fábrica, e o item é convidado. Uma fonte por fato — a lista de
+ * paradas tinha dois desenhos possíveis e agora tem um.
  */
 export interface PainelDaCargaProps {
   readonly titulo: string;
@@ -22,55 +18,14 @@ export interface PainelDaCargaProps {
 }
 
 export function PainelDaCarga({ titulo, trajeto, onFechar, vazio }: PainelDaCargaProps) {
-  const ultima = trajeto.at(-1);
-  const paradas = trajeto.slice(-PARADAS_NO_PAINEL);
-
   return (
     <aside className="carga-painel" aria-label="Following one item">
       <header className="carga-painel__topo">
-        <p className="carga-painel__titulo mono">{titulo}</p>
         <button type="button" onClick={onFechar}>
           stop following
         </button>
       </header>
-
-      {ultima === undefined ? (
-        <p className="carga-painel__vazio">{vazio}</p>
-      ) : (
-        <>
-          <ol className="carga-painel__trajeto mono">
-            {paradas.map((parada, i) => (
-              <li
-                key={`${parada.tick}:${parada.de}:${parada.para}`}
-                data-atual={i === paradas.length - 1 ? "true" : undefined}
-                data-mudou={parada.mudou.length > 0 ? "true" : undefined}
-              >
-                <span className="carga-painel__salto">
-                  {parada.de} → {parada.para}
-                </span>
-                <span className="carga-painel__delta">
-                  {parada.mudou.length === 0
-                    ? i === 0
-                      ? "first sighting"
-                      : "unchanged"
-                    : parada.mudou.join(", ")}
-                </span>
-              </li>
-            ))}
-          </ol>
-
-          {/*
-            O corpo, com o que mudou na ÚLTIMA parada marcado. É a mesma peça do
-            herói da landing, e o mesmo gesto: o campo que acabou de mudar pisca
-            no lugar em que ele mora.
-          */}
-          <Inspector
-            value={ultima.corpo}
-            changedPaths={ultima.mudou}
-            label={`as it left ${ultima.de}`}
-          />
-        </>
-      )}
+      <Trilha trajeto={trajeto} titulo={titulo} vazio={vazio} />
     </aside>
   );
 }

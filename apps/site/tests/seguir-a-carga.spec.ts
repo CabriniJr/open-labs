@@ -35,15 +35,17 @@ test("na anatomia, o trajeto mostra o traceparent reescrito a cada salto", async
   // é PRODUTO da requisição, e não parada dela — misturado, cada linha acusava
   // duas mudanças e o leitor lia ruído no lugar do mecanismo.
   await expect
-    .poll(async () => page.locator(".carga-painel__trajeto li").count(), { timeout: 30_000 })
-    .toBeGreaterThanOrEqual(3);
+    .poll(async () => page.locator(".dui-trilha__estacao").count(), { timeout: 30_000 })
+    .toBeGreaterThanOrEqual(4);
 
-  const paradas = await page.locator(".carga-painel__trajeto li").allTextContents();
-  expect(paradas[0]).toContain("first sighting");
-  expect(paradas.slice(1).every((p) => p.includes("traceparent"))).toBe(true);
+  const paradas = await page.locator(".dui-trilha__estacao").allTextContents();
+  // A primeira estação é a ORIGEM: ninguém chegou nela por um salto, então ela
+  // não tem delta. `first sighting` é da chegada seguinte.
+  expect(paradas[1]).toContain("first sighting");
+  expect(paradas.slice(2).every((p) => p.includes("traceparent"))).toBe(true);
 
   // E o campo que mudou está marcado no corpo, no lugar em que ele mora.
-  await expect(page.locator('.carga-painel .dui-inspector__line[data-changed="true"]')).not.toHaveCount(0);
+  await expect(page.locator('.dui-trilha .dui-inspector__line[data-changed="true"]')).not.toHaveCount(0);
 });
 
 test("nos pilares, o trajeto mostra o que cada gravador joga fora", async ({ page }) => {
@@ -55,12 +57,12 @@ test("nos pilares, o trajeto mostra o que cada gravador joga fora", async ({ pag
   await expect
     .poll(
       async () =>
-        (await page.locator(".carga-painel__trajeto li").allTextContents()).join(" | "),
+        (await page.locator(".dui-trilha__estacao").allTextContents()).join(" | "),
       { timeout: 30_000 },
     )
     .toContain("metric-store");
 
-  const paradas = await page.locator(".carga-painel__trajeto li").allTextContents();
+  const paradas = await page.locator(".dui-trilha__estacao").allTextContents();
   const doTracer = paradas.find((p) => p.includes("trace-store")) ?? "";
   const doMedidor = paradas.find((p) => p.includes("metric-store")) ?? "";
   const doLog = paradas.find((p) => p.includes("log-store")) ?? "";

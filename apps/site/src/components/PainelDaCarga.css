@@ -1,5 +1,8 @@
 /*
   Sem hexadecimal: cor sai de token, e a do desenho sai do catálogo do palco.
+
+  O painel é só a moldura: quem desenha o trajeto é a `Trilha`, e o estilo dela
+  mora em `trilha.css`.
 */
 .carga-painel {
   display: grid;
@@ -18,92 +21,5 @@
 
 .carga-painel__topo {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--space-1);
-}
-
-.carga-painel__titulo {
-  margin: 0;
-  font-weight: 600;
-}
-
-.carga-painel__vazio {
-  margin: 0;
-  color: var(--ink-muted);
-  font-size: var(--size-step--1);
-  line-height: 1.6;
-}
-
-/*
-  O trajeto: um salto por linha, e o que ele mudou ao lado.
-
-  A parada que mudou alguma coisa é a que interessa — ela ganha a marca do
-  acento à esquerda, que é figura e não só cor.
-*/
-.carga-painel__trajeto {
-  display: grid;
-  gap: 0.15rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  font-size: var(--size-step--1);
-}
-
-.carga-painel__trajeto li {
-  display: flex;
-  justify-content: space-between;
-  gap: var(--space-1);
-  padding: 0.2rem 0.4rem;
-  border-left: 3px solid transparent;
-  color: var(--ink-muted);
-}
-
-.carga-painel__trajeto li[data-mudou="true"] {
-  border-left-color: var(--accent);
-  color: var(--ink);
-}
-
-.carga-painel__trajeto li[data-atual="true"] {
-  background: color-mix(in oklab, var(--accent) 8%, transparent);
-}
-
-.carga-painel__delta {
-  color: var(--ink-faint);
-  text-align: right;
-}
-
-.carga-painel__trajeto li[data-mudou="true"] .carga-painel__delta {
-  color: var(--accent);
-}
-
-/*
-  A linha comprida rola DENTRO do painel, e não empurra a página.
-
-  Um `traceparent` tem cinquenta e cinco caracteres, e é ele que o leitor veio
-  ver: cortá-lo em silêncio seria esconder exatamente o campo que o painel
-  existe para mostrar.
-*/
-.carga-painel .dui-inspector__body {
-  overflow-x: auto;
-}
-
-.carga-painel .dui-inspector__line {
-  /* Um `traceparent` tem cinquenta e cinco caracteres e é o que o leitor veio
-     ver: ele quebra em duas linhas em vez de sair pela direita. Rolagem
-     horizontal esconde o fim de uma string cujo fim é o assunto. */
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-}
-
-/* Espremido, o salto e o que mudou empilham em vez de disputar a linha. */
-@media (max-width: 110rem) {
-  .carga-painel__trajeto li {
-    display: grid;
-    gap: 0;
-  }
-
-  .carga-painel__delta {
-    text-align: left;
-  }
+  justify-content: flex-end;
 }
