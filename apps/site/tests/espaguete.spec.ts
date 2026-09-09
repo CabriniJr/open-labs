@@ -132,12 +132,30 @@ const TETOS = [
    */
   { lab: "labs/three-pillars/", nome: "os três gravadores", cruzamentos: 0 },
   { lab: "labs/anatomy-of-a-trace/", nome: "a anatomia de um trace", cruzamentos: 4 },
+  // A landing: o herói roda o mesmo motor e entra na mesma medida. Três caixas
+  // em fila não têm por que cruzar — e é justamente por ser óbvio que o teto
+  // fica escrito: o dia em que ele subir, subiu por alguma coisa.
+  { lab: "", nome: "o herói da landing", cruzamentos: 0 },
 ] as const;
+
+/**
+ * Abre a página do teto e espera o palco existir.
+ *
+ * O herói da landing é ilha `client:visible`: só hidrata quando entra na tela, e
+ * o palco só existe depois de hidratar. Nos labs a ilha é `client:only` e já
+ * nasce na dobra, então rolar é coisa da landing.
+ */
+async function abrirOPalco(page: import("@playwright/test").Page, lab: string) {
+  await page.goto(lab);
+  if (lab === "") {
+    await page.locator("astro-island:has(.hero-sim)").scrollIntoViewIfNeeded();
+  }
+  await expect(page.locator(".dui-stage")).toBeVisible({ timeout: 15_000 });
+}
 
 for (const teto of TETOS) {
   test(`${teto.nome} não vira meada`, async ({ page }) => {
-    await page.goto(teto.lab);
-    await expect(page.locator(".dui-stage")).toBeVisible({ timeout: 15_000 });
+    await abrirOPalco(page, teto.lab);
     // Contagem, e não visibilidade: um fio perfeitamente reto é uma linha
     // horizontal, e a caixa dela tem altura zero — o que a checagem de
     // visibilidade chama de escondido. Depois que a saída passou a mirar o
@@ -221,8 +239,7 @@ async function bocas(page: import("@playwright/test").Page) {
  */
 for (const teto of TETOS) {
   test(`${teto.nome}: nenhum cruzamento fica nu`, async ({ page }) => {
-    await page.goto(teto.lab);
-    await expect(page.locator(".dui-stage")).toBeVisible({ timeout: 15_000 });
+    await abrirOPalco(page, teto.lab);
     await expect
       .poll(async () => page.locator(".dui-stage__trilho").count(), { timeout: 10_000 })
       .toBeGreaterThan(0);

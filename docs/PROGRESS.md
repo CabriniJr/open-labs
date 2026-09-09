@@ -2101,3 +2101,43 @@ Os três viraram espera de verdade. A suíte inteira: **275 e2e, zero falhas**, 
 carregada.
 
 Estado: 1081 testes unitários, 275 e2e, typecheck, boundaries, catálogo e build verdes.
+
+## Entrega 15 — O foco no item, e o herói no motor novo ✅
+
+08/09/2026. A rodada começou como "migrar a landing" e virou investimento no pilar, por duas
+correções dele. A primeira: o `depth-core` não é andaime, é **pilar** — um motor de grafos com
+profundidade que não existe assim no mercado. A segunda, e é a que mudou o desenho:
+
+> *"Mesmo que se encaixe na nossa lógica de fluxos, o foco é o item e não a fábrica. Ou
+> melhoramos o foco pro item, ou criamos um lab mais PhET."*
+
+Um trace **é** um fluxo com camadas e mesmo assim o motor o servia mal, porque o protagonista
+dele é a fábrica. Viraram `DECISIONS.md` §9, com a formulação que decide sozinha: **o tema do
+lab nomeia o protagonista**, e não se monta uma rua para explicar uma porta.
+
+### A Trilha
+
+O trajeto virou o desenho: uma estação por ponta, e o que mudou **entre** as estações. Duas
+decisões que a implementação obrigou:
+
+- **as estações são uma a mais que as paradas** — uma parada é um salto, e N saltos tocam N+1
+  lugares. Uma estação por parada faria o item nascer no meio do caminho;
+- **o rótulo do que mudou é do salto, e é lido na estação de partida.** Pendurado na chegada,
+  ele diria "o destino tem o campo" — verdade que não é o assunto, porque o assunto é quem
+  acrescentou.
+
+`seguir()`/`Parada` subiram para o `depth-core`: identidade e trajeto de um item são conceito
+do motor, e viviam em `apps/site` como utilitário de página. E o painel dos labs passou a
+desenhar a `Trilha` — a lista de paradas tinha dois desenhos possíveis e agora tem um.
+
+### O herói
+
+Mundo próprio (`service → collector → backend`), sem controle nenhum, abrindo **já seguindo**
+um span. Não é o lab de ninguém de propósito: `providers` mora dentro do processo, `anatomy`
+entre quatro processos, e o herói é o oleoduto visto de fora.
+
+A seção dos quatro níveis mortos saiu da landing. No lugar, os três gestos que valem para uma
+CPU e para um trace — e a segunda metade do pilar, que não estava em lugar nenhum do site:
+quando o assunto não é fluxo com camadas, o lab é outro, feito para ele.
+
+Estado: unit, e2e, typecheck, boundaries, catálogo e build verdes.
