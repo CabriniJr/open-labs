@@ -32,10 +32,15 @@ export interface LeitorDaCarga {
    * Esta mensagem é uma **parada no trajeto da coisa**, ou um produto dela?
    *
    * A distinção não é preciosismo: num lab real, a requisição atravessa quatro
-   * serviços e cada um exporta um registro à parte. Esses registros são
-   * produtos — eles não continuam o caminho. Misturados no trajeto, cada
-   * parada acusava "mudou o selo E o registro", porque o corpo alternava
-   * entre duas formas, e o leitor lia ruído no lugar do mecanismo.
+   * serviços e cada um exporta um span à parte. Esses spans são produtos — eles
+   * não continuam o caminho. Misturados no trajeto, cada parada acusava "mudou
+   * o selo E o span", porque o corpo alternava entre duas formas, e o leitor
+   * lia ruído no lugar do mecanismo.
+   *
+   * (O `selo` é o cabeçalho de correlação que atravessa a fronteira com a
+   * requisição, e que um proxy pode derrubar. Ele não se chama assim em lugar
+   * nenhum: o motor não pode saber o nome dele, e é por isso que a guarda de
+   * fronteiras recusa a palavra de verdade aqui dentro.)
    *
    * Ausente, tudo é parada: um lab em que a coisa só anda não precisa disto.
    */
