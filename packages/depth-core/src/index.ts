@@ -63,6 +63,17 @@ export type {
 export { diffStates } from "./diff.js";
 export { createRandom } from "./random.js";
 
+/**
+ * Seguir um item: o trajeto de UMA coisa, e o que cada parada mudou nela.
+ *
+ * Mora no motor porque identidade e trajeto são conceito do motor: o motor dá
+ * id novo a cada emissão — e está certo, cada salto é uma mensagem nova —, e
+ * quem sabe que duas mensagens são a mesma coisa é o domínio, pelo `LeitorDaCarga`.
+ * O desenho disso é a `Trilha`, no `depth-ui`.
+ */
+export { PARADAS_NO_PAINEL, seguir } from "./seguir.js";
+export type { LeitorDaCarga, Parada } from "./seguir.js";
+
 // modelo antigo — andaime até a S5 migrar a landing. NÃO usar em código novo.
 export { Engine } from "./engine.js";
 export type { LevelId, Scenario } from "./types.js";

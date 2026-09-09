@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { World, indexTree } from "@ovh/depth-core";
+import { World, indexTree, seguir } from "@ovh/depth-core";
+import type { Parada } from "@ovh/depth-core";
 import {
   anatomiaWorld,
   estadoDaAnatomia,
@@ -10,8 +11,6 @@ import {
   VIEWS_DA_ANATOMIA,
 } from "@ovh/otel-domain";
 import type { NoDaArvore } from "@ovh/otel-domain";
-import { seguir } from "../lib/seguir.js";
-import type { Parada } from "../lib/seguir.js";
 import { Explorer } from "./Explorer.js";
 import { PainelDaCarga } from "./PainelDaCarga.js";
 

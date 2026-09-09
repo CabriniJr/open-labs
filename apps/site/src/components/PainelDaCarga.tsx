@@ -1,6 +1,6 @@
+import { PARADAS_NO_PAINEL } from "@ovh/depth-core";
+import type { Parada } from "@ovh/depth-core";
 import { Inspector } from "@ovh/depth-ui";
-import type { Parada } from "../lib/seguir.js";
-import { PARADAS_NO_PAINEL } from "../lib/seguir.js";
 
 /**
  * O painel de quem está seguindo uma carga.

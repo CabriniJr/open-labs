@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { World, indexTree } from "@ovh/depth-core";
+import { World, indexTree, seguir } from "@ovh/depth-core";
+import type { Parada } from "@ovh/depth-core";
 import {
   estadoDosPilares,
   LEITOR_DA_REQUISICAO,
@@ -8,8 +9,6 @@ import {
   pilaresWorld,
   VIEWS_DOS_PILARES,
 } from "@ovh/otel-domain";
-import { seguir } from "../lib/seguir.js";
-import type { Parada } from "../lib/seguir.js";
 import { Explorer } from "./Explorer.js";
 import { PainelDaCarga } from "./PainelDaCarga.js";
 
