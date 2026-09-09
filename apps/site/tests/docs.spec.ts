@@ -73,10 +73,20 @@ test("o tema escolhido sobrevive ao reload", async ({ page }) => {
   await expect(raiz).toHaveAttribute("data-theme", escolhido!);
 });
 
-test("a landing leva à documentação e mostra os quatro níveis", async ({ page }) => {
+test("a landing leva à documentação e mostra o que o motor faz", async ({ page }) => {
   await page.goto("");
 
-  await expect(page.locator(".levels__item")).toHaveCount(4);
+  /*
+    A seção não é mais a escada de quatro níveis fixos, e o teste não volta a
+    escrever uma contagem: número escrito aqui é segunda fonte do mesmo fato, e
+    quem mexer na seção descobre no CI em vez de na página.
+
+    O que ele cobra é o gesto que esta rodada pôs lá — seguir uma coisa e ver o
+    que cada parada mudou nela. Se ele sumir da landing, sumiu a metade do
+    motor que o herói existe para mostrar.
+  */
+  await expect(page.locator(".levels__item")).not.toHaveCount(0);
+  await expect(page.locator(".levels__list")).toContainText("Follow one item");
   await expect(page.locator(".docs-state")).toContainText("The written record");
 
   await page.getByRole("link", { name: "Read the documentation" }).click();

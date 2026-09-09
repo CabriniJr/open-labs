@@ -22,7 +22,8 @@ import { Explorer } from "./Explorer.js";
  * > You called `tracer.startSpan`. Who decides whether it ever leaves the process?
  *
  * Dois tipos de controle, e a diferença é da spec do handbook §4: **mudar uma
- * taxa é parâmetro** e vive aqui embaixo, no L0; **trocar a árvore é estrutura**
+ * taxa é parâmetro** e vive aqui embaixo, na vista de abertura; **trocar a
+ * árvore é estrutura**
  * e só o "no SDK" faz isso — porque não há provider nenhum naquele mundo, e
  * fingir que há um com um parâmetro desligado seria desenhar uma mentira.
  *
