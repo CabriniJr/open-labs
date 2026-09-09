@@ -1432,12 +1432,16 @@ Em `apps/site/src/pages/index.astro`, substitua o bloco de comentário e a const
 /**
  * O que o motor faz, e por que ele existe.
  *
- * Aqui viviam os quatro níveis fixos — L0 Flow, L1 Mechanism, L2 Wire, L3
- * Payload. Eles morreram quando profundidade virou a árvore de composição, e a
- * seção continuou vendendo uma escada única para todo assunto. Ver
- * `DECISIONS.md` §9: abrir uma CPU até o fio é descida de verdade, e um trace
- * não tem *dentro* — ele tem árvore espalhada por processos que só se
- * encontram no Collector.
+ * Aqui viviam os quatro níveis fixos, numerados e iguais para todo assunto.
+ * Eles morreram quando profundidade virou a árvore de composição, e a seção
+ * continuou vendendo a escada única. Ver `DECISIONS.md` §9: abrir uma CPU até o
+ * fio é descida de verdade, e um trace não tem *dentro* — ele tem árvore
+ * espalhada por processos que só se encontram no Collector.
+ *
+ * Os nomes velhos não são escritos aqui de propósito: a varredura de
+ * `landing.spec.ts` procura por eles em `apps/site/src` para que a escada não
+ * volte por descuido, e uma guarda que abre exceção para comentário deixa de
+ * ser guarda.
  */
 const GESTOS = [
   {
