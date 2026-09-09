@@ -167,7 +167,7 @@ Somam-se aos cinco princípios da spec do handbook, não os substituem.
 | **Fenômeno que precisou de roteiro deve ser zero** | O dia em que um precisar, é animação e não simulação |
 | **`model` que não cabe num handbook é dois `model`** | Trava contra escopo inflado |
 | **Fluxo com camadas usa o motor; o resto vira lab separado** | O motor é pilar, não obrigação. Ver §9 |
-| **Protagonista é a fábrica ou o item?** | Item → ou melhora o foco no motor, ou lab PhET-like. Nunca por omissão. §9 |
+| **O tema do lab nomeia o protagonista** | Não se monta uma rua para explicar uma porta. Item → melhora o motor ou lab PhET-like, nunca por omissão. §9 |
 
 ---
 
@@ -282,6 +282,12 @@ lab pior que um lab simples, e ainda mentiria sobre o assunto.
 > **Não** → **lab separado**, enxuto, exclusivo do assunto — uma experiência mais *mockada*
 > mesmo, desde que **represente melhor**. Mais perto do PhET do que do Factorio.
 
+**E o lab pequeno é mais barato que o motor** — este é o outro lado, e ele importa tanto
+quanto: o motor é bom, funciona, e adentrar nele é a melhor coisa que o projeto tem, mas isso
+é razão para usá-lo onde ele ganha, e não para forçá-lo onde o assunto não é fluxo. Um lab
+especializado, isolado e **bem feito** ensina mais que uma rua construída para explicar uma
+porta, e custa menos.
+
 O critério de qualidade **não cai** no segundo caso: pequeno e dedicado não é rascunho. Um
 lab PhET-like continua devendo o mesmo que qualquer outro — uma pergunta concreta, resposta
 derivada do estado e não de texto, o mal-entendido que ele desfaz, contraparte real quando
@@ -304,6 +310,20 @@ corpo, mas ele continua sendo um ponto pequeno numa esteira, com o painel de lad
 Num span, o protagonista é o item: importa **aquela coisa**, o que ela virou em cada parada,
 e onde ela terminou. A fábrica é cenário. Aplicar o motor sem enxergar isso produz um lab
 que desenha a tubulação com capricho e trata de raspão o assunto.
+
+**O tema do lab é quem nomeia o protagonista — e não a gente.** A formulação dele, e ela
+resolve o caso sozinha:
+
+> *"É que nem estarmos fazendo um lab sobre motorista e focar nas ruas, e um lab de ruas e
+> focar no motorista. E num de porta de carros, não vamos montar uma rua para explicar."*
+
+O protagonista não é escolha de desenho: ele já está dito no assunto, e a única maneira de
+errar é não perguntar. Lab de oleoduto → a fábrica protagoniza. Lab de span → o item
+protagoniza. Lab de porta de carro → **nem um nem outro**, e montar a rua em volta para
+explicar a porta é gastar caro para ensinar pior.
+
+E ela é assumidamente subjetiva. Isso não a enfraquece: a alternativa é a omissão, que decide
+igual e decide sempre a favor do motor, porque o motor está pronto.
 
 **Então a régua tem duas perguntas, nesta ordem:**
 
