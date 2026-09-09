@@ -162,7 +162,8 @@ controle é assunto de lab, e o herói que pede configuração já pediu demais 
 agora. Três gestos:
 
 1. a carga anda sozinha — autoplay, respeitando `prefers-reduced-motion`;
-2. **clicar num item** abre a Trilha dele. É o gesto principal, e é a ideia nº 7 do
+2. **clicar em outro item** troca quem está sendo seguido — a trilha já está aberta desde o
+   primeiro quadro (ver abaixo), e o clique é para escolher outro. É a ideia nº 7 do
    `DECISIONS.md` no lugar de onde ela veio;
 3. **duplo clique numa caixa** desce para dentro dela — a profundidade deixa de ser prometida
    em parágrafo e vira gesto na primeira dobra da página.
