@@ -2027,3 +2027,77 @@ fica embaixo de todos é um leque que converge.
 
 Espinha: `three-pillars` ✅ · `anatomy-of-a-trace` ✅ · `providers` ✅ · `manual-spans` ·
 `head-vs-tail-sampling`.
+
+## Entrega 14 — Seguir a carga, e o que cada parada muda ✅
+
+08/09/2026. Pedido dele, olhando os dois labs novos: *"acho que a abordagem do herói seria
+melhor — clicar dentro do item e ver do lado o conteúdo dele, e conseguir acompanhar no
+trajeto ele sendo enriquecido; essa é a visão da landing, muito mais adequada"*.
+
+Ele está apontando para a **ideia nº 7 do `DECISIONS.md`** — "seguir a carga" —, que existia
+só no herói da landing e nunca tinha entrado num lab. O que faltava não era desenho: era
+**identidade**. O motor dá um id novo a cada emissão, e está certo, porque cada salto é uma
+mensagem nova; quem sabe que duas mensagens são a mesma coisa é o domínio.
+
+Agora clicar num item abre o painel dele: o corpo agora, o trajeto até aqui, e **o que cada
+parada mudou** — com o campo alterado marcado no lugar em que ele mora, pelo mesmo
+`Inspector` do herói, que estava escrito desde o primeiro dia e nunca tinha sido usado num lab.
+
+### Na anatomia, o trajeto É o mecanismo
+
+```
+edge → gateway        first sighting
+gateway → checkout    traceparent
+checkout → payments   traceparent
+payments → ledger     traceparent
+```
+
+O cabeçalho reescrito a cada serviço, acontecendo. E quando um proxy o derruba, a mudança
+aparece como o campo virando `— no header on the wire —`: a ausência é **dita**, e não
+omitida — um campo que some da tela sem explicação é o defeito que o lab existe para mostrar.
+
+### Nos pilares, o trajeto é a tese vista de dentro de um item
+
+```
+requests → service       first sighting
+service → trace-store    kept_by
+service → metric-store   kept_by, request, duration_ms
+service → log-store      kept_by, request, route, duration_ms
+```
+
+O tracer não perde nada; o medidor perde a identidade e o número exato; o log perde quase
+tudo. Os três corpos têm a **mesma forma** de propósito, com o valor trocado por "descartado" —
+formas diferentes fariam o diff acusar a forma, e não a perda, que é o assunto.
+
+### Três decisões que o round obrigou
+
+1. **Produto não é parada.** Cada serviço exporta um span, e span não continua o caminho da
+   requisição. Misturado, cada linha do trajeto acusava "mudou o traceparent E o span",
+   porque o corpo alternava entre duas formas — ruído no lugar do mecanismo. O leitor do
+   domínio passou a dizer o que é parada;
+2. **O diff é contra a CHEGADA no nó, e não contra a parada anterior.** Num caminho reto as
+   duas coisas são a mesma; num **leque** não são: comparar o segundo braço com o primeiro
+   respondia "o que o log tem de diferente da métrica", pergunta que ninguém fez. Contra a
+   chegada, cada braço responde a certa — o que ele guardou da mesma coisa;
+3. **O item precisa de área de clique.** Ele tem sete unidades de raio, anda, e é recriado a
+   cada tick: acertá-lo era pontaria, não gesto. Um alvo invisível do dobro do tamanho, com
+   `fill: transparent` (e não `none`, que não recebe ponteiro).
+
+### E três testes que fingiam guardar
+
+A suíte vinha falhando raro, sob carga, sempre em testes diferentes — e a causa era uma só,
+repetida: **guarda que não guarda**.
+
+- o teste do mapa esperava o contador dizer "0 de N" antes de clicar. Esse texto **já está no
+  HTML do servidor**: esperar por ele não prova que a ilha hidratou, e o clique caía num botão
+  que ainda não escutava ninguém;
+- a primeira versão do conserto esperava a hidratação **sem rolar a página** — e a ilha é
+  `client:visible`, então ela esperava por uma coisa que ninguém tinha pedido para acontecer.
+  Ficou vinte segundos pendurada e reprovou o teste que existia para salvar;
+- o teste do herói lia o inspetor **uma vez** depois de mexer na linha do tempo, e às vezes
+  pegava o payload anterior — ou nenhum.
+
+Os três viraram espera de verdade. A suíte inteira: **275 e2e, zero falhas**, com a máquina
+carregada.
+
+Estado: 1081 testes unitários, 275 e2e, typecheck, boundaries, catálogo e build verdes.

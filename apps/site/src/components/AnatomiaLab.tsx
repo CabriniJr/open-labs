@@ -3,13 +3,17 @@ import { World, indexTree } from "@ovh/depth-core";
 import {
   anatomiaWorld,
   estadoDaAnatomia,
+  LEITOR_DA_CHAMADA,
   MAL_ENTENDIDOS_DA_ANATOMIA,
   PARAMS_DA_ANATOMIA,
   SERVICOS,
   VIEWS_DA_ANATOMIA,
 } from "@ovh/otel-domain";
 import type { NoDaArvore } from "@ovh/otel-domain";
+import { seguir } from "../lib/seguir.js";
+import type { Parada } from "../lib/seguir.js";
 import { Explorer } from "./Explorer.js";
+import { PainelDaCarga } from "./PainelDaCarga.js";
 
 /**
  * O lab da anatomia de um trace.
@@ -70,6 +74,17 @@ export function AnatomiaLab() {
   const [controles, setControles] = useState<Record<Controle, number>>(INICIAIS);
   const [tick, setTick] = useState(0);
   const [rodando, setRodando] = useState(true);
+  /**
+   * A carga que o leitor está seguindo, e o trajeto dela.
+   *
+   * O trajeto é acumulado **enquanto o mundo anda**, e não recalculado: ele é o
+   * registro do que aconteceu, que é a única coisa honesta a mostrar. Refazê-lo
+   * a partir do estado atual exigiria adivinhar o passado.
+   */
+  const [seguindo, setSeguindo] = useState<string | undefined>(undefined);
+  const [trajeto, setTrajeto] = useState<readonly Parada[]>([]);
+  const seguindoRef = useRef<string | undefined>(undefined);
+  seguindoRef.current = seguindo;
   const mundoRef = useRef<World | null>(null);
 
   const spec = useMemo(() => anatomiaWorld(INICIAIS), []);
@@ -84,6 +99,10 @@ export function AnatomiaLab() {
       if (m === null) return;
       m.advance(1);
       setTick(m.tick);
+      const chave = seguindoRef.current;
+      if (chave !== undefined) {
+        setTrajeto((antes) => seguir(antes, m.state, chave, LEITOR_DA_CHAMADA));
+      }
     }, 700);
     return () => window.clearInterval(id);
   }, [rodando, mundo]);
@@ -94,6 +113,15 @@ export function AnatomiaLab() {
   };
 
   const e = estadoDaAnatomia(mundo.state);
+
+  const seguirCarga = (chave: string | undefined): void => {
+    setSeguindo(chave);
+    // Trajeto novo a cada escolha: misturar o de duas cargas seria o painel
+    // afirmando um percurso que ninguém andou.
+    setTrajeto(
+      chave === undefined ? [] : seguir([], mundo.state, chave, LEITOR_DA_CHAMADA),
+    );
+  };
 
   const readouts: Record<string, string> = Object.fromEntries([
     ["edge", `${e.requisicoes}`],
@@ -124,6 +152,17 @@ export function AnatomiaLab() {
           readouts={readouts}
           conteudo={conteudo}
           comFicha
+          chaveDaCarga={LEITOR_DA_CHAMADA.chave}
+          cargaSeguida={seguindo}
+          onSeguirCarga={seguirCarga}
+          painelDaCarga={
+            <PainelDaCarga
+              titulo={seguindo ?? ""}
+              trajeto={trajeto}
+              onFechar={() => seguirCarga(undefined)}
+              vazio="This one has already left the system. Click another item on a wire to follow it."
+            />
+          }
         />
 
         <div className="anatomia-lab__controles">

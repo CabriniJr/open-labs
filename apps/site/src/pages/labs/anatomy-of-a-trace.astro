@@ -8,6 +8,7 @@ import { url } from "../../lib/urls";
 import "../../styles/docs.css";
 import "../../components/AnatomiaLab.css";
 import "../../components/Predicao.css";
+import "../../components/PainelDaCarga.css";
 import "@ovh/depth-ui/src/stage.css";
 import "../../components/Explorer.css";
 ---
@@ -36,9 +37,16 @@ import "../../components/Explorer.css";
         <p>
           Below, one request crosses four processes. Watch the calls move
           <em>forward</em> and the spans leave <em>downward</em>, one per
-          service, each on its own wire. Then break it: drop the header at a
-          boundary, or take the instrumentation out of a service in the middle.
-          Nothing errors. You get a different conclusion.
+          service, each on its own wire. <b>Click any item on a wire</b> to
+          follow it: the panel shows what it is carrying right now, and every
+          hop it has made — with the field that changed at each one. The
+          <code>traceparent</code> is rewritten at every service, and that is
+          the whole mechanism, happening.
+        </p>
+        <p>
+          Then break it: drop the header at a boundary, or take the
+          instrumentation out of a service in the middle. Nothing errors. You
+          get a different conclusion.
         </p>
       </div>
       <aside class="lab-head__note mono">

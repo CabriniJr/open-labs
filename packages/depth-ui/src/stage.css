@@ -569,6 +569,37 @@
 }
 
 /*
+ * A carga que o leitor está seguindo.
+ *
+ * Um anel em volta, e não uma cor nova: a espécie da carga já usa a tinta, e
+ * trocá-la faria "estou seguindo isto" e "isto é um span" disputarem o mesmo
+ * canal. O anel é figura, e figura não compete com tinta.
+ */
+.dui-stage__carga-grupo[role="button"] {
+  cursor: pointer;
+}
+
+/*
+  O alvo invisível: o item é pequeno e anda, e clicar nele era pontaria.
+  `fill: transparent` e não `fill: none` — `none` não recebe ponteiro nenhum, e
+  um alvo que não recebe clique não é alvo.
+*/
+.dui-stage__carga-alvo {
+  fill: transparent;
+}
+
+.dui-stage__carga-grupo[data-seguindo="true"] .dui-stage__carga {
+  stroke: var(--accent);
+  stroke-width: 2;
+  paint-order: stroke;
+}
+
+.dui-stage__carga-grupo[role="button"]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/*
  * A boca do túnel: a figura que diz "este fio passa por baixo, e volta ali".
  *
  * A junção acima resolve metade da pergunta por PRESENÇA, e a outra metade por

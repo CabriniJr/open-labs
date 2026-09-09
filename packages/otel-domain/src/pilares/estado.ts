@@ -137,3 +137,78 @@ function ordemDoBalde(nome: string): number {
   const valor = numeros === null ? 0 : Number(numeros[0]);
   return nome.startsWith(">") ? valor + 1 : valor;
 }
+
+/**
+ * Como o leitor segue **uma requisição** neste lab, e o que ele vê dela em cada
+ * parada.
+ *
+ * Aqui o trajeto tem uma forma que os outros labs não têm: a requisição sai do
+ * serviço para os três gravadores **ao mesmo tempo**, e o corpo em cada braço é
+ * o que aquele gravador vai guardar dela. O diff entre as paradas mostra então o
+ * que cada sinal **joga fora** — que é a tese do lab, vista de dentro de um
+ * item em vez de vista no agregado.
+ */
+export const LEITOR_DA_REQUISICAO = {
+  chave: (mensagem: { readonly data: Readonly<Record<string, unknown>> }): string | undefined => {
+    const requisicoes = mensagem.data["requisicoes"];
+    if (!Array.isArray(requisicoes) || requisicoes.length === 0) return undefined;
+    const primeira = requisicoes[0] as { readonly n?: number };
+    return primeira.n === undefined ? undefined : `request:${primeira.n}`;
+  },
+
+  corpo: (mensagem: {
+    readonly kind: string;
+    readonly data: Readonly<Record<string, unknown>>;
+  }): unknown => {
+    const requisicoes = mensagem.data["requisicoes"];
+    if (!Array.isArray(requisicoes) || requisicoes.length === 0) return {};
+    const req = requisicoes[0] as Requisicao;
+
+    /*
+      Os três corpos têm a MESMA forma, e é isso que faz o diff dizer alguma
+      coisa: o campo que um guarda e o outro joga fora aparece no mesmo lugar,
+      com o valor trocado por "descartado". Formas diferentes fariam o diff
+      acusar a forma, e não a perda — que é o assunto.
+    */
+    const DESCARTADO = "— discarded at write time —";
+    const NUNCA_DITO = "— the code never mentioned it —";
+
+    if (mensagem.kind === "span") {
+      // O tracer fica com o indivíduo inteiro: é o único que ainda sabe quem.
+      return {
+        kept_by: "the tracer",
+        request: req.n,
+        route: req.rota,
+        duration_ms: req.latencia,
+        error: req.erro,
+      };
+    }
+    if (mensagem.kind === "measurement") {
+      // O medidor fica com o BALDE. O número exato entrou e não saiu.
+      return {
+        kept_by: "the meter",
+        request: DESCARTADO,
+        route: req.rota,
+        duration_ms: `${baldeDe(req.latencia)} (a bucket, not a number)`,
+        error: req.erro,
+      };
+    }
+    if (mensagem.kind === "record") {
+      // O registrador fica com o que o código escolheu dizer, e nada mais.
+      return {
+        kept_by: "the logger",
+        request: NUNCA_DITO,
+        route: req.erro ? req.rota : NUNCA_DITO,
+        duration_ms: NUNCA_DITO,
+        error: req.erro,
+      };
+    }
+    return {
+      kept_by: "nobody yet — this is the request itself",
+      request: req.n,
+      route: req.rota,
+      duration_ms: req.latencia,
+      error: req.erro,
+    };
+  },
+};

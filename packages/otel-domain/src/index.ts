@@ -68,7 +68,7 @@ export type {
   EstadoServico,
   EstadoTracer,
 } from "./pilares/world.js";
-export { estadoDosPilares } from "./pilares/estado.js";
+export { estadoDosPilares, LEITOR_DA_REQUISICAO } from "./pilares/estado.js";
 export type { EstadoDosPilares, RespostaDoSinal } from "./pilares/estado.js";
 export { baldeDe, BALDES, chaveDaSerie } from "./pilares/carga.js";
 export type { Requisicao } from "./pilares/carga.js";
@@ -78,7 +78,7 @@ export { VIEW_PILARES, VIEWS_DOS_PILARES } from "./pilares/views.js";
 // O lab da anatomia de um trace: a árvore que ninguém possui.
 export { anatomiaWorld, PARAMS_DA_ANATOMIA } from "./anatomia/world.js";
 export type { EstadoBackend, EstadoServico as EstadoServicoDaAnatomia } from "./anatomia/world.js";
-export { estadoDaAnatomia } from "./anatomia/estado.js";
+export { estadoDaAnatomia, LEITOR_DA_CHAMADA } from "./anatomia/estado.js";
 export type { ArvoreMontada, EstadoDaAnatomia, NoDaArvore } from "./anatomia/estado.js";
 export type { Chamada, SpanExportado } from "./anatomia/carga.js";
 export { MAL_ENTENDIDOS_DA_ANATOMIA, ROTULOS_ANATOMIA, SERVICOS } from "./anatomia/labels.js";

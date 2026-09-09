@@ -39,6 +39,18 @@ export interface ExplorerProps {
     | undefined;
   /** Mostra a ficha do objeto selecionado ao lado do palco. */
   readonly comFicha?: boolean;
+  /**
+   * Seguir a carga: a chave da coisa que o leitor está seguindo, quem a define,
+   * e o painel que o lab desenha para ela.
+   *
+   * O painel vem pronto do lab porque **o corpo de uma carga é conhecimento de
+   * domínio** — o palco sabe desenhar a bolinha andando, e não sabe o que ela
+   * carrega. É a mesma fronteira de `leituraDaCarga` e `conteudo`.
+   */
+  readonly chaveDaCarga?: ((mensagem: import("@ovh/depth-core").Message) => string | undefined) | undefined;
+  readonly cargaSeguida?: string | undefined;
+  readonly onSeguirCarga?: ((chave: string | undefined) => void) | undefined;
+  readonly painelDaCarga?: React.ReactNode;
   /** O que cada peça é, no vocabulário do domínio. Ver `FichaProps.descricoes`. */
   readonly descricoes?: Readonly<Record<string, string>> | undefined;
 }
@@ -61,6 +73,10 @@ export function Explorer({
   especieDaCarga,
   conteudo,
   comFicha = false,
+  chaveDaCarga,
+  cargaSeguida,
+  onSeguirCarga,
+  painelDaCarga,
   descricoes,
 }: ExplorerProps) {
   const primeiro = inicial ?? views[0]?.focus ?? tree.rootId;
@@ -257,9 +273,21 @@ export function Explorer({
           leituraDaCarga={leituraDaCarga}
           especieDaCarga={especieDaCarga}
           conteudo={conteudo}
+          chaveDaCarga={chaveDaCarga}
+          cargaSeguida={cargaSeguida}
+          onSeguirCarga={onSeguirCarga}
         />
         </div>
-        {comFicha ? (
+        {/*
+          Seguindo uma carga, o painel dela toma o lugar da ficha do objeto.
+
+          Os dois respondem "o que é isto?" sobre coisas diferentes, e mostrar
+          os dois ao mesmo tempo faria o leitor escolher qual ler — o que é
+          escolher por ele, mal. Quem está seguindo uma carga quer a carga.
+        */}
+        {painelDaCarga !== undefined && cargaSeguida !== undefined ? (
+          painelDaCarga
+        ) : comFicha ? (
           <Ficha
             tree={tree}
             wires={wires}

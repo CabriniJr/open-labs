@@ -133,6 +133,22 @@ export interface StageProps {
    */
   readonly leituraDaCarga?: ((mensagem: Message) => string | undefined) | undefined;
   /**
+   * A identidade de uma carga **através dos saltos**, dita pelo domínio.
+   *
+   * O motor dá um id novo a cada emissão — e ele está certo: cada salto é uma
+   * mensagem nova. Mas o leitor que clica numa carga quer seguir *aquela
+   * coisa*, e o que faz dela a mesma de um salto para o outro é conhecimento do
+   * domínio: uma requisição continua sendo a mesma requisição quando o
+   * cabeçalho dela é reescrito.
+   *
+   * Sem isto, seguir a carga só funcionaria dentro de um fio — que é o mesmo
+   * que não funcionar.
+   */
+  readonly chaveDaCarga?: ((mensagem: Message) => string | undefined) | undefined;
+  /** Qual carga o leitor está seguindo, pela chave. */
+  readonly cargaSeguida?: string | undefined;
+  readonly onSeguirCarga?: ((chave: string | undefined) => void) | undefined;
+  /**
    * A **espécie** de uma carga, para o desenho poder distingui-la das outras.
    *
    * A carga muda de cara ao atravessar quem a transforma — uma palavra vira
@@ -654,6 +670,9 @@ function Camada({
   onOpen,
   interiores,
   leituraDaCarga,
+  chaveDaCarga,
+  cargaSeguida,
+  onSeguirCarga,
   especieDaCarga,
   conteudo,
   unidadesPorQuadro,
@@ -2072,6 +2091,9 @@ function Camada({
                       selected={selected}
                       interiores={interiores}
                       leituraDaCarga={leituraDaCarga}
+                      chaveDaCarga={chaveDaCarga}
+                      cargaSeguida={cargaSeguida}
+                      onSeguirCarga={onSeguirCarga}
                       especieDaCarga={especieDaCarga}
                       conteudo={conteudo}
                       emissoes={emissoes}
@@ -2564,6 +2586,35 @@ function Camada({
               key={`${item.id}:${state.tick}`}
               className="dui-stage__carga-grupo dui-stage__carga-grupo--voo"
               data-carga={item.id}
+              /*
+                Seguir a carga: clicar nela escolhe a COISA, e não a mensagem.
+
+                A chave vem do domínio porque é ele que sabe o que faz duas
+                mensagens serem a mesma coisa em dois saltos — o motor, com
+                razão, dá um id novo a cada emissão.
+              */
+              data-chave={chaveDaCarga?.(item.message)}
+              data-seguindo={
+                cargaSeguida !== undefined && chaveDaCarga?.(item.message) === cargaSeguida
+                  ? "true"
+                  : undefined
+              }
+              {...(onSeguirCarga === undefined || chaveDaCarga?.(item.message) === undefined
+                ? {}
+                : {
+                    role: "button",
+                    tabIndex: 0,
+                    onClick: () => {
+                      const chaveDela = chaveDaCarga(item.message);
+                      onSeguirCarga(chaveDela === cargaSeguida ? undefined : chaveDela);
+                    },
+                    onKeyDown: (e: React.KeyboardEvent) => {
+                      if (e.key !== "Enter" && e.key !== " ") return;
+                      e.preventDefault();
+                      const chaveDela = chaveDaCarga(item.message);
+                      onSeguirCarga(chaveDela === cargaSeguida ? undefined : chaveDela);
+                    },
+                  })}
               /* O feixe anda em fila, e fila tem direção: só ele gira junto com
                  a esteira. Um envelope ou uma barra girando ficariam de cabeça
                  para baixo na volta do fio, sem ganhar nada com isso. */
@@ -2581,6 +2632,17 @@ function Camada({
                 ["--dui-ate" as string]: `${Math.min(1, andou + 1 / edgeTicks) * 100}%`,
               }}
             >
+              {/*
+                A área de clique, e ela é maior que o desenho.
+
+                O item tem sete unidades de raio, anda, e é recriado a cada tick
+                — acertá-lo com o cursor era um teste de pontaria, não um gesto.
+                O alvo invisível é o dobro: continua sendo o item, e agora dá
+                para pegá-lo. Só existe quando há o que seguir.
+              */}
+              {onSeguirCarga !== undefined && chaveDaCarga?.(item.message) !== undefined ? (
+                <circle className="dui-stage__carga-alvo" r={16} />
+              ) : null}
               <Carga
                 mensagem={item.message}
                 leitura={leituraDaCarga?.(item.message)}

@@ -2,12 +2,16 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { World, indexTree } from "@ovh/depth-core";
 import {
   estadoDosPilares,
+  LEITOR_DA_REQUISICAO,
   MAL_ENTENDIDOS_DOS_PILARES,
   PARAMS_DOS_PILARES,
   pilaresWorld,
   VIEWS_DOS_PILARES,
 } from "@ovh/otel-domain";
+import { seguir } from "../lib/seguir.js";
+import type { Parada } from "../lib/seguir.js";
 import { Explorer } from "./Explorer.js";
+import { PainelDaCarga } from "./PainelDaCarga.js";
 
 /**
  * O lab dos três pilares.
@@ -52,6 +56,16 @@ export function PilaresLab() {
   const [controles, setControles] = useState<Record<Controle, number>>(INICIAIS);
   const [tick, setTick] = useState(0);
   const [rodando, setRodando] = useState(true);
+  /**
+   * Seguir uma requisição: aqui o trajeto se abre em três braços ao mesmo
+   * tempo, e o corpo em cada um é o que aquele gravador guarda dela. O diff
+   * entre as paradas mostra o que cada sinal **joga fora** — a tese do lab
+   * vista de dentro de um item, e não no agregado.
+   */
+  const [seguindo, setSeguindo] = useState<string | undefined>(undefined);
+  const [trajeto, setTrajeto] = useState<readonly Parada[]>([]);
+  const seguindoRef = useRef<string | undefined>(undefined);
+  seguindoRef.current = seguindo;
   const mundoRef = useRef<World | null>(null);
 
   const spec = useMemo(() => pilaresWorld(INICIAIS), []);
@@ -66,6 +80,10 @@ export function PilaresLab() {
       if (m === null) return;
       m.advance(1);
       setTick(m.tick);
+      const chave = seguindoRef.current;
+      if (chave !== undefined) {
+        setTrajeto((antes) => seguir(antes, m.state, chave, LEITOR_DA_REQUISICAO));
+      }
     }, 600);
     return () => window.clearInterval(id);
   }, [rodando, mundo]);
@@ -76,6 +94,11 @@ export function PilaresLab() {
   };
 
   const e = estadoDosPilares(mundo.state, controles["pergunta-acima-de"]);
+
+  const seguirCarga = (chave: string | undefined): void => {
+    setSeguindo(chave);
+    setTrajeto(chave === undefined ? [] : seguir([], mundo.state, chave, LEITOR_DA_REQUISICAO));
+  };
 
   /**
    * O que cada caixa guarda, linha a linha — e é aqui que o lab acontece.
@@ -151,6 +174,17 @@ export function PilaresLab() {
           capacidades={capacidades}
           conteudo={conteudo}
           comFicha
+          chaveDaCarga={LEITOR_DA_REQUISICAO.chave}
+          cargaSeguida={seguindo}
+          onSeguirCarga={seguirCarga}
+          painelDaCarga={
+            <PainelDaCarga
+              titulo={seguindo ?? ""}
+              trajeto={trajeto}
+              onFechar={() => seguirCarga(undefined)}
+              vazio="This one has already been recorded. Click another item on a wire to follow it."
+            />
+          }
         />
 
         <div className="pilares-lab__controles">

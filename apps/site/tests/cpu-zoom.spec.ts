@@ -8,6 +8,9 @@ import { expect, test } from "@playwright/test";
 test.skip(({ isMobile }) => isMobile === true, "o gesto de toque é a pinça, e ela não existe ainda");
 
 test("o somador de 32 bits abre dentro da caixa da ULA", async ({ page }) => {
+  // Dez passos de roda com espera entre eles, mais a animação da câmera: sob
+  // carga isto passa dos trinta segundos, e o teste falhava por relógio.
+  test.setTimeout(90_000);
   await page.goto("labs/cpu/");
   await page.waitForSelector("g.dui-stage__objeto");
 

@@ -8,6 +8,7 @@ import { url } from "../../lib/urls";
 import "../../styles/docs.css";
 import "../../components/PilaresLab.css";
 import "../../components/Predicao.css";
+import "../../components/PainelDaCarga.css";
 import "@ovh/depth-ui/src/stage.css";
 import "../../components/Explorer.css";
 ---
@@ -34,7 +35,10 @@ import "../../components/Explorer.css";
         </p>
         <p>
           Below, one service handles requests. Three recorders watch the exact
-          same ones. Let it run, then ask the question at the bottom: <em>which
+          same ones — and <b>clicking any item on a wire follows it</b>: the
+          panel shows what each recorder is about to keep of that one request,
+          and the fields that vanish on the way in are the ones you will not be
+          able to ask for later. Let it run, then ask the question at the bottom: <em>which
           requests took longer than 250&nbsp;ms?</em> One of the three answers
           with a list. One answers with a number, at best. One answers only if
           the person who wrote the code happened to mention it.

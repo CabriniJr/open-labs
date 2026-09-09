@@ -160,3 +160,68 @@ export function estadoDaAnatomia(state: WorldState): EstadoDaAnatomia {
     porServico,
   };
 }
+
+/**
+ * Como o leitor segue uma requisição, e o que ele vê dentro dela.
+ *
+ * A chave é a requisição, e não a mensagem: cada salto emite uma mensagem nova
+ * — o motor está certo em dar id novo a cada uma —, e o que faz duas serem a
+ * mesma coisa é o número da requisição. Quem sabe disso é o domínio.
+ *
+ * O corpo é o que ela carrega **naquele ponto do trajeto**, e é por isso que
+ * seguir uma requisição mostra o enriquecimento: o `traceparent` é reescrito a
+ * cada serviço, e some inteiro quando alguém o derruba.
+ */
+export const LEITOR_DA_CHAMADA = {
+  chave: (mensagem: { readonly data: Readonly<Record<string, unknown>> }): string | undefined => {
+    const chamadas = mensagem.data["chamadas"];
+    if (Array.isArray(chamadas) && chamadas.length > 0) {
+      const primeira = chamadas[0] as { readonly n?: number };
+      return primeira.n === undefined ? undefined : `request:${primeira.n}`;
+    }
+    const spans = mensagem.data["spans"];
+    if (Array.isArray(spans) && spans.length > 0) {
+      const primeiro = spans[0] as { readonly n?: number };
+      return primeiro.n === undefined ? undefined : `request:${primeiro.n}`;
+    }
+    return undefined;
+  },
+
+  /**
+   * O trajeto é o da REQUISIÇÃO; o span é produto dela, e não parada.
+   *
+   * Misturados, cada parada acusava "mudou o traceparent e mudou o span",
+   * porque o corpo alternava entre duas formas — o leitor lia ruído no lugar do
+   * mecanismo, que é o cabeçalho sendo reescrito a cada serviço.
+   */
+  noTrajeto: (mensagem: { readonly data: Readonly<Record<string, unknown>> }): boolean =>
+    Array.isArray(mensagem.data["chamadas"]),
+
+  corpo: (mensagem: { readonly data: Readonly<Record<string, unknown>> }): unknown => {
+    const chamadas = mensagem.data["chamadas"];
+    if (Array.isArray(chamadas) && chamadas.length > 0) {
+      const chamada = chamadas[0] as { readonly n: number; readonly traceparent?: string };
+      return {
+        request: chamada.n,
+        // A ausência é dita, e não omitida: um campo que some da tela sem
+        // explicação é exatamente o defeito que este lab existe para mostrar.
+        traceparent: chamada.traceparent ?? "— no header on the wire —",
+      };
+    }
+    const spans = mensagem.data["spans"];
+    if (Array.isArray(spans) && spans.length > 0) {
+      const span = spans[0] as SpanExportado;
+      return {
+        request: span.n,
+        exported_span: {
+          service: span.servico,
+          trace_id: span.traceId,
+          span_id: span.spanId,
+          parent_span_id: span.parentId ?? "— none: this span is a root —",
+          sampled: span.amostrado,
+        },
+      };
+    }
+    return {};
+  },
+};
