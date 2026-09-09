@@ -24,6 +24,23 @@ import { Explorer } from "./Explorer.js";
 
 const TICK_MS = 700;
 
+/**
+ * Quantos ticks o quadro parado adianta de uma vez.
+ *
+ * O bastante para um span sair do serviço, atravessar o collector e chegar ao
+ * backend — a trilha inteira, com as duas paradas e o campo que a segunda
+ * acrescentou. Menos que isso mostraria meia história parada, que é pior que
+ * nenhuma: o leitor não teria como saber que falta metade.
+ */
+const TICKS_DO_QUADRO_PARADO = 8;
+
+/** A chave do primeiro item que aparecer em voo, se houver algum. */
+function primeiroEmVoo(mundo: World): string | undefined {
+  return mundo.state.flight
+    .map((item) => LEITOR_DO_SPAN.chave(item.message))
+    .find((chave): chave is string => chave !== undefined);
+}
+
 export function HeroSim() {
   const [, setTick] = useState(0);
   const [seguindo, setSeguindo] = useState<string | undefined>(undefined);
@@ -38,11 +55,38 @@ export function HeroSim() {
   mundoRef.current = mundo;
 
   useEffect(() => {
+    const inicial = mundoRef.current;
+    if (inicial === null) return;
+
     /*
-      Quem pediu para não ver movimento não vê: o palco fica no estado inicial,
-      legível e parado. É o mesmo respeito que o herói antigo tinha.
+      Quem pediu para não ver movimento ganha o quadro **parado com conteúdo**,
+      e não o vazio.
+
+      A primeira versão simplesmente não ligava o relógio, e com isso a trilha
+      ficava na mensagem de espera — "The first span is on its way" — para um
+      leitor que nunca ia ver o span chegar. Uma vitrine dizendo o que não vai
+      acontecer é o mesmo defeito que esta rodada existe para tirar da landing.
+
+      Então o mundo anda de uma vez até a história fechar, e para ali. Nada se
+      move na tela, e ainda assim há um trajeto de verdade para ler.
     */
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      let chave: string | undefined;
+      let trilho: readonly Parada[] = [];
+      for (let i = 0; i < TICKS_DO_QUADRO_PARADO; i += 1) {
+        inicial.advance(1);
+        chave ??= primeiroEmVoo(inicial);
+        if (chave !== undefined) {
+          trilho = seguir(trilho, inicial.state, chave, LEITOR_DO_SPAN);
+        }
+      }
+      setTick(inicial.tick);
+      if (chave !== undefined) {
+        setSeguindo(chave);
+        setTrajeto(trilho);
+      }
+      return;
+    }
 
     const id = window.setInterval(() => {
       const m = mundoRef.current;
@@ -56,9 +100,7 @@ export function HeroSim() {
           Ninguém escolheu ainda: o herói escolhe por conta própria o primeiro
           item que aparecer, e é assim que a trilha está aberta desde o começo.
         */
-        const primeiro = m.state.flight
-          .map((item) => LEITOR_DO_SPAN.chave(item.message))
-          .find((c): c is string => c !== undefined);
+        const primeiro = primeiroEmVoo(m);
         if (primeiro !== undefined) {
           setSeguindo(primeiro);
           setTrajeto(seguir([], m.state, primeiro, LEITOR_DO_SPAN));
