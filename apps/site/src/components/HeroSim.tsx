@@ -27,12 +27,18 @@ const TICK_MS = 700;
 /**
  * Quantos ticks o quadro parado adianta de uma vez.
  *
- * O bastante para um span sair do serviço, atravessar o collector e chegar ao
- * backend — a trilha inteira, com as duas paradas e o campo que a segunda
+ * O bastante para um span sair do serviço, atravessar as três peças do collector
+ * e chegar ao backend — a trilha inteira, com o campo que o processador
  * acrescentou. Menos que isso mostraria meia história parada, que é pior que
  * nenhuma: o leitor não teria como saber que falta metade.
+ *
+ * Eram oito quando o collector era uma caixa fechada, e a chegada era no tick 5.
+ * Abrir a caixa pôs dois saltos a mais no caminho, e o número aqui **não** é um
+ * detalhe de animação: ele é quanto do trajeto o leitor parado consegue ler.
+ * Se o mundo ganhar peça, este número sobe junto — ou o comentário acima passa
+ * a mentir, que é o defeito que esta rodada existe para tirar do projeto.
  */
-const TICKS_DO_QUADRO_PARADO = 8;
+const TICKS_DO_QUADRO_PARADO = 12;
 
 /** A chave do primeiro item que aparecer em voo, se houver algum. */
 function primeiroEmVoo(mundo: World): string | undefined {
