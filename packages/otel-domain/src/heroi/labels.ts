@@ -4,6 +4,11 @@ export const ROTULOS_HEROI = {
   service: "service",
   collector: "collector",
   backend: "backend",
+  /** O que se lê ao descer no collector — o título da vista de dentro. */
+  dentroDoCollector: "Inside the collector: it appends, and passes it on",
+  receiver: "otlp receiver",
+  processor: "resource processor",
+  exporter: "otlp exporter",
 } as const;
 
 /** O que o collector acrescenta ao recurso de tudo que passa por ele. */

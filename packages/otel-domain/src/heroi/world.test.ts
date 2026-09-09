@@ -42,6 +42,36 @@ describe("heroiWorld", () => {
     expect(depois.has("true")).toBe(true);
   });
 
+  it("quem acrescenta o atributo é o processor, e não as pontas do collector", () => {
+    /*
+      O que o desenho de dentro do collector afirma: as duas pontas são conduíte
+      e o meio é processador, e por isso o campo aparece num fio só.
+
+      Medido nos DOIS fios de dentro, e não só no de saída: só o fio de baixo
+      diria "saiu enriquecido" sem dizer por quem, e um receiver que carimbasse
+      o campo passaria por esse teste calado — que é exatamente a mentira
+      silenciosa que a vista de dentro passaria a desenhar.
+    */
+    const mundo = new World(heroiWorld());
+    const noFio = new Map<string, Set<boolean>>();
+    for (let i = 0; i < 20; i += 1) {
+      mundo.advance(1);
+      for (const item of mundo.state.flight) {
+        const spans = Array.isArray(item.message.data["spans"])
+          ? (item.message.data["spans"] as SpanDoHeroi[])
+          : [];
+        for (const span of spans) {
+          const chave = `${item.from}->${String(item.to)}`;
+          const vistos = noFio.get(chave) ?? new Set<boolean>();
+          vistos.add(ATRIBUTO_DO_COLLECTOR in span.resource);
+          noFio.set(chave, vistos);
+        }
+      }
+    }
+    expect(noFio.get("receiver->processor")).toEqual(new Set([false]));
+    expect(noFio.get("processor->exporter")).toEqual(new Set([true]));
+  });
+
   it("o span mantém o traceId ao atravessar o collector", () => {
     /*
       Enriquecer não é criar outro: o collector acrescenta campo e devolve a
