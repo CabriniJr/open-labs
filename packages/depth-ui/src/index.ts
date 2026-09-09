@@ -23,3 +23,5 @@ export { familiesOf, interiorDisagreement, viewDisagreement } from "./view.js";
 export { ALTURA_DA_LINHA, encaixar, fracaoDoQuadro, quantoAparece, tabelaLegivel } from "./lod.js";
 export type { NodePlacement, View } from "./view.js";
 export { autoView, pathTo } from "./auto-view.js";
+export { estacoesDe, Trilha } from "./Trilha.js";
+export type { Estacao, TrilhaProps } from "./Trilha.js";
