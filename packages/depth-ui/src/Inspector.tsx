@@ -18,15 +18,19 @@ export function toInspectorLines(
   changedPaths: readonly string[] = [],
   path = "",
   depth = 0,
-  insideArray = false,
+  key?: string,
 ): InspectorLine[] {
   const changed = new Set(changedPaths);
   const mark = (line: InspectorLine): InspectorLine =>
     changed.has(line.path) ? { ...line, changed: true } : line;
 
+  // A chave vem de quem chamou, nunca do caminho: chaves com ponto (`casa.numero`)
+  // são indistinguíveis de aninhamento depois que o caminho é montado, e derivá-la
+  // dele mostraria um corpo que o modelo nunca disse.
+  //
   // Elementos de array não têm chave: JSON real não escreve `"0": {`. O caminho
   // ainda usa o índice — é ele que casa com o diff — mas ele não vira rótulo.
-  const label = path === "" || insideArray ? "" : `"${path.split(".").at(-1)}": `;
+  const label = key === undefined ? "" : `"${key}": `;
 
   if (isRecord(value) || Array.isArray(value)) {
     const [open, close] = Array.isArray(value) ? ["[", "]"] : ["{", "}"];
@@ -42,7 +46,7 @@ export function toInspectorLines(
           changedPaths,
           path === "" ? key : `${path}.${key}`,
           depth + 1,
-          Array.isArray(value),
+          Array.isArray(value) ? undefined : key,
         ),
       );
     }
