@@ -167,6 +167,7 @@ Somam-se aos cinco princípios da spec do handbook, não os substituem.
 | **Fenômeno que precisou de roteiro deve ser zero** | O dia em que um precisar, é animação e não simulação |
 | **`model` que não cabe num handbook é dois `model`** | Trava contra escopo inflado |
 | **Fluxo com camadas usa o motor; o resto vira lab separado** | O motor é pilar, não obrigação. Ver §9 |
+| **Protagonista é a fábrica ou o item?** | Item → ou melhora o foco no motor, ou lab PhET-like. Nunca por omissão. §9 |
 
 ---
 
@@ -286,6 +287,32 @@ lab PhET-like continua devendo o mesmo que qualquer outro — uma pergunta concr
 derivada do estado e não de texto, o mal-entendido que ele desfaz, contraparte real quando
 ele afirma algo sobre o mundo, e teste que cai quando o lab para de ensinar o que promete.
 O que ele **não** deve é profundidade: sem árvore de composição, sem palco, sem `kinds`.
+
+### O corte real: a fábrica ou o item?
+
+*Afiado por ele em 2026-09-08, logo depois:* **"mesmo que se encaixe na nossa lógica de
+fluxos, o foco é o item e não a fábrica — o nosso sistema de grafos funciona muito bem
+quando o foco é a fábrica, mas no span o foco é o item; ou melhoramos o foco pro item, ou
+criamos um lab mais PhET."**
+
+"Fluxo com camadas" era a pergunta certa e não era a pergunta suficiente. Um trace **é** um
+fluxo com camadas, e mesmo assim o motor não o serve bem — porque o motor é centrado na
+**fábrica**. O protagonista dele é o grafo: as máquinas, as esteiras, o que tem dentro de
+cada caixa. O item é carga que atravessa; desde "seguir a carga" dá para clicar nele e ler o
+corpo, mas ele continua sendo um ponto pequeno numa esteira, com o painel de lado.
+
+Num span, o protagonista é o item: importa **aquela coisa**, o que ela virou em cada parada,
+e onde ela terminou. A fábrica é cenário. Aplicar o motor sem enxergar isso produz um lab
+que desenha a tubulação com capricho e trata de raspão o assunto.
+
+**Então a régua tem duas perguntas, nesta ordem:**
+
+1. **É um fluxo com camadas de abstração e lógica?** Não → lab separado, PhET-like.
+2. **Quem é o protagonista, a fábrica ou o item?** Fábrica → motor, é o caso para o qual ele
+   foi feito. **Item → decisão explícita entre duas saídas, e nunca por omissão:** ou a
+   rodada **melhora o foco no item no motor** — e aí é investimento no pilar, com dono e
+   escopo —, ou o lab é **separado e PhET-like**. O que não pode acontecer é usar o motor
+   como está e deixar o item de coadjuvante num assunto que é sobre ele.
 
 ### O que isto revoga, e o que não
 
