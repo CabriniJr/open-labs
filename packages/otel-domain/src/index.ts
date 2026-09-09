@@ -83,3 +83,11 @@ export type { ArvoreMontada, EstadoDaAnatomia, NoDaArvore } from "./anatomia/est
 export type { Chamada, SpanExportado } from "./anatomia/carga.js";
 export { MAL_ENTENDIDOS_DA_ANATOMIA, ROTULOS_ANATOMIA, SERVICOS } from "./anatomia/labels.js";
 export { VIEW_ANATOMIA, VIEWS_DA_ANATOMIA } from "./anatomia/views.js";
+
+// O herói da landing: o oleoduto visto de fora, com um span seguido de ponta a ponta.
+export { heroiWorld } from "./heroi/world.js";
+export { LEITOR_DO_SPAN, tituloDoSpan } from "./heroi/estado.js";
+export { spanDoHeroi } from "./heroi/carga.js";
+export type { SpanDoHeroi } from "./heroi/carga.js";
+export { ATRIBUTO_DO_COLLECTOR, ROTULOS_HEROI, VALOR_DO_COLLECTOR } from "./heroi/labels.js";
+export { VIEW_HEROI, VIEWS_DO_HEROI } from "./heroi/views.js";
