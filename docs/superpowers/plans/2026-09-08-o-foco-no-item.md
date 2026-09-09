@@ -885,7 +885,9 @@ describe("heroiWorld", () => {
   it("o serviço emite span, e ele chega ao backend", () => {
     const mundo = new World(heroiWorld());
     mundo.advance(12);
-    const backend = mundo.state.objects["backend"] as { readonly recebidos: number } | undefined;
+    // `nodes`, e não `objects`: é como o estado do motor se chama, e é o que
+    // todos os irmãos leem (`anatomia/estado.ts`, `providers/world.test.ts`).
+    const backend = mundo.state.nodes["backend"] as { readonly recebidos: number } | undefined;
     expect(backend?.recebidos ?? 0).toBeGreaterThan(0);
   });
 
