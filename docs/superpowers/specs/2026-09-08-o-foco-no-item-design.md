@@ -93,9 +93,16 @@ ninguém aperta num herói de quinze segundos.
   └──────────────────────────────────┘
 ```
 
-**O trajeto vira a espinha da tela.** Uma estação por parada; o nome da estação é a peça da
-fábrica, reduzida a rótulo; e **o que mudou aparece entre as estações**, no salto em que
-mudou — não numa coluna, não numa legenda. O corpo fica embaixo, com o campo alterado marcado
+**O trajeto vira a espinha da tela.** As estações são **uma a mais que as paradas** — uma
+parada é um salto, e N saltos tocam N+1 lugares —, o nome de cada uma é a peça da fábrica
+reduzida a rótulo, e **o que mudou aparece entre as estações**, no salto em que mudou — não
+numa coluna, não numa legenda.
+
+O rótulo do salto mora na estação de **chegada**, e a razão é o leque: no lab dos três
+pilares, três saltos saem do mesmo lugar com deltas diferentes, e do lado da partida os três
+disputariam uma linha só. Na chegada, cada braço carrega o seu — e os braços penduram na
+mesma origem em vez de entrarem em fila, que afirmaria que a carga passou por um depois pelo
+outro quando o assunto do lab é que os três viram a mesma coisa. O corpo fica embaixo, com o campo alterado marcado
 no lugar em que ele mora, pelo mesmo `Inspector` que já serve o painel e o herói.
 
 ### De onde cada traço sai (a régua da gramática visual)
@@ -106,8 +113,9 @@ Toda figura tem de sair de um fato que o modelo já tem. Aqui:
 |---|---|
 | uma estação | uma `Parada` — o par (`de`, `para`) do salto |
 | a ordem das estações | a ordem em que as paradas foram vistas, por `tick` |
-| o rótulo `+campo` entre duas estações | `Parada.mudou`, que é `diffStates` contra a **chegada** no nó |
-| `first sighting` na primeira | trajeto sem chegada anterior — a ausência é dita, não omitida |
+| o rótulo `+campo`, na estação de **chegada** do salto | `Parada.mudou`, que é `diffStates` contra a chegada no nó anterior |
+| um braço pendurado, e não uma estação em fila | duas paradas com o mesmo `de` — um leque |
+| `first sighting` na primeira chegada | trajeto sem chegada anterior — a ausência é dita, não omitida |
 | o campo marcado no corpo | `changedPaths` da última parada |
 | a estação em que o item está agora | a última `Parada`, e ela é a única com `data-atual` |
 
