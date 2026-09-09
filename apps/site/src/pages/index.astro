@@ -11,22 +11,28 @@ import "../components/HeroSim.css";
 import "../styles/docs.css";
 
 /**
- * Os quatro níveis são a ideia central do projeto, e até aqui viviam escondidos
- * num parágrafo. Viram peça: quatro faixas, na ordem em que se desce.
+ * O que o motor faz, e por que ele existe.
+ *
+ * Aqui viviam os quatro níveis fixos — L0 Flow, L1 Mechanism, L2 Wire, L3
+ * Payload. Eles morreram quando profundidade virou a árvore de composição, e a
+ * seção continuou vendendo uma escada única para todo assunto. Ver
+ * `DECISIONS.md` §9: abrir uma CPU até o fio é descida de verdade, e um trace
+ * não tem *dentro* — ele tem árvore espalhada por processos que só se
+ * encontram no Collector.
  */
-const LEVELS = [
+const GESTOS = [
   {
-    id: "L0",
-    name: "Flow",
-    line: "Services and telemetry moving between them. The shape of the system.",
+    name: "Open a part",
+    line: "Double-click any box and you are inside it, looking at the parts it is made of.",
   },
   {
-    id: "L1",
-    name: "Mechanism",
-    line: "Inside one component: the processors, the queue, the exporter.",
+    name: "Open a message",
+    line: "The thing moving on the wire has a body, and you can read it field by field.",
   },
-  { id: "L2", name: "Wire", line: "The channel opened up — HTTP/2 frames, one by one." },
-  { id: "L3", name: "Payload", line: "The OTLP message, field by field, with the change lit up." },
+  {
+    name: "Follow one item",
+    line: "Click it and its whole path opens up, with what each stop changed lit where it lives.",
+  },
 ] as const;
 ---
 
@@ -43,13 +49,14 @@ const LEVELS = [
         <p class="hero__lede prose">
           OpenLabs builds handbooks that run. Most material shows you a diagram
           and a config file; here the diagram is the running mechanism — change
-          something, watch it react, then open it up and read the exact bytes
+          something, watch it react, then open it up and read the exact data
           that produced what you just saw.
         </p>
         <p class="prose">
           One engine, many subjects. Below is a piece of the OpenTelemetry
-          handbook: turn off context propagation and the picture breaks — and so
-          does the payload underneath it, because they are the same data.
+          handbook, running: a span leaving a service, picking up what the
+          collector adds to it, and landing in a backend. Click a different one
+          and you follow that one instead.
         </p>
         <p class="hero__cta">
           <a class="cta cta--primary" href={url("handbooks")}>Browse the handbooks</a>
@@ -94,22 +101,25 @@ const LEVELS = [
 
     <section class="levels">
       <p class="levels__intro">
-        The depths are named by the model, not by the engine. In the
-        OpenTelemetry handbook they read like this:
+        Underneath every handbook is one engine: a graph you can go into. It
+        draws a running flow, and each layer of abstraction opens into the one
+        below — not another diagram of the same thing, the same thing seen
+        closer.
       </p>
       <ol class="levels__list">
         {
-          LEVELS.map((level) => (
+          GESTOS.map((gesto) => (
             <li class="levels__item">
-              <span class="levels__id mono">{level.id}</span>
-              <span class="levels__name">{level.name}</span>
-              <span class="levels__line">{level.line}</span>
+              <span class="levels__name">{gesto.name}</span>
+              <span class="levels__line">{gesto.line}</span>
             </li>
           ))
         }
       </ol>
       <p class="levels__note mono">
-        One run, four projections. Nothing below is drawn by hand.
+        And when a subject is not a flow with layers — or when the thing that
+        matters is one item and not the pipeline it crosses — the lab is a
+        different one, built for it. A street is a poor way to explain a door.
       </p>
     </section>
 
@@ -237,17 +247,11 @@ const LEVELS = [
   }
 
   .levels__item {
-    display: flex;
-    flex-direction: column;
-    gap: 0.2rem;
-    padding: var(--space-3) var(--space-2);
-    background: var(--paper-raised);
-  }
-
-  .levels__id {
-    color: var(--accent);
-    font-size: var(--size-step--1);
-    letter-spacing: 0.08em;
+    display: grid;
+    grid-template-columns: minmax(0, 12rem) minmax(0, 1fr);
+    gap: var(--space-1) var(--space-2);
+    padding-block: var(--space-1);
+    border-block-start: 1px solid var(--rule);
   }
 
   .levels__name {
