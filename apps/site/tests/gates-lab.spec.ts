@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { noTema } from "./tema.js";
 
 /**
  * O lab das portas: vinte portas, nenhuma sabe somar. Se a conta sai certa na
@@ -144,26 +145,6 @@ test("descer da porta lógica até o transistor, e achar silício vivo lá embai
  *    com a simulação rodando a porta reiniciava a transição a cada tick e
  *    vivia perto do quadro zero.
  */
-/**
- * Os dois temas, porque um defeito de cor pode existir só num deles — e o da
- * moldura existia só no escuro.
- *
- * Pelo botão do próprio site, e não escrevendo o atributo na marra nem
- * emulando a preferência do sistema: as duas tentativas anteriores não
- * trocaram o tema, e o laço passava medindo o mesmo caso duas vezes. Um laço
- * de temas que não troca o tema é um teste que finge cobrir dois casos e cobre
- * um — e é por isso que cada teste daqui prova, no fim, que a troca aconteceu.
- */
-async function noTema(page: import("@playwright/test").Page, tema: "light" | "dark") {
-  const botao = page.locator("[data-theme-toggle]").first();
-  for (let tentativa = 0; tentativa < 3; tentativa += 1) {
-    const atual = await page.evaluate(() => document.documentElement.dataset.theme);
-    if (atual === tema) return;
-    await botao.click();
-  }
-  throw new Error(`o botão de tema não chegou em ${tema}`);
-}
-
 async function tinta(page: import("@playwright/test").Page, seletor: string) {
   return page.locator(seletor).first().evaluate((el) => {
     const caixa = el.querySelector(":scope > .dui-stage__caixa");

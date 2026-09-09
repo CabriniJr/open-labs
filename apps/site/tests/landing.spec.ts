@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { MAPA_OTEL } from "../src/data/roadmap.js";
 import { MAPA_CPU } from "../src/data/roadmap-cpu.js";
+import { noTema } from "./tema.js";
 
 /**
  * O total do contador sai do mapa, e não de um número escrito aqui. Escrito à
@@ -31,72 +32,113 @@ test("the landing loads and the hero hydrates", async ({ page }) => {
 
   await expect(page.locator("h1")).toContainText("actually works");
   await expect(page.locator(".hero-sim")).toBeVisible();
-  await expect(page.getByRole("img", { name: "Service flow" })).toBeVisible();
 });
 
+test("the hero runs on its own", async ({ page }) => {
+  await page.goto("");
+  await aguardarHidratacao(page);
 
-/**
- * Os `traceId` que o inspetor está mostrando **agora**.
- *
- * Lido por sondagem, e não uma vez: mexer na linha do tempo agenda um quadro, e
- * ler o texto no instante seguinte às vezes pega o payload anterior — ou
- * nenhum. A afirmação do teste é sobre o estado que se alcança, então quem
- * espera é o teste, e não o leitor.
- */
-async function traceIdsDoInspetor(page: import("@playwright/test").Page): Promise<string[]> {
-  let achados: string[] = [];
+  /*
+    Dois quadros diferentes, e não "existe um item na tela".
+
+    O HTML do servidor já traz o palco desenhado: afirmar que ele existe não
+    prova que alguma coisa está rodando. O que prova é o desenho MUDAR sozinho,
+    sem ninguém tocar em nada.
+  */
+  const palco = page.locator(".hero-sim .dui-stage");
+  const primeiro = await palco.innerHTML();
   await expect
-    .poll(
-      async () => {
-        const texto = await page.locator(".hero-sim .dui-inspector__body").innerText();
-        achados = [...texto.matchAll(/"traceId":\s*"([^"]+)"/gu)].map((m) => m[1] ?? "");
-        return achados.length;
-      },
-      { timeout: 15_000 },
-    )
+    .poll(async () => (await palco.innerHTML()) !== primeiro, { timeout: 15_000 })
+    .toBe(true);
+});
+
+test("the hero opens already following a span, and the collector enriches it", async ({ page }) => {
+  await page.goto("");
+  await aguardarHidratacao(page);
+
+  /*
+    A afirmação inteira do herói em um teste: o span atravessa o collector e
+    ganha um campo que ele não tinha ao sair do serviço.
+
+    Se o collector parar de enriquecer, este teste cai — e é para isso que ele
+    existe. Uma trilha que mostra três estações e nenhuma mudança seria uma
+    vitrine bonita afirmando que nada acontece.
+  */
+  const trilha = page.locator(".hero-sim .dui-trilha");
+  await expect(trilha).toBeVisible({ timeout: 15_000 });
+
+  await expect
+    .poll(async () => await trilha.locator(".dui-trilha__estacao").count(), { timeout: 20_000 })
     .toBeGreaterThanOrEqual(2);
-  return achados;
-}
 
-test("turning propagation off breaks the trace", async ({ page }) => {
-  await page.goto("");
+  await expect(
+    trilha.locator('.dui-trilha__estacao[data-mudou*="collector.name"]'),
+  ).toHaveCount(1, { timeout: 20_000 });
 
-  await aguardarHidratacao(page);
-
-  const heroSim = page.locator(".hero-sim");
-  await heroSim.getByRole("checkbox").uncheck();
-
-  await page.getByRole("slider", { name: "Timeline" }).fill("22");
-
-  await expect(heroSim).toContainText("orphan trace");
-
-  const traceIds = await traceIdsDoInspetor(page);
-  expect(new Set(traceIds).size).toBe(2);
+  await expect(
+    trilha.locator('.dui-inspector__line[data-changed="true"]').first(),
+  ).toContainText("collector.name");
 });
 
-test("with propagation on, both spans share the trace", async ({ page }) => {
+test("double-clicking a box goes inside it", async ({ page }) => {
   await page.goto("");
-
   await aguardarHidratacao(page);
 
-  const heroSim = page.locator(".hero-sim");
-  await page.getByRole("slider", { name: "Timeline" }).fill("22");
+  const palco = page.locator(".hero-sim .dui-stage");
+  const antes = await palco.getAttribute("aria-label");
 
-  const traceIds = await traceIdsDoInspetor(page);
-  expect(new Set(traceIds).size).toBe(1);
-  await expect(heroSim.locator(".dui-inspector__body")).toContainText("parentSpanId");
+  await page.locator('.hero-sim .dui-stage__objeto[data-id="collector"]').first().dblclick();
+
+  /*
+    A vista de dentro não pode ser a de fora. Comparar o rótulo do palco é o
+    jeito mais barato de cobrar isso sem depender de qual desenho o motor
+    escolheu montar lá dentro.
+  */
+  await expect
+    .poll(async () => await palco.getAttribute("aria-label"), { timeout: 10_000 })
+    .not.toBe(antes);
 });
 
-test("the timeline lets you stop and read the payload", async ({ page }) => {
+test("na trilha, a parada que mudou algo se distingue da que não mudou, nos dois temas", async ({
+  page,
+}) => {
   await page.goto("");
-
   await aguardarHidratacao(page);
 
-  const heroSim = page.locator(".hero-sim");
-  await page.getByRole("slider", { name: "Timeline" }).fill("20");
+  const trilha = page.locator(".hero-sim .dui-trilha");
+  const mudou = trilha.locator(".dui-trilha__estacao[data-mudou] .dui-trilha__delta").first();
+  const igual = trilha
+    .locator(".dui-trilha__estacao:not([data-mudou]) .dui-trilha__delta")
+    .first();
+  await expect(mudou).toBeVisible({ timeout: 20_000 });
+  await expect(igual).toBeVisible();
 
-  await expect(heroSim.getByRole("button", { name: "Play" })).toBeVisible();
-  await expect(heroSim.locator(".dui-inspector__body")).toContainText("resourceSpans");
+  const fundoPorTema: string[] = [];
+  for (const tema of ["light", "dark"] as const) {
+    await noTema(page, tema);
+    fundoPorTema.push(await page.evaluate(() => getComputedStyle(document.body).backgroundColor));
+    const a = await mudou.evaluate((el) => getComputedStyle(el).color);
+    const b = await igual.evaluate((el) => getComputedStyle(el).color);
+    // Se as duas tintas forem iguais, o acento não está dizendo nada, e a
+    // trilha vira uma lista de nomes com um enfeite.
+    expect(a, `o delta que mudou se distingue no tema ${tema}`).not.toBe(b);
+  }
+  // A prova de que o laço acima trocou mesmo de tema.
+  expect(fundoPorTema[0], "o tema mudou de verdade").not.toBe(fundoPorTema[1]);
+});
+
+test("nothing on the site still sells the four fixed levels", async () => {
+  /*
+    A escada morta não pode voltar por descuido. É varredura de código porque a
+    mentira silenciosa não aparece em nenhuma asserção de tela: uma página que
+    promete L2 Wire e nunca mostra um só continua verde.
+  */
+  const { execSync } = await import("node:child_process");
+  const achados = execSync(
+    'grep -rnE "DepthShell|FlowDiagram|\\bL0\\b|\\bL1\\b|\\bL2\\b|\\bL3\\b" apps/site/src || true',
+    { cwd: process.cwd().replace(/\/apps\/site$/u, ""), encoding: "utf8" },
+  );
+  expect(achados.trim()).toBe("");
 });
 
 /**
