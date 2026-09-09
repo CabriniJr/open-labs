@@ -2140,4 +2140,55 @@ A seção dos quatro níveis mortos saiu da landing. No lugar, os três gestos q
 CPU e para um trace — e a segunda metade do pilar, que não estava em lugar nenhum do site:
 quando o assunto não é fluxo com camadas, o lab é outro, feito para ele.
 
-Estado: unit, e2e, typecheck, boundaries, catálogo e build verdes.
+### O que os testes novos acharam, e que não estava no plano
+
+Os cinco testes do herói entraram vermelhos em três, e cada um era defeito de verdade. Vale
+registrar porque a rodada só valeu o preço por causa disto:
+
+1. **O `Inspector` mostrava um corpo que não era o corpo.** Ele redesenhava o rótulo cortando
+   o caminho no último ponto, então **toda chave com ponto aparecia truncada** — e chave com
+   ponto é a norma do OTel (`service.name`, `http.method`). A peça que o projeto usa para
+   dizer "este é o corpo, campo por campo" mentia em todo lab, desde sempre, e ninguém tinha
+   visto porque nenhum teste usava chave com ponto. O conserto passa a chave pela recursão em
+   vez de rederivá-la; o `path` ficou byte a byte igual, porque é ele que o diff casa.
+
+   E ao consertar apareceu o limite por baixo, agora **lacuna declarada** em `diff.ts`: o
+   caminho é codificação com perda — `{a:{b:{c}}}` e `{a:{"b.c"}}` dão o mesmo `"a.b.c"`.
+   Fica não consertado de propósito, pelo mesmo trato que o arquivo já fazia: falso positivo
+   em vez de falso negativo silencioso.
+
+2. **O herói prometia descer e o mundo não tinha nada dentro.** As três caixas eram `leaf`, o
+   duplo clique não fazia nada, e o docblock afirmava o contrário. **O collector ganhou
+   interior — `receiver → processor → exporter`** —, escolhido por ser a única das três cujo
+   dentro nenhum lab mostra: `providers` mora dentro do *processo*, não do collector.
+
+   Quem carimba o atributo é o **processador**, e a razão é do domínio: num Collector de
+   verdade `resource`, `attributes` e `resourcedetection` são todos processors — receiver e
+   exporter são transporte. Carimbar numa ponta seria transporte que transforma, e isso
+   esconde onde o dado mudou. As duas pontas são conduíte, o miolo é processador, e **a forma
+   das caixas diz onde o campo nasce antes de qualquer rótulo ser lido**. O teste mede os dois
+   fios de dentro, e não um: ausente antes do processador, presente depois. Medir só a saída
+   deixaria passar um receiver que carimbasse.
+
+   Achado de desenho que vale para o motor inteiro: fio declarado `to: "collector"` roteia
+   certo e **some da vista interior**, porque as duas pontas caem fora do quadro. Ligado às
+   folhas, o mesmo fio desenha nas duas vistas.
+
+3. **Duas sobras da escada morta**: um comentário no lab dos provedores, e um teste que ainda
+   cobrava que a landing mostrasse **quatro** níveis. Esse voltou sem contagem escrita —
+   número no teste é segunda fonte do mesmo fato; ele cobra agora o gesto que a rodada pôs
+   lá, e cai se "Follow one item" sumir da landing.
+
+Mais dois defeitos que só apareceram porque alguém olhou: o herói **sem movimento** mostrava
+a trilha vazia dizendo "The first span is on its way" para um leitor que nunca veria o span
+chegar — agora o mundo adianta de uma vez e para, com trajeto de verdade para ler; e o número
+de ticks desse quadro parado ficou falso no instante em que o collector ganhou interior, e
+subiu junto.
+
+E uma armadilha de suíte: **o Vitest daqui não registra o `cleanup` do testing-library**, então
+arquivo de teste que renderiza mais de uma vez lê o DOM do teste anterior. Cinco testes da
+`Trilha` falhavam por isso, e nenhum por defeito no componente. Está contornado nos dois
+arquivos que precisam; um setup compartilhado resolveria de vez e não foi feito.
+
+Estado: **1093 unitários (93 arquivos), 283 e2e (21 puladas, zero falhas)**, typecheck,
+boundaries, catálogo e build verdes — os seis rodados na árvore final, depois de tudo pousar.
