@@ -28,13 +28,13 @@ const raizDoRepo = join(aqui, "..", "..", "..", "..");
 /** Endereços que não respondem, ou que não são nossos. */
 const MORTOS = [
   "otel-visual-handbook.vercel.app",
-  "cabrinijr.github.io",
+  "openlabs-guaxinims-projects.vercel.app",
   "github.com/CabriniJr/otel-visual-handbook",
   // De outra conta: responde, redireciona para /en, e já custou meia investigação.
   "://openlabs.vercel.app",
 ];
 
-const NO_AR = "https://openlabs-guaxinims-projects.vercel.app";
+const NO_AR = "https://cabrinijr.github.io/open-labs";
 
 function arquivosDe(dir: string): readonly string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap((entrada) => {

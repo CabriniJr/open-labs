@@ -1,0 +1,5 @@
+# Uma linha só, sem finais mistos. O CI é Linux, e a leitura de conteúdo em
+# testes assume LF: sem esta regra, um checkout no Windows vira CRLF e faz o
+# `articles.test.ts` acusar "sem frontmatter" e o vitest engasgar no shebang
+# do check-boundaries.mjs. Vale para tudo texto do repo.
+* text=auto eol=lf
