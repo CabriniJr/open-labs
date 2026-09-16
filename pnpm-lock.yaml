@@ -133,6 +133,9 @@ importers:
       '@ovh/depth-core':
         specifier: workspace:*
         version: link:../depth-core
+      '@ovh/model-format':
+        specifier: workspace:*
+        version: link:../model-format
       yaml:
         specifier: ^2.5.0
         version: 2.9.0

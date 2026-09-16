@@ -52,6 +52,8 @@ interface Ctx {
   readonly subgraphs: Map<string, MutSubgraph>;
   readonly classes: Map<string, ClassDef>;
   readonly subgraphStack: string[];
+  /** Ordem de declaração dos filhos do grafo raiz. */
+  readonly topLevel: string[];
   direction: Skeleton["direction"];
 }
 
@@ -81,6 +83,7 @@ export function parseSkeleton(source: string): ParseResult {
     subgraphs: new Map(),
     classes: new Map(),
     subgraphStack: [],
+    topLevel: [],
     direction: "LR",
   };
 
@@ -190,6 +193,7 @@ export function parseSkeleton(source: string): ParseResult {
       nodes,
       edges: ctx.edges,
       subgraphs,
+      topLevel: [...ctx.topLevel],
       frontMatter: front,
     },
   };
@@ -227,6 +231,7 @@ function openSubgraph(ctx: Ctx, id: string, label: string): void {
   const parent = ctx.subgraphStack[ctx.subgraphStack.length - 1] ?? null;
   ctx.subgraphs.set(id, { id, label, direction: null, children: [], parent });
   if (parent !== null) ctx.subgraphs.get(parent)!.children.push(id);
+  else ctx.topLevel.push(id);
   ctx.subgraphStack.push(id);
 }
 
@@ -360,6 +365,7 @@ function ensureNode(ctx: Ctx, id: string, ov: NodeOverrides, lineNo: number): vo
   };
   ctx.nodes.set(id, node);
   if (parent !== null) ctx.subgraphs.get(parent)!.children.push(id);
+  else ctx.topLevel.push(id);
 }
 
 interface EdgeSyntax {

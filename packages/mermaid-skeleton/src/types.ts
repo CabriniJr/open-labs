@@ -16,6 +16,13 @@ export interface Skeleton {
   readonly nodes: readonly SkeletonNode[];
   readonly edges: readonly SkeletonEdge[];
   readonly subgraphs: readonly SkeletonSubgraph[];
+  /**
+   * Ids dos filhos diretos do grafo, na ordem em que foram declarados no
+   * Mermaid. Mistura nós e subgrafos — o motor precisa dessa ordem para pôr o
+   * `mid` entre `gen` e `out`, e não depois dos dois, quando a ordem no texto
+   * é essa.
+   */
+  readonly topLevel: readonly string[];
   /** Tudo que sobrou do front-matter YAML, sem interpretação nossa. */
   readonly frontMatter: Readonly<Record<string, unknown>>;
 }

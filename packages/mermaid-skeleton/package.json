@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@ovh/depth-core": "workspace:*",
+    "@ovh/model-format": "workspace:*",
     "yaml": "^2.5.0"
   }
 }
