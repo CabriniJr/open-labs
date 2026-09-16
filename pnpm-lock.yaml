@@ -128,6 +128,15 @@ importers:
         specifier: ^25.0.1
         version: 25.0.1
 
+  packages/mermaid-skeleton:
+    dependencies:
+      '@ovh/depth-core':
+        specifier: workspace:*
+        version: link:../depth-core
+      yaml:
+        specifier: ^2.5.0
+        version: 2.9.0
+
   packages/model-format:
     dependencies:
       '@ovh/depth-core':

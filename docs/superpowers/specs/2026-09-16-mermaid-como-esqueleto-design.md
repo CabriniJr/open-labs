@@ -10,6 +10,21 @@ edição**, e usá-la como entrada canônica do nosso motor de simulação.
 
 ---
 
+## 0. A decisão
+
+**2026-09-16, Luigi:** Mermaid é a nova fonte de esqueleto de cenário. O foco
+dele é **criar estrutura e relações** — nós, canais, subgrafos, portas. O motor
+adiciona por cima o desenho, as animações e a lógica: o que o `.modelet.yaml`
+representava vira parte do runtime, não da linguagem. `.modelet.yaml` fica
+reservado a `.model` (o aplicativo agregado); nenhum cenário novo é escrito
+nele a partir daqui.
+
+Embarcar tudo no Mermaid — parâmetros, `teaches`, `not_modeled` — é meta, não
+requisito. Enquanto a gramática do Mermaid não expressar isso sem ficar
+grotesca, o front-matter YAML no cabeçalho do `.mmd` carrega o que sobra.
+
+---
+
 ## 1. A tese
 
 Hoje um lab é escrito em três lugares: a topologia (um `WorldSpec` em TS), o layout
@@ -250,10 +265,17 @@ Não implementar antes de aprovar a sintaxe da §4. As fases, quando começarem:
   está resolvido em §3: um `.view.ts` opcional sobrepõe posições.
 - **Duas fontes de verdade.** Existir `.modelet.yaml` **e** `.mmd` para o mesmo
   mundo é o pesadelo que este documento cria se a gente permitir os dois no
-  mesmo lab. Regra dura: um lab escolhe **um** formato de esqueleto. YAML fica
-  para composição de `.model` (o agregado) e Mermaid para o esqueleto do
-  cenário. `.modelet.yaml` some quando o parser de Mermaid cobre os mesmos
-  casos.
+  mesmo lab. **Decidido em 2026-09-16 (Luigi):** Mermaid substitui
+  `.modelet.yaml` para o **cenário**. O foco do Mermaid é a estrutura e as
+  relações; o motor põe por cima o desenho, a animação e a lógica — que é o
+  que o modelet representava. Se em algum momento a gramática do Mermaid puder
+  embarcar o que hoje sobra em TS (parâmetros, `teaches`, `not_modeled`) numa
+  linguagem só, tanto melhor; enquanto não puder, o front-matter YAML no
+  cabeçalho do `.mmd` carrega essa parte. `.modelet.yaml` some quando o parser
+  de Mermaid cobre os mesmos casos que o compilador de modelet cobre hoje
+  (`source`, `buffer`, `sink`); daí em diante, cenário novo é `.mmd`, e YAML
+  fica reservado para o agregado `.model` da §4 do `model-format.md` (o
+  aplicativo, não o cenário).
 - **O motor precisa ler dagre.** Adiciona dependência a um pacote que hoje é
   quase sem deps. Aceito, porque a alternativa é reimplementar posicionamento.
 
