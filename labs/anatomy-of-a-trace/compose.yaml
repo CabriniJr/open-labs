@@ -1,0 +1,49 @@
+# Quatro processos e um Collector. O MESMO programa roda quatro vezes com nomes
+# diferentes: numa cadeia de verdade ninguém é especial.
+#
+# As duas variáveis que quebram, e são as duas do lab da tela:
+#   ANATOMY_STRIP_HEADER=true  no `checkout`  → payments começa um trace novo
+#   ANATOMY_UNINSTRUMENTED=true no `payments` → ledger se pendura no avô
+services:
+  collector:
+    image: otel/opentelemetry-collector-contrib:0.160.0
+    command: ["--config=/etc/collector.yaml"]
+    volumes:
+      - ./collector.yaml:/etc/collector.yaml:ro,z
+
+  ledger:
+    build: ./app
+    depends_on: [collector]
+    environment:
+      ANATOMY_SERVICE: ledger
+      ANATOMY_PORT: "8080"
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://collector:4317
+
+  payments:
+    build: ./app
+    depends_on: [ledger]
+    environment:
+      ANATOMY_SERVICE: payments
+      ANATOMY_PORT: "8080"
+      ANATOMY_NEXT: http://ledger:8080/
+      ANATOMY_UNINSTRUMENTED: "false"
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://collector:4317
+
+  checkout:
+    build: ./app
+    depends_on: [payments]
+    environment:
+      ANATOMY_SERVICE: checkout
+      ANATOMY_PORT: "8080"
+      ANATOMY_NEXT: http://payments:8080/
+      ANATOMY_STRIP_HEADER: "false"
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://collector:4317
+
+  gateway:
+    build: ./app
+    depends_on: [checkout]
+    environment:
+      ANATOMY_SERVICE: gateway
+      ANATOMY_PORT: "8080"
+      ANATOMY_NEXT: http://checkout:8080/
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://collector:4317

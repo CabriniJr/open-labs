@@ -129,12 +129,82 @@ export function retasDe(d: string): readonly string[] {
   return retas;
 }
 
+/**
+ * As duas pontas de um caminho.
+ *
+ * Existe porque **a porta tem de ficar onde o fio chega**. As portas eram
+ * distribuídas em alturas iguais pela borda e o roteador escolhia a altura por
+ * conta própria: o desenho mostrava uma entrada e uma linha que não a tocava, e
+ * o leitor não tinha como saber por onde a coisa de fato entrou. Perguntar ao
+ * caminho onde ele começa e termina inverte a dependência — quem manda é a
+ * geometria da ligação, e a porta é o desenho dela.
+ */
+export function pontasDe(d: string): { readonly inicio: Ponto; readonly fim: Ponto } {
+  const partes = d.trim().split(/\s+/u);
+  let x = 0;
+  let y = 0;
+  let inicio: Ponto | undefined;
+  let i = 0;
+  while (i < partes.length) {
+    if (partes[i] === "M") {
+      x = Number(partes[i + 1]);
+      y = Number(partes[i + 2]);
+      inicio ??= { x, y };
+      i += 3;
+    } else if (partes[i] === "H") {
+      x = Number(partes[i + 1]);
+      i += 2;
+    } else if (partes[i] === "V") {
+      y = Number(partes[i + 1]);
+      i += 2;
+    } else {
+      i += 1;
+    }
+  }
+  return { inicio: inicio ?? { x, y }, fim: { x, y } };
+}
+
+/**
+ * O afastamento da mira, em unidades de desenho.
+ *
+ * A mira — a saída aponta para o destino, a entrada aponta para a origem — é o
+ * que ordena um leque, e foi ela que levou o somador de vinte e oito
+ * cruzamentos para quatro. Ela não se toca.
+ *
+ * O que ela não resolve é o par: **duas portas diferentes ligando as mesmas
+ * duas caixas miram o mesmo ponto**, saem na mesma altura e são desenhadas uma
+ * por cima da outra — o leitor vê uma ligação onde existem duas, e a caixa
+ * parece ter uma porta só. O desvio afasta as portas em torno da mira, e é
+ * pequeno de propósito: a ordem global continua sendo da mira, e o desvio só
+ * desempata quem ela empatou.
+ */
+export interface Ancoras {
+  readonly desvioSaida?: number | undefined;
+  readonly desvioEntrada?: number | undefined;
+  /**
+   * A altura exata em que a linha sai e entra, quando o **interior** da caixa
+   * está aberto e se sabe em qual peça de dentro ela pousa.
+   *
+   * É o que faz o fluxo continuar entre os níveis em vez de morrer na moldura.
+   * Sem isso, três ligações da mesma aplicação para três provedores diferentes
+   * miram todas o centro da moldura do SDK, saem na mesma altura e são
+   * desenhadas uma por cima da outra — e lá dentro nascem três entradas em
+   * alturas que a linha de fora nunca visitou.
+   *
+   * Ganha da mira e do desvio porque não é heurística: é o lugar em que a
+   * travessia continua, e as duas têm de ser a mesma linha.
+   */
+  readonly alvoSaida?: number | undefined;
+  readonly alvoEntrada?: number | undefined;
+}
+
 export function caminho(
   de: NodePlacement,
   para: NodePlacement,
   faixa: number,
   obstaculos: readonly Retangulo[],
   ocupadas: Ocupadas = new Set(),
+  ancoras: Ancoras = {},
 ): string {
   const repetido = (chave: string): number => (ocupadas.has(chave) ? REPETIR : 0);
   const a = centro(de);
@@ -168,12 +238,18 @@ export function caminho(
       ordem, e um caminho mirado que atravesse uma caixa perde para um caminho
       torto que não atravesse nada. Só aí as cinco alturas voltam.
     */
-    const mira = Math.max(de.y + 6, Math.min(de.y + de.h - 6, b.y));
+    const mira = Math.max(
+      de.y + 6,
+      Math.min(de.y + de.h - 6, ancoras.alvoSaida ?? b.y + (ancoras.desvioSaida ?? 0)),
+    );
     // E a entrada mira a origem, pelo mesmo motivo e com a mesma consequência:
     // vários fios chegando na mesma caixa entram ordenados por de onde vieram,
     // e ordem preservada nas duas pontas é o que faz o feixe inteiro não
     // trançar. O leque e a convergência são a mesma figura, invertida.
-    const miraEntrada = Math.max(para.y + 6, Math.min(para.y + para.h - 6, a.y));
+    const miraEntrada = Math.max(
+      para.y + 6,
+      Math.min(para.y + para.h - 6, ancoras.alvoEntrada ?? a.y + (ancoras.desvioEntrada ?? 0)),
+    );
     const custoDe = ({ x, y1, y2 }: { x: number; y1: number; y2: number }): number =>
       outros.filter((r) => cruzaHorizontal(y1, saida.x, x, r)).length * MENTIRA +
       outros.filter((r) => cruzaVertical(x, y1, y2, r)).length * MENTIRA +
@@ -210,25 +286,45 @@ export function caminho(
     const corredores = [
       ...new Set([a.y, b.y, ...outros.flatMap((r) => [r.y - 12, r.y + r.h + 12])]),
     ];
-    const desvio = melhorEntre(
-      corredores.flatMap((lane) =>
+    /**
+     * O corredor ganha **trilhos** — mas só quando o do meio já está ocupado.
+     *
+     * Vários fios escolhem legitimamente o mesmo corredor: é para isso que ele
+     * existe, e corredor compartilhado é organização. O que não pode é os
+     * quatro correrem na MESMA reta, porque aí os quatro se leem como um.
+     *
+     * Os trilhos entram como segunda tentativa, e não como alternativa de
+     * primeira: oferecidos de saída, eles empatavam com o do meio e o roteador
+     * mudava fios que não tinham motivo para se mexer — o desenho ganhava
+     * cruzamento sem ganhar nada em troca.
+     */
+    const comTrilhos = (base: readonly number[]): readonly number[] => [
+      ...new Set(base.flatMap((c) => [c, c - 7, c + 7])),
+    ];
+    const rotaDesvio = (lanes: readonly number[]) =>
+      melhorEntre(
+        lanes.flatMap((lane) =>
         // O corredor já é o caminho torto: aqui a mira não se sustenta, e as
         // cinco alturas voltam porque o que importa é não atravessar ninguém.
-        alturasEm(de).flatMap((y1) =>
-          alturasEm(para).map((y2) => ({ lane, y1, y2, x0: saida.x + 14, x1: para.x - 14 })),
+          alturasEm(de).flatMap((y1) =>
+            alturasEm(para).map((y2) => ({ lane, y1, y2, x0: saida.x + 14, x1: para.x - 14 })),
+          ),
         ),
-      ),
-      ({ lane, y1, y2, x0, x1 }) =>
-        outros.filter((r) => cruzaHorizontal(y1, saida.x, x0, r)).length * MENTIRA +
-        outros.filter((r) => cruzaVertical(x0, y1, lane, r)).length * MENTIRA +
-        outros.filter((r) => cruzaHorizontal(lane, x0, x1, r)).length * MENTIRA +
-        outros.filter((r) => cruzaVertical(x1, lane, y2, r)).length * MENTIRA +
-        outros.filter((r) => cruzaHorizontal(y2, x1, para.x, r)).length * MENTIRA +
-        repetido(`h:${lane}`) +
-        repetido(`v:${x0}`) +
-        repetido(`v:${x1}`) +
-        (Math.abs(y1 - a.y) + Math.abs(y2 - b.y) + Math.abs(lane - a.y) / 8) / 10_000,
-    );
+        ({ lane, y1, y2, x0, x1 }) =>
+          outros.filter((r) => cruzaHorizontal(y1, saida.x, x0, r)).length * MENTIRA +
+          outros.filter((r) => cruzaVertical(x0, y1, lane, r)).length * MENTIRA +
+          outros.filter((r) => cruzaHorizontal(lane, x0, x1, r)).length * MENTIRA +
+          outros.filter((r) => cruzaVertical(x1, lane, y2, r)).length * MENTIRA +
+          outros.filter((r) => cruzaHorizontal(y2, x1, para.x, r)).length * MENTIRA +
+          repetido(`h:${lane}`) +
+          repetido(`v:${x0}`) +
+          repetido(`v:${x1}`) +
+          (Math.abs(y1 - a.y) + Math.abs(y2 - b.y) + Math.abs(lane - a.y) / 8) / 10_000,
+      );
+    const semTrilho = rotaDesvio(corredores);
+    const desvio = ocupadas.has(`h:${semTrilho.lane}`)
+      ? rotaDesvio(comTrilhos(corredores))
+      : semTrilho;
     return `M ${saida.x} ${desvio.y1} H ${desvio.x0} V ${desvio.lane} H ${desvio.x1} V ${desvio.y2} H ${para.x}`;
   }
 
@@ -303,14 +399,58 @@ export function caminho(
     ...outros.map((r) => r.y + r.h + 16),
   ].filter((c) => c > base - 12);
   const entradas = [b.x, para.x + para.w * 0.3, para.x + para.w * 0.7, para.x + 8, para.x + para.w - 8];
-  const volta = melhorEntre(
-    faixas.flatMap((lane) => entradas.map((x2) => ({ lane, x2 }))),
-    ({ lane, x2 }) =>
-      outros.filter((r) => cruzaVertical(coluna, saida.y, lane, r)).length * MENTIRA +
-      outros.filter((r) => cruzaHorizontal(lane, coluna, x2, r)).length * MENTIRA +
-      outros.filter((r) => cruzaVertical(x2, lane, para.y + para.h, r)).length * MENTIRA +
-      (Math.abs(x2 - b.x) + Math.abs(lane - base) / 8) / 10_000,
-  );
-  return `M ${saida.x} ${saida.y} H ${coluna} V ${volta.lane} H ${volta.x2} V ${para.y + para.h}`;
+  /*
+    A volta era a única espécie de caminho que **não olhava para os outros
+    fios**: coluna fixa em `saida.x + 14`, altura fixa no centro da caixa. Duas
+    caixas lado a lado na mesma fileira, mandando as duas para trás, produziam
+    dois caminhos idênticos — desenhados um por cima do outro, e lidos como um
+    só. Sete sobreposições cegas na vista do processador do micro, nenhuma
+    acusada: o teto de cruzamento não fala de sobreposição.
+
+    O conserto entra como **segunda tentativa**, e é a mesma disciplina do
+    corredor: a volta canônica é tentada primeiro e só perde a vez quando ela
+    repete a reta de alguém. Oferecer as alternativas de saída empatava com a
+    canônica e mexia em fios que não tinham motivo nenhum para se mexer.
+  */
+  const rotaVolta = (
+    colunas: readonly number[],
+    saidas: readonly number[],
+    lanes: readonly number[],
+  ) =>
+    melhorEntre(
+      lanes.flatMap((lane) =>
+        entradas.flatMap((x2) =>
+          colunas.flatMap((col) => saidas.map((y1) => ({ lane, x2, col, y1 }))),
+        ),
+      ),
+      ({ lane, x2, col, y1 }) =>
+        outros.filter((r) => cruzaHorizontal(y1, saida.x, col, r)).length * MENTIRA +
+        outros.filter((r) => cruzaVertical(col, y1, lane, r)).length * MENTIRA +
+        outros.filter((r) => cruzaHorizontal(lane, col, x2, r)).length * MENTIRA +
+        outros.filter((r) => cruzaVertical(x2, lane, para.y + para.h, r)).length * MENTIRA +
+        repetido(`h:${y1}`) +
+        repetido(`v:${col}`) +
+        repetido(`h:${lane}`) +
+        (Math.abs(y1 - saida.y) + Math.abs(col - coluna)) / 100 +
+        (Math.abs(x2 - b.x) + Math.abs(lane - base) / 8) / 10_000,
+    );
+  const canonica = rotaVolta([coluna], [saida.y], faixas);
+  /*
+    Só a **faixa longa** dispara a busca.
+
+    Dividir a reta curta que sai da caixa com quem entrou nela não engana
+    ninguém: são dois centímetros de traço com uma ponta em comum, e o pontinho
+    de junção já responde por eles. O que se lê como uma linha só é o trecho
+    comprido do corredor — e é ele, e só ele, que vale mexer no fio.
+  */
+  const repete = ocupadas.has(`h:${canonica.lane}`);
+  const volta = repete
+    ? rotaVolta(
+        [coluna, coluna + 8, coluna + 16, coluna - 6],
+        alturasEm(de),
+        [...new Set(faixas.flatMap((c) => [c, c - 7, c + 7]))],
+      )
+    : canonica;
+  return `M ${saida.x} ${volta.y1} H ${volta.col} V ${volta.lane} H ${volta.x2} V ${para.y + para.h}`;
 }
 

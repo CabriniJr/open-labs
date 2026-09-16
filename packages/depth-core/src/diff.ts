@@ -15,6 +15,25 @@ function isRecord(v: unknown): v is Record<string, unknown> {
  * falso positivo (duas `Date` iguais reportadas como diferentes) por nunca ter
  * um falso negativo silencioso — para um destaque visual, piscar de leve a mais
  * é infinitamente melhor que não piscar.
+ *
+ * **Lacuna declarada: o caminho é codificação com perda.** Juntar as chaves com
+ * ponto apaga a fronteira entre aninhamento e ponto DENTRO do nome da chave:
+ * `{ a: { b: { c: 1 } } }` e `{ a: { "b.c": 1 } }` produzem os dois o mesmo
+ * `"a.b.c"`, e nada aqui para baixo consegue desfazer isso. Num corpo que tenha
+ * as duas formas colidindo na mesma string, o destaque acende as duas linhas
+ * quando só uma mudou.
+ *
+ * Fica registrada e não consertada de propósito: é o MESMO trato do parágrafo
+ * acima — falso positivo em vez de falso negativo —, e é raro. Consertar de
+ * verdade é o caminho deixar de ser string e virar lista de chaves
+ * (`["a", "b.c"]`), o que mexe aqui, no `Inspector` e em todo mundo que produz
+ * ou consome `changedPaths`. No dia em que um lab tiver a colisão de verdade na
+ * tela, este comentário é o lugar de onde a conversa recomeça.
+ *
+ * Não confundir com o defeito que ESTE comentário nasceu junto de: o `Inspector`
+ * redesenhava o rótulo cortando o caminho no último ponto, e por isso mostrava
+ * `casa.numero` como `numero` — corpo que não era o corpo, em toda chave com
+ * ponto. Aquilo era bug e foi consertado; isto aqui é limite, e é conhecido.
  */
 export function diffStates(before: unknown, after: unknown, path = ""): string[] {
   if (Object.is(before, after)) return [];

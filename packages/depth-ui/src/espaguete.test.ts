@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { juncoes, meada, segmentos } from "./espaguete.js";
+import { cruzamentos, juncoes, meada, segmentos } from "./espaguete.js";
 
 describe("ler os cotovelos de um caminho", () => {
   it("quebra M/H/V nos trechos que eles desenham", () => {
@@ -76,5 +76,35 @@ describe("onde o desenho marca junção", () => {
       { x: 40, y: 10 },
       { x: 70, y: 10 },
     ]);
+  });
+});
+
+describe("onde os fios se cruzam", () => {
+  it("devolve o ponto, e diz quem é quem", () => {
+    // Um deitado em y=50 indo de x=0 a x=100; um em pé em x=50 indo de y=0 a y=100.
+    const deitado = "M 0 50 H 100";
+    const emPe = "M 50 0 V 100";
+    const achados = cruzamentos([deitado, emPe]);
+    expect(achados).toHaveLength(1);
+    expect(achados[0]).toMatchObject({ x: 50, y: 50, a: 0, b: 1 });
+  });
+
+  it("a contagem é a mesma que a meada já dava", () => {
+    // Duas fontes para o mesmo fato discordariam no dia em que uma piorasse.
+    const fios = ["M 0 50 H 100", "M 50 0 V 100", "M 20 0 V 100"];
+    expect(cruzamentos(fios)).toHaveLength(meada(fios).cruzamentos);
+  });
+
+  it("encostar na ponta não é cruzamento", () => {
+    // É assim que um fio chega numa porta, e acusar isso condenaria todo
+    // desenho correto.
+    expect(cruzamentos(["M 0 50 H 100", "M 100 50 V 100"])).toEqual([]);
+  });
+
+  it("diz por qual trecho cada fio passou ali", () => {
+    // A boca precisa saber se o trecho que mergulha está deitado ou em pé.
+    const achados = cruzamentos(["M 0 50 H 100", "M 50 0 V 100"]);
+    expect(achados[0]?.horizontalA).toBe(true);
+    expect(achados[0]?.horizontalB).toBe(false);
   });
 });

@@ -8,3 +8,7 @@ playwright-report/
 .DS_Store
 .vercel
 .claude/
+
+# Build local do lab Java: o repo guarda a fonte, não o artefato.
+target/
+dependency-reduced-pom.xml

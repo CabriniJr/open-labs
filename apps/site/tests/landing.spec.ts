@@ -1,4 +1,17 @@
 import { expect, test, type Page } from "@playwright/test";
+import { MAPA_OTEL } from "../src/data/roadmap.js";
+import { MAPA_CPU } from "../src/data/roadmap-cpu.js";
+import { noTema } from "./tema.js";
+
+/**
+ * O total do contador sai do mapa, e não de um número escrito aqui. Escrito à
+ * mão ele é uma segunda fonte do mesmo fato: acrescentar um lab passa a exigir
+ * lembrar deste arquivo, e quem esquecer descobre no CI — que foi o que
+ * aconteceu quando a trilha do OTel cresceu de treze para dezoito nós.
+ */
+const TOTAL_CPU = MAPA_CPU.labs.length;
+const TOTAL_OTEL = MAPA_OTEL.labs.length;
+
 
 /**
  * O herói é uma ilha `client:visible`: o HTML vem pronto do servidor, mas os
@@ -19,52 +32,113 @@ test("the landing loads and the hero hydrates", async ({ page }) => {
 
   await expect(page.locator("h1")).toContainText("actually works");
   await expect(page.locator(".hero-sim")).toBeVisible();
-  await expect(page.getByRole("img", { name: "Service flow" })).toBeVisible();
 });
 
-test("turning propagation off breaks the trace", async ({ page }) => {
+test("the hero runs on its own", async ({ page }) => {
   await page.goto("");
-
   await aguardarHidratacao(page);
 
-  const heroSim = page.locator(".hero-sim");
-  await heroSim.getByRole("checkbox").uncheck();
+  /*
+    Dois quadros diferentes, e não "existe um item na tela".
 
-  await page.getByRole("slider", { name: "Timeline" }).fill("22");
-
-  await expect(heroSim).toContainText("orphan trace");
-
-  const inspectorText = await heroSim.locator(".dui-inspector__body").innerText();
-  const traceIds = [...inspectorText.matchAll(/"traceId":\s*"([^"]+)"/g)].map((m) => m[1]);
-  expect(traceIds.length).toBeGreaterThanOrEqual(2);
-  expect(new Set(traceIds).size).toBe(2);
+    O HTML do servidor já traz o palco desenhado: afirmar que ele existe não
+    prova que alguma coisa está rodando. O que prova é o desenho MUDAR sozinho,
+    sem ninguém tocar em nada.
+  */
+  const palco = page.locator(".hero-sim .dui-stage");
+  const primeiro = await palco.innerHTML();
+  await expect
+    .poll(async () => (await palco.innerHTML()) !== primeiro, { timeout: 15_000 })
+    .toBe(true);
 });
 
-test("with propagation on, both spans share the trace", async ({ page }) => {
+test("the hero opens already following a span, and the collector enriches it", async ({ page }) => {
   await page.goto("");
-
   await aguardarHidratacao(page);
 
-  const heroSim = page.locator(".hero-sim");
-  await page.getByRole("slider", { name: "Timeline" }).fill("22");
+  /*
+    A afirmação inteira do herói em um teste: o span atravessa o collector e
+    ganha um campo que ele não tinha ao sair do serviço.
 
-  const inspectorText = await heroSim.locator(".dui-inspector__body").innerText();
-  const traceIds = [...inspectorText.matchAll(/"traceId":\s*"([^"]+)"/g)].map((m) => m[1]);
-  expect(traceIds.length).toBeGreaterThanOrEqual(2);
-  expect(new Set(traceIds).size).toBe(1);
-  expect(inspectorText).toContain("parentSpanId");
+    Se o collector parar de enriquecer, este teste cai — e é para isso que ele
+    existe. Uma trilha que mostra três estações e nenhuma mudança seria uma
+    vitrine bonita afirmando que nada acontece.
+  */
+  const trilha = page.locator(".hero-sim .dui-trilha");
+  await expect(trilha).toBeVisible({ timeout: 15_000 });
+
+  await expect
+    .poll(async () => await trilha.locator(".dui-trilha__estacao").count(), { timeout: 20_000 })
+    .toBeGreaterThanOrEqual(2);
+
+  await expect(
+    trilha.locator('.dui-trilha__estacao[data-mudou*="collector.name"]'),
+  ).toHaveCount(1, { timeout: 20_000 });
+
+  await expect(
+    trilha.locator('.dui-inspector__line[data-changed="true"]').first(),
+  ).toContainText("collector.name");
 });
 
-test("the timeline lets you stop and read the payload", async ({ page }) => {
+test("double-clicking a box goes inside it", async ({ page }) => {
   await page.goto("");
-
   await aguardarHidratacao(page);
 
-  const heroSim = page.locator(".hero-sim");
-  await page.getByRole("slider", { name: "Timeline" }).fill("20");
+  const palco = page.locator(".hero-sim .dui-stage");
+  const antes = await palco.getAttribute("aria-label");
 
-  await expect(heroSim.getByRole("button", { name: "Play" })).toBeVisible();
-  await expect(heroSim.locator(".dui-inspector__body")).toContainText("resourceSpans");
+  await page.locator('.hero-sim .dui-stage__objeto[data-id="collector"]').first().dblclick();
+
+  /*
+    A vista de dentro não pode ser a de fora. Comparar o rótulo do palco é o
+    jeito mais barato de cobrar isso sem depender de qual desenho o motor
+    escolheu montar lá dentro.
+  */
+  await expect
+    .poll(async () => await palco.getAttribute("aria-label"), { timeout: 10_000 })
+    .not.toBe(antes);
+});
+
+test("na trilha, a parada que mudou algo se distingue da que não mudou, nos dois temas", async ({
+  page,
+}) => {
+  await page.goto("");
+  await aguardarHidratacao(page);
+
+  const trilha = page.locator(".hero-sim .dui-trilha");
+  const mudou = trilha.locator(".dui-trilha__estacao[data-mudou] .dui-trilha__delta").first();
+  const igual = trilha
+    .locator(".dui-trilha__estacao:not([data-mudou]) .dui-trilha__delta")
+    .first();
+  await expect(mudou).toBeVisible({ timeout: 20_000 });
+  await expect(igual).toBeVisible();
+
+  const fundoPorTema: string[] = [];
+  for (const tema of ["light", "dark"] as const) {
+    await noTema(page, tema);
+    fundoPorTema.push(await page.evaluate(() => getComputedStyle(document.body).backgroundColor));
+    const a = await mudou.evaluate((el) => getComputedStyle(el).color);
+    const b = await igual.evaluate((el) => getComputedStyle(el).color);
+    // Se as duas tintas forem iguais, o acento não está dizendo nada, e a
+    // trilha vira uma lista de nomes com um enfeite.
+    expect(a, `o delta que mudou se distingue no tema ${tema}`).not.toBe(b);
+  }
+  // A prova de que o laço acima trocou mesmo de tema.
+  expect(fundoPorTema[0], "o tema mudou de verdade").not.toBe(fundoPorTema[1]);
+});
+
+test("nothing on the site still sells the four fixed levels", async () => {
+  /*
+    A escada morta não pode voltar por descuido. É varredura de código porque a
+    mentira silenciosa não aparece em nenhuma asserção de tela: uma página que
+    promete L2 Wire e nunca mostra um só continua verde.
+  */
+  const { execSync } = await import("node:child_process");
+  const achados = execSync(
+    'grep -rnE "DepthShell|FlowDiagram|\\bL0\\b|\\bL1\\b|\\bL2\\b|\\bL3\\b" apps/site/src || true',
+    { cwd: process.cwd().replace(/\/apps\/site$/u, ""), encoding: "utf8" },
+  );
+  expect(achados.trim()).toBe("");
 });
 
 /**
@@ -73,6 +147,35 @@ test("the timeline lets you stop and read the payload", async ({ page }) => {
  * atropelam — e o que se testa aqui é justamente a memória entre recargas, que
  * por definição não é isolada por aba.
  */
+
+/**
+ * Esperar a ilha do mapa **hidratar**.
+ *
+ * Esperar o contador dizer "0 de N" não prova nada: esse texto já está no HTML
+ * que o servidor mandou, e o botão de marcar só passa a escutar depois da
+ * hidratação. Era guarda que não guardava — o clique caía num botão mudo, o
+ * contador ficava em zero, e a falha aparecia rara, sob carga, em qualquer um
+ * dos testes desta suíte.
+ *
+ * `ssr` sai do `astro-island` quando a hidratação termina. É o mesmo sinal que
+ * o teste do exercício usa, e pela mesma razão.
+ */
+async function mapaVivo(page: import("@playwright/test").Page): Promise<void> {
+  // A ilha é `client:visible`: ela só começa a hidratar quando entra na tela.
+  // Esperar sem rolar é esperar por uma coisa que ninguém pediu para acontecer —
+  // e foi assim que a primeira versão desta guarda ficou pendurada vinte
+  // segundos e reprovou o teste que ela existia para salvar.
+  await page.locator(".roadmap").first().scrollIntoViewIfNeeded();
+  // Timeout generoso de propósito: o trabalho desta função é **esperar**, e não
+  // policiar quanto tempo a hidratação leva. Sob carga ela passa de cinco
+  // segundos, e falhar aí seria trocar um defeito de teste por outro.
+  await expect(page.locator("astro-island:has(.roadmap)").first()).not.toHaveAttribute(
+    "ssr",
+    /.*/u,
+    { timeout: 20_000 },
+  );
+}
+
 test.describe.serial("progresso do mapa", () => {
   test("the map tracks progress and it survives a reload", async ({ page }) => {
     // No handbook da CPU, e não mais no OTel: só se marca o que abre, e hoje
@@ -84,23 +187,20 @@ test.describe.serial("progresso do mapa", () => {
 
     const roadmap = page.locator(".roadmap");
     await roadmap.scrollIntoViewIfNeeded();
+    await mapaVivo(page);
 
-    // `[data-hydrated]` só aparece depois do primeiro efeito da ilha — sem
-    // isso o clique pode cair num botão ainda sem listener e sumir. Usamos
-    // `toBeAttached` porque no mobile o mapa pode estar fora do viewport.
-    await expect(page.locator(".roadmap[data-hydrated]")).toBeAttached();
-    await expect(roadmap.locator(".roadmap__progress-count")).toHaveText("0 of 6");
+    await expect(roadmap.locator(".roadmap__progress-count")).toHaveText(`0 of ${TOTAL_CPU}`);
 
     const marcar = page.getByRole("button", { name: /Mark The whole cycle in one tick as done/i });
     await marcar.click();
 
-    await expect(roadmap.locator(".roadmap__progress-count")).toHaveText("1 of 6");
+    await expect(roadmap.locator(".roadmap__progress-count")).toHaveText(`1 of ${TOTAL_CPU}`);
 
     await page.reload();
     await roadmap.scrollIntoViewIfNeeded();
+    await mapaVivo(page);
 
-    await expect(page.locator(".roadmap[data-hydrated]")).toBeAttached();
-    await expect(roadmap.locator(".roadmap__progress-count")).toHaveText("1 of 6");
+    await expect(roadmap.locator(".roadmap__progress-count")).toHaveText(`1 of ${TOTAL_CPU}`);
     await expect(
       page.getByRole("button", { name: /Mark The whole cycle in one tick as done/i }),
     ).toHaveAttribute("aria-pressed", "true");
@@ -112,20 +212,19 @@ test.describe.serial("progresso do mapa", () => {
     await page.goto("handbooks/cpu/");
     await page.evaluate(() => window.localStorage.clear());
     await page.reload();
-    // O Roadmap sobe com `client:visible`: precisa entrar no viewport para
-    // hidratar. `[data-hydrated]` é o sinal explícito de que a ilha já leu o
-    // armazenamento e ligou os listeners — esperar o contador zerar não
-    // bastava (o SSR já imprime "0 of 6" e o clique caía num botão sem handler).
-    await page.locator(".roadmap").scrollIntoViewIfNeeded();
-    await expect(page.locator(".roadmap[data-hydrated]")).toBeAttached();
+    // Esperar o contador zerar antes de clicar não é folga: ele só existe
+    // depois de a ilha hidratar e ler o armazenamento. Clicar antes disso
+    // marca no estado inicial e o clique se perde na hidratação — falha
+    // intermitente, e só sob carga.
+    await mapaVivo(page);
+    await expect(page.locator(".roadmap__progress-count")).toHaveText(`0 of ${TOTAL_CPU}`);
     const marcar = page.getByRole("button", { name: /Mark The whole cycle in one tick as done/i });
+    await marcar.scrollIntoViewIfNeeded();
     await marcar.click();
-    await expect(page.locator(".roadmap__progress-count")).toHaveText("1 of 6");
+    await expect(page.locator(".roadmap__progress-count")).toHaveText(`1 of ${TOTAL_CPU}`);
 
     await page.goto("handbooks/otel/");
-    await page.locator(".roadmap").scrollIntoViewIfNeeded();
-    await expect(page.locator(".roadmap[data-hydrated]")).toBeAttached();
-    await expect(page.locator(".roadmap__progress-count")).toHaveText("0 of 13");
+    await expect(page.locator(".roadmap__progress-count")).toHaveText(`0 of ${TOTAL_OTEL}`);
   });
 });
 

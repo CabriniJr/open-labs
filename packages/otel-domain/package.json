@@ -10,6 +10,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@ovh/depth-core": "workspace:*"
+    "@ovh/depth-core": "workspace:*",
+    "@ovh/depth-ui": "workspace:*"
   }
 }

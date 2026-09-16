@@ -21,7 +21,7 @@ const { chapter, body, headings } = Astro.props;
 const tempo = readingTime(body);
 const tema = themeOf(chapter.id);
 const { prev, next } = neighbours(chapter.id);
-const editar = `https://github.com/CabriniJr/otel-visual-handbook/edit/main/docs/${chapter.id}.md`;
+const editar = `https://github.com/CabriniJr/open-labs/edit/main/docs/${chapter.id}.md`;
 ---
 
 <Base

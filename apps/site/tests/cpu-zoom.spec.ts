@@ -8,6 +8,9 @@ import { expect, test } from "@playwright/test";
 test.skip(({ isMobile }) => isMobile === true, "o gesto de toque é a pinça, e ela não existe ainda");
 
 test("o somador de 32 bits abre dentro da caixa da ULA", async ({ page }) => {
+  // Dez passos de roda com espera entre eles, mais a animação da câmera: sob
+  // carga isto passa dos trinta segundos, e o teste falhava por relógio.
+  test.setTimeout(90_000);
   await page.goto("labs/cpu/");
   await page.waitForSelector("g.dui-stage__objeto");
 
@@ -24,6 +27,11 @@ test("o somador de 32 bits abre dentro da caixa da ULA", async ({ page }) => {
     page.locator(".dui-stage__interior").first().evaluate((el) => Number(el.getAttribute("opacity")));
   expect(await opacidade()).toBeLessThan(0.6);
 
+  // O palco passou a ter altura própria e ficou mais alto, então a caixa pode
+  // nascer abaixo da dobra. A roda precisa cair SOBRE o desenho: fora dele o
+  // navegador rola a página e a câmera não se mexe — que é como este teste
+  // falhava, com a opacidade parada no valor de longe.
+  await somador.scrollIntoViewIfNeeded();
   const caixa = await somador.boundingBox();
   const janela = page.viewportSize();
   if (caixa === null || janela === null) throw new Error("o somador não está na tela");
@@ -126,10 +134,51 @@ test("um seletor é um trapézio, e o que não é seletor não é", async ({ pag
   // realmente sai.
   await expect(mux.locator('.dui-stage__porta[data-lado="saida"]')).toHaveCount(1);
 
-  // O banco de registradores guarda, não seleciona: continua sendo caixa.
+  // Muitas entram, uma sai: o trapézio fecha.
+  await expect(mux).toHaveAttribute("data-leque", "fecha");
+
+  // O banco de registradores guarda, não faz leque: continua sendo caixa.
   const banco = page.locator('[data-id="banco"]');
   await expect(banco.locator("rect.dui-stage__caixa")).toHaveCount(1);
   await expect(banco.locator("path.dui-stage__caixa")).toHaveCount(0);
+});
+
+test("uma entrada e muitas saídas abre o trapézio para o outro lado", async ({ page }) => {
+  await page.goto("labs/cpu/");
+  await page.waitForSelector("g.dui-stage__objeto");
+  await page.locator('.dui-stage__objeto[data-id="logica"]').first().dblclick();
+  await page.waitForTimeout(1_200);
+  await page.locator('.dui-stage__objeto[data-id="ula"]').first().dblclick();
+  await page.waitForTimeout(1_500);
+
+  // O dispersor recebe uma palavra de 32 e entrega bit a bit: sessenta e quatro
+  // saídas contra uma entrada. Desenhado com o trapézio do mux, ele dizia o
+  // contrário — e era a forma, não o rótulo, que o leitor lia primeiro.
+  const dispersor = page.locator('.dui-stage__objeto[data-id="dispersor"]').first();
+  await expect(dispersor).toHaveAttribute("data-leque", "abre");
+  await expect(dispersor.locator("path.dui-stage__caixa")).toHaveCount(1);
+
+  // E a geometria, que é o que o leitor vê: o lado estreito é o das entradas.
+  const lados = await dispersor.locator("path.dui-stage__caixa").evaluate((el) => {
+    const d = el.getAttribute("d") ?? "";
+    const pontos = [...d.matchAll(/(-?[0-9.]+) (-?[0-9.]+)/gu)].map((m) => ({
+      x: Number(m[1]),
+      y: Number(m[2]),
+    }));
+    const xs = pontos.map((p) => p.x);
+    const altura = (lado: number) => {
+      const ys = pontos.filter((p) => Math.abs(p.x - lado) < 0.5).map((p) => p.y);
+      return Math.max(...ys) - Math.min(...ys);
+    };
+    return { esquerda: altura(Math.min(...xs)), direita: altura(Math.max(...xs)) };
+  });
+  expect(lados.direita, "o lado das saídas tem de ser o largo").toBeGreaterThan(lados.esquerda);
+
+  // O coletor faz o caminho de volta — muitos bits, uma palavra —, e fecha.
+  await expect(page.locator('.dui-stage__objeto[data-id="coletor"]').first()).toHaveAttribute(
+    "data-leque",
+    "fecha",
+  );
 });
 
 test("a memória abre, e lá dentro está o que endereçar quer dizer", async ({ page }) => {

@@ -62,3 +62,59 @@ export function alvoDoBorne(tree: TreeIndex, id: string, porta: string): string 
   const primeiro = bornes?.[0];
   return primeiro === undefined ? undefined : borneNode(primeiro);
 }
+
+/**
+ * Para que lado o leque da caixa abre.
+ *
+ * O trapézio era desenhado **sempre do mesmo jeito** — largo à esquerda,
+ * estreito à direita — para todo `router`, e a descrição dele no catálogo era a
+ * do mux: muitas entram, uma sai. Só que metade dos `router` do acervo é o
+ * espelho disso: o amostrador tem uma entrada e três saídas, o dispersor tem uma
+ * entrada e sessenta e quatro. Neles a forma afirmava o contrário do que o
+ * modelo diz, e forma afirma antes de qualquer rótulo ser lido.
+ *
+ * Agora a forma **segue o leque**:
+ *
+ * - `fecha` — várias entram, uma sai. É o mux, o coletor, a porta lógica;
+ * - `abre` — uma entra, várias saem. É o amostrador, o dispersor;
+ * - `reto` — não há leque, e um trapézio afirmaria um que não existe.
+ *
+ * O que a forma **não** diz é se a caixa escolhe ou combina: as duas convergem.
+ * Quem separa é a linha de controle — quem escolhe é comandado, e desde a
+ * separação dos planos ela é desenhada por cima, noutra altura.
+ */
+export type Leque = "abre" | "fecha" | "reto";
+
+export function lequeDe(entradas: number, saidas: number): Leque {
+  if (entradas > saidas) return "fecha";
+  if (saidas > entradas) return "abre";
+  return "reto";
+}
+
+/**
+ * O leque de uma caixa, contado nas **ligações** e não nos nomes de porta.
+ *
+ * O coletor da ULA recebe trinta e dois fios numa entrada anônima só: pelos
+ * nomes de porta ele tem uma entrada e uma saída, e não teria leque nenhum.
+ * Pelo que o leitor vê — trinta e duas linhas chegando e uma saindo —, ele
+ * fecha, e é exatamente o espelho do dispersor.
+ *
+ * Sem fio nenhum na vista, o que sobra é o que o objeto declarou: uma caixa
+ * fora do enquadramento não perde a forma que ela tem.
+ */
+export function lequeDaCaixa(tree: TreeIndex, wires: readonly Wire[], id: string): Leque {
+  let entram = 0;
+  let saem = 0;
+  for (const wire of wires) {
+    if (String(wire.to) === id) entram += 1;
+    if (wire.from === id) saem += 1;
+  }
+  if (entram === 0 && saem === 0) {
+    const node = tree.byId.get(id);
+    return lequeDe(
+      Object.keys(node?.inlets ?? {}).length,
+      Object.keys(node?.outlets ?? {}).length,
+    );
+  }
+  return lequeDe(entram, saem);
+}

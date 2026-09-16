@@ -81,6 +81,51 @@ function seCruzam(a: Segmento, b: Segmento): boolean {
   return entre(emPe.x1, deitado.x1, deitado.x2) && entre(deitado.y1, emPe.y1, emPe.y2);
 }
 
+export interface Cruzamento {
+  readonly x: number;
+  readonly y: number;
+  /** O índice, na lista de caminhos, de cada um dos dois fios. */
+  readonly a: number;
+  readonly b: number;
+  /** Se o trecho pelo qual `a` passou ali está deitado. O de `b` é o contrário. */
+  readonly horizontalA: boolean;
+  readonly horizontalB: boolean;
+}
+
+/**
+ * Onde os fios se atravessam.
+ *
+ * `meada()` conta; esta diz **onde**, e é o que o túnel usa para saber onde
+ * mergulhar. As duas leem os mesmos segmentos e usam o mesmo `seCruzam`: um
+ * segundo detector de cruzamento discordaria do primeiro no dia em que um dos
+ * dois ficasse errado, e o desenho tunelaria num lugar enquanto a conta contaria
+ * em outro.
+ */
+export function cruzamentos(caminhos: readonly string[]): readonly Cruzamento[] {
+  const porFio = caminhos.map(segmentos);
+  const achados: Cruzamento[] = [];
+  for (let i = 0; i < porFio.length; i += 1) {
+    for (let j = i + 1; j < porFio.length; j += 1) {
+      for (const a of porFio[i] ?? []) {
+        for (const b of porFio[j] ?? []) {
+          if (!seCruzam(a, b)) continue;
+          const deitado = horizontal(a) ? a : b;
+          const emPe = horizontal(a) ? b : a;
+          achados.push({
+            x: emPe.x1,
+            y: deitado.y1,
+            a: i,
+            b: j,
+            horizontalA: horizontal(a),
+            horizontalB: horizontal(b),
+          });
+        }
+      }
+    }
+  }
+  return achados;
+}
+
 /**
  * O quanto dois trechos precisam se cobrir para se lerem como um só.
  *

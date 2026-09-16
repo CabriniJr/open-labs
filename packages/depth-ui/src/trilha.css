@@ -1,0 +1,128 @@
+/*
+  A trilha: o trajeto de um item como espinha do desenho.
+
+  Sem hexadecimal — cor sai de token. A estação é ponto na linha, e o que o
+  salto mudou fica ENTRE dois pontos, que é onde ele aconteceu.
+*/
+.dui-trilha {
+  display: grid;
+  gap: var(--space-1);
+  align-content: start;
+  min-width: 0;
+  /* Corpo de item tem linha comprida. Sem isto ela sai pela direita e o leitor
+     perde justamente o campo que acabou de mudar. */
+  overflow: hidden;
+}
+
+.dui-trilha__titulo {
+  margin: 0;
+  font-weight: 600;
+}
+
+.dui-trilha__vazio {
+  margin: 0;
+  color: var(--ink-muted);
+  font-size: var(--size-step--1);
+  line-height: 1.6;
+}
+
+.dui-trilha__estacoes {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--size-step--1);
+}
+
+/*
+  Cada estação tem duas linhas: o que o salto trouxe, e o nome de onde ele
+  chegou. O delta vem em cima, então ele cai entre o ponto de cima e este —
+  que é onde ele aconteceu.
+
+  O trilho é desenhado por quem tem para onde ir (`:not(:last-child)`), e não
+  pelo de baixo: assim a última estação não estende linha para lugar nenhum,
+  que seria a figura afirmando um salto que não houve.
+*/
+.dui-trilha__estacao {
+  display: grid;
+  grid-template-columns: 1rem minmax(0, 1fr);
+  align-items: start;
+  column-gap: var(--space-1);
+  color: var(--ink-muted);
+}
+
+/* Um braço de leque pendura na MESMA estação de cima, e não continua a linha. */
+.dui-trilha__estacao[data-ramo="true"] {
+  margin-inline-start: var(--space-2);
+}
+
+.dui-trilha__delta {
+  grid-column: 2;
+  padding-block: 0.15rem;
+  color: var(--ink-faint);
+}
+
+.dui-trilha__estacao[data-mudou] .dui-trilha__delta {
+  color: var(--accent);
+}
+
+.dui-trilha__ponto {
+  position: relative;
+  grid-column: 1;
+  inline-size: 0.55rem;
+  block-size: 0.55rem;
+  margin-block-start: 0.35rem;
+  margin-inline-start: 0.2rem;
+  border-radius: 50%;
+  background: var(--rule);
+}
+
+/* O trilho até a estação de baixo. */
+.dui-trilha__estacao:not(:last-child) .dui-trilha__ponto::after {
+  content: "";
+  position: absolute;
+  inset-block-start: 0.55rem;
+  inset-inline-start: calc(50% - 1px);
+  inline-size: 2px;
+  block-size: calc(100% + 1.6rem);
+  background: var(--rule);
+}
+
+.dui-trilha__nome {
+  grid-column: 2;
+  padding-block-end: var(--space-1);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.dui-trilha__estacao:last-child .dui-trilha__nome {
+  padding-block-end: 0;
+}
+
+/* Salto que mudou alguma coisa: o ponto de chegada acende no acento. */
+.dui-trilha__estacao[data-mudou] .dui-trilha__ponto {
+  background: var(--accent);
+}
+
+.dui-trilha__estacao[data-atual="true"] {
+  color: var(--ink);
+}
+
+.dui-trilha__estacao[data-atual="true"] .dui-trilha__ponto {
+  background: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 22%, transparent);
+}
+
+/*
+  A linha comprida rola DENTRO da peça, e não empurra a página. Cortar em
+  silêncio esconderia o fim de um valor cujo fim costuma ser o assunto.
+*/
+.dui-trilha .dui-inspector__body {
+  overflow-x: auto;
+}
+
+.dui-trilha .dui-inspector__line {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

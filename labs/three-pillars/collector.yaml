@@ -1,0 +1,23 @@
+# Recebe os três sinais e imprime os três. É a borda do lab, e ela é opaca de
+# propósito: o que acontece DENTRO do Collector é outro lab.
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+
+exporters:
+  debug:
+    verbosity: detailed
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      exporters: [debug]
+    metrics:
+      receivers: [otlp]
+      exporters: [debug]
+    logs:
+      receivers: [otlp]
+      exporters: [debug]

@@ -115,3 +115,43 @@ describe("o caminho de um fio", () => {
     expect(segmentos(d).at(-1)?.x2).toBe(400);
   });
 });
+
+describe("o fio sai de cima do vizinho quando a reta já é de alguém", () => {
+  /** As retas horizontais longas de um caminho, na notação do `ocupadas`. */
+  const faixasDe = (d: string): readonly string[] =>
+    segmentos(d)
+      .filter((s) => s.y1 === s.y2 && Math.abs(s.x2 - s.x1) > 40)
+      .map((s) => `h:${s.y1}`);
+
+  it("a volta para trás não repete a faixa longa da volta anterior", () => {
+    // Duas caixas lado a lado na mesma fileira, as duas mandando para trás:
+    // com coluna e altura fixas, as duas voltas saíam idênticas e o leitor via
+    // uma linha onde existem duas. Sete assim na vista do processador do micro.
+    const alvo = caixa("alvo", 0, 0, 90, 60);
+    const um = caixa("um", 300, 0, 90, 60);
+    const outro = caixa("outro", 300, 0, 90, 60);
+    const obstaculos = [alvo, um];
+
+    const primeira = caminho(um, alvo, 24, obstaculos);
+    const ocupadas = new Set(faixasDe(primeira));
+    expect(ocupadas.size, "a volta não tem faixa longa: o teste mede outra coisa").toBeGreaterThan(0);
+
+    const segunda = caminho(outro, alvo, 24, obstaculos, ocupadas);
+    for (const faixa of faixasDe(segunda)) {
+      expect(ocupadas.has(faixa), `a segunda volta correu na mesma reta (${faixa})`).toBe(false);
+    }
+  });
+
+  it("sem ninguém no caminho, a volta continua sendo a mesma de sempre", () => {
+    // O desvio é segunda tentativa, e não alternativa de primeira: oferecido de
+    // saída, ele empatava com a rota canônica e mexia em fios que não tinham
+    // motivo nenhum para se mexer — o desenho ganhava cruzamento de graça.
+    const alvo = caixa("alvo", 0, 0, 90, 60);
+    const um = caixa("um", 300, 0, 90, 60);
+    const obstaculos = [alvo, um];
+
+    expect(caminho(um, alvo, 24, obstaculos, new Set())).toBe(
+      caminho(um, alvo, 24, obstaculos, new Set(["h:9999"])),
+    );
+  });
+});

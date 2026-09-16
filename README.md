@@ -64,9 +64,10 @@ O caminho-base não é constante: quem chama o build declara onde o site vai ser
 | Local / domínio próprio | `pnpm build` | raiz |
 
 O deploy sai de `.github/workflows/deploy.yml`, que roda em cada push em `main` e
-publica `apps/site/dist` no ambiente `github-pages`. Toda URL interna do site
-precisa passar por `import.meta.env.BASE_URL` — caminho absoluto cravado funciona
-local e quebra no Pages.
+publica `apps/site/dist` no ambiente `github-pages`. A alavanca do caminho-base
+continua porque a decisão de onde servir é de quem chama o build; toda URL interna
+do site precisa passar por `import.meta.env.BASE_URL`, e caminho absoluto cravado
+funciona local e quebra em qualquer subdiretório.
 
 Writing a lab: see [`docs/authoring.md`](docs/authoring.md).
 
