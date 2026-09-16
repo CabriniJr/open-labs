@@ -1,5 +1,5 @@
 {
-  "name": "@ovh/otel-domain",
+  "name": "@ovh/mermaid-skeleton",
   "version": "0.0.0",
   "license": "Apache-2.0",
   "private": true,
@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@ovh/depth-core": "workspace:*",
-    "@ovh/depth-ui": "workspace:*",
-    "@ovh/mermaid-skeleton": "workspace:*"
+    "@ovh/model-format": "workspace:*",
+    "yaml": "^2.5.0"
   }
 }

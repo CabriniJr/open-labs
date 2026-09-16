@@ -4,3 +4,5 @@ export { ModeletSchema, parseModelet } from "./modelet.js";
 export type { Child, Endpoint, Modelet, ParseResult, ResolvedWire, Teaches } from "./modelet.js";
 export { compileModelet, compileSource } from "./compile.js";
 export type { CompileOptions, CompileResult, ParamInfo } from "./compile.js";
+export { consumo, fonte, retencao, sourceBehavior, bufferBehavior, sinkBehavior } from "./behaviors.js";
+export type { Arg } from "./behaviors.js";
