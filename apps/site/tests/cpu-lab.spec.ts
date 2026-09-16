@@ -196,7 +196,9 @@ test("bateu a dúvida do que é a peça, a resposta está ali", async ({ page })
   const ficha = page.locator(".ficha");
   await expect(ficha).toContainText("operand mux");
   await expect(ficha).toContainText("router");
-  await expect(ficha).toContainText("A mux is a router");
+  // O texto do catálogo mudou quando a forma passou a seguir o leque: o
+  // `router` fana para os dois lados, e a descrição dizia só um deles.
+  await expect(ficha).toContainText("fans both ways");
   await expect(ficha).toContainText("processor");
 
   // e a topologia crua, para conferir o desenho contra o modelo

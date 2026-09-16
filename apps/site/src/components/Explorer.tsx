@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { isOpenable } from "@ovh/depth-core";
 import type { Message, TreeIndex, Wire, WorldState } from "@ovh/depth-core";
 import { Legenda, Stage, autoView, pathTo } from "@ovh/depth-ui";
@@ -25,6 +25,7 @@ export interface ExplorerProps {
   readonly views: readonly View[];
   readonly inicial?: string | undefined;
   readonly fills?: Readonly<Record<string, number>> | undefined;
+  readonly capacidades?: Readonly<Record<string, number>> | undefined;
   readonly readouts?: Readonly<Record<string, string>> | undefined;
   /** Quem está com a saída em alto. Só o domínio sabe ler o valor que saiu. */
   readonly altos?: ReadonlySet<string> | undefined;
@@ -38,6 +39,18 @@ export interface ExplorerProps {
     | undefined;
   /** Mostra a ficha do objeto selecionado ao lado do palco. */
   readonly comFicha?: boolean;
+  /**
+   * Seguir a carga: a chave da coisa que o leitor está seguindo, quem a define,
+   * e o painel que o lab desenha para ela.
+   *
+   * O painel vem pronto do lab porque **o corpo de uma carga é conhecimento de
+   * domínio** — o palco sabe desenhar a bolinha andando, e não sabe o que ela
+   * carrega. É a mesma fronteira de `leituraDaCarga` e `conteudo`.
+   */
+  readonly chaveDaCarga?: ((mensagem: import("@ovh/depth-core").Message) => string | undefined) | undefined;
+  readonly cargaSeguida?: string | undefined;
+  readonly onSeguirCarga?: ((chave: string | undefined) => void) | undefined;
+  readonly painelDaCarga?: React.ReactNode;
   /** O que cada peça é, no vocabulário do domínio. Ver `FichaProps.descricoes`. */
   readonly descricoes?: Readonly<Record<string, string>> | undefined;
 }
@@ -52,6 +65,7 @@ export function Explorer({
   views,
   inicial,
   fills,
+  capacidades,
   readouts,
   altos,
   conduzindo,
@@ -59,6 +73,10 @@ export function Explorer({
   especieDaCarga,
   conteudo,
   comFicha = false,
+  chaveDaCarga,
+  cargaSeguida,
+  onSeguirCarga,
+  painelDaCarga,
   descricoes,
 }: ExplorerProps) {
   const primeiro = inicial ?? views[0]?.focus ?? tree.rootId;
@@ -166,8 +184,33 @@ export function Explorer({
     [viagem, view],
   );
 
+  /**
+   * Tela cheia, e ela é do EXPLORER inteiro — não só do palco.
+   *
+   * A ficha e a trilha vão junto porque em tela cheia a pessoa continua
+   * precisando saber onde está e o que é a peça que ela clicou. Mandar só o
+   * desenho deixaria o leitor grande e cego.
+   */
+  const caixaRef = useRef<HTMLDivElement>(null);
+  const [cheia, setCheia] = useState(false);
+
+  useEffect(() => {
+    // O estado vem do documento, e não do nosso clique: sair com Esc não passa
+    // pelo botão, e um botão que mente sobre o próprio estado é pior que não ter.
+    const ouvir = (): void => setCheia(document.fullscreenElement === caixaRef.current);
+    document.addEventListener("fullscreenchange", ouvir);
+    return () => document.removeEventListener("fullscreenchange", ouvir);
+  }, []);
+
+  const alternarTelaCheia = (): void => {
+    const caixa = caixaRef.current;
+    if (caixa === null) return;
+    if (document.fullscreenElement === caixa) void document.exitFullscreen();
+    else void caixa.requestFullscreen?.();
+  };
+
   return (
-    <div className="explorer">
+    <div className="explorer" ref={caixaRef} data-cheia={cheia ? "true" : undefined}>
       <nav className="explorer__trilha mono" aria-label="Onde você está">
         {trilha.map((id, i) => (
           <span key={id}>
@@ -187,9 +230,26 @@ export function Explorer({
             ? "auto-laid view · double-click to enter"
             : "double-click to enter"}
         </span>
+        <button
+          type="button"
+          className="explorer__cheia"
+          onClick={alternarTelaCheia}
+          aria-pressed={cheia}
+        >
+          {cheia ? "Exit full screen" : "Full screen"}
+        </button>
       </nav>
 
       <div className="explorer__corpo" data-com-ficha={comFicha ? "true" : undefined}>
+        {/*
+          O palco tem altura própria e é redimensionável pelo canto.
+
+          Antes ele era `height: auto`, e a altura saía da proporção da vista:
+          quem queria mais desenho não tinha o que fazer. E como a largura é
+          quase sempre o lado que aperta, o texto do desenho — que é medido em
+          unidades da vista — chegava na tela menor do que dá para ler.
+        */}
+        <div className="explorer__palco">
         <Stage
           tree={tree}
           wires={wires}
@@ -199,6 +259,7 @@ export function Explorer({
           {...(edgeTicks === undefined ? {} : { edgeTicks })}
           {...(tickMs === undefined ? {} : { tickMs })}
           fills={fills}
+          capacidades={capacidades}
           readouts={readouts}
           altos={altos}
           conduzindo={conduzindo}
@@ -212,8 +273,21 @@ export function Explorer({
           leituraDaCarga={leituraDaCarga}
           especieDaCarga={especieDaCarga}
           conteudo={conteudo}
+          chaveDaCarga={chaveDaCarga}
+          cargaSeguida={cargaSeguida}
+          onSeguirCarga={onSeguirCarga}
         />
-        {comFicha ? (
+        </div>
+        {/*
+          Seguindo uma carga, o painel dela toma o lugar da ficha do objeto.
+
+          Os dois respondem "o que é isto?" sobre coisas diferentes, e mostrar
+          os dois ao mesmo tempo faria o leitor escolher qual ler — o que é
+          escolher por ele, mal. Quem está seguindo uma carga quer a carga.
+        */}
+        {painelDaCarga !== undefined && cargaSeguida !== undefined ? (
+          painelDaCarga
+        ) : comFicha ? (
           <Ficha
             tree={tree}
             wires={wires}

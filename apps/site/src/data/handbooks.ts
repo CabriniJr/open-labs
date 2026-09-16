@@ -1,3 +1,4 @@
+import type { TemaCompleto } from "../lib/tema.js";
 import { MAPA_OTEL, type RoadmapMap } from "./roadmap.js";
 import { MAPA_CPU } from "./roadmap-cpu.js";
 import { labs as otelLabs, phases as otelPhases } from "./roadmap.js";
@@ -80,18 +81,37 @@ export interface Handbook {
   readonly labs: readonly HandbookItem[];
   /** De onde veio o modelo, quando ele não é nosso. */
   readonly reference?: HandbookReference;
+  /**
+   * A identidade visual, e ela mora aqui pelo mesmo motivo que o mapa mora:
+   * **uma fonte por fato**. Enquanto ela era um arquivo CSS por domínio, um
+   * handbook podia existir sem tema e ninguém descobria até abrir a página.
+   *
+   * O conjunto do que ela pinta é fechado — ver `lib/tema.ts`, que explica o
+   * que fica de fora e por quê.
+   */
+  readonly tema: TemaCompleto;
 }
 
+/**
+ * O mesmo mapeamento do lado da CPU, e pelo mesmo motivo: os labs saem do mapa,
+ * fonte única.
+ *
+ * O `href` faltava aqui. Enquanto todo lab do OTel estava `coming`, ninguém
+ * percebia — o teste de "item pronto tem para onde levar" só tem o que cobrar
+ * quando existe um item pronto. O primeiro lab publicado achou o buraco, que é o
+ * jeito ruim de achar: a lista prometia um lab e não levava a lugar nenhum.
+ */
 const OTEL_LABS: readonly HandbookItem[] = otelLabs.map((lab) => ({
   id: lab.id,
   title: lab.title,
   status: lab.status === "available" ? "available" : "coming",
   phase: lab.phase,
+  ...(lab.href === "#" ? {} : { href: lab.href }),
 }));
 
 const OTEL_PHASE_LINES: Record<number, string> = {
   1: "Why three signals with no thread between them leave you blind.",
-  2: "Trace, span, context: the shape the data has before any vendor touches it.",
+  2: "Trace, metric, log: the shape each one has before any vendor touches it.",
   3: "SDK, Collector, backend — and what each one is allowed to change.",
   4: "Getting the signal out of code you wrote and code you did not.",
   5: "Sampling, backpressure, and the rollout that does not page anyone.",
@@ -99,6 +119,24 @@ const OTEL_PHASE_LINES: Record<number, string> = {
 
 const OTEL: Handbook = {
   id: "otel",
+  /**
+   * O rastro é azul, e o azul é o que este handbook tem de mais reconhecível.
+   * As espécies de carga saem do que o assunto move: span, métrica, registro e
+   * o que já foi empacotado para sair.
+   */
+  tema: {
+    claro: {
+      acento: "#425cc7",
+      fluxo: "#425cc7",
+      descarte: "#b8442a",
+      ok: "#3f7a52",
+      mutacao: "#f5a800",
+      processador: "#425cc7",
+      conduite: "#3f7a52",
+      especies: ["#7c5cd6", "#3f7a52", "#c2410c", "#0e7490"],
+    },
+    escuro: { acento: "#8fa2ee", processador: "#8fa2ee", especies: ["#a371f7", "#3fb950", "#f0883e", "#22d3ee"] },
+  },
   name: "OpenTelemetry Visual Handbook",
   subject: "OpenTelemetry",
   tagline: "Watch the telemetry move, then read the bytes that moved.",
@@ -113,12 +151,100 @@ const OTEL: Handbook = {
     title: phase.title,
     line: OTEL_PHASE_LINES[phase.number] ?? "",
   })),
+  /**
+   * A teoria do handbook, na ordem das cinco fases.
+   *
+   * Eram cinco títulos, um por fase, todos `coming` — o que é o mesmo que dizer
+   * que a teoria não existia. Uma fase tem mais de um conceito que se sustenta
+   * sozinho, e enfiar todos num artigo produz o texto que ninguém termina.
+   *
+   * A regra de pareamento: **um artigo é a teoria de um lab, ou é o degrau que
+   * dois labs pisam.** Artigo sem nenhuma das duas coisas é ensaio solto, e não
+   * entra.
+   *
+   * Item pronto tem link; item por escrever **não tem** — `href` para página que
+   * ninguém escreveu é link morto em produção, e o leitor só descobre clicando.
+   * Há teste dos dois lados.
+   *
+   * Nota sobre o frontmatter: nenhum artigo do OTel declara `lab` ainda, porque
+   * nenhum lab do OTel está no ar e a página do artigo renderiza o campo como
+   * "open the lab →". O primeiro lab publicado leva o campo consigo.
+   */
   articles: [
-    { id: "what-a-signal-is", title: "What a signal is", status: "coming", phase: 1 },
-    { id: "context-is-the-product", title: "Context is the product", status: "coming", phase: 2 },
-    { id: "who-owns-the-pipeline", title: "Who owns the pipeline", status: "coming", phase: 3 },
-    { id: "instrumenting-what-you-did-not-write", title: "Instrumenting what you did not write", status: "coming", phase: 4 },
+    {
+      id: "what-a-signal-is",
+      title: "What a signal is",
+      status: "available",
+      phase: 1,
+      href: "handbooks/otel/articles/what-a-signal-is",
+    },
+    {
+      id: "the-seam-between-signals",
+      title: "The seam between the signals",
+      status: "available",
+      phase: 1,
+      href: "handbooks/otel/articles/the-seam-between-signals",
+    },
+
+    {
+      id: "a-trace-is-a-tree-nobody-owns",
+      title: "A trace is a tree nobody owns",
+      status: "available",
+      phase: 2,
+      href: "handbooks/otel/articles/a-trace-is-a-tree-nobody-owns",
+    },
+    {
+      id: "context-is-the-product",
+      title: "Context is the product",
+      status: "available",
+      phase: 2,
+      href: "handbooks/otel/articles/context-is-the-product",
+    },
+    { id: "what-a-metric-remembers", title: "What a metric remembers", status: "coming", phase: 2 },
+    {
+      id: "the-envelope-is-the-object-graph",
+      title: "The envelope is the object graph",
+      status: "available",
+      phase: 2,
+      href: "handbooks/otel/articles/the-envelope-is-the-object-graph",
+    },
+
+    {
+      id: "who-owns-the-pipeline",
+      title: "Who owns the pipeline",
+      status: "available",
+      phase: 3,
+      href: "handbooks/otel/articles/who-owns-the-pipeline",
+    },
+    {
+      id: "agent-or-gateway-is-a-blast-radius",
+      title: "Agent or gateway is a blast-radius question",
+      status: "coming",
+      phase: 3,
+    },
+
+    {
+      id: "instrumenting-what-you-did-not-write",
+      title: "Instrumenting what you did not write",
+      status: "coming",
+      phase: 4,
+    },
+    { id: "a-library-depends-on-the-api-only", title: "A library depends on the API only", status: "coming", phase: 4 },
+    {
+      id: "context-does-not-cross-a-queue",
+      title: "Context does not cross a queue by itself",
+      status: "coming",
+      phase: 4,
+    },
+
     { id: "the-cost-of-keeping-everything", title: "The cost of keeping everything", status: "coming", phase: 5 },
+    {
+      id: "sampling-is-a-statement-about-ignorance",
+      title: "Sampling is a statement about what you will not know",
+      status: "coming",
+      phase: 5,
+    },
+    { id: "the-rollout-nobody-noticed", title: "The rollout nobody noticed", status: "coming", phase: 5 },
   ],
   labs: OTEL_LABS,
 };
@@ -140,6 +266,24 @@ const CPU_LABS: readonly HandbookItem[] = MAPA_CPU.labs.map((lab) => ({
 
 const CPU: Handbook = {
   id: "cpu",
+  /**
+   * O verde-azulado do silício. A tinta viva **não** entra aqui: seta vermelha
+   * é controle em qualquer diagrama de blocos, e isso é convenção, não
+   * identidade — o livro-texto manda nela.
+   */
+  tema: {
+    claro: {
+      acento: "#0f766e",
+      fluxo: "#0f766e",
+      descarte: "#b8442a",
+      ok: "#3f7a52",
+      mutacao: "#c2410c",
+      processador: "#0f766e",
+      conduite: "#3f7a52",
+      especies: ["#7c3aed", "#0f766e", "#b45309", "#be185d"],
+    },
+    escuro: { acento: "#5eddd0", fluxo: "#5eddd0", mutacao: "#fb923c", processador: "#5eddd0", especies: ["#a371f7", "#5eddd0", "#e3b341", "#db61a2"] },
+  },
   name: "CPU Visual Handbook",
   subject: "the CPU",
   tagline: "Type an instruction, watch the transistors settle.",
@@ -258,6 +402,24 @@ const CPU: Handbook = {
  */
 const ALGORITHMS: Handbook = {
   id: "algorithms",
+  /**
+   * Violeta, que é a distância que faz os três se distinguirem numa aba só. As
+   * espécies aqui são os itens que trocam de lugar, e a mais discreta é a que
+   * já está no lugar certo.
+   */
+  tema: {
+    claro: {
+      acento: "#6d28d9",
+      fluxo: "#6d28d9",
+      descarte: "#b8442a",
+      ok: "#3f7a52",
+      mutacao: "#c2410c",
+      processador: "#6d28d9",
+      conduite: "#3f7a52",
+      especies: ["#6d28d9", "#0e7490", "#b45309", "#3f7a52"],
+    },
+    escuro: { acento: "#c4a7f7", fluxo: "#c4a7f7", processador: "#c4a7f7", especies: ["#c4a7f7", "#22d3ee", "#e3b341", "#3fb950"] },
+  },
   name: "Algorithms Visual Handbook",
   subject: "algorithms",
   tagline: "An algorithm is a system of parts. Watch the items move.",

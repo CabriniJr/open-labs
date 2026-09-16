@@ -1,0 +1,76 @@
+/*
+  Sem hexadecimal: `pnpm catalogo` reprova tinta escrita fora do catálogo, e a
+  regra vale para o CSS de lab também. Cor sai de token, sempre.
+*/
+.predicao {
+  max-width: var(--measure);
+  padding: var(--space-2);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-2);
+  background: var(--paper-raised);
+}
+
+.predicao__pergunta {
+  margin: 0 0 var(--space-1);
+  font-weight: 600;
+}
+
+.predicao__opcoes {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0 0 var(--space-1);
+  padding: 0;
+  list-style: none;
+}
+
+.predicao__opcoes button {
+  width: 100%;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-1);
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.predicao__opcoes button:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+.predicao__opcoes button:disabled {
+  cursor: default;
+}
+
+/*
+  O veredito é atributo, e não só cor: um teste que cobrasse a cor cobraria o
+  desenho e não a afirmação, e um leitor de tela não lê borda nenhuma.
+*/
+.predicao__opcoes button[data-veredito="certo"] {
+  border-color: var(--accent);
+  background: var(--paper);
+  font-weight: 600;
+}
+
+.predicao__opcoes button[data-veredito="errado"] {
+  border-color: var(--ink-muted);
+  text-decoration: line-through;
+}
+
+.predicao__opcoes button[data-veredito="outro"] {
+  opacity: 0.55;
+}
+
+.predicao__revelacao {
+  margin: 0;
+  padding-block-start: var(--space-1);
+  border-block-start: 1px solid var(--rule);
+  line-height: 1.6;
+}
+
+.predicao__aviso {
+  margin: 0;
+  color: var(--ink-muted);
+  font-size: var(--size-step--1);
+}

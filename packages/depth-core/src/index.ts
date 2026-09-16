@@ -63,6 +63,28 @@ export type {
 export { diffStates } from "./diff.js";
 export { createRandom } from "./random.js";
 
-// modelo antigo — andaime até a S5 migrar a landing. NÃO usar em código novo.
+/**
+ * Seguir um item: o trajeto de UMA coisa, e o que cada parada mudou nela.
+ *
+ * Mora no motor porque identidade e trajeto são conceito do motor: o motor dá
+ * id novo a cada emissão — e está certo, cada salto é uma mensagem nova —, e
+ * quem sabe que duas mensagens são a mesma coisa é o domínio, pelo `LeitorDaCarga`.
+ * O desenho disso é a `Trilha`, no `depth-ui`.
+ */
+export { PARADAS_NO_PAINEL, seguir } from "./seguir.js";
+export type { LeitorDaCarga, Parada } from "./seguir.js";
+
+/*
+  O modelo antigo: níveis FIXOS (L0 Flow, L1 Mechanism, L2 Wire, L3 Payload) em
+  vez da árvore de composição.
+
+  Sem consumidor desde que a landing migrou (Entrega 15). Fica de propósito, e
+  não por esquecimento: a escada fixa descreve bem um assunto em que descer é
+  descer de verdade — uma CPU até o fio —, e o dia em que um handbook quiser
+  exatamente isso, ela está aqui. O que ela não descreve é um trace, que não tem
+  *dentro*. Ver `DECISIONS.md` §9.
+
+  NÃO usar em código novo sem essa conversa.
+*/
 export { Engine } from "./engine.js";
 export type { LevelId, Scenario } from "./types.js";

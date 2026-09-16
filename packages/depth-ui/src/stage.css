@@ -155,9 +155,24 @@
   stroke-dasharray: 6 4;
 }
 
+/*
+ * A ponta da seta toma a cor do fio, e isso precisa de `context-stroke`.
+ *
+ * O conteúdo de um `<marker>` **não herda** do elemento que o referencia: ele
+ * herda de onde está no documento, que é o `<defs>`. `currentColor` ali resolvia
+ * uma cor só para o desenho inteiro — medido na tela: a ponta saía na tinta do
+ * dado enquanto o fio de controle estava na tinta viva. Toda linha vermelha
+ * terminava numa ponta da cor do dado, e um fio aceso não acendia a ponta.
+ *
+ * `context-stroke` é o mecanismo que o SVG tem exatamente para isto: a ponta
+ * pinta com o traço de quem a chamou. O `currentColor` fica antes como reserva —
+ * navegador que não conheça o valor novo ignora a segunda linha e mantém a
+ * primeira, e uma ponta de cor única é pior que a certa, não é quebrado.
+ */
 .dui-stage__fio marker path,
 .dui-stage #dui-seta path {
   fill: currentColor;
+  fill: context-stroke;
 }
 
 .dui-stage__fio {
@@ -202,6 +217,33 @@
   filter: drop-shadow(0 0 5px color-mix(in oklab, var(--dui-sinal) 60%, transparent));
 }
 
+/*
+ * O descarte. Ele toma a tinta da linha que morre nele — um descarte de dado é
+ * dado que some, e um de sinal é sinal que some —, e o traço é o de fim de
+ * linha do esquemático: curto, transversal, sem seta. Sem seta de propósito:
+ * seta aponta para um destino, e o descarte é a ausência de um.
+ */
+.dui-stage__descarte path {
+  stroke: var(--dui-dado);
+  stroke-width: 2;
+  opacity: 0.75;
+  fill: none;
+}
+
+.dui-stage__fio[data-linha="control"] .dui-stage__descarte path {
+  stroke: var(--dui-sinal);
+}
+
+.dui-stage__descarte text {
+  fill: var(--ink-faint);
+  font-size: 9px;
+  letter-spacing: 0.04em;
+}
+
+.dui-stage__fio[data-descarte="true"] .dui-stage__trilho {
+  opacity: 0.7;
+}
+
 .dui-stage__largura {
   fill: var(--ink-faint);
   font-size: 9px;
@@ -242,11 +284,35 @@
  * dentro do motor. Quem numera as espécies é o domínio; o palco só sabe que
  * duas cargas são diferentes, e não o que elas são.
  */
-.dui-stage__carga[data-especie="1"] { fill: var(--dui-especie-1); }
-.dui-stage__carga[data-especie="2"] { fill: var(--dui-especie-2); }
-.dui-stage__carga[data-especie="3"] { fill: var(--dui-especie-3); }
-.dui-stage__carga[data-especie="4"] { fill: var(--dui-especie-4); }
-.dui-stage__carga[data-especie="5"] { fill: var(--dui-especie-5); }
+/*
+ * A espécie é declarada no GRUPO — é lá que o domínio a responde —, e a tinta
+ * pinta a carga lá dentro. O seletor pedia o atributo na própria carga, e o
+ * atributo nunca esteve nela: as cinco espécies existiam no DOM e o desenho
+ * pintava todas da mesma cor, calado, desde que a regra nasceu.
+ */
+.dui-stage__carga-grupo[data-especie="1"] .dui-stage__carga { fill: var(--dui-especie-1); }
+.dui-stage__carga-grupo[data-especie="2"] .dui-stage__carga { fill: var(--dui-especie-2); }
+.dui-stage__carga-grupo[data-especie="3"] .dui-stage__carga { fill: var(--dui-especie-3); }
+.dui-stage__carga-grupo[data-especie="4"] .dui-stage__carga { fill: var(--dui-especie-4); }
+.dui-stage__carga-grupo[data-especie="5"] .dui-stage__carga { fill: var(--dui-especie-5); }
+
+/*
+ * O pacote: o que atravessa um canal sai serializado do outro lado, e por isso
+ * ele deixa de ser "as coisas" e passa a ser "o documento que as carrega". A
+ * dobra e as linhas são o que fazem ler como papel em vez de mais um bloco — e
+ * elas tomam a cor do fundo, porque são vazio recortado no documento, não tinta.
+ */
+.dui-stage__carga--pacote path {
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.dui-stage__carga-dobra,
+.dui-stage__carga-linhas {
+  fill: none;
+  stroke: var(--paper);
+  stroke-width: 1.1;
+}
 
 /* ---------- objetos ---------- */
 
@@ -393,9 +459,15 @@
   transition: y var(--dui-tick) linear, height var(--dui-tick) linear;
 }
 
+/*
+ * O tipo do palco é medido em UNIDADES DA VISTA, e por isso ele encolhe junto
+ * com a projeção. Numa vista de mil e duzentas unidades projetada num laptop, um
+ * rótulo de 11 chegava com menos de cinco pixels. Doze não resolve sozinho — a
+ * tela cheia é que resolve —, mas é a folga que existe sem apertar as caixas.
+ */
 .dui-stage__rotulo {
   fill: var(--ink);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
 }
 
@@ -481,6 +553,155 @@
 .dui-stage__juncao {
   fill: color-mix(in oklab, var(--dui-dado) 85%, var(--ink));
   stroke: none;
+}
+
+/*
+ * A borda que é feixe: as portas não cabiam, e a marca diz quantas são.
+ *
+ * A porta existe para dizer POR ONDE a coisa entra. Sessenta e cinco delas
+ * empilhadas numa borda de noventa unidades dizem o contrário — a caixa parece
+ * ter uma porta gigante —, e aí a marca do barramento é a resposta honesta.
+ */
+.dui-stage__porta--feixe rect {
+  fill: color-mix(in oklab, var(--dui-dado) 45%, var(--paper));
+  stroke: color-mix(in oklab, var(--dui-dado) 70%, var(--ink));
+  stroke-width: 0.8;
+}
+
+/*
+ * A carga que o leitor está seguindo.
+ *
+ * Um anel em volta, e não uma cor nova: a espécie da carga já usa a tinta, e
+ * trocá-la faria "estou seguindo isto" e "isto é um span" disputarem o mesmo
+ * canal. O anel é figura, e figura não compete com tinta.
+ */
+.dui-stage__carga-grupo[role="button"] {
+  cursor: pointer;
+}
+
+/*
+  O alvo invisível: o item é pequeno e anda, e clicar nele era pontaria.
+  `fill: transparent` e não `fill: none` — `none` não recebe ponteiro nenhum, e
+  um alvo que não recebe clique não é alvo.
+*/
+.dui-stage__carga-alvo {
+  fill: transparent;
+}
+
+.dui-stage__carga-grupo[data-seguindo="true"] .dui-stage__carga {
+  stroke: var(--accent);
+  stroke-width: 2;
+  paint-order: stroke;
+}
+
+.dui-stage__carga-grupo[role="button"]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/*
+ * A boca do túnel: a figura que diz "este fio passa por baixo, e volta ali".
+ *
+ * A junção acima resolve metade da pergunta por PRESENÇA, e a outra metade por
+ * ausência — e ausência é muda para quem não conhece a convenção. A boca troca
+ * a ausência por uma figura: onde não há pontinho E há duas bocas, os dois fios
+ * não se falam, e dá para ver por quê.
+ *
+ * A cor sai do fio dono, e não daqui: túnel de linha de controle é vermelho
+ * porque a linha é de controle, e um triângulo preto ali diria que passa dado.
+ */
+/*
+ * A fila com casas, e a casa ocupada.
+ *
+ * A barra de nível responde "quanto" e some quando as casas aparecem: duas
+ * respostas para a mesma pergunta, empilhadas, se leem como duas coisas.
+ */
+.dui-stage__casa {
+  fill: none;
+  stroke: color-mix(in oklab, var(--ink) 22%, transparent);
+  stroke-width: 0.8;
+}
+
+.dui-stage__casa[data-ocupada="true"] {
+  fill: color-mix(in oklab, var(--dui-dado) 55%, var(--paper));
+  stroke: color-mix(in oklab, var(--dui-dado) 70%, var(--ink));
+}
+
+/*
+ * Cheia: daqui em diante o que chegar é recusado.
+ *
+ * O contorno endurece — é a máquina dizendo que não cabe mais, e é a CAUSA do
+ * descarte que sai ao lado. Sem isto o palco mostrava só o resultado.
+ */
+.dui-stage__objeto[data-cheia="true"] .dui-stage__caixa {
+  stroke: color-mix(in oklab, var(--dui-descarte, var(--dui-sinal)) 70%, var(--ink));
+  stroke-width: 2.2;
+}
+
+/*
+ * O alerta: está perdendo dado agora.
+ *
+ * Figura e não cor — triângulo com barra —, porque cor sozinha não é canal.
+ * A pulsação é curta e para: alerta que pisca para sempre vira decoração de
+ * fundo, e o olho aprende a não ver.
+ */
+.dui-stage__alerta-corpo {
+  fill: var(--dui-sinal);
+  stroke: color-mix(in oklab, var(--dui-sinal) 55%, var(--ink));
+  stroke-width: 0.9;
+  stroke-linejoin: round;
+}
+
+.dui-stage__alerta-barra {
+  fill: var(--paper);
+  stroke: var(--paper);
+  stroke-width: 1.3;
+  stroke-linecap: round;
+}
+
+.dui-stage__alerta {
+  animation: dui-alerta 420ms ease-out 2;
+}
+
+@keyframes dui-alerta {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dui-stage__alerta {
+    animation: none;
+  }
+}
+
+/*
+ * O circuito: a segunda rede da fábrica.
+ *
+ * Ela não carrega coisa, carrega comando — e fica num plano acima das esteiras.
+ * O que diz isso é a ordem no documento (ela é desenhada depois) mais duas
+ * pistas de leitura: traço mais fino, porque comando não tem volume, e uma
+ * sombra curta, que é como o olho lê "está mais perto de mim".
+ */
+.dui-stage__circuito .dui-stage__trilho {
+  stroke-width: 1.4;
+}
+
+.dui-stage__circuito {
+  filter: drop-shadow(0 1px 1px color-mix(in oklab, var(--ink) 18%, transparent));
+}
+
+.dui-stage__boca {
+  fill: color-mix(in oklab, var(--dui-dado) 85%, var(--ink));
+  stroke: none;
+}
+
+.dui-stage__boca[data-linha="control"] {
+  fill: color-mix(in oklab, var(--dui-sinal) 65%, var(--rule));
 }
 
 .dui-stage__chave-via,
@@ -657,6 +878,18 @@
   offset-path: var(--dui-trilho);
   offset-rotate: 0deg;
   opacity: 0;
+}
+
+/*
+ * O feixe é o único que gira com a esteira.
+ *
+ * Ele é uma FILA de itens, e fila tem direção: deitada no fio, o eixo x local é
+ * o sentido da marcha. As outras formas ficam de pé — um envelope girando
+ * chegaria de cabeça para baixo do outro lado de um cotovelo, e ninguém ganha
+ * nada com isso.
+ */
+.dui-stage__carga-grupo[data-forma="feixe"] {
+  offset-rotate: auto;
 }
 
 .dui-stage__carga-grupo--acomodada {
@@ -931,11 +1164,12 @@
 }
 
 /*
- * O seletor é um trapézio, e o rótulo dele cabe onde há espaço.
+ * O leque é um trapézio, e o rótulo dele cabe onde há espaço.
  *
  * A forma é a explicação: largo do lado das entradas, estreito do lado da
  * saída — muitas entram, uma sai. Escrever "mux" dentro de um retângulo exige
- * que o leitor já saiba o que é um mux; o trapézio conta antes de ele ler.
+ * que o leitor já saiba o que a caixa faz; o trapézio conta antes de ele ler:
+ * largo do lado em que são muitos, estreito do lado em que é um.
  */
 .dui-stage__objeto:has(> path.dui-stage__caixa) .dui-stage__rotulo {
   font-size: 10px;

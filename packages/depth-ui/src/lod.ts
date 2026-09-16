@@ -19,6 +19,24 @@ export const LIMIAR_ENTRA = 0.24;
 /** Onde ele já está inteiro. */
 export const LIMIAR_CHEIO = 0.5;
 
+/**
+ * A partir de quanto de aparição o interior é **legível o bastante para receber
+ * linha uma a uma**.
+ *
+ * A rampa acima decide o quanto do interior se vê; esta decide outra coisa, e
+ * confundir as duas custou caro. Na vista da ULA o interior do somador de 32
+ * bits era desenhado a **sete por cento de opacidade** — um borrão — e mesmo
+ * assim recebia trinta e duas linhas individuais, uma por bit, pousando em
+ * entradas que ninguém consegue ver. Trezentos e quarenta e dois cruzamentos
+ * numa vista cujo lab tem teto quinze na vista de abertura.
+ *
+ * Abaixo deste limiar a ligação vira **uma linha marcada com o feixe de N**, que
+ * é a notação que o esquemático usa para um barramento e a mesma que este palco
+ * já usa quando o interior está fechado. De longe o desenho informa a conta; de
+ * perto ele se abre nos fios que a compõem.
+ */
+export const LIMIAR_LEGIVEL = 0.6;
+
 /** Até onde a câmera aproxima. Além disto o desenho é um pixel esticado. */
 export const ZOOM_MAXIMO = 40;
 

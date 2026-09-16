@@ -128,9 +128,50 @@ dela mudar ao atravessar o `transform` — tudo por smoke automatizado.
 
 ---
 
+### As vistas fundas passaram a ser medidas — 2026-09-08
+
+`profundidade.spec.ts` mede o espaguete **um nível abaixo** de cada lab, que é onde ele
+estava: a vista da ULA tinha 342 cruzamentos e 2345 sobreposições enquanto o lab passava com
+teto quinze. Três causas, e a pior era a `key` do React repetida entre fios agregados — nó
+órfão acumulando a cada tick, invisível para toda medida que olhava o modelo em vez da tela.
+Registro em `docs/PROGRESS.md` (Entrega 9).
+
+**Próximo alvo do desenho:** a porta lógica é desenhada com o trapézio do seletor e não
+seleciona nada; a forma tem de seguir o leque real. E o processador do micro, com 42
+cruzamentos, é a vista mais cara que sobrou.
+
+### A linguagem visual ganhou o túnel — 2026-09-08
+
+Onde dois fios se cruzam, um mergulha e reaparece, com uma boca em cada ponta. Fecha a
+metade que a convenção do pontinho de junção respondia por ausência. O vazio é máscara e não
+`d` partido, então a medida de espaguete não perde um cruzamento de vista — os cinco tetos
+passaram sem mudar. Registro em `docs/PROGRESS.md` (Entrega 7).
+
+**A rodada seguinte do desenho** é soltar os pesos do roteador (com cruzamento legível,
+cruzar ficou barato) e as quatro figuras aprovadas: carga na esteira item a item, esteira
+entupida, alerta na máquina, camada de circuito.
+
 ## F4 — `otel` como primeiro pacote de modelo
 
 Aqui o projeto deixa de ser motor e passa a ser produto.
+
+### O primeiro lab está no ar — 2026-09-01
+
+`labs/providers` publicado: os três provedores do SDK, com L0, L1 e L3, e o invariante do
+envelope provado por property test mais teste de mutação. A linha "árvore fiel do
+TracerProvider" da tabela abaixo está **feita**; o importador de manifesto, a leitura da
+configuração nativa e o contrato de fidelidade no CI continuam abertos. Registro em
+`docs/PROGRESS.md`.
+
+**A contraparte real deixou de ser pendência — 2026-09-08.** `labs/providers/` existe e
+roda: app Java com o SDK fixado (BOM 1.65.0), Collector imprimindo, `compose.yaml`. Foi
+rodada de verdade — 56 spans em lotes de cinco segundos, `service.name` chegando uma camada
+acima dos spans, escopo `checkout.http` no meio. Com ela veio a seção **Instrument it**, e
+o bloco certo de cada exercício é **extraído** daquele arquivo, nunca escrito ao lado.
+
+O retorno de motor deste round: o `router` estava descrito de um lado só — o texto do
+catálogo descreve o mux, que escolhe qual **entrada** responde, e um amostrador é o espelho
+disso. Fica registrado sem `kind` novo: a régua exige dois alvos pagantes, e há um.
 
 | Item | Nota |
 |---|---|

@@ -1,6 +1,8 @@
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
 import { Inspector, toInspectorLines } from "./Inspector.js";
+
+afterEach(cleanup);
 
 describe("toInspectorLines", () => {
   it("achata um objeto em linhas com caminho", () => {
@@ -32,6 +34,17 @@ describe("toInspectorLines", () => {
     expect(lines.find((l) => l.path === "xs.0.n")?.changed).toBe(true);
   });
 
+  it("mostra a chave inteira quando ela contém ponto", () => {
+    const lines = toInspectorLines({ casa: { "casa.numero": 12 } });
+    expect(lines).toEqual([
+      { path: "", text: "{", depth: 0 },
+      { path: "casa", text: '"casa": {', depth: 1 },
+      { path: "casa.casa.numero", text: '"casa.numero": 12', depth: 2 },
+      { path: "casa", text: "}", depth: 1 },
+      { path: "", text: "}", depth: 0 },
+    ]);
+  });
+
   it("marca como alterada a linha cujo caminho está no diff", () => {
     const lines = toInspectorLines({ a: { b: 1 } }, ["a.b"]);
     expect(lines.find((l) => l.path === "a.b")?.changed).toBe(true);
@@ -43,6 +56,11 @@ describe("Inspector", () => {
   it("renderiza os valores do objeto", () => {
     render(<Inspector value={{ status: 200 }} changedPaths={[]} />);
     expect(screen.getByText(/"status": 200/)).toBeDefined();
+  });
+
+  it("renderiza a chave com ponto por inteiro", () => {
+    render(<Inspector value={{ "a.b": 1 }} changedPaths={[]} />);
+    expect(screen.getByText(/"a\.b": 1/)).toBeDefined();
   });
 
   it("marca visualmente as linhas alteradas", () => {

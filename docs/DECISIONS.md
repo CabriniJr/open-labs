@@ -38,10 +38,15 @@ telemetria, quando o motor é justamente **o que não sabe o que é um span**.
   span e pipeline. O que o `cpu.model` pedir ao motor e o `otel.model` não usar é
   suspeito de ser domínio vazado
 
-**O que não muda:** o repositório segue `otel-visual-handbook` e os pacotes seguem no
-escopo `@ovh/`. Renomear quebra links, CI e o deploy publicado por um ganho só de
-fachada; o nome que o leitor vê já está certo. A renomeação técnica sai de graça quando
-o motor for para repositório próprio — a decisão aberta nº 7 da §7.
+**O que não muda:** os pacotes seguem no escopo `@ovh/`. Renomear quebra CI e imports por
+um ganho só de fachada; o nome que o leitor vê já está certo. A renomeação técnica sai de
+graça quando o motor for para repositório próprio — a decisão aberta nº 7 da §7.
+
+**O que mudou:** o repositório passou a se chamar `CabriniJr/open-labs` (o nome antigo
+redireciona, e o clone local ainda se chama `otel-visual-handbook` — pasta é nome de
+pasta). Os links que o **site publica** apontam para o nome novo, e há teste cobrando isso:
+link que o leitor clica não pode depender de redirecionamento de terceiro continuar
+existindo.
 
 **Onde isto poderia mentir em silêncio:** o catálogo
 (`apps/site/src/data/handbooks.ts`) é a promessa da capa, e um artigo ou lab apontando
@@ -161,6 +166,8 @@ Somam-se aos cinco princípios da spec do handbook, não os substituem.
 | **Se precisa de condicional no YAML, precisa de um `kind`** | Impede o formato de virar linguagem de programação |
 | **Fenômeno que precisou de roteiro deve ser zero** | O dia em que um precisar, é animação e não simulação |
 | **`model` que não cabe num handbook é dois `model`** | Trava contra escopo inflado |
+| **Fluxo com camadas usa o motor; o resto vira lab separado** | O motor é pilar, não obrigação. Ver §9 |
+| **O tema do lab nomeia o protagonista** | Não se monta uma rua para explicar uma porta. Item → melhora o motor ou lab PhET-like, nunca por omissão. §9 |
 
 ---
 
@@ -209,7 +216,7 @@ que exige o motor.
 
 Nomenclatura · a ferramenta ensina e não opera · `model` é ilha com porto · reuso não é
 requisito · playground é editor de grafo com regras · segue com o motor · a gramática ·
-os quatro níveis como tipos de coisa · **o projeto é OpenLabs, e cada handbook é um
+os quatro níveis como tipos de coisa · **o motor é pilar e não é obrigatório** (§9) · **o projeto é OpenLabs, e cada handbook é um
 `.model` com roadmap, artigos e labs** (o enquadramento, no topo).
 
 ### Abertas, e nesta ordem de urgência
@@ -229,9 +236,114 @@ os quatro níveis como tipos de coisa · **o projeto é OpenLabs, e cada handboo
 ## 8. As três coisas baratas que faltam, e nenhuma exige o motor
 
 1. **Predição antes da revelação.** Perguntar o que a pessoa acha que vai acontecer **antes**
-   de rodar. É o achado mais replicado da pesquisa em simulação didática
+   de rodar. É o achado mais replicado da pesquisa em simulação didática.
+
+   **Virou duas peças (08/09/2026).** A `Predicao` pergunta *o que vai acontecer*; o
+   `Exercicio` pergunta *o que eu escrevo aqui* — a decisão que a pessoa toma no trabalho,
+   no meio do código em que ela é tomada. As duas dividem a mesma regra: **a resposta não se
+   refaz**, porque o compromisso é o mecanismo. E as duas só põem a explicação no DOM
+   depois da resposta, e não escondida por CSS
 2. **O mal-entendido que cada lab desfaz.** "As pessoas acham que o span vai direto para o
    backend." Vira campo no `teaches`, e força escrever para quem já tem ideia errada — que é
    o caso real
 3. **`docs/authoring.md` como interface pública.** O teste de "ser base para outros handbooks"
    é um handbook escrito por outra pessoa, e o que habilita isso é o guia, não o motor
+
+---
+
+## 9. O motor é um pilar — e não é obrigatório
+
+*Decidido em 2026-09-08, no meio da rodada que ia migrar a landing para o motor novo.*
+
+Duas afirmações que só valem juntas. Separadas, cada uma vira um erro que o projeto já
+esteve perto de cometer.
+
+**A primeira: o `depth-core` é pilar do projeto, e não infraestrutura.** Ele é um motor de
+**grafos com profundidade** — representar fluxo de forma dinâmica, com camadas de abstração,
+e descer de uma para a de baixo sem que as duas sejam desenhos diferentes da mesma coisa.
+Isso, *nesta forma e com estes conceitos*, **não existe no mercado**. É por isso que ele
+recebe atenção desproporcional ao tamanho: cada rodada de refino nele (o túnel, as vistas
+fundas, o roteador, a gramática do Factorio) é investimento no único ativo do projeto que
+ninguém mais tem. Ele nunca é "o jeito rápido de fazer o lab"; ele é o motivo de o projeto
+existir.
+
+**A segunda: nem todo assunto é um fluxo com camadas.** O motor foi construído para grafo e
+profundidade, e há assunto que simplesmente não é isso. O caso que trouxe a decisão à tona
+é a **escada fixa de quatro níveis na anatomia de um trace**: abrir uma CPU até o fio é uma
+descida de verdade, e um trace não tem *dentro* — ele tem uma árvore espalhada por quatro
+processos que só se encontram no Collector. Forçar o assunto na forma do motor produziria um
+lab pior que um lab simples, e ainda mentiria sobre o assunto.
+
+### A regra, e ela decide sozinha
+
+> **O assunto é um fluxo com camadas de abstração e lógica?**
+> **Sim** → usa o motor. Sem discussão, sem "seria mais rápido à mão": é para isto que
+> pagamos as rodadas de refino.
+> **Não** → **lab separado**, enxuto, exclusivo do assunto — uma experiência mais *mockada*
+> mesmo, desde que **represente melhor**. Mais perto do PhET do que do Factorio.
+
+**E o lab pequeno é mais barato que o motor** — este é o outro lado, e ele importa tanto
+quanto: o motor é bom, funciona, e adentrar nele é a melhor coisa que o projeto tem, mas isso
+é razão para usá-lo onde ele ganha, e não para forçá-lo onde o assunto não é fluxo. Um lab
+especializado, isolado e **bem feito** ensina mais que uma rua construída para explicar uma
+porta, e custa menos.
+
+O critério de qualidade **não cai** no segundo caso: pequeno e dedicado não é rascunho. Um
+lab PhET-like continua devendo o mesmo que qualquer outro — uma pergunta concreta, resposta
+derivada do estado e não de texto, o mal-entendido que ele desfaz, contraparte real quando
+ele afirma algo sobre o mundo, e teste que cai quando o lab para de ensinar o que promete.
+O que ele **não** deve é profundidade: sem árvore de composição, sem palco, sem `kinds`.
+
+### O corte real: a fábrica ou o item?
+
+*Afiado por ele em 2026-09-08, logo depois:* **"mesmo que se encaixe na nossa lógica de
+fluxos, o foco é o item e não a fábrica — o nosso sistema de grafos funciona muito bem
+quando o foco é a fábrica, mas no span o foco é o item; ou melhoramos o foco pro item, ou
+criamos um lab mais PhET."**
+
+"Fluxo com camadas" era a pergunta certa e não era a pergunta suficiente. Um trace **é** um
+fluxo com camadas, e mesmo assim o motor não o serve bem — porque o motor é centrado na
+**fábrica**. O protagonista dele é o grafo: as máquinas, as esteiras, o que tem dentro de
+cada caixa. O item é carga que atravessa; desde "seguir a carga" dá para clicar nele e ler o
+corpo, mas ele continua sendo um ponto pequeno numa esteira, com o painel de lado.
+
+Num span, o protagonista é o item: importa **aquela coisa**, o que ela virou em cada parada,
+e onde ela terminou. A fábrica é cenário. Aplicar o motor sem enxergar isso produz um lab
+que desenha a tubulação com capricho e trata de raspão o assunto.
+
+**O tema do lab é quem nomeia o protagonista — e não a gente.** A formulação dele, e ela
+resolve o caso sozinha:
+
+> *"É que nem estarmos fazendo um lab sobre motorista e focar nas ruas, e um lab de ruas e
+> focar no motorista. E num de porta de carros, não vamos montar uma rua para explicar."*
+
+O protagonista não é escolha de desenho: ele já está dito no assunto, e a única maneira de
+errar é não perguntar. Lab de oleoduto → a fábrica protagoniza. Lab de span → o item
+protagoniza. Lab de porta de carro → **nem um nem outro**, e montar a rua em volta para
+explicar a porta é gastar caro para ensinar pior.
+
+E ela é assumidamente subjetiva. Isso não a enfraquece: a alternativa é a omissão, que decide
+igual e decide sempre a favor do motor, porque o motor está pronto.
+
+**Então a régua tem duas perguntas, nesta ordem:**
+
+1. **É um fluxo com camadas de abstração e lógica?** Não → lab separado, PhET-like.
+2. **Quem é o protagonista, a fábrica ou o item?** Fábrica → motor, é o caso para o qual ele
+   foi feito. **Item → decisão explícita entre duas saídas, e nunca por omissão:** ou a
+   rodada **melhora o foco no item no motor** — e aí é investimento no pilar, com dono e
+   escopo —, ou o lab é **separado e PhET-like**. O que não pode acontecer é usar o motor
+   como está e deixar o item de coadjuvante num assunto que é sobre ele.
+
+### O que isto revoga, e o que não
+
+Não revoga nada da §3: "só precisa ser simulado o que vai ser apresentado" e "`model` que
+não cabe num handbook é dois `model`" continuam valendo, e esta regra é irmã das duas.
+Revoga uma expectativa que nunca foi escrita mas estava no ar — a de que **todo** lab de
+todo handbook nasceria do `.model`. Não nasce. O handbook é a casa; o motor é o inquilino
+principal, não o único.
+
+**Onde isto poderia mentir em silêncio:** um lab PhET-like desenhado à mão pode afirmar o
+que nenhum modelo sustenta, que é o defeito mais caro do projeto. A trava é a mesma dos
+outros: **contraparte real**. Se o lab diz algo sobre o mundo, o repositório tem de ter como
+conferir contra a coisa de verdade — e sem modelo por baixo, essa dívida fica *maior*, não
+menor.

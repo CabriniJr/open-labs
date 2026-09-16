@@ -97,8 +97,10 @@ export const KINDS: Readonly<Record<Kind, Descricao>> = {
   router: {
     resumo: "Takes in, decides, emits on an outlet.",
     detalhe:
-      "The most common processor. A mux is a router: it picks which of its inputs answers, " +
-      "and what commands the choice is usually a control line.",
+      "The most common processor, and it fans both ways. One kind picks which of its many " +
+      "inputs answers; the mirror image takes one input and picks which outlet it leaves " +
+      "by. The shape follows the fan — wide where there are many, narrow where there is " +
+      "one — and what commands the choice is usually a control line.",
   },
   switch: {
     resumo: "Lets the path through, or does not.",
