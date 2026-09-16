@@ -81,9 +81,15 @@ export function Roadmap({ mapa }: { readonly mapa: RoadmapMap }) {
   // Lido só depois da hidratação: o HTML do servidor não conhece o progresso
   // do leitor, e ler no render causaria divergência de hidratação.
   const [done, setDone] = useState<readonly string[]>([]);
+  // O contador nasce "0 of N" no servidor e continua "0 of N" na primeira
+  // renderização do cliente — sem um sinal explícito, o teste (e o leitor rápido)
+  // não distingue "ainda não hidratou" de "já hidratou, ninguém marcou nada".
+  // Um clique antes da hidratação atinge um botão sem listener e some.
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     setDone(readProgress(storageKey));
+    setHydrated(true);
   }, [storageKey]);
 
   const toggle = (id: string): void => {
@@ -96,7 +102,7 @@ export function Roadmap({ mapa }: { readonly mapa: RoadmapMap }) {
   const completed = done.length;
 
   return (
-    <div className="roadmap">
+    <div className="roadmap" data-hydrated={hydrated || undefined}>
       <div className="roadmap__progress">
         <span className="roadmap__progress-label mono">Your progress</span>
         <span className="roadmap__progress-count mono">

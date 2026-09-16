@@ -18,6 +18,10 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # `astro sync` gera os tipos de `astro:content` e `import.meta.env` que o
+      # typecheck consome. Sem isto o tsc quebra em content.config.ts e urls.ts —
+      # o build depois roda seu próprio sync, mas o typecheck não.
+      - run: pnpm --filter @ovh/site exec astro sync
       - run: pnpm boundaries
       - run: pnpm catalogo
       - run: pnpm typecheck

@@ -11,8 +11,8 @@ que faz o segundo handbook custar menos que o primeiro.
 Todo handbook tem a mesma anatomia: **roadmap** (a ordem em que os conceitos se
 sustentam), **artigos** e **labs**.
 
-**https://otel-visual-handbook.vercel.app** — o site canônico, servido na raiz.
-Espelho no GitHub Pages: **https://cabrinijr.github.io/otel-visual-handbook**
+**https://cabrinijr.github.io/open-labs/** — o site canônico, publicado pelo
+GitHub Pages a partir de `main`.
 
 ## Why
 
@@ -60,13 +60,13 @@ O caminho-base não é constante: quem chama o build declara onde o site vai ser
 
 | Destino | Comando | Onde serve |
 |---|---|---|
-| Vercel (canônico) | `pnpm build` | raiz do domínio |
-| GitHub Pages (espelho) | `PUBLIC_BASE_PATH=/otel-visual-handbook/ PUBLIC_SITE_URL=https://cabrinijr.github.io pnpm build` | `/otel-visual-handbook/` |
+| GitHub Pages (canônico) | `PUBLIC_BASE_PATH=/open-labs/ PUBLIC_SITE_URL=https://cabrinijr.github.io pnpm build` | `/open-labs/` |
+| Local / domínio próprio | `pnpm build` | raiz |
 
-A Vercel usa o `vercel.json` da raiz (`framework: null`, porque o autodetect erra o
-diretório num monorepo pnpm). O Pages sai de `.github/workflows/deploy.yml`, que passa as
-duas variáveis acima. Toda URL interna do site precisa passar por `import.meta.env.BASE_URL`
-— caminho absoluto cravado funciona local e quebra no espelho.
+O deploy sai de `.github/workflows/deploy.yml`, que roda em cada push em `main` e
+publica `apps/site/dist` no ambiente `github-pages`. Toda URL interna do site
+precisa passar por `import.meta.env.BASE_URL` — caminho absoluto cravado funciona
+local e quebra no Pages.
 
 Writing a lab: see [`docs/authoring.md`](docs/authoring.md).
 

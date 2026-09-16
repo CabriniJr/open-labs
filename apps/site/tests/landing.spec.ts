@@ -85,6 +85,10 @@ test.describe.serial("progresso do mapa", () => {
     const roadmap = page.locator(".roadmap");
     await roadmap.scrollIntoViewIfNeeded();
 
+    // `[data-hydrated]` só aparece depois do primeiro efeito da ilha — sem
+    // isso o clique pode cair num botão ainda sem listener e sumir. Usamos
+    // `toBeAttached` porque no mobile o mapa pode estar fora do viewport.
+    await expect(page.locator(".roadmap[data-hydrated]")).toBeAttached();
     await expect(roadmap.locator(".roadmap__progress-count")).toHaveText("0 of 6");
 
     const marcar = page.getByRole("button", { name: /Mark The whole cycle in one tick as done/i });
@@ -95,6 +99,7 @@ test.describe.serial("progresso do mapa", () => {
     await page.reload();
     await roadmap.scrollIntoViewIfNeeded();
 
+    await expect(page.locator(".roadmap[data-hydrated]")).toBeAttached();
     await expect(roadmap.locator(".roadmap__progress-count")).toHaveText("1 of 6");
     await expect(
       page.getByRole("button", { name: /Mark The whole cycle in one tick as done/i }),
@@ -107,17 +112,19 @@ test.describe.serial("progresso do mapa", () => {
     await page.goto("handbooks/cpu/");
     await page.evaluate(() => window.localStorage.clear());
     await page.reload();
-    // Esperar o contador zerar antes de clicar não é folga: ele só existe
-    // depois de a ilha hidratar e ler o armazenamento. Clicar antes disso
-    // marca no estado inicial e o clique se perde na hidratação — falha
-    // intermitente, e só sob carga.
-    await expect(page.locator(".roadmap__progress-count")).toHaveText("0 of 6");
+    // O Roadmap sobe com `client:visible`: precisa entrar no viewport para
+    // hidratar. `[data-hydrated]` é o sinal explícito de que a ilha já leu o
+    // armazenamento e ligou os listeners — esperar o contador zerar não
+    // bastava (o SSR já imprime "0 of 6" e o clique caía num botão sem handler).
+    await page.locator(".roadmap").scrollIntoViewIfNeeded();
+    await expect(page.locator(".roadmap[data-hydrated]")).toBeAttached();
     const marcar = page.getByRole("button", { name: /Mark The whole cycle in one tick as done/i });
-    await marcar.scrollIntoViewIfNeeded();
     await marcar.click();
     await expect(page.locator(".roadmap__progress-count")).toHaveText("1 of 6");
 
     await page.goto("handbooks/otel/");
+    await page.locator(".roadmap").scrollIntoViewIfNeeded();
+    await expect(page.locator(".roadmap[data-hydrated]")).toBeAttached();
     await expect(page.locator(".roadmap__progress-count")).toHaveText("0 of 13");
   });
 });

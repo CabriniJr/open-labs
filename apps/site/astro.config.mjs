@@ -3,20 +3,18 @@ import pagefind from "astro-pagefind";
 import { defineConfig } from "astro/config";
 import { drillDown } from "./src/lib/drill.ts";
 
-// O GitHub Pages serve em /<repo>/; a Vercel serve na raiz. Quem chama o build
-// declara onde vai servir, em vez de o código adivinhar.
+// O GitHub Pages serve em /<repo>/; um domínio próprio serviria na raiz. Quem
+// chama o build declara onde vai servir, em vez de o código adivinhar. Para
+// rodar local basta o padrão `/`; o workflow de Pages injeta `/open-labs/`.
 const base = process.env.PUBLIC_BASE_PATH ?? "/";
 /**
  * O endereço público, e ele precisa ser o de verdade.
  *
- * O padrão apontava para um domínio que **não existe** — respondia 404, e era o
- * nome antigo do projeto. Enquanto nada gera URL canônica nem sitemap, um errado
- * não aparece em lugar nenhum; no dia em que gerar, ele publica endereço morto
- * em toda página, e a descoberta vem de fora, tarde.
- *
- * Quem serve em outro lugar declara `PUBLIC_SITE_URL`.
+ * Padrão aponta para GitHub Pages, que é o alvo canônico. Quem serve em outro
+ * lugar declara `PUBLIC_SITE_URL` — o workflow do Pages passa apenas
+ * `https://cabrinijr.github.io` (o base path completa a URL).
  */
-const site = process.env.PUBLIC_SITE_URL ?? "https://openlabs-guaxinims-projects.vercel.app";
+const site = process.env.PUBLIC_SITE_URL ?? "https://cabrinijr.github.io";
 
 /**
  * Todo documento em `docs/` abre com `# Título`, porque também é lido no
