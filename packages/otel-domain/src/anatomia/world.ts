@@ -1,7 +1,9 @@
-import type { AnyObject, Emission, ObjectSpec, Wire, WorldSpec } from "@ovh/depth-core";
+import type { Emission, ObjectSpec, WorldSpec } from "@ovh/depth-core";
+import { compileSkeleton, parseSkeleton, type NodeOverride } from "@ovh/mermaid-skeleton";
 import { formatTraceparent, parseTraceparent } from "../traceparent.js";
 import { amostradaNaRaiz, idHex, type Chamada, type SpanExportado } from "./carga.js";
 import { ROTULOS_ANATOMIA, SERVICOS, type Servico } from "./labels.js";
+import ANATOMY_MMD from "./anatomy.mmd?raw";
 
 /**
  * Uma requisição, quatro processos, e uma árvore que ninguém possui.
@@ -85,12 +87,9 @@ const spansDe = (data: Readonly<Record<string, unknown>>): readonly SpanExportad
 /** Quantos spans o backend guarda antes de o lab virar teste de memória. */
 const TETO = 80;
 
-const entrada: ObjectSpec<{ readonly n: number }> = {
-  id: "edge",
-  kind: "source",
-  label: ROTULOS_ANATOMIA.entrada,
+const entrada: NodeOverride = {
   leaf: true,
-  init: () => ({ n: 0 }),
+  init: (): { readonly n: number } => ({ n: 0 }),
   behavior: (state, _inbox, ctx) => {
     if (ctx.phase !== "commit") return { state, out: [] };
     const quantas = inteiro(ctx.params["requisicoes-por-tick"], 1);
@@ -117,11 +116,8 @@ const entrada: ObjectSpec<{ readonly n: number }> = {
  * desenho: são a mesma lógica com uma peça faltando, que é como eles acontecem
  * de verdade.
  */
-function servico(nome: Servico, posicao: number, ultimo: boolean): ObjectSpec<EstadoServico> {
+function servico(nome: Servico, posicao: number, ultimo: boolean): NodeOverride {
   return {
-    id: nome,
-    kind: "router",
-    label: ROTULOS_ANATOMIA[nome],
     leaf: true,
     init: (): EstadoServico => ({ atendidas: 0, exportados: 0, raizesInesperadas: 0, ultimaN: 0 }),
     behavior: (state, inbox, ctx) => {
@@ -214,10 +210,7 @@ function servico(nome: Servico, posicao: number, ultimo: boolean): ObjectSpec<Es
  * ninguém tem a lista. A árvore é montada em `estado.ts`, na leitura — que é
  * onde ela é montada na vida real.
  */
-const backend: ObjectSpec<EstadoBackend> = {
-  id: "backend",
-  kind: "store",
-  label: ROTULOS_ANATOMIA.backend,
+const backend: NodeOverride = {
   leaf: true,
   init: (): EstadoBackend => ({ spans: [] }),
   behavior: (state, inbox, ctx) => {
@@ -237,31 +230,56 @@ const backend: ObjectSpec<EstadoBackend> = {
   },
 };
 
+/**
+ * Monta o `WorldSpec` da anatomia a partir do esqueleto em `anatomy.mmd`.
+ *
+ * Topologia — quem existe, quem liga em quem, quais são as portas — vem toda
+ * do desenho. Comportamento e estado ficam aqui, injetados como
+ * `overrides` no compilador. É o padrão que a §3 do design descreve: o mmd é
+ * o esqueleto; o motor põe a lógica por cima.
+ */
 export function anatomiaWorld(params: Readonly<Record<string, number>> = {}): WorldSpec {
-  const servicos = SERVICOS.map((nome, i) => servico(nome, i + 1, i === SERVICOS.length - 1));
+  const parsed = parseSkeleton(ANATOMY_MMD);
+  if (!parsed.ok) throw new Error(`anatomy.mmd inválido: ${parsed.errors.join(" | ")}`);
 
-  const root: AnyObject = {
-    id: "sistema",
-    kind: "composite",
-    label: ROTULOS_ANATOMIA.sistema,
-    entry: "edge",
-    exit: "backend",
-    children: [entrada, ...servicos, backend],
-  };
-
-  const wires: Wire[] = [{ from: "edge", port: "call", to: SERVICOS[0]! }];
+  const overrides: Record<string, NodeOverride> = { edge: entrada, backend };
   SERVICOS.forEach((nome, i) => {
-    const proximo = SERVICOS[i + 1];
-    if (proximo !== undefined) wires.push({ from: nome, port: "call", to: proximo });
-    wires.push({ from: nome, port: "export", to: "backend" });
+    overrides[nome] = servico(nome, i + 1, i === SERVICOS.length - 1);
   });
 
+  const compiled = compileSkeleton(parsed.value, {
+    overrides,
+    rootId: "sistema",
+    rootLabel: ROTULOS_ANATOMIA.sistema,
+    rootEntry: "edge",
+    rootExit: "backend",
+  });
+  if (!compiled.ok) throw new Error(`anatomy.mmd não compila: ${compiled.errors.join(" | ")}`);
+
+  // Rótulos legíveis vêm dos ROTULOS_ANATOMIA — o mmd carrega os ids curtos,
+  // que casam com o vocabulário de `SERVICOS` e com quem lê o WorldSpec fora.
+  const world = comLabels(compiled.world);
+
   return {
-    id: "otel-anatomy",
-    seed: 11,
-    root,
-    wires,
-    params: { ...PARAMS_DA_ANATOMIA, ...params },
-    edgeTicks: 1,
+    ...world,
+    params: { ...PARAMS_DA_ANATOMIA, ...world.params, ...params },
   };
+}
+
+/**
+ * Aplica os rótulos longos por cima do WorldSpec compilado. É preferível a
+ * carregá-los no mmd porque `ROTULOS_ANATOMIA` é o vocabulário canônico e
+ * duplicar rótulo num mmd seria uma segunda fonte da mesma verdade.
+ */
+function comLabels(world: WorldSpec): WorldSpec {
+  const rotule = (obj: ObjectSpec): ObjectSpec => {
+    const rotulo = (ROTULOS_ANATOMIA as Readonly<Record<string, string>>)[obj.id];
+    const children = obj.children?.map(rotule);
+    return {
+      ...obj,
+      ...(rotulo === undefined ? {} : { label: rotulo }),
+      ...(children === undefined ? {} : { children }),
+    };
+  };
+  return { ...world, root: rotule(world.root) };
 }

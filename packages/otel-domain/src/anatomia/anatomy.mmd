@@ -1,0 +1,33 @@
+---
+id: otel-anatomy
+title: Uma requisição, quatro processos, quatro exports
+seed: 11
+edgeTicks: 1
+params:
+  requisicoes-por-tick: 1
+  derrubar-cabecalho-em: 0
+  sem-instrumentacao: 0
+  taxa-de-amostragem: 1
+  ignorar-amostragem: 0
+---
+flowchart LR
+  edge([edge]):::entrada
+  gateway[gateway]:::servico
+  checkout[checkout]:::servico
+  payments[payments]:::servico
+  ledger[ledger]:::servico
+  backend[(backend)]:::backend
+
+  edge     -- "call:request" --> gateway
+  gateway  -- "call:request" --> checkout
+  checkout -- "call:request" --> payments
+  payments -- "call:request" --> ledger
+
+  gateway  -. "export:span" .-> backend
+  checkout -. "export:span" .-> backend
+  payments -. "export:span" .-> backend
+  ledger   -. "export:span" .-> backend
+
+  classDef entrada family:processor,kind:source
+  classDef servico family:processor,kind:router
+  classDef backend family:processor,kind:store

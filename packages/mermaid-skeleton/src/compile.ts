@@ -1,4 +1,4 @@
-import type { AnyObject, Kind, Wire as WorldWire, WorldSpec } from "@ovh/depth-core";
+import type { AnyObject, Behavior, Kind, PortId, Wire as WorldWire, WorldSpec } from "@ovh/depth-core";
 import { consumo, fonte, retencao } from "@ovh/model-format";
 import type { Arg } from "@ovh/model-format";
 import type { Skeleton, SkeletonEdge, SkeletonNode, SkeletonSubgraph } from "./types.js";
@@ -65,6 +65,54 @@ export interface CompileOptions {
    * a saída disso é passar por fora até a §embarcar-no-mermaid da spec fechar.
    */
   readonly args?: Readonly<Record<string, Readonly<Record<string, number | { readonly param: string }>>>>;
+  /**
+   * Comportamento injetado por nó, indexado pelo `id`.
+   *
+   * É a promessa da §3 do design tornada mecânica: o `.mmd` descreve o
+   * esqueleto — o nó, o `kind` visual, as arestas — e o comportamento vem por
+   * cima, no runtime. Quando um id aparece aqui, o compilador **respeita o
+   * `kind` declarado no mmd** e não passa o nó pelas tabelas `CONTRATOS`
+   * ou `RECUSADOS`. É como um `router` ou um `store` conseguem existir num
+   * cenário: o autor toma a responsabilidade das portas e do behavior.
+   */
+  readonly overrides?: Readonly<Record<string, NodeOverride>>;
+  /**
+   * O composite raiz aceita `entry` e `exit` — quais filhos recebem carga que
+   * vem "de fora" do root e por quais ela sai. Um cenário top-level não tem
+   * fora, então isso raramente importa; existe para paridade com o
+   * `WorldSpec.root` que a anatomia produzia à mão.
+   */
+  readonly rootEntry?: string;
+  readonly rootExit?: string;
+  /** Id do composite raiz. Padrão: `${skeleton.id}-root`. */
+  readonly rootId?: string;
+  /** Rótulo do composite raiz. Padrão: `skeleton.title`. */
+  readonly rootLabel?: string;
+}
+
+/**
+ * O que o autor pode fornecer por nó, além do que o mmd já disse.
+ *
+ * `id`, `kind` e `label` **não** entram aqui — eles vêm do desenho. O resto do
+ * `ObjectSpec` é livre: `behavior`, `init`, `leaf`, `outlets`, `entry`, `exit`,
+ * `drives`, `dynamic`, `replicas`, `shortcut`. Um nó overridden não é validado
+ * contra `CONTRATOS`, então o autor é quem sabe quais portas o nó tem.
+ */
+export interface NodeOverride {
+  readonly leaf?: true;
+  readonly drives?: true;
+  readonly dynamic?: true;
+  readonly replicas?: number;
+  readonly entry?: string;
+  readonly exit?: string;
+  readonly outlets?: Readonly<Record<PortId, readonly string[]>>;
+  readonly inlets?: Readonly<Record<PortId, readonly string[]>>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  readonly init?: () => any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  readonly behavior?: Behavior<any>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  readonly shortcut?: Behavior<any>;
 }
 
 export type CompileResult =
@@ -96,6 +144,7 @@ export function compileSkeleton(sk: Skeleton, opts: CompileOptions = {}): Compil
   };
 
   const contratoDe = new Map<string, Contrato>();
+  const overriddenIds = new Set<string>(Object.keys(opts.overrides ?? {}));
   const buildLeaf = (n: SkeletonNode): AnyObject | null => {
     if (n.kind === null) {
       erros.push(
@@ -104,11 +153,19 @@ export function compileSkeleton(sk: Skeleton, opts: CompileOptions = {}): Compil
       );
       return null;
     }
+    const ov = opts.overrides?.[n.id];
+    if (ov !== undefined) {
+      // Comportamento injetado: o autor toma a responsabilidade. O compilador
+      // respeita o `kind` visual e monta o ObjectSpec sem passar por CONTRATOS.
+      // Se as portas declaradas em `outlets`/`inlets` não baterem com as
+      // arestas, `validateWorld` cai no `new World(...)` — mesma guarda.
+      return { id: n.id, kind: n.kind, label: n.label, ...ov };
+    }
     const contrato = CONTRATOS[n.kind];
     if (contrato === undefined) {
       const recusa = RECUSADOS[n.kind];
       const onda = ONDAS[n.kind];
-      if (recusa !== undefined) erros.push(`o nó "${n.id}" usa kind "${n.kind}", que o compilador recusa: ${recusa}`);
+      if (recusa !== undefined) erros.push(`o nó "${n.id}" usa kind "${n.kind}", que o compilador recusa: ${recusa} (ou forneça \`overrides["${n.id}"]\`)`);
       else if (onda !== undefined) {
         erros.push(
           `o nó "${n.id}" usa kind "${n.kind}", que ainda não existe no motor — chega na ${onda} (docs/kinds.md)`,
@@ -166,7 +223,7 @@ export function compileSkeleton(sk: Skeleton, opts: CompileOptions = {}): Compil
 
   const fios: WorldWire[] = [];
   for (const e of sk.edges) {
-    const wire = compileEdge(e, nodesById, subgraphsById, contratoDe, erros);
+    const wire = compileEdge(e, nodesById, subgraphsById, contratoDe, overriddenIds, erros);
     if (wire !== null) fios.push(wire);
   }
 
@@ -176,14 +233,19 @@ export function compileSkeleton(sk: Skeleton, opts: CompileOptions = {}): Compil
     id: sk.id,
     seed: opts.seed ?? readSeed(sk.frontMatter) ?? 1,
     root: {
-      id: `${sk.id}-root`,
+      id: opts.rootId ?? `${sk.id}-root`,
       kind: "composite" satisfies Kind,
-      label: sk.title,
+      label: opts.rootLabel ?? sk.title,
       children: topLevel,
+      ...(opts.rootEntry === undefined ? {} : { entry: opts.rootEntry }),
+      ...(opts.rootExit === undefined ? {} : { exit: opts.rootExit }),
     },
     wires: fios,
     params,
-    ...(opts.edgeTicks === undefined ? {} : { edgeTicks: opts.edgeTicks }),
+    ...(() => {
+      const et = opts.edgeTicks ?? readNumber(sk.frontMatter, "edgeTicks");
+      return et === null ? {} : { edgeTicks: et };
+    })(),
   };
   return { ok: true, world };
 }
@@ -204,8 +266,12 @@ function extractParams(front: Readonly<Record<string, unknown>>, erros: string[]
 }
 
 function readSeed(front: Readonly<Record<string, unknown>>): number | null {
-  const s = front["seed"];
-  return typeof s === "number" && Number.isFinite(s) ? s : null;
+  return readNumber(front, "seed");
+}
+
+function readNumber(front: Readonly<Record<string, unknown>>, key: string): number | null {
+  const v = front[key];
+  return typeof v === "number" && Number.isFinite(v) ? v : null;
 }
 
 function compileEdge(
@@ -213,6 +279,7 @@ function compileEdge(
   nodesById: Map<string, SkeletonNode>,
   subgraphsById: Map<string, SkeletonSubgraph>,
   contratoDe: Map<string, Contrato>,
+  overriddenIds: ReadonlySet<string>,
   erros: string[],
 ): WorldWire | null {
   const fromNode = nodesById.get(e.from);
@@ -229,36 +296,40 @@ function compileEdge(
     return null;
   }
 
-  // Para um subgraph, o motor sabe entrar/sair pela composição — não checamos
-  // porta. Para folha, exigimos que a porta exista no contrato do kind.
+  // Regra da §3: nó com override é responsabilidade do autor; o compilador
+  // aceita a porta que o rótulo diz e deixa `validateWorld` cruzar com
+  // `outlets` na hora de instanciar o mundo. Sem override, a porta tem que
+  // estar em `CONTRATOS[kind].saidas`.
   let port: string;
   if (fromNode !== undefined) {
-    const contrato = contratoDe.get(fromNode.id);
-    if (contrato === undefined) return null; // kind já foi recusado
-    const escolhida = e.fromPort ?? (contrato.saidas[0] ?? null);
-    if (escolhida === null) {
-      erros.push(`"${fromNode.id}" (kind "${fromNode.kind}") não emite por nenhuma porta`);
-      return null;
+    if (overriddenIds.has(fromNode.id)) {
+      port = e.fromPort ?? "out";
+    } else {
+      const contrato = contratoDe.get(fromNode.id);
+      if (contrato === undefined) return null; // kind já foi recusado
+      const escolhida = e.fromPort ?? (contrato.saidas[0] ?? null);
+      if (escolhida === null) {
+        erros.push(`"${fromNode.id}" (kind "${fromNode.kind}") não emite por nenhuma porta`);
+        return null;
+      }
+      if (!contrato.saidas.includes(escolhida)) {
+        erros.push(
+          `"${fromNode.id}" não emite pela porta "${escolhida}": ` +
+            `as saídas de "${fromNode.kind}" são ${contrato.saidas.join(", ") || "nenhuma"}`,
+        );
+        return null;
+      }
+      port = escolhida;
     }
-    if (!contrato.saidas.includes(escolhida)) {
-      erros.push(
-        `"${fromNode.id}" não emite pela porta "${escolhida}": ` +
-          `as saídas de "${fromNode.kind}" são ${contrato.saidas.join(", ") || "nenhuma"}`,
-      );
-      return null;
-    }
-    port = escolhida;
   } else {
-    // Subgraph como origem: o motor resolve pela árvore. Usamos "out" como
-    // placeholder de porta, que o `validateWorld` cruza com `outlets` do composite.
+    // Subgraph como origem: o motor resolve pela árvore.
     port = e.fromPort ?? "out";
   }
 
-  if (toNode !== undefined) {
+  if (toNode !== undefined && !overriddenIds.has(toNode.id)) {
     const contrato = contratoDe.get(toNode.id);
     if (contrato === undefined) return null;
     if (e.line === "control") {
-      // Nenhum kind de hoje tem porta de controle — mesma recusa do `model-format`.
       erros.push(
         `fio de controle chega em "${toNode.id}", e nenhum kind de hoje tem porta de controle ` +
           `(clock e arbiter chegam na onda 1, docs/kinds.md §3)`,
@@ -269,7 +340,6 @@ function compileEdge(
       erros.push(`"${toNode.id}" (kind "${toNode.kind}") não recebe por nenhuma porta`);
       return null;
     }
-    // Carga entra pela primeira porta de entrada; o motor acha a folha.
   }
 
   const wire: WorldWire = e.line === "control"

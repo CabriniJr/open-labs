@@ -116,7 +116,7 @@ export function parseSkeleton(source: string): ParseResult {
     const subM = /^subgraph\s+([A-Za-z_][A-Za-z0-9_-]*)(?:\s*\[([^\]]+)\]|\s*"([^"]+)")?\s*$/.exec(line);
     if (subM) {
       const [, id, bracketLabel, quotedLabel] = subM;
-      openSubgraph(ctx, id, bracketLabel ?? quotedLabel ?? id);
+      openSubgraph(ctx, id!, bracketLabel ?? quotedLabel ?? id!);
       continue;
     }
 

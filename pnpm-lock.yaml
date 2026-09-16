@@ -160,6 +160,9 @@ importers:
       '@ovh/depth-ui':
         specifier: workspace:*
         version: link:../depth-ui
+      '@ovh/mermaid-skeleton':
+        specifier: workspace:*
+        version: link:../mermaid-skeleton
 
 packages:
 
