@@ -20,6 +20,7 @@ import { anatomiaWorld } from "./anatomia/world.js";
 import { heroiWorld } from "./heroi/world.js";
 import { pilaresWorld } from "./pilares/world.js";
 import { otelWorld } from "./providers/world.js";
+import * as pacote from "./index.js";
 
 const LABS: Readonly<Record<string, () => WorldSpec>> = {
   anatomia: () => anatomiaWorld(),
@@ -27,6 +28,9 @@ const LABS: Readonly<Record<string, () => WorldSpec>> = {
   pilares: () => pilaresWorld(),
   providers: () => otelWorld(),
 };
+
+/** Os construtores que a varredura exercita, por nome. Ver a guarda no fim. */
+const CONSTRUTORES_VARRIDOS = ["anatomiaWorld", "heroiWorld", "otelWorld", "pilaresWorld"];
 
 describe("nenhuma emissão cai no vácuo", () => {
   for (const [nome, build] of Object.entries(LABS)) {
@@ -62,4 +66,27 @@ describe("a anatomia vinda do mmd, com os parâmetros de defeito ligados", () =>
       expect(perdas, `\n${relatoDePerdas(perdas)}`).toEqual([]);
     });
   }
+});
+
+describe("a varredura não envelhece em silêncio", () => {
+  /*
+    Guarda com lista escrita à mão passa a não medir nada sem avisar: o lab
+    novo entra, ninguém lembra deste arquivo, e o verde continua verde cobrindo
+    os antigos. Não é hipótese — na primeira vez que a versão desta guarda
+    rodou no `cpu-domain` ela achou `portaCmosWorld` de fora.
+
+    A convenção que ela usa já valia antes de ela existir: todo construtor de
+    mundo deste repositório termina em `World`. Construtor não exportado do
+    índice fica invisível aqui, e é o limite declarado desta checagem.
+  */
+  it("todo construtor de mundo exportado pelo pacote está na varredura", () => {
+    const exportados = Object.keys(pacote)
+      .filter((nome) => /World$/u.test(nome))
+      .sort();
+    expect(
+      exportados,
+      "um construtor de mundo entrou no índice do pacote e não entrou na " +
+        "varredura de emissões perdidas. Acrescente-o neste arquivo.",
+    ).toEqual(CONSTRUTORES_VARRIDOS);
+  });
 });

@@ -2438,7 +2438,32 @@ para pegar, que é a porta acesa cair na tinta da apagada.
 faria a asserção reprovar com a mensagem errada. Aplicado também no laço de temas do mesmo teste,
 que tem a corrida idêntica pela razão idêntica — ele mede logo depois de trocar o tema.
 
-Estado: **1168 unitários (101 arquivos)** — 53 novos —, typecheck, boundaries, catálogo e build
+### E a guarda que impede a guarda de envelhecer — que achou um furo na primeira volta
+
+O defeito que esta rodada inteira perseguiu é guarda que passa a não medir nada **sem avisar**.
+As varreduras `sem-perda` eram exatamente isso: lista de mundos escrita à mão. O lab novo entra,
+ninguém lembra do arquivo, e o verde continua verde cobrindo os antigos.
+
+A convenção que resolve já valia antes de ser usada: **todo construtor de mundo deste
+repositório termina em `World`**. Então a guarda é sobre a *superfície do pacote* — lê
+`Object.keys` do índice, filtra por `/World$/`, e compara com a lista varrida. Um construtor
+novo faz o teste cair **nomeando-o** e dizendo onde acrescentá-lo.
+
+Não é hipótese: **na primeira vez que ela rodou, achou `portaCmosWorld` de fora.** Exportado do
+`cpu-domain`, varredura escrita à mão na rodada anterior, ficou para trás. Os doze variantes
+dele (seis portas × com e sem atalho) estavam limpos — então o que se perdeu não foi um defeito,
+foi a garantia. Entraram na varredura, e a CPU passou de 7 para 20 testes.
+
+O limite fica declarado no próprio teste: construtor que não é exportado do índice é invisível
+para ela. É guarda sobre superfície pública, não sobre chamadas.
+
+Houve uma escolha de desenho a registrar: a lista de nomes (`CONSTRUTORES_VARRIDOS`) é segunda
+fonte da mesma verdade, e o projeto normalmente recusa isso. Ela fica porque existe só para a
+comparação nome-a-nome, e o preço está dito no docblock — um nome listado ali sem estar em `LABS`
+não é pego por nada. A alternativa seria a guarda chamar cada construtor, e os construtores não
+têm assinatura uniforme: `cpuWorld` quer uma imagem montada, `rpnWorld` quer tokens.
+
+Estado: **1183 unitários (101 arquivos)** — 68 novos —, typecheck, boundaries, catálogo e build
 verdes. O e2e local falha num teste `[mobile]` por artefato de container (o Playwright 1.62.1
 procura chromium build 1234 e a imagem traz 1194, então o full chromium entra no lugar do
 headless shell e o `site-nav` fixo intercepta o clique); reproduz idêntico em `main`, onde o CI

@@ -11,6 +11,7 @@
 import { describe, expect, it } from "vitest";
 import { World, emissoesPerdidas, relatoDePerdas } from "@ovh/depth-core";
 import { lerExpressao, rpnWorld } from "./rpn.js";
+import * as pacote from "./index.js";
 
 /**
  * Expressões escolhidas por quais caminhos elas acordam, e não por aritmética:
@@ -18,6 +19,9 @@ import { lerExpressao, rpnWorld } from "./rpn.js";
  * nunca chega a acionar o operador).
  */
 const EXPRESSOES = ["3 4 +", "3 4 + 2 *", "10 2 -", "12 4 /", "7"] as const;
+
+/** Os construtores que a varredura exercita, por nome. Ver a guarda no fim. */
+const CONSTRUTORES_VARRIDOS = ["rpnWorld"];
 
 describe("nenhuma emissão cai no vácuo", () => {
   for (const fonte of EXPRESSOES) {
@@ -30,4 +34,27 @@ describe("nenhuma emissão cai no vácuo", () => {
       expect(perdas, `\n${relatoDePerdas(perdas)}`).toEqual([]);
     });
   }
+});
+
+describe("a varredura não envelhece em silêncio", () => {
+  /*
+    Guarda com lista escrita à mão passa a não medir nada sem avisar: o lab
+    novo entra, ninguém lembra deste arquivo, e o verde continua verde cobrindo
+    os antigos. Não é hipótese — na primeira vez que a versão desta guarda
+    rodou no `cpu-domain` ela achou `portaCmosWorld` de fora.
+
+    A convenção que ela usa já valia antes de ela existir: todo construtor de
+    mundo deste repositório termina em `World`. Construtor não exportado do
+    índice fica invisível aqui, e é o limite declarado desta checagem.
+  */
+  it("todo construtor de mundo exportado pelo pacote está na varredura", () => {
+    const exportados = Object.keys(pacote)
+      .filter((nome) => /World$/u.test(nome))
+      .sort();
+    expect(
+      exportados,
+      "um construtor de mundo entrou no índice do pacote e não entrou na " +
+        "varredura de emissões perdidas. Acrescente-o neste arquivo.",
+    ).toEqual(CONSTRUTORES_VARRIDOS);
+  });
 });
