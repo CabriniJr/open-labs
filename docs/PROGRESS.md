@@ -2463,6 +2463,34 @@ comparação nome-a-nome, e o preço está dito no docblock — um nome listado 
 não é pego por nada. A alternativa seria a guarda chamar cada construtor, e os construtores não
 têm assinatura uniforme: `cpuWorld` quer uma imagem montada, `rpnWorld` quer tokens.
 
+### O guia de autoria ensinava um caminho que não existe mais
+
+A última coisa olhada foi a doc que um autor de lab lê primeiro, e ela estava três mudanças
+atrás:
+
+- mandava escrever em **`apps/site/src/labs/<slug>/scenario.ts`**, e esse diretório **não
+  existe**;
+- descrevia a API `Scenario<S>` com `initialState`/`step`. Ela ainda é exportada do
+  `depth-core`, e **nenhum lab a usa**: as únicas menções no repositório são o próprio motor e o
+  teste dele. Os sete componentes de lab vão todos por `new World(spec)`;
+- não mencionava **Mermaid nem `.mmd` uma única vez** — nem ela, nem `model-format.md`, nem
+  `kinds.md`. O formato que a spec declara canônico desde 16/09 era invisível nos três
+  documentos que um autor leria.
+
+Reescrito o que um lab **é** hoje, com as duas formas lado a lado (esqueleto Mermaid para labs
+novos; `WorldSpec` à mão para os oito que antecedem o formato, e sem obrigação de reescrever),
+mais a tabela das três guardas, que é o que um lab novo tem de satisfazer.
+
+`Engine`/`Scenario<S>` ficam no código, com uma nota dizendo que nenhum lab as usa e que se elas
+deviam continuar públicas é pergunta aberta. Remover superfície pública é decisão, não limpeza.
+
+**Uma afirmação minha foi corrigida pela leitura do motor.** Eu havia escrito que "um
+comportamento que ignora a fase roda duas vezes". Está pela metade: ele é chamado nas duas, sim,
+mas o escalonador **recusa em voz alta** emissão em porta cujo regime não casa com a fase,
+nomeando a porta — e o `state` devolvido na acomodação nunca é lido, que é o que separa lógica
+combinacional de elemento de memória. A mecânica real é mais útil que o aviso vago, e foi essa
+que ficou escrita.
+
 Estado: **1183 unitários (101 arquivos)** — 68 novos —, typecheck, boundaries, catálogo e build
 verdes. O e2e local falha num teste `[mobile]` por artefato de container (o Playwright 1.62.1
 procura chromium build 1234 e a imagem traz 1194, então o full chromium entra no lugar do
