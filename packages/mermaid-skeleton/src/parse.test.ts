@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { parseSkeleton } from "./parse.js";
 
 const anatomy = `---
-id: otel-anatomy
+id: anatomia-exemplo
 title: One request, four processes, four exports
 seed: 1
 levels: [flow]
@@ -45,7 +45,7 @@ describe("parseSkeleton", () => {
   it("resolve o id e o title do front-matter", () => {
     const r = parseSkeleton(anatomy);
     if (!r.ok) throw new Error(r.errors.join("\n"));
-    expect(r.value.id).toBe("otel-anatomy");
+    expect(r.value.id).toBe("anatomia-exemplo");
     expect(r.value.title).toBe("One request, four processes, four exports");
     expect(r.value.direction).toBe("LR");
   });
