@@ -28,12 +28,14 @@ export { boundaryProjection, shortcutDisagreement } from "./shortcut.js";
 export type { BoundaryProjection } from "./shortcut.js";
 export {
   boundaryCrossings,
+  emissoesPerdidas,
   inCount,
   inWeight,
   portCount,
   portWeight,
+  relatoDePerdas,
 } from "./meters.js";
-export type { Crossing } from "./meters.js";
+export type { Crossing, EmissaoPerdida } from "./meters.js";
 export { borneNode, bornePort, DROP, familyOf } from "./model.js";
 export type {
   AnyObject,

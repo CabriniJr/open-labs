@@ -2192,3 +2192,95 @@ arquivos que precisam; um setup compartilhado resolveria de vez e não foi feito
 
 Estado: **1093 unitários (93 arquivos), 283 e2e (21 puladas, zero falhas)**, typecheck,
 boundaries, catálogo e build verdes — os seis rodados na árvore final, depois de tudo pousar.
+
+## Entrega 16 — O mermaid pousa, e o medidor que ninguém lia ✅
+
+13/10/2026. A rodada era fechar o merge do esqueleto Mermaid (PR #16) e virou duas coisas: o
+merge, e o buraco que o merge deixou à vista.
+
+### O que o CI já dizia, e ninguém tinha lido
+
+A PR #16 estava **vermelha desde o terceiro commit**, e morria em 27 segundos — em
+`pnpm boundaries`, antes de chegar ao typecheck, ao test, ao build e ao e2e. A causa era de uma
+palavra: o commit que pôs `mermaid-skeleton` na lista dos agnósticos escreveu, no mesmo pacote,
+uma fixture chamada `otel-anatomy`. A guarda de fronteira passou a ler o pacote e achou "otel"
+dentro do motor.
+
+**A guarda estava certa**, e o conserto foi na fixture: ela é teste do motor, e a topologia dela
+não é de domínio nenhum. Vale anotar porque é a tentação óbvia — a guarda acusa, e o caminho
+curto é afrouxar a guarda.
+
+E o novo pacote **não estava nas referências do `tsconfig` da raiz**: `tsc -b` construía sete
+projetos e nenhum deles era o do parser e do compilador. Mil linhas fora do `pnpm typecheck`,
+verdes porque ninguém olhava.
+
+### O medidor que existia e ninguém lia
+
+A pergunta que abriu isto era de confiança no formato: o `.mmd` declara a porta de cada fio num
+**rótulo escrito à mão** (`call:request`, `export:span`). O que acontece se alguém errar uma
+letra?
+
+Medido antes de ser respondido. Com `cal:request` no lugar de `call:request`:
+
+- o parser aceita;
+- o compilador aceita — um nó com `override` **não tem porta validada**, porque o compilador não
+  pode saber por quais portas uma função emite;
+- `validateWorld` aceita, e o mundo é válido;
+- o run roda, e o livro-caixa marca `out:gateway.call.unwired: 11`.
+
+**O motor já media.** Onze emissões no vácuo, contadas, com nome e porta — e nenhum leitor. O
+que caía era um teste de comportamento três camadas abaixo, cobrando quatro spans e recebendo
+um; e a primeira suspeita de quem lê isso é do comportamento, que está certo.
+
+O que se perde sem isso não é o desenho: é o **sentido**. A anatomia com esse erro de uma letra
+continuava rodando, continuava válida, e passava a ensinar que um trace tem um span.
+
+Então o conserto não foi medir — foi **ler o medidor**: `emissoesPerdidas(state)` em
+`depth-core/meters.ts`, ao lado de `portCount`, e uma guarda por domínio que varre os mundos e
+cobra lista vazia. Com o typo, ela falha dizendo `gateway.call: 19 emissão(ões) sem fio` — nó,
+porta e contagem, na altura em que o erro foi cometido.
+
+**Os nove mundos do repositório passaram de primeira**, e isso é o que torna a guarda instalável
+sem exceção nenhuma: ela não documenta dívida, ela trava o próximo erro.
+
+### Três distinções que o livro-caixa não faz sozinho
+
+A guarda só vale se não gritar com o que é legítimo, e são três coisas parecidas que não são a
+mesma:
+
+- **descarte declarado** (`to: DROP`) não é perda — o autor pediu que caísse, e o buffer emitindo
+  por `drop` é o projeto cumprindo a regra de que descarte invisível é mentira;
+- **porta de controle** que entrega sinal não é perda: o escalonador só marca `unwired` quando
+  não houve destino de sinal tampouco;
+- **fio nenhum** é perda, e é a única das três.
+
+### A assimetria da chave, que inverteu a implementação
+
+A chave é `out:<nó>.<porta>.unwired`, e partir isso parecia detalhe. Não é:
+
+- `indexTree` **recusa** id com `.` ou `:` na construção — então o nó é garantidamente de um
+  pedaço só. (Um teste cobra isso de dentro de `perdas.test.ts`, e não só de `tree.test.ts`: se
+  um dia a regra afrouxar, a partida da chave tem de ser repensada junto.)
+- `validateWorld` só valida porta **que aparece num fio**. A porta deste balde é, por definição,
+  a de uma emissão sem fio — **a única do livro-caixa que nunca passou por validação nenhuma**, e
+  pode trazer um ponto dentro.
+
+Escrito primeiro com `lastIndexOf`, pela analogia com o `Inspector` da entrega 15. Está errado:
+com porta `a.b` daria nó `gen.a` e porta `b`, as duas inventadas. É `indexOf`, e a razão é a
+assimetria — o lado garantido é o do nó, não o da porta.
+
+### Duas sobras que o typecheck pegou e o vitest não
+
+`vitest` passou verde com `comTransistores: true` num mundo cuja opção se chama
+`transistoresNaUla`: propriedade desconhecida é ignorada em silêncio, e a variante "CPU aberta
+até o transistor" **testava a CPU comum duas vezes**. Rodava em 3ms e parecia ótimo; agora roda
+em 1370ms, que é o preço de abrir trinta e dois bits até o silício.
+
+É o argumento do typecheck em teste, e não só em código de produção: um teste que não typecheca
+mente com cara de verde.
+
+Estado: **1144 unitários (99 arquivos)** — 29 novos —, typecheck, boundaries, catálogo e build
+verdes. O e2e local falha num teste `[mobile]` por artefato de container (o Playwright 1.62.1
+procura chromium build 1234 e a imagem traz 1194, então o full chromium entra no lugar do
+headless shell e o `site-nav` fixo intercepta o clique); reproduz idêntico em `main`, onde o CI
+real está verde.
