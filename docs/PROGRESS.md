@@ -2308,6 +2308,35 @@ E um susto que era erro de medida meu, anotado porque é o tipo de coisa que vir
 o caminho de métricas parecia morto em todos os cenários. Não estava — `export-interval`
 padrão são 60 ticks, e a sonda rodava exatamente 60.
 
+### A terceira perna: o rótulo que mente
+
+O parser lê `call:request` como porta `call` e kind de mensagem `request`, e guarda os dois no
+`SkeletonEdge`. **O compilador usa a porta e descarta o kind** — `WorldSpec.wires` não tem campo
+para ele, e quem decide o kind do que viaja é `ctx.emit(kind, …)`, no comportamento.
+
+Então o mmd pode dizer `call:request` enquanto o comportamento emite `ctx.emit("pedido")`, e
+nada acusa. Não perde emissão: o fio existe e carrega. Não há fio morto: ele tem tráfego. O que
+se perde é só o que o rótulo promete — e a §3 do design é explícita em dizer que esse rótulo
+**é** o kind da mensagem no vocabulário do domínio.
+
+Num material em que o desenho é o argumento, essa é a mentira mais barata de cometer e a mais
+difícil de ver: o lab roda, ensina a topologia certa, e **nomeia errado o que passa por ela**.
+
+Medido como as outras duas. Com `call:pedido` no mmd e o comportamento emitindo `request`:
+`sem-perda.test.ts` passa 8/8, a guarda de fio morto passa, e só a nova acusa —
+`gateway.call: rótulo diz "pedido", viajou ["request"]`.
+
+Fecha o conjunto, e as três são distintas:
+
+| O que acontece | Quem acusa |
+|---|---|
+| emissão sai por porta sem fio | `emissoesPerdidas` (as três guardas de domínio) |
+| fio sai de porta onde nada é emitido | `fios.test.ts` — "carrega alguma coisa" |
+| rótulo nomeia o kind errado | `fios.test.ts` — "carrega o que o rótulo diz" |
+
+Nos três casos o mundo é válido, o run roda e nenhum erro aparece. É o que torna o conjunto
+necessário: o formato não falha alto, ele **ensina outra coisa**.
+
 ### A tabela que ensinava a opção rejeitada
 
 A §4.2 da spec do design dizia que linha pontilhada é canal de **controle**. A `Nota 1` do
@@ -2320,7 +2349,7 @@ Quem depende disso é a anatomia. O span **é dado** — chega no `inbox`, não 
 e ainda assim sai por linha pontilhada, para dizer "sai pelo lado, não pela cadeia". Pela
 regra antiga ela teria de escolher entre o desenho certo e o fio certo.
 
-Estado: **1147 unitários (100 arquivos)** — 32 novos —, typecheck, boundaries, catálogo e build
+Estado: **1149 unitários (100 arquivos)** — 34 novos —, typecheck, boundaries, catálogo e build
 verdes. O e2e local falha num teste `[mobile]` por artefato de container (o Playwright 1.62.1
 procura chromium build 1234 e a imagem traz 1194, então o full chromium entra no lugar do
 headless shell e o `site-nav` fixo intercepta o clique); reproduz idêntico em `main`, onde o CI
