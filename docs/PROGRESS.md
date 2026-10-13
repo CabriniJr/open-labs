@@ -2383,7 +2383,62 @@ estática.
 O erro de quem liga um fio numa placa não é ter errado a porta: é ter lido a placa como peça de
 fluxo. A mensagem responde isso, e não o sintoma.
 
-Estado: **1154 unitários (100 arquivos)** — 39 novos —, typecheck, boundaries, catálogo e build
+### As guardas saem da anatomia e viram peça do formato
+
+As três guardas nasceram amarradas à anatomia, e isso tinha prazo: quando o lab nº2 em `.mmd`
+aparecer, alguém copia e cola — e copia a ressalva de composto sem ler. Duas delas (fio sem
+emissão, rótulo que mente) viraram `conferir.ts` no `mermaid-skeleton`, com a API em três peças:
+`observarCanais(estados)` acumula o que viajou, `conferirDesenho(sk, spec, observado)` devolve só
+o que divergiu, `relatoDeDivergencias` escreve a mensagem. A terceira (emissão sem fio) fica no
+`depth-core`, porque não é do formato: vale para mundo escrito à mão também.
+
+**A ressalva de composto virou pré-condição que levanta, em vez de comentário.** Um chamador que
+ignora um aviso recebe uma lista de mentiras, e a próxima pessoa a ler o teste acredita nela.
+
+E aí o parser respondeu algo melhor do que a pré-condição: **ele não deixa um `.mmd` ligar fio
+num `subgraph`**, e recusa nas duas ordens — `"bloco" já é subgraph` quando o subgraph vem
+antes, `colide com outro id já usado` quando vem depois. Valia medir a segunda, porque a
+checagem olha `ctx.subgraphs`, que é preenchido na leitura, e a ordem inversa poderia escapar.
+Não escapa. Então para o caminho do mmd a pré-condição é rede de segunda camada: um composto só
+nasce de `subgraph`, e nenhum fio toca um. Ela segue valendo para quem apontar a conferência
+para um `WorldSpec` escrito em TS — que é como alguém a usaria num lab de CPU, e onde a conta
+ingênua erraria 67 de 68 vezes. O teste da ordem inversa mora junto da conferência, e não só em
+`parse.test.ts`, porque é a premissa de que ela depende.
+
+A anatomia virou a primeira consumidora, e o diagnóstico melhorou de graça: com `cal:request` no
+lugar de `call:request`, o relato agora mostra o **raio de propagação** — `gateway.cal` mudo mais
+`checkout.call`, `payments.call` e `checkout.export`, que emudecem porque a cadeia quebrou atrás.
+Antes a guarda local acusava um canal só.
+
+E os cenários de defeito ganharam a distinção que faltava: canal mudo ali é **esperado** —
+desligar a amostragem silencia os `export` de propósito, e cobrar lista vazia seria cobrar que o
+lab não ensinasse. O que vale nos cenários é a outra metade, que não depende de parâmetro: o que
+carrega tem de carregar o kind prometido. Com um teste a mais provando que o cenário muda algo,
+senão o filtro passaria mesmo com parâmetro inerte.
+
+### O CI vermelho que não era meu, e não era para ignorar
+
+`65586c9` reprovou em `[mobile] gates-lab: a porta acesa é desenhada acesa`, e o commit seguinte
+passou no mesmo teste. Nada no diff toca portas lógicas nem o CSS do palco. A saída fácil era
+chamar de flake. Medido, com uma sonda que lê o mesmo estilo seis vezes:
+
+| | alta | baixa | delta | limiar |
+|---|---|---|---|---|
+| em regime | 0.068 | 0.009 | **0.0594** | 0.02 ✅ |
+| primeira leitura | 0.056 | 0.009 | 0.0472 | 0.02 ✅ |
+| o que o CI pegou | 0.022 | 0.009 | **0.0131** | 0.02 ❌ |
+
+Em regime a margem é **três vezes** o limiar. O teste compara a croma em oklab durante a
+transição do `fill`, que `stage.css` declara em 160ms; num runner mais lento o quadro pego é mais
+cedo. O limiar não é o problema — afrouxá-lo esconderia justamente o defeito que o teste existe
+para pegar, que é a porta acesa cair na tinta da apagada.
+
+`tintaEstavel` espera o `fill` parar de mudar, com orçamento de 1,6s (dez vezes a transição), e
+**levanta** se estourar: tinta que não assenta é achado, não ruído, e devolver a última medida
+faria a asserção reprovar com a mensagem errada. Aplicado também no laço de temas do mesmo teste,
+que tem a corrida idêntica pela razão idêntica — ele mede logo depois de trocar o tema.
+
+Estado: **1168 unitários (101 arquivos)** — 53 novos —, typecheck, boundaries, catálogo e build
 verdes. O e2e local falha num teste `[mobile]` por artefato de container (o Playwright 1.62.1
 procura chromium build 1234 e a imagem traz 1194, então o full chromium entra no lugar do
 headless shell e o `site-nav` fixo intercepta o clique); reproduz idêntico em `main`, onde o CI
