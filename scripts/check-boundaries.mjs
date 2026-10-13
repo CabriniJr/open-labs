@@ -33,6 +33,7 @@ const AGNOSTIC = [
   "packages/depth-core/",
   "packages/depth-ui/",
   "packages/model-format/",
+  "packages/mermaid-skeleton/",
 ];
 
 /** Pacotes de domínio que eles não podem importar. */
