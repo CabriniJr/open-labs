@@ -2491,6 +2491,24 @@ nomeando a porta — e o `state` devolvido na acomodação nunca é lido, que é
 combinacional de elemento de memória. A mecânica real é mais útil que o aviso vago, e foi essa
 que ficou escrita.
 
+E o fio solto que o conserto do guia deixou: a §0 do `model-format.md` é literalmente a tabela
+"o que já é código, e o que ainda é proposta", e a decisão de 16/09 não estava nela. Ganhou uma
+§0.1 dizendo que o cenário saiu dali, que o `modelet` segue valendo para o agregado `.model`, e
+que nada implementado foi removido — o que não acontece mais é cenário novo nascer em YAML.
+
+Com a divergência registrada com precisão, porque ela é nova: **o compilador de Mermaid monta
+`static` e o de modelet não.** A linha da tabela que recusa `static` descreve o
+`compileModelet`, e segue correta. A tabela de contratos de cada compilador é local de
+propósito, e o `compile.ts` do `mermaid-skeleton` dizia isso no docblock desde que nasceu — a
+divergência era prevista, e agora é fato.
+
+O que **não** divergiu entrou junto, porque é a pergunta que alguém faria em seguida: `router`,
+`switch`, `store` e `sequencer` seguem recusados nos dois lados, e a razão é a mesma — falta
+política, não sintaxe — com o ponteiro para a spec que mediu isso.
+
+`kinds.md` ficou sem ponteiro de propósito: é o catálogo dos primitivos do motor, agnóstico de
+formato de autoria. Acrescentar Mermaid ali seria confundir as duas coisas.
+
 Estado: **1183 unitários (101 arquivos)** — 68 novos —, typecheck, boundaries, catálogo e build
 verdes. O e2e local falha num teste `[mobile]` por artefato de container (o Playwright 1.62.1
 procura chromium build 1234 e a imagem traz 1194, então o full chromium entra no lugar do
