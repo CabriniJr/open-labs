@@ -295,6 +295,22 @@ Não implementar antes de aprovar a sintaxe da §4. As fases, quando começarem:
   (`source`, `buffer`, `sink`); daí em diante, cenário novo é `.mmd`, e YAML
   fica reservado para o agregado `.model` da §4 do `model-format.md` (o
   aplicativo, não o cenário).
+
+  **13/10/2026: esse critério foi atingido e passado.** O compilador de Mermaid
+  monta `source`, `buffer`, `sink` e também `static`, que o de modelet recusa.
+  A placa entrou sem sintaxe nova porque não precisava de nenhuma: o
+  `ObjectSpec` de uma é `{ id, kind, label, leaf }` e nada mais — sem `init` e
+  sem `behavior`, porque `indexTree` recusa placa que aja —, e o desenho já traz
+  os três campos que sobram. A recusa antiga dizia "o formato ainda não declara
+  o conteúdo dela", e isso vale para conteúdo **rico**; esse conteúdo nunca
+  chegou ao motor nem pelo caminho do TS, onde `placa()` passa o título como
+  `label` e para aí.
+
+  O que falta — `router`, `switch`, `store`, `sequencer` — **não** é do mesmo
+  tipo. Neles o que falta é **política** (de rota, de retenção), e isso é
+  decisão de linguagem: a §6 manda aprovar a sintaxe antes de implementar, e
+  esta nota não a aprova. Até lá eles existem num cenário por `overrides`, que é
+  como a `anatomia` tem `router` e `store`.
 - **O motor precisa ler dagre.** Adiciona dependência a um pacote que hoje é
   quase sem deps. Aceito, porque a alternativa é reimplementar posicionamento.
 

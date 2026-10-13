@@ -2349,7 +2349,41 @@ Quem depende disso é a anatomia. O span **é dado** — chega no `inbox`, não 
 e ainda assim sai por linha pontilhada, para dizer "sai pelo lado, não pela cadeia". Pela
 regra antiga ela teria de escolher entre o desenho certo e o fio certo.
 
-Estado: **1149 unitários (100 arquivos)** — 34 novos —, typecheck, boundaries, catálogo e build
+### A placa entra no catálogo nativo, e não precisou de sintaxe nova
+
+O buraco óbvio do compilador é o catálogo: nativamente ele montava `source`/`buffer`/`sink`, e
+`router`/`switch`/`store`/`sequencer`/`static` só existiam por `overrides` — é assim que a
+anatomia tem `router` e `store`. A tentação é atacar `router` primeiro, porque é o que os labs
+usam. Está errado: nele o que falta é **política de rota**, e declarar política é decisão de
+linguagem que a §6 manda aprovar antes de implementar.
+
+`static` é de outro tipo, e foi o que sobrou olhando o que o motor de fato exige. O `ObjectSpec`
+de uma placa é `{ id, kind, label, leaf }` **e nada mais**: sem `init`, sem `behavior`, porque
+`indexTree` recusa placa que aja — placa que age deixou de ser placa. O `.mmd` já traz id (o nó),
+kind (o `classDef`) e label. Não faltava nada.
+
+A recusa dizia "o formato ainda não declara o conteúdo dela", e é verdade para conteúdo **rico**
+— um recurso com atributos, uma tabela de limites. Só que esse conteúdo **nunca chegou ao motor
+nem pelo caminho do TS**: o `placa()` do lab dos provedores recebe um `PlacaDeRecurso`, usa
+`dados.titulo` como `label`, e para aí. Para a estrutura, o rótulo é o conteúdo — então a recusa
+guardava uma porta que não tinha nada atrás.
+
+Com isso o critério de morte do `.modelet.yaml` (§7 da spec: "quando o Mermaid cobrir `source`,
+`buffer`, `sink`") foi **atingido e passado** — o compilador de Mermaid monta um kind que o de
+modelet recusa.
+
+**Duas recusas que ficaram, e a segunda é a interessante.** Fio que CHEGA numa placa já era
+recusado por `validateWorld`; agora é recusado na compilação, mais cedo e com a frase que
+explica o que placa é, em vez de "não recebe por nenhuma porta". E fio que SAI de uma placa é
+**provadamente morto**: placa nunca tem behavior, logo nunca emite, logo aquele fio não
+carregaria nada em nenhum tick. É o único caso de fio morto que se recusa sem rodar o mundo —
+os outros dependem do run, e é por isso que as guardas da rodada são testes e não checagem
+estática.
+
+O erro de quem liga um fio numa placa não é ter errado a porta: é ter lido a placa como peça de
+fluxo. A mensagem responde isso, e não o sintoma.
+
+Estado: **1154 unitários (100 arquivos)** — 39 novos —, typecheck, boundaries, catálogo e build
 verdes. O e2e local falha num teste `[mobile]` por artefato de container (o Playwright 1.62.1
 procura chromium build 1234 e a imagem traz 1194, então o full chromium entra no lugar do
 headless shell e o `site-nav` fixo intercepta o clique); reproduz idêntico em `main`, onde o CI
