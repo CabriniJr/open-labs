@@ -2279,7 +2279,48 @@ em 1370ms, que é o preço de abrir trinta e dois bits até o silício.
 É o argumento do typecheck em teste, e não só em código de produção: um teste que não typecheca
 mente com cara de verde.
 
-Estado: **1144 unitários (99 arquivos)** — 29 novos —, typecheck, boundaries, catálogo e build
+### A outra metade: o fio que não carrega nada
+
+A guarda de cima cobre uma direção — o comportamento fala e ninguém ouve. A inversa é um fio
+que sai de porta onde nada é emitido: o desenho mostra uma ligação que não existe. No typo de
+uma letra as duas acontecem juntas, e a primeira bastava. Separadas, não, e foi medido:
+acrescentando ao mmd uma aresta `gateway -- "metrics:foo" --> backend`, sem comportamento
+nenhum emitindo por `metrics`, **`sem-perda.test.ts` passa 8/8** e só a guarda nova acusa.
+São complementares, e é por isso que são duas.
+
+Para um material visual essa é a pior das duas: o leitor não tem como saber que aquela linha
+nunca carregou nada, e o desenho é o argumento.
+
+**A guarda é local à anatomia de propósito, e isso foi medido antes de decidido.** `portCount`
+lê `out:<nó>.<porta>`, e a chave de um fio que sai de COMPOSTO pertence às folhas de dentro
+dele. Na CPU, **67 dos 68** fios que essa conta chamaria de mortos saem de composto e carregam
+carga normalmente — uma guarda geral assim seria fábrica de falso positivo, que é como se
+ensina gente a ignorar guarda. Quem resolve a cadeia de bornes é `emissoesPorPorta`, por tick,
+e isso já estava resolvido uma vez para a camada de vista. A anatomia escapa porque o único
+composto dela é a raiz `sistema` e nenhum fio sai dela; a premissa é **cobrada em teste**, e
+cai primeiro no dia em que ela ganhar um `subgraph`.
+
+No `providers`, 6 dos 30 fios ficam mudos no cenário padrão e **todos** acordam no cenário que
+o lab existe para ensinar — descarte, fila cheia, `record-only`, collector caído. Nenhum fio
+do lab é decoração.
+
+E um susto que era erro de medida meu, anotado porque é o tipo de coisa que viraria "achado":
+o caminho de métricas parecia morto em todos os cenários. Não estava — `export-interval`
+padrão são 60 ticks, e a sonda rodava exatamente 60.
+
+### A tabela que ensinava a opção rejeitada
+
+A §4.2 da spec do design dizia que linha pontilhada é canal de **controle**. A `Nota 1` do
+exemplo põe as duas saídas lado a lado e recomenda **a outra** — traço é ênfase visual,
+`data`/`control` vem do prefixo do rótulo —, que é o que o parser implementa e o que
+`parse.test.ts` já fixava em teste. A §4.3 da própria spec já usava `control:tick`: a tabela
+contradizia a seção seguinte, e o documento que alguém lê primeiro ensinava a regra morta.
+
+Quem depende disso é a anatomia. O span **é dado** — chega no `inbox`, não em `ctx.signals` —
+e ainda assim sai por linha pontilhada, para dizer "sai pelo lado, não pela cadeia". Pela
+regra antiga ela teria de escolher entre o desenho certo e o fio certo.
+
+Estado: **1147 unitários (100 arquivos)** — 32 novos —, typecheck, boundaries, catálogo e build
 verdes. O e2e local falha num teste `[mobile]` por artefato de container (o Playwright 1.62.1
 procura chromium build 1234 e a imagem traz 1194, então o full chromium entra no lugar do
 headless shell e o `site-nav` fixo intercepta o clique); reproduz idêntico em `main`, onde o CI
