@@ -316,6 +316,40 @@ Não implementar antes de aprovar a sintaxe da §4. As fases, quando começarem:
 
 ---
 
+## 7.1 Limites do formato achados ao escrever o segundo lab
+
+*16/10/2026, construindo `collector-pipeline`, o primeiro lab a nascer em `.mmd`.*
+
+Dois, e os dois são de fato limites — não lacunas de implementação a fechar com mais código.
+
+**1. O `.mmd` não expressa descarte.** No motor, `to: DROP` é "a ausência de destino dita em
+voz alta", e o lab dos provedores usa isso. O parser não tem como escrever `@drop`: o id de
+nó dele é `[A-Za-z_][A-Za-z0-9_-]*`, e `@` não casa. Não há suporte a `DROP` em lugar nenhum
+do `mermaid-skeleton`.
+
+Contornado no `collector-pipeline` por um **nó contador explícito** (`descartes`), e o
+contorno acabou melhor que o original: o Collector de verdade expõe
+`otelcol_processor_refused_spans` — a perda dele é um contador, não um vazio. Uma caixa com
+número ensina melhor que um terminal de descarte, e a caixa recebe das duas pipelines, que é
+o que o Collector faz.
+
+Então a decisão é **não** acrescentar `DROP` ao formato por enquanto: o caso que o pediria é
+um em que o descarte não deva ser contado, e nenhum lab tem esse caso. Se aparecer, a sintaxe
+natural é um id reservado (`drop` como nó implícito), e não um caractere novo.
+
+**2. O `.mmd` declara topologia, então parâmetro não reordena processador.** A tese mais
+óbvia do Collector — `processors:` é lista ordenada, e `memory_limiter` antes de `batch` não
+é estilo — **não cabe num lab de um mmd**, porque trocar a ordem é trocar o desenho. O lab
+ficou com a outra tese (um receiver, duas pipelines, uma cópia para cada), e a da ordem ficou
+registrada na tabela de mal-entendidos sem ser simulada.
+
+A saída, quando alguém quiser simulá-la, é **dois `.mmd`** e um parâmetro que escolhe qual
+esqueleto compila. Isso é novo e não está aprovado: dobra o desenho e a vista, e a §3 do
+`DECISIONS.md` ("só precisa ser simulado o que vai ser apresentado") é o lugar de decidir se
+paga.
+
+---
+
 ## 8. O exemplo, para leitura
 
 Em `docs/superpowers/specs/2026-09-16-mermaid-anatomy-example.md` está a

@@ -1,5 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { cruzamentos as cruzamentosDe, meada } from "@ovh/depth-ui";
+import { MAPA_OTEL } from "../src/data/roadmap.js";
+import { MAPA_CPU } from "../src/data/roadmap-cpu.js";
 
 /**
  * Quanto espaguete cada figura tem, medido no que foi desenhado.
@@ -132,6 +134,17 @@ const TETOS = [
    */
   { lab: "labs/three-pillars/", nome: "os três gravadores", cruzamentos: 0 },
   { lab: "labs/anatomy-of-a-trace/", nome: "a anatomia de um trace", cruzamentos: 4 },
+  /*
+   * Um, e ele é estrutural: as duas pipelines são fileiras PARALELAS e o
+   * contador de descarte é o único nó que as duas compartilham, embaixo das
+   * duas. A linha que desce da fileira de cima até ele atravessa a de baixo, e
+   * isso é leque que converge — a mesma razão dos quatro da anatomia.
+   *
+   * Dava para zerar movendo o contador para fora, e seria pior: um contador por
+   * fileira deixaria o desenho mais simétrico e ensinaria que a perda de cada
+   * pipeline é contada em lugares diferentes, que não é o que o Collector faz.
+   */
+  { lab: "labs/collector-pipeline/", nome: "a pipeline do collector", cruzamentos: 1 },
   // A landing: o herói roda o mesmo motor e entra na mesma medida. Três caixas
   // em fila não têm por que cruzar — e é justamente por ser óbvio que o teto
   // fica escrito: o dia em que ele subir, subiu por alguma coisa.
@@ -275,3 +288,37 @@ for (const teto of TETOS) {
     }
   });
 }
+
+
+/**
+ * A guarda contra a lista de tetos envelhecer.
+ *
+ * `TETOS` é escrita à mão, e tem de ser: o número de cruzamentos de cada
+ * desenho é uma MEDIÇÃO daquele desenho, e não há de onde derivá-la. O que dá
+ * para derivar é a lista de labs — e sem isto um lab novo entra no repositório,
+ * ninguém lembra deste arquivo, e o desenho dele nunca é medido. O verde
+ * continua verde cobrindo os antigos, que é o defeito que este repositório já
+ * pagou em outras guardas.
+ *
+ * A fonte é o roadmap, que é onde um lab é declarado publicado. Lab com
+ * `status: "available"` e `href` de verdade é um lab que tem palco, e palco tem
+ * desenho.
+ */
+const PUBLICADOS: readonly string[] = [
+  ...new Set(
+    [...MAPA_OTEL.labs, ...MAPA_CPU.labs]
+      .filter((lab) => lab.status === "available" && lab.href !== "#")
+      .map((lab) => `${lab.href.replace(/\/$/u, "")}/`),
+  ),
+].sort();
+
+test("todo lab publicado tem teto de cruzamentos medido", () => {
+  const medidos = new Set(TETOS.map((t) => t.lab).filter((l) => l !== ""));
+  const faltando = PUBLICADOS.filter((lab) => !medidos.has(lab));
+  expect(
+    faltando,
+    "um lab publicado não tem teto de cruzamentos. O desenho dele nunca foi " +
+      "medido: acrescente-o a `TETOS` neste arquivo, com o número que a medição " +
+      "der e a razão dele por escrito.",
+  ).toEqual([]);
+});

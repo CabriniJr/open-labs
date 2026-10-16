@@ -1,0 +1,227 @@
+---
+import { MAL_ENTENDIDOS_DO_COLLECTOR } from "@ovh/otel-domain";
+import { CollectorLab } from "../../components/CollectorLab.tsx";
+import { Predicao } from "../../components/Predicao.tsx";
+import SiteFooter from "../../components/SiteFooter.astro";
+import SiteNav from "../../components/SiteNav.astro";
+import Base from "../../layouts/Base.astro";
+import { url } from "../../lib/urls";
+import "../../styles/docs.css";
+import "../../components/CollectorLab.css";
+import "../../components/Predicao.css";
+import "../../components/PainelDaCarga.css";
+import "@ovh/depth-ui/src/stage.css";
+import "../../components/Explorer.css";
+---
+
+<Base
+  domain="otel"
+  title="The Collector pipeline — OpenLabs"
+  description="A receiver declared in two pipelines is still one receiver, and it hands each pipeline its own copy. That is why a filter you added changes nothing in the exporter you were not looking at — and why `processors:` is an ordered list rather than a set."
+>
+  <SiteNav current="labs" />
+
+  <main id="content">
+    <section class="lab-head editorial">
+      <div class="prose">
+        <p class="lab-head__eyebrow mono">
+          <a href={url("handbooks/otel")}>OpenTelemetry Visual Handbook</a> · lab
+        </p>
+        <h1>You added a filter, and the data kept arriving</h1>
+        <p>
+          A Collector config reads like a set of boxes you plug together, and
+          that reading survives right up to the first incident. Two things in it
+          are not what they look like: <code>processors:</code> is an
+          <b>ordered list</b>, not a set — the order is the behaviour — and a
+          receiver named in two pipelines is <b>one receiver that copies</b>,
+          not two.
+        </p>
+        <p>
+          Below, one app exports spans into one <code>otlp</code> receiver, and
+          that receiver feeds two pipelines. Watch the drawing first: two lines
+          leave the <em>same</em> port and never touch again. Then turn on the
+          filter and read the two counters under the stage. One of them does not
+          move — and <b>clicking any item on a wire follows it</b>, so you can
+          watch a single span take both branches at once.
+        </p>
+      </div>
+      <aside class="lab-head__note mono">
+        <p>One tick is one second.</p>
+        <p>Nothing here is scripted: every row is the run.</p>
+      </aside>
+    </section>
+
+    <section class="lab-palco">
+      <CollectorLab client:only="react" />
+    </section>
+
+    <section class="lab-prosa editorial">
+      <div class="prose">
+        <h2>Break it</h2>
+        <p>Three moves, and each one is a ticket someone has already written.</p>
+        <ol>
+          <li>
+            <b>Turn the filter on.</b> The <code>stdout</code> counter halves and
+            the <code>backend</code> counter does not move at all. The filter is
+            real, it works, and it is in the other pipeline — so the exporter you
+            were not watching keeps shipping every health check you thought you
+            had stopped paying for.
+          </li>
+          <li>
+            <b>Drop spans per second to 1 and raise <code>send_batch_size</code>
+            to 10.</b> The batch never fills, and telemetry still leaves — look
+            at <em>closed by timeout</em> climbing while <em>closed by size</em>
+            stays at zero. This is the half of <code>batch</code> that the phrase
+            &ldquo;it sends when it is full&rdquo; leaves out, and without it a
+            low-traffic service would hold its spans until a batch filled up,
+            which can be never.
+          </li>
+          <li>
+            <b>Raise traffic to 5 and drop <code>memory_limiter</code> to 2.</b>
+            Loss appears in <code>dropped</code>, attributed to
+            <code>memory_limiter</code> — and that is the point of it being a
+            port and not a silence. With the filter also on, the same box shows
+            two numbers from two causes: one is capacity failing, the other is
+            configuration working. Summing them would erase the only difference
+            that matters when you are paged.
+          </li>
+        </ol>
+
+        <h2>Predict before you look</h2>
+        <p>
+          Answer first, then run it. Predicting and being wrong is what makes the
+          answer stick.
+        </p>
+      </div>
+      <div class="lab-predicao">
+        <Predicao
+          client:visible
+          pergunta="Your config declares one otlp receiver in two pipelines: traces (batch → otlp exporter) and traces/audit (filter → debug exporter). The filter drops /health. What reaches the otlp exporter?"
+          opcoes={[
+            "Everything, including /health — the filter belongs to the other pipeline",
+            "Everything except /health — a processor applies to the receiver that feeds it",
+            "Half of the spans — the receiver splits its output between the two pipelines",
+          ]}
+          correta={0}
+          revelacao="A receiver named in two pipelines is one instance, and the data is fanned out: each pipeline gets its own copy, and a processor only ever sees the copy that entered its own pipeline. Nothing is split and nothing is shared — which is also why the receiver's own throughput does not double when you add a second pipeline, but your egress does."
+        />
+      </div>
+    </section>
+
+    <section class="lab-prosa editorial">
+      <div class="prose">
+        <h2>What people get wrong</h2>
+        <p>
+          Every row below is a belief worth naming, because the drawing above is
+          arranged to take it apart. The right column is the documentation, with
+          the link.
+        </p>
+      </div>
+      <div class="lab-mal-entendidos">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">What people believe</th>
+              <th scope="col">What the docs say</th>
+            </tr>
+          </thead>
+          <tbody>
+            {
+              MAL_ENTENDIDOS_DO_COLLECTOR.map((m) => (
+                <tr>
+                  <td>{m.crenca}</td>
+                  <td>
+                    {m.spec}{" "}
+                    <a href={m.fonte} rel="noreferrer noopener" target="_blank">
+                      source
+                    </a>
+                  </td>
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="lab-prosa editorial">
+      <div class="prose">
+        <h2>Run it for real</h2>
+        <p>
+          <code>labs/collector-pipeline/</code> is this drawing as a config that
+          runs: one app, one <code>otlp</code> receiver, and the same two
+          pipelines. The <code>collector.yaml</code> there is the counterpart of
+          the stage above — same receiver in both pipelines, same filter in only
+          one — so the claim this lab makes is checkable against the binary and
+          not only against the simulation.
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <SiteFooter />
+</Base>
+
+<style>
+  .lab-head {
+    padding-block: var(--space-4) var(--space-2);
+  }
+
+  .lab-head__eyebrow {
+    margin: 0 0 var(--space-1);
+    color: var(--accent);
+    font-size: var(--size-step--1);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  h1 {
+    margin: 0 0 var(--space-2);
+    font-size: var(--size-step-2);
+    max-width: 24ch;
+  }
+
+  .lab-head__note {
+    align-self: end;
+    color: var(--ink-muted);
+    font-size: var(--size-step--1);
+  }
+
+  .lab-head__note p {
+    margin: 0 0 0.35rem;
+  }
+
+  .lab-palco {
+    margin-block: var(--space-2) var(--space-4);
+  }
+
+  .lab-prosa {
+    padding-block-end: var(--space-4);
+  }
+
+  .lab-predicao {
+    grid-column: 1 / -1;
+    margin-block-start: var(--space-2);
+    max-width: var(--measure);
+  }
+
+  .lab-mal-entendidos {
+    grid-column: 1 / -1;
+    margin-block-start: var(--space-2);
+    overflow-x: auto;
+  }
+
+  .lab-mal-entendidos table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: var(--size-step--1);
+  }
+
+  .lab-mal-entendidos th,
+  .lab-mal-entendidos td {
+    border-block-end: 1px solid var(--border);
+    padding: var(--space-1) var(--space-2);
+    text-align: start;
+    vertical-align: top;
+  }
+</style>

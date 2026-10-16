@@ -17,6 +17,7 @@ import { describe, expect, it } from "vitest";
 import { World, emissoesPerdidas, relatoDePerdas } from "@ovh/depth-core";
 import type { WorldSpec } from "@ovh/depth-core";
 import { anatomiaWorld } from "./anatomia/world.js";
+import { collectorWorld } from "./collector/world.js";
 import { heroiWorld } from "./heroi/world.js";
 import { pilaresWorld } from "./pilares/world.js";
 import { otelWorld } from "./providers/world.js";
@@ -24,13 +25,25 @@ import * as pacote from "./index.js";
 
 const LABS: Readonly<Record<string, () => WorldSpec>> = {
   anatomia: () => anatomiaWorld(),
+  collector: () => collectorWorld(),
+  // O collector sob os parâmetros que acordam as portas de recusa: sem eles
+  // `limiter.recusado` e `filtro.barrado` nunca emitem, e a varredura passaria
+  // sem ter visto metade das portas do lab.
+  "collector sob pressão": () =>
+    collectorWorld({ "spans-por-tick": 5, "limite-de-memoria": 2, "filtrar-health-checks": 1 }),
   heroi: heroiWorld,
   pilares: () => pilaresWorld(),
   providers: () => otelWorld(),
 };
 
 /** Os construtores que a varredura exercita, por nome. Ver a guarda no fim. */
-const CONSTRUTORES_VARRIDOS = ["anatomiaWorld", "heroiWorld", "otelWorld", "pilaresWorld"];
+const CONSTRUTORES_VARRIDOS = [
+  "anatomiaWorld",
+  "collectorWorld",
+  "heroiWorld",
+  "otelWorld",
+  "pilaresWorld",
+];
 
 describe("nenhuma emissão cai no vácuo", () => {
   for (const [nome, build] of Object.entries(LABS)) {

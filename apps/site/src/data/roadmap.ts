@@ -115,7 +115,7 @@ export const labs: readonly RoadmapLab[] = [
   // Quem não sabe o que um provider decide não tem como avaliar o que um
   // Collector muda depois.
   { id: "providers", title: "The three providers", href: "labs/providers", status: "available", side: "left", y: 490, phase: 3 },
-  { id: "collector-pipeline", title: "The Collector pipeline", href: "#", status: "coming", side: "left", y: 546, phase: 3 },
+  { id: "collector-pipeline", title: "The Collector pipeline", href: "labs/collector-pipeline", status: "available", side: "left", y: 546, phase: 3 },
   { id: "agent-or-gateway", title: "Agent or gateway", href: "#", status: "coming", side: "right", y: 546, phase: 3 },
 
   { id: "manual-spans", title: "Manual spans", href: "#", status: "coming", side: "left", y: 680, phase: 4 },

@@ -28,6 +28,7 @@ const LABS_PUBLICADOS: readonly string[] = [
 
 const LABS = [
   "labs/providers/",
+  "labs/collector-pipeline/",
   "labs/cpu/",
   "labs/gates/",
   "labs/micro/",

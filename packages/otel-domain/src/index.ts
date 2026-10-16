@@ -62,6 +62,28 @@ export { EXERCICIOS_DA_ANATOMIA } from "./exercicios/anatomia.js";
 export { EXERCICIOS_DOS_PILARES } from "./exercicios/pilares.js";
 export type { DefinicaoDeExercicio, Distrator } from "./exercicios/tipos.js";
 
+// O lab do Collector: um receiver, duas pipelines, uma cópia para cada.
+export { collectorWorld, PARAMS_DO_COLLECTOR } from "./collector/world.js";
+export type {
+  SpanDoCollector,
+  EstadoDaApp,
+  EstadoDoReceiver,
+  EstadoDoLimiter,
+  EstadoDoLote,
+  EstadoDoFiltro,
+  EstadoDoDestino,
+  EstadoDoDescarte,
+} from "./collector/world.js";
+export { estadoDoCollector, LEITOR_DO_SPAN_DO_COLLECTOR } from "./collector/estado.js";
+export type { EstadoDoCollector } from "./collector/estado.js";
+export { VIEW_COLLECTOR, VIEWS_DO_COLLECTOR } from "./collector/views.js";
+export {
+  ROTULOS_COLLECTOR,
+  ROTAS_DO_COLLECTOR,
+  ROTA_FILTRADA,
+  MAL_ENTENDIDOS_DO_COLLECTOR,
+} from "./collector/labels.js";
+
 // O lab dos três pilares: as mesmas requisições, três gravadores.
 export { pilaresWorld, PARAMS_DOS_PILARES, latenciaDe } from "./pilares/world.js";
 export type {
