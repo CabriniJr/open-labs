@@ -2514,3 +2514,133 @@ verdes. O e2e local falha num teste `[mobile]` por artefato de container (o Play
 procura chromium build 1234 e a imagem traz 1194, então o full chromium entra no lugar do
 headless shell e o `site-nav` fixo intercepta o clique); reproduz idêntico em `main`, onde o CI
 real está verde.
+
+
+## Entrega 17 — Dois labs, duas formas, e um diagnóstico meu que estava errado ✅
+
+16/10/2026. O pedido era amplo — gráficos, conteúdo, exercícios, mais labs — com uma restrição
+que decide tudo antes de qualquer código: **a ADR §9**. Ela tem duas perguntas em ordem, e a
+rodada aplicou as duas em vez de escolher a forma por gosto.
+
+### O conteúdo que faltava: duas de três contrapartes sem exercício
+
+O repositório tinha três contrapartes reais rodando em compose e **só uma com exercício**. A
+anatomia tinha `Service.java` desde a entrega 13 e nenhuma pergunta em cima dele.
+
+Os dois da anatomia são sobre a MESMA peça vista das duas pontas — qual contexto o serviço passa
+adiante —, e isso é deliberado: o defeito que o lab ensina não é erro de API, é **a árvore
+fechar parecendo completa com um salto a menos**, e esse resultado sai de qualquer das duas
+pontas errada. Cada exercício tem um distrator que produz um cenário que o painel do lab já
+mostra: `Context atual = recebido` é o `sem-instrumentacao`, `inject(Context.root(), …)` é o
+`derrubar-cabecalho-em`.
+
+Os dois dos pilares erram para o lado que **parece mais cuidadoso** — mais atributos, nome mais
+claro —, que é como eles acontecem: `trace_id` como atributo de métrica (a intenção está certa,
+e é para isso que exemplar existe), e `setUnit("milliseconds")` em vez do código UCUM.
+
+O Java ganhou só linhas de comentário, e `mvn compile` foi rodado antes e depois nos dois labs.
+
+Três consertos que o segundo conjunto obrigou: `versaoDoBom()` lia o `pom.xml` do *providers*
+fixo (a tela mostraria a versão de outro projeto, e os três usam 1.65.0 hoje — o defeito
+nasceria invisível); o teste varria uma lista escrita à mão, então as regras valiam para um
+conjunto e não para o outro; e o e2e cobrava comportamento do componente, que é o mesmo nas duas
+páginas, e seguiria verde se alguém apagasse a seção de uma delas.
+
+A cobertura passou a ser derivada do domínio — e **se estendeu sozinha** quando o terceiro
+conjunto entrou: 5 testes viraram 6 sem eu tocar nela.
+
+### O lab do motor: `collector-pipeline`, o primeiro a nascer em `.mmd`
+
+Régua: a pipeline do Collector **é** fluxo com camadas, e o protagonista é a **fábrica** — a
+pipeline é o assunto, não o span que passa. Logo motor, e em Mermaid.
+
+A tese é a mais barata de errar do Collector: um receiver declarado em duas pipelines é um
+receiver só, e entrega **uma cópia a cada**. Alguém põe um `filter` para cortar `/health`,
+confere no backend certo, vê que parou — e o segundo exporter seguiu mandando tudo.
+
+E ela é propriedade do **desenho**: duas arestas saem da mesma porta, o leque é nativo do motor,
+e o comportamento do receiver emite uma vez sem mencionar pipeline nenhuma — como no Collector,
+onde ele também não sabe quantas existem. Há teste cobrando isso **no esqueleto**, sem rodar
+nada. Medido: ligar o filtro deixa o backend em 44 spans, exatamente onde estava, e corta o
+stdout de 48 para 24.
+
+**Dois limites do formato achados ao construir**, na §7.1 da spec do design:
+
+- **o `.mmd` não expressa `DROP`.** O id de nó do parser é `[A-Za-z_][A-Za-z0-9_-]*`, e `@drop`
+  não casa; não há suporte a `DROP` em lugar nenhum do `mermaid-skeleton`. Contornado com um nó
+  contador explícito, e o contorno ficou **melhor** que o original: o Collector expõe
+  `otelcol_processor_refused_spans` — a perda dele é contador, não vazio;
+- **o `.mmd` declara topologia, então parâmetro não reordena processador.** A tese mais óbvia do
+  Collector (`processors:` é lista ordenada) **não cabe num lab de um mmd**, e ficou na tabela de
+  mal-entendidos sem ser simulada. A saída seria dois `.mmd` e um parâmetro escolhendo qual
+  compila — novo, e não aprovado.
+
+Contraparte real com o `collector.yaml` que **é** o desenho. A lacuna está declarada no README:
+sem daemon de Docker no container, `otelcol-contrib validate` não rodou, e a sintaxe evita de
+propósito as partes que mudaram entre versões.
+
+### O lab PhET-like: `cardinality-and-the-bill`
+
+Régua, primeira pergunta: cardinalidade **não é fluxo** — é o tamanho de um produto cartesiano.
+Logo lab separado, sem palco, sem `kinds`, sem importar o motor.
+
+A decisão de desenho que carrega a tese: **o produto aparece como produto.**
+`12 × 6 × 4 × 8 000 = 2 304 000` numa linha é o argumento inteiro; só o total seria um número
+grande sem mecanismo.
+
+**E o lab não afirma preço**, com trava nos dois níveis: um teste de unidade cobra que a `Conta`
+não tenha campo de preço, e um e2e cobra que a saída não mostre moeda até o leitor digitar a
+dele. A ADR nomeia isso como o defeito mais caro do projeto, e preço de fornecedor é exatamente
+o caso — cada um cobra por unidade diferente. O modelo calcula **volume**, que é mecânico.
+
+O limite de cardinalidade usa a **mesma leitura** do lab dos três pilares. Dois labs discordando
+da mesma spec seria pior que um lab faltando. E a contraparte real não é nova: `three-pillars` já
+roda um SDK de verdade, e `PILLARS_USER_ATTRIBUTE` é a jogada que este lab cobra.
+
+**Consequência estrutural da ADR na suíte:** lab sem palco não tem desenho para medir, então o
+teto de cruzamentos não se aplica. `SEM_PALCO` **não é isenção** — há teste cobrando que a página
+desses labs de fato não tenha `.dui-stage`. No dia em que um ganhar palco, ele cai pedindo um
+teto.
+
+### O gráfico, e um diagnóstico meu que estava errado
+
+A seção de exercícios quebrou `seguir-a-carga` no mobile. Medido em vez de contornado: a página
+foi de 412px de largura para **864** num viewport de 412.
+
+A causa levou três medições: o cartão do exercício é item de grid, item de grid tem
+`min-width: auto` — que é **min-content** —, e com `white-space: pre` min-content é a linha mais
+longa do código. O cartão crescia até caber a linha e arrastava a página; o `overflow-x: auto` do
+`<pre>` nunca entrava em ação porque o **contêiner** dele é que crescia.
+
+**A primeira hipótese estava no elemento errado,** e isso vale registrar: `min-width: 0` em
+`.lab-exercicios > *` não mudou nada, porque `astro-island` é `display: contents` — a ilha não é
+caixa nenhuma, e o item de grid é a **raiz do componente**. Fixes de layout de ilha moram no CSS
+do componente, não no da página.
+
+E a correção que mais importa: **nas duas sessões anteriores eu afirmei, duas vezes, que a falha
+de `[mobile] providers-lab` era artefato de container.** A reprodução em `main` era real, mas a
+causa não era o browser: a página rolava 812px num viewport de 412 desde a entrega 5, e era isso
+que jogava o clique sob o header fixo. Com o cartão consertado ela caiu para 528 e o teste passa
+3/3 — e a suíte e2e inteira fechou com **zero falhas** pela primeira vez neste container. O
+headless shell do CI não disparava, e foi o que me fez atribuir ao ambiente um defeito da página.
+
+Entrou a guarda que faltava: **nenhum lab publicado rola na horizontal**, com a lista derivada do
+roadmap. A regra existia só para `cpu`, `gates` e `rpn`, cada uma escrita no spec do seu lab — e
+por isso as páginas do OTel nunca foram medidas em quatro entregas. As duas que seguem rolando
+entram como **dívida medida**: o conjunto não isenta, ele afirma que ainda rola, e cai quando
+alguém consertar. E é escopada ao mobile, porque no desktop as duas não rolam.
+
+Tentei `overflow-wrap: break-word` no código inline. **Não mudou número nenhum**, então saiu:
+manter uma regra com um comentário afirmando que ela conserta algo é a mentira que este
+repositório mais tenta evitar.
+
+### E a guarda da entrega 16 pegou os dois labs novos, sozinha
+
+Três vezes, sem eu lembrar dela: nomeou `collectorWorld` fora da varredura de emissões perdidas,
+cobrou o teto de cruzamentos do lab novo, e o `SEM_PALCO` existe porque ela cobrou teto de um lab
+que não tem palco. Era o ponto de fazê-la derivada.
+
+Estado: **1226 unitários (104 arquivos)** — 72 novos —, **e2e 323 com zero falhas**, typecheck,
+boundaries, catálogo e build verdes. `mvn compile` verde nos três labs reais com Java.
+
+Dois dos quinze labs que o roadmap prometia saíram de `coming` para publicados.
