@@ -95,6 +95,28 @@ export {
   MAL_ENTENDIDOS_DO_COLLECTOR,
 } from "./collector/labels.js";
 
+// O lab da amostragem: head decide antes de saber; tail precisa do trace inteiro.
+export { amostragemWorld, PARAMS_DA_AMOSTRAGEM, hashDoTrace } from "./amostragem/world.js";
+export type {
+  SpanAmostrado,
+  EstadoDaAppAmostrada,
+  EstadoDoHead,
+  EstadoDoBalanceador,
+  EstadoDoTail,
+  TraceAberto,
+  TraceNoBackend,
+  EstadoDoBackendDeTraces,
+  EstadoDoDescarteDeTraces,
+} from "./amostragem/world.js";
+export { estadoDaAmostragem, LEITOR_DO_SPAN_AMOSTRADO } from "./amostragem/estado.js";
+export type { EstadoDaAmostragem, EstadoDeUmGateway } from "./amostragem/estado.js";
+export { VIEW_AMOSTRAGEM, VIEWS_DA_AMOSTRAGEM } from "./amostragem/views.js";
+export {
+  ROTULOS_AMOSTRAGEM,
+  SERVICOS_DO_TRACE,
+  MAL_ENTENDIDOS_DA_AMOSTRAGEM,
+} from "./amostragem/labels.js";
+
 // O lab dos três pilares: as mesmas requisições, três gravadores.
 export { pilaresWorld, PARAMS_DOS_PILARES, latenciaDe } from "./pilares/world.js";
 export type {

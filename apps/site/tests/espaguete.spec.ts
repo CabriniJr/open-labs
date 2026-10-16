@@ -133,6 +133,19 @@ const TETOS = [
    * embaixo de todos é um leque que converge, e leque que converge cruza.
    */
   { lab: "labs/three-pillars/", nome: "os três gravadores", cruzamentos: 0 },
+  /*
+   * Dois, e eles são o mesmo defeito estrutural do lab do Collector com um
+   * produtor a mais: TRÊS nós jogam fora (o head sampler e os dois gateways) e
+   * o contador de descarte é um só, embaixo. A linha que desce do gateway de
+   * cima até ele atravessa a fileira do gateway de baixo, e a do head atravessa
+   * o caminho do balanceador — leque que converge cruza.
+   *
+   * Dava para zerar dando um contador a cada um, e seria pior pela mesma razão
+   * de lá: ensinaria que a perda de head sampling e a de tail sampling são
+   * contadas em lugares diferentes, quando a pergunta que o lab existe para
+   * responder é justamente qual dos dois jogou fora o trace que faltou.
+   */
+  { lab: "labs/head-and-tail-sampling/", nome: "head e tail sampling", cruzamentos: 2 },
   { lab: "labs/anatomy-of-a-trace/", nome: "a anatomia de um trace", cruzamentos: 4 },
   /*
    * Um, e ele é estrutural: as duas pipelines são fileiras PARALELAS e o

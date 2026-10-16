@@ -1,0 +1,235 @@
+---
+import { MAL_ENTENDIDOS_DA_AMOSTRAGEM } from "@ovh/otel-domain";
+import { AmostragemLab } from "../../components/AmostragemLab.tsx";
+import { Predicao } from "../../components/Predicao.tsx";
+import SiteFooter from "../../components/SiteFooter.astro";
+import SiteNav from "../../components/SiteNav.astro";
+import Base from "../../layouts/Base.astro";
+import { url } from "../../lib/urls";
+import "../../styles/docs.css";
+import "../../components/AmostragemLab.css";
+import "../../components/Predicao.css";
+import "../../components/PainelDaCarga.css";
+import "@ovh/depth-ui/src/stage.css";
+import "../../components/Explorer.css";
+---
+
+<Base
+  domain="otel"
+  title="Head vs tail sampling — OpenLabs"
+  description="Head sampling decides at the root span, before the request has failed. Tail sampling decides on the finished trace, and so it has to hold every span in memory — and it is only right if every span of a trace reaches the same instance."
+>
+  <SiteNav current="labs" />
+
+  <main id="content">
+    <section class="lab-head editorial">
+      <div class="prose">
+        <p class="lab-head__eyebrow mono">
+          <a href={url("handbooks/otel")}>OpenTelemetry Visual Handbook</a> · lab
+        </p>
+        <h1>The trace you needed was the one you threw away</h1>
+        <p>
+          Sampling is usually discussed as a percentage, which hides the only
+          thing that matters about it: <b>when</b> the decision is taken. A head
+          sampler decides at the root span, before the request has done
+          anything — so it cannot keep &ldquo;the traces that failed&rdquo;,
+          because nothing has failed yet. A tail sampler decides on the finished
+          trace and can, at the price of holding every span of every trace in
+          memory until it decides.
+        </p>
+        <p>
+          Below, each trace has a few spans across two services, and the error
+          is always in the <em>last</em> one. Turn the head sampler up and watch
+          the counter of <em>error traces cut</em> climb: those are gone, and no
+          tail policy can bring them back, because they never arrived. Then turn
+          the load balancer's trace routing off.
+        </p>
+      </div>
+      <aside class="lab-head__note mono">
+        <p>One tick is one second.</p>
+        <p>The sampling rate is a hash of the trace id, like the real sampler.</p>
+        <p>Nothing here is scripted: every number is the run.</p>
+      </aside>
+    </section>
+
+    <section class="lab-palco">
+      <AmostragemLab client:only="react" />
+    </section>
+
+    <section class="lab-prosa editorial">
+      <div class="prose">
+        <h2>Break it</h2>
+        <p>Three moves. The third one is a production incident that reports nothing.</p>
+        <ol>
+          <li>
+            <b>Head sampler to 1 in 10, tail keeping everything.</b> The
+            <em>cut before the error existed</em> counter climbs, and
+            <em>error traces · whole</em> stops growing. This is the whole
+            argument against head sampling as a reliability tool: the decision
+            could not depend on the error, so what you keep is a slice of
+            traffic and not a slice of each category. A failure in 1 in 500
+            requests, sampled at 10%, is a failure you meet once in 5 000.
+          </li>
+          <li>
+            <b>Head sampler back to 1 in 1, tail keeping 1 in 10 of the rest.</b>
+            Now every error trace survives — <em>kept · error</em> equals the
+            number that failed — and the boring traffic is thinned out. Then
+            raise the decision window and watch <em>holding</em> in both
+            gateways: that is memory, it belongs to traces that are about to be
+            discarded, and it is the price of deciding late.
+          </li>
+          <li>
+            <b>Turn off <code>load balancer routes by traceID</code>.</b> Nothing
+            looks broken. The gateways keep deciding, the backend keeps filling,
+            and <em>arrived broken</em> starts climbing: traces that are in the
+            backend without the span that failed. Each gateway decided correctly
+            on the fragment it received, and the fragment was not a trace. In
+            production nothing reports this, because no backend knows how many
+            spans a trace had.
+          </li>
+        </ol>
+
+        <h2>Predict before you look</h2>
+        <p>
+          Answer first, then run it. Predicting and being wrong is what makes
+          the answer stick.
+        </p>
+      </div>
+      <div class="lab-predicao">
+        <Predicao
+          client:visible
+          pergunta="Your SDKs sample at 10% (head). Your Collector runs tail sampling with a policy that keeps every trace containing an error. What fraction of error traces reaches the backend?"
+          opcoes={[
+            "About 10% — the head sampler already threw the rest away before the Collector saw them",
+            "100% — the tail policy keeps every error trace it decides on",
+            "About 10%, but the tail policy can be configured to recover the rest",
+          ]}
+          correta={0}
+          revelacao="Tail sampling can only decide about spans that reach it. Head sampling happens first, in the SDK, and what it drops is never exported — so the tail policy is applied to the 10% that survived, and it keeps every error inside that 10%. This is why the recommendation when you run tail sampling is to leave the SDK sampler on AlwaysOn: two samplers in series multiply, and the first one is the one that cannot know anything."
+        />
+      </div>
+    </section>
+
+    <section class="lab-prosa editorial">
+      <div class="prose">
+        <h2>What people get wrong</h2>
+        <p>
+          Every row below is a belief worth naming, because the model above is
+          arranged to take it apart. The right column is the documentation, with
+          the link.
+        </p>
+      </div>
+      <div class="lab-mal-entendidos">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">What people believe</th>
+              <th scope="col">What the docs say</th>
+            </tr>
+          </thead>
+          <tbody>
+            {
+              MAL_ENTENDIDOS_DA_AMOSTRAGEM.map((m) => (
+                <tr>
+                  <td>{m.crenca}</td>
+                  <td>
+                    {m.spec}{" "}
+                    <a href={m.fonte} rel="noreferrer noopener" target="_blank">
+                      source
+                    </a>
+                  </td>
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="lab-prosa editorial">
+      <div class="prose">
+        <h2>What this model does not claim</h2>
+        <p>
+          Two simplifications, declared rather than hidden. First, the sampling
+          here is <b>deterministic</b>: the decision is a hash of the trace id,
+          reproducible across runs, so two regimes can be compared instead of
+          two draws. Real head sampling hashes the trace id too — that is why
+          its rate is approximate — but it is a rate and not a schedule.
+        </p>
+        <p>
+          Second, all spans of a trace leave the application in the same tick.
+          In a real system they are produced over the life of the request, which
+          is the actual reason a tail sampler needs a decision window at all.
+          The window here is real and it is a parameter, but what it waits for
+          is the model's wiring and not the duration of a request.
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <SiteFooter />
+</Base>
+
+<style>
+  .lab-head {
+    padding-block: var(--space-4) var(--space-2);
+  }
+
+  .lab-head__eyebrow {
+    margin: 0 0 var(--space-1);
+    color: var(--accent);
+    font-size: var(--size-step--1);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  h1 {
+    margin: 0 0 var(--space-2);
+    font-size: var(--size-step-2);
+    max-width: 24ch;
+  }
+
+  .lab-head__note {
+    align-self: end;
+    color: var(--ink-muted);
+    font-size: var(--size-step--1);
+  }
+
+  .lab-head__note p {
+    margin: 0 0 0.35rem;
+  }
+
+  .lab-palco {
+    margin-block: var(--space-2) var(--space-4);
+  }
+
+  .lab-prosa {
+    padding-block-end: var(--space-4);
+  }
+
+  .lab-predicao {
+    grid-column: 1 / -1;
+    margin-block-start: var(--space-2);
+    max-width: var(--measure);
+  }
+
+  .lab-mal-entendidos {
+    grid-column: 1 / -1;
+    margin-block-start: var(--space-2);
+    overflow-x: auto;
+  }
+
+  .lab-mal-entendidos table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: var(--size-step--1);
+  }
+
+  .lab-mal-entendidos th,
+  .lab-mal-entendidos td {
+    border-block-end: 1px solid var(--border);
+    padding: var(--space-1) var(--space-2);
+    text-align: start;
+    vertical-align: top;
+  }
+</style>

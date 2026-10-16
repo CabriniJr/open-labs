@@ -16,6 +16,7 @@
 import { describe, expect, it } from "vitest";
 import { World, emissoesPerdidas, relatoDePerdas } from "@ovh/depth-core";
 import type { WorldSpec } from "@ovh/depth-core";
+import { amostragemWorld } from "./amostragem/world.js";
 import { anatomiaWorld } from "./anatomia/world.js";
 import { collectorWorld } from "./collector/world.js";
 import { heroiWorld } from "./heroi/world.js";
@@ -24,6 +25,15 @@ import { otelWorld } from "./providers/world.js";
 import * as pacote from "./index.js";
 
 const LABS: Readonly<Record<string, () => WorldSpec>> = {
+  amostragem: () => amostragemWorld(),
+  // A amostragem com os dois cortes ligados: no padrão (`1 em 1` no head) as
+  // três portas de corte nunca emitem, e a varredura passaria sem ter visto um
+  // terço das portas do lab.
+  "amostragem cortando": () =>
+    amostragemWorld({ "head-mantem-1-em": 3, "tail-mantem-1-em": 4, "erro-a-cada": 3 }),
+  // E com o roteamento que parte o trace: é o cenário do defeito, e as portas
+  // dos dois gateways acordam por caminhos diferentes nele.
+  "amostragem com rota por chegada": () => amostragemWorld({ "rotear-por-trace": 0 }),
   anatomia: () => anatomiaWorld(),
   collector: () => collectorWorld(),
   // O collector sob os parâmetros que acordam as portas de recusa: sem eles
@@ -38,6 +48,7 @@ const LABS: Readonly<Record<string, () => WorldSpec>> = {
 
 /** Os construtores que a varredura exercita, por nome. Ver a guarda no fim. */
 const CONSTRUTORES_VARRIDOS = [
+  "amostragemWorld",
   "anatomiaWorld",
   "collectorWorld",
   "heroiWorld",
