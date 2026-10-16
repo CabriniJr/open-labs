@@ -1,4 +1,15 @@
 import { expect, test } from "@playwright/test";
+import { MAPA_OTEL } from "../src/data/roadmap.js";
+import { MAPA_CPU } from "../src/data/roadmap-cpu.js";
+
+/** Os labs publicados, lidos do roadmap: lista derivada não envelhece. */
+const LABS_PUBLICADOS: readonly string[] = [
+  ...new Set(
+    [...MAPA_OTEL.labs, ...MAPA_CPU.labs]
+      .filter((lab) => lab.status === "available" && lab.href !== "#")
+      .map((lab) => `${lab.href.replace(/\/$/u, "")}/`),
+  ),
+].sort();
 
 /**
  * **A vista de fora não pode discordar do próprio interior.**
@@ -99,5 +110,59 @@ for (const lab of LABS) {
         expect(encostou, `${lab} · ${caixa}: linha termina em ${fim.x},${fim.y} e nenhuma entrada do interior começa ali`).toBe(true);
       }
     }
+  });
+}
+
+/**
+ * Nenhum lab publicado rola na horizontal.
+ *
+ * A regra existia para `cpu`, `gates` e `rpn`, cada uma escrita no spec do seu
+ * lab — e por isso as páginas do OTel nunca foram medidas. Quando foram, em
+ * 16/10/2026: `providers` com 528px num viewport de 412, `three-pillars` com
+ * 464, e a anatomia com 864 depois de ganhar exercícios.
+ *
+ * A causa da anatomia era a pior e já está consertada: o cartão do exercício é
+ * item de grid, item de grid tem `min-width: auto` (min-content), e com
+ * `white-space: pre` min-content é a linha mais longa do código — o cartão
+ * crescia até caber a linha e arrastava a página. O conserto mora em
+ * `Exercicio.css`, porque `astro-island` é `display: contents` e a raiz do
+ * componente é que recebe o layout.
+ *
+ * As duas que sobram são DÍVIDA DECLARADA, e a declaração é medida: o conjunto
+ * abaixo não isenta, ele **afirma que ainda rola**. No dia em que alguém
+ * consertar `providers`, este teste cai pedindo que o nome saia da lista — que é
+ * o contrário de uma isenção, que silenciaria para sempre.
+ *
+ * E a dívida é **do mobile**, não das páginas: medida no desktop, `providers` e
+ * `three-pillars` não rolam. Escrita como fato absoluto, a afirmação reprovava
+ * no desktop — a lista precisa dizer onde o número foi medido, senão ela afirma
+ * mais do que alguém olhou.
+ */
+const AINDA_ROLA_NO_MOBILE: ReadonlySet<string> = new Set([
+  "labs/providers/",
+  "labs/three-pillars/",
+]);
+
+for (const lab of [...LABS_PUBLICADOS]) {
+  test(`${lab} — a página não rola na horizontal`, async ({ page }, info) => {
+    await page.goto(lab);
+    await expect(page.locator(".dui-stage")).toBeVisible({ timeout: 20_000 });
+    // O palco e as ilhas acabam de assentar; medir antes mede o meio do caminho.
+    await page.waitForTimeout(1200);
+    const { scrollW, clientW } = await page.evaluate(() => ({
+      scrollW: document.documentElement.scrollWidth,
+      clientW: document.documentElement.clientWidth,
+    }));
+
+    if (info.project.name === "mobile" && AINDA_ROLA_NO_MOBILE.has(lab)) {
+      expect(
+        scrollW,
+        `${lab} está em AINDA_ROLA_NO_MOBILE e parou de rolar — tire-o da lista`,
+      ).toBeGreaterThan(clientW + 1);
+      return;
+    }
+    expect(scrollW, `${lab} rola ${scrollW - clientW}px na horizontal`).toBeLessThanOrEqual(
+      clientW + 1,
+    );
   });
 }

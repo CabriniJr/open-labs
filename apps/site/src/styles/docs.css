@@ -627,3 +627,29 @@
 .status--coming {
   color: var(--ink-faint);
 }
+
+/*
+  A grade dos exercícios de instrumentação.
+
+  Ela estava escrita no `<style>` de três páginas de lab, e com o mesmo defeito
+  nas três: item de grid tem `min-width: auto`, que é **min-content** — e
+  `white-space: pre` num bloco de código faz min-content ser a linha mais longa
+  do bloco. O cartão então crescia até caber a linha inteira e arrastava a
+  página com ele; medido no mobile, a anatomia ficou com 864px de largura num
+  viewport de 412, e a de provedores já estava com 812 desde a entrega 5 sem
+  ninguém ver.
+
+  O conserto NÃO mora aqui, e a razão vale registrar porque custou uma medição:
+  `astro-island` é `display: contents`, então a ilha não é caixa nenhuma. O item
+  de grid é a raiz do próprio componente, e `min-width: 0` escrito em
+  `.lab-exercicios > *` acerta a ilha e não faz nada. Está em
+  `Exercicio.css`, onde o componente declara que não cresce além do contêiner.
+
+  Aqui fica só a grade, que estava copiada em três páginas.
+*/
+.lab-exercicios {
+  display: grid;
+  gap: var(--space-2);
+  grid-column: 1 / -1;
+  margin-block-start: var(--space-2);
+}
