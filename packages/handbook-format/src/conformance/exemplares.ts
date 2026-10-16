@@ -31,5 +31,8 @@ const ler = (nome: string): string => readFileSync(new URL(nome, aqui), "utf8");
 
 export const EXEMPLARES: readonly Exemplar[] = [
   { apiVersion: "openlabs/handbook/v1", yaml: ler("v1.handbook.yaml") },
+  // O par de migração é exemplar da MESMA versão lido de outro ângulo: ele
+  // prova que a tradução é fiel, e não só que o arquivo carrega. Ver
+  // `migracao.test.ts`.
   { apiVersion: "typescript" },
 ];

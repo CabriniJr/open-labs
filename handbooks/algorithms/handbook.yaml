@@ -64,7 +64,8 @@ phases:
 articles:
   - id: a-stack-is-a-box
     title: A stack is a box
-    status: coming
+    status: available
+    href: handbooks/algorithms/articles/a-stack-is-a-box
     phase: 1
   - id: fifo-and-backpressure
     title: FIFO, and what happens when it is full

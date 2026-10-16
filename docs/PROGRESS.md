@@ -2745,3 +2745,81 @@ catálogo e build (44 páginas) verdes. `mvn compile` verde nos quatro labs reai
 
 Três dos quinze labs do roadmap do OTel seguem publicados, e a fase 5 ganhou lab, matéria e
 exercícios no mesmo dia.
+
+## Entrega 19 — O caminho dourado: handbook é submissão, com versão ✅
+
+O pedido: qualquer pessoa ou agente cria, submete e **mantém** o handbook dela, usa em
+qualquer ambiente, e a casa sempre suporta a release anterior.
+
+### O que mudou de estrutura
+
+Publicar um handbook exigia editar `apps/site/src/data/handbooks.ts` mais o mapa mais um
+arquivo de tema. Isso cobrava o monorepo inteiro de quem só domina um assunto, e deixava
+quem mantém a casa dono de conteúdo de terceiro. Agora é `handbooks/<id>/handbook.yaml`:
+**um diretório, um dono, zero TypeScript.**
+
+O `algorithms` foi o primeiro a migrar, e a página dele hoje é gerada do manifesto — nome,
+fases, itens e tema vindos do arquivo.
+
+### A compatibilidade é mecanismo, e as duas versões são reais hoje
+
+`apiVersion` nomeia o **contrato**, não a release. A lista de versões suportadas tem estado,
+data e um leitor por versão, e é ela que o teste varre:
+
+- versão na lista tem **exemplar de conformidade**, e o exemplar carrega em cada suíte.
+  Apagar o leitor de uma versão listada derruba a suíte nomeando a versão;
+- a recusa separa as duas direções: quem escreveu contra uma versão **mais nova** é mandado
+  atualizar a casa (nada no arquivo dele está errado); quem escreveu contra uma
+  **aposentada** é mandado migrar. "Versão inválida" manda os dois procurarem no lugar
+  errado;
+- `migrate` existe com a tabela vazia, e isso é declarado: uma versão só pode ser aposentada
+  quando existe migração automática, e é ali que ela vai morar. Dizer "migrado" sem migrar
+  seria a mentira que este repositório mais combate.
+
+E as duas versões não são promessa sobre um `v2` futuro: os três handbooks originais são
+objetos TypeScript escritos à mão, que é **literalmente** a versão anterior deste contrato,
+e ela está na lista com esse nome.
+
+### A ferramenta, e o molde que nasce válido
+
+Cinco comandos em `node` puro — nada depende do Astro, de navegador, ou de estar dentro
+deste monorepo rodando:
+
+| comando | o que faz |
+| --- | --- |
+| `new` | escreve um manifesto **que passa no check** |
+| `check` | o mesmo comando que o CI roda |
+| `export` | pacote portátil em JSON: manifesto normalizado + artigos com corpo |
+| `migrate` | sobe o manifesto de versão |
+| `codeowners` | **deriva** o CODEOWNERS dos manifestos |
+
+A ponte com o schema (que é TypeScript) é o compilado, garantido em dia pela própria
+ferramenta. A alternativa seria uma segunda cópia das regras em JS — e duas cópias da mesma
+regra divergem, como já divergiram aqui entre o mapa e o catálogo de labs.
+
+### Andei o caminho antes de dizer que ele funciona — e achei um defeito meu
+
+Escrevi o primeiro artigo do handbook submetido ("A stack is a box", com o `sp` do RISC-V
+conferido no próprio psABI: `x2`, pilha crescendo para baixo, 128 bits de alinhamento).
+Trocar o status do item de `coming` para `available` **reprovou o meu teste de
+compatibilidade** — e o teste estava mal projetado, não o artigo.
+
+Ele comparava o manifesto **vivo** com a expectativa congelada, misturando duas coisas: "o
+leitor traduz fielmente" e "o conteúdo nunca muda". Agora o par é congelado dos dois lados,
+no pacote de formato: a entrada é o manifesto como ele estava no dia da migração, a saída é
+o objeto que o catálogo em TypeScript tinha. Conteúdo novo entra no manifesto vivo e não
+encosta nele. Com um teste a mais, cobrando que a expectativa cubra o handbook inteiro —
+senão alguém "conserta" uma divergência apagando o campo.
+
+Este é o argumento do caminho dourado em uma frase: ele só vale depois de alguém andá-lo, e
+quem o escreve é quem tem de andar primeiro.
+
+### O limite, escrito em vez de descoberto
+
+O manifesto **não descreve comportamento**: lab que roda é modelo, e modelo é TypeScript.
+E o `map` do roadmap é desenho com coordenadas, que é a razão honesta de OTel e CPU seguirem
+em TypeScript. As duas coisas estão em `docs/handbooks.md` e na ADR §10, com o porquê.
+
+Estado: **1354 unitários (110 arquivos)**, typecheck, fronteira, catálogo, `handbooks`,
+`codeowners`, build (46 páginas) e varredura de links verdes. CI ganhou os dois portões
+novos.
