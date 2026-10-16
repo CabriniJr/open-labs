@@ -145,7 +145,7 @@ const TETOS = [
    * contadas em lugares diferentes, quando a pergunta que o lab existe para
    * responder é justamente qual dos dois jogou fora o trace que faltou.
    */
-  { lab: "labs/head-and-tail-sampling/", nome: "head e tail sampling", cruzamentos: 2 },
+  { lab: "labs/head-vs-tail-sampling/", nome: "head e tail sampling", cruzamentos: 2 },
   { lab: "labs/anatomy-of-a-trace/", nome: "a anatomia de um trace", cruzamentos: 4 },
   /*
    * Um, e ele é estrutural: as duas pipelines são fileiras PARALELAS e o

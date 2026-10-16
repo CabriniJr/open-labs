@@ -1,6 +1,7 @@
 ---
-import { MAL_ENTENDIDOS_DA_AMOSTRAGEM } from "@ovh/otel-domain";
+import { EXERCICIOS_DA_AMOSTRAGEM, MAL_ENTENDIDOS_DA_AMOSTRAGEM } from "@ovh/otel-domain";
 import { AmostragemLab } from "../../components/AmostragemLab.tsx";
+import { Exercicio } from "../../components/Exercicio.tsx";
 import { Predicao } from "../../components/Predicao.tsx";
 import SiteFooter from "../../components/SiteFooter.astro";
 import SiteNav from "../../components/SiteNav.astro";
@@ -12,6 +13,10 @@ import "../../components/Predicao.css";
 import "../../components/PainelDaCarga.css";
 import "@ovh/depth-ui/src/stage.css";
 import "../../components/Explorer.css";
+import "../../components/Exercicio.css";
+import { montarExercicio } from "../../lib/exercicios";
+
+const exercicios = EXERCICIOS_DA_AMOSTRAGEM.map(montarExercicio);
 ---
 
 <Base
@@ -107,6 +112,31 @@ import "../../components/Explorer.css";
           correta={0}
           revelacao="Tail sampling can only decide about spans that reach it. Head sampling happens first, in the SDK, and what it drops is never exported — so the tail policy is applied to the 10% that survived, and it keeps every error inside that 10%. This is why the recommendation when you run tail sampling is to leave the SDK sampler on AlwaysOn: two samplers in series multiply, and the first one is the one that cannot know anything."
         />
+      </div>
+    </section>
+
+    <section class="lab-prosa editorial">
+      <div class="prose">
+        <h2>Configure it</h2>
+        <p>
+          Three lines from <code>labs/head-vs-tail-sampling/</code>, which is
+          this model as something that boots. The correct block of each one is
+          lifted out of the file that runs, so it cannot drift from the config.
+        </p>
+        <p>
+          They are in <b>three different files</b>, and that is the point rather
+          than variety: the sampling decision is taken in three places owned by
+          three different people. The SDK sampler belongs to whoever writes the
+          application, <code>routing_key</code> to whoever operates the cluster,
+          and the policies to whoever looks after observability. None of the
+          three sees the other two files, and each of them can, alone, delete the
+          trace of the error.
+        </p>
+      </div>
+      <div class="lab-exercicios">
+        {exercicios.map((exercicio) => (
+          <Exercicio client:visible exercicio={exercicio} />
+        ))}
       </div>
     </section>
 

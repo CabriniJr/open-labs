@@ -61,6 +61,7 @@ export { EXERCICIOS_DOS_PROVEDORES } from "./exercicios/providers.js";
 export { EXERCICIOS_DA_ANATOMIA } from "./exercicios/anatomia.js";
 export { EXERCICIOS_DOS_PILARES } from "./exercicios/pilares.js";
 export { EXERCICIOS_DO_COLLECTOR } from "./exercicios/collector.js";
+export { EXERCICIOS_DA_AMOSTRAGEM } from "./exercicios/amostragem.js";
 export type { DefinicaoDeExercicio, Distrator } from "./exercicios/tipos.js";
 
 // Cardinalidade e a conta: lab PhET-like, SEM motor (ADR §9). Aritmética sobre

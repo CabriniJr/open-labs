@@ -1,3 +1,4 @@
+import { EXERCICIOS_DA_AMOSTRAGEM } from "./amostragem.js";
 import { EXERCICIOS_DA_ANATOMIA } from "./anatomia.js";
 import { EXERCICIOS_DO_COLLECTOR } from "./collector.js";
 import { EXERCICIOS_DOS_PILARES } from "./pilares.js";
@@ -25,6 +26,7 @@ import type { DefinicaoDeExercicio } from "./tipos.js";
 export const CONJUNTOS_DE_EXERCICIOS: Readonly<
   Record<string, readonly DefinicaoDeExercicio[]>
 > = {
+  EXERCICIOS_DA_AMOSTRAGEM,
   EXERCICIOS_DA_ANATOMIA,
   EXERCICIOS_DO_COLLECTOR,
   EXERCICIOS_DOS_PILARES,

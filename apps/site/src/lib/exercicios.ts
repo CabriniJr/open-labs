@@ -50,7 +50,15 @@ export interface ExercicioMontado {
   readonly cenario: string;
   readonly pergunta: string;
   readonly arquivo: string;
-  /** A versão do SDK, lida do `pom.xml` do lab. Aparece na tela ao lado do código. */
+  /**
+   * O que executa este arquivo, e em que versão — já com o nome da coisa.
+   *
+   * Carrega o nome junto do número porque o nome é parte do fato: o componente
+   * escrevia "OpenTelemetry Java" fixo, e com a entrada dos exercícios de YAML
+   * a linha de origem de um `collector.yaml` passou a dizer
+   * "OpenTelemetry Java collector 0.160.0" — um número certo com o nome errado
+   * em volta. Quem sabe qual é a coisa é esta função, e não a tela.
+   */
   readonly versao: string;
   /** O código acima da lacuna, já sem os marcadores. */
   readonly antes: string;
@@ -128,7 +136,7 @@ function versaoDoArquivo(arquivo: string): string {
           "a tela mostra esse número, e ele não pode ser escrito em dois lugares",
       );
     }
-    return achado[1];
+    return `OpenTelemetry Java ${achado[1]}`;
   }
 
   // Qualquer outra coisa no lab é configuração, e quem a executa é a imagem.
@@ -142,7 +150,7 @@ function versaoDoArquivo(arquivo: string): string {
         "onde o compose a declara",
     );
   }
-  return `collector ${achado[1]}`;
+  return `OpenTelemetry Collector ${achado[1]}`;
 }
 
 export function montarExercicio(definicao: DefinicaoDeExercicio): ExercicioMontado {

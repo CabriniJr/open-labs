@@ -21,7 +21,7 @@ const montado = {
   cenario: "The checkout service already installs an SDK.",
   pergunta: "Where does the Tracer come from?",
   arquivo: "labs/providers/app/src/main/java/checkout/Checkout.java",
-  versao: "1.65.0",
+  versao: "OpenTelemetry Java 1.65.0",
   antes: "OpenTelemetry otel = GlobalOpenTelemetry.get();",
   depois: 'Span span = tracer.spanBuilder("GET /checkout").startSpan();',
   certo,

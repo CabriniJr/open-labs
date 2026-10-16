@@ -15,7 +15,7 @@ import { expect, test } from "@playwright/test";
  *    reporta, e aqui ele é medido.
  */
 
-const LAB = "labs/head-and-tail-sampling/";
+const LAB = "labs/head-vs-tail-sampling/";
 
 const PLACAR = ".amostragem-lab__resposta";
 
