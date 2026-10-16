@@ -62,6 +62,16 @@ export { EXERCICIOS_DA_ANATOMIA } from "./exercicios/anatomia.js";
 export { EXERCICIOS_DOS_PILARES } from "./exercicios/pilares.js";
 export type { DefinicaoDeExercicio, Distrator } from "./exercicios/tipos.js";
 
+// Cardinalidade e a conta: lab PhET-like, SEM motor (ADR §9). Aritmética sobre
+// um produto cartesiano, e nenhum preço afirmado em lugar nenhum.
+export { calcular, fatorDeEntrada, pontosPorSerie } from "./cardinalidade/modelo.js";
+export type { Atributo, Conta, TipoDeMetrica } from "./cardinalidade/modelo.js";
+export {
+  ATRIBUTOS_DA_CARDINALIDADE,
+  ROTULOS_DA_CARDINALIDADE,
+  MAL_ENTENDIDOS_DA_CARDINALIDADE,
+} from "./cardinalidade/labels.js";
+
 // O lab do Collector: um receiver, duas pipelines, uma cópia para cada.
 export { collectorWorld, PARAMS_DO_COLLECTOR } from "./collector/world.js";
 export type {

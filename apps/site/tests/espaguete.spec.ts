@@ -312,13 +312,39 @@ const PUBLICADOS: readonly string[] = [
   ),
 ].sort();
 
-test("todo lab publicado tem teto de cruzamentos medido", () => {
+/**
+ * Labs que **não têm palco**, e por isso não têm desenho para medir.
+ *
+ * Não é isenção: é a ADR §9 aparecendo na suíte. Um lab cujo assunto não é
+ * fluxo com camadas é um lab PhET-like, e a ADR é explícita sobre o que ele não
+ * deve ter — "sem árvore de composição, sem palco, sem `kinds`". Medir
+ * cruzamento de fio num lab sem fio não é uma medida mais fraca, é uma medida
+ * sem objeto.
+ *
+ * E a entrada aqui é VERIFICADA: o teste abaixo cobra que a página destes labs
+ * de fato não tenha `.dui-stage`. No dia em que um deles ganhar palco, ele cai
+ * pedindo um teto — que é o contrário de uma lista que silencia.
+ */
+const SEM_PALCO: ReadonlySet<string> = new Set(["labs/cardinality-and-the-bill/"]);
+
+test("todo lab publicado COM palco tem teto de cruzamentos medido", () => {
   const medidos = new Set(TETOS.map((t) => t.lab).filter((l) => l !== ""));
-  const faltando = PUBLICADOS.filter((lab) => !medidos.has(lab));
+  const faltando = PUBLICADOS.filter((lab) => !medidos.has(lab) && !SEM_PALCO.has(lab));
   expect(
     faltando,
     "um lab publicado não tem teto de cruzamentos. O desenho dele nunca foi " +
       "medido: acrescente-o a `TETOS` neste arquivo, com o número que a medição " +
-      "der e a razão dele por escrito.",
+      "der e a razão dele por escrito. Se ele não tem palco (ADR §9), acrescente-o " +
+      "a `SEM_PALCO`.",
   ).toEqual([]);
 });
+
+for (const lab of [...SEM_PALCO]) {
+  test(`${lab} está em SEM_PALCO, e a página confirma que não tem palco`, async ({ page }) => {
+    // A afirmação, e não a isenção. Sem isto, `SEM_PALCO` seria um jeito de
+    // tirar um lab da medição escrevendo o nome dele numa lista.
+    await page.goto(lab);
+    await expect(page.locator("main")).toBeVisible();
+    await expect(page.locator(".dui-stage")).toHaveCount(0);
+  });
+}

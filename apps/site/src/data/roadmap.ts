@@ -130,7 +130,7 @@ export const labs: readonly RoadmapLab[] = [
   // A fase 5 fala de custo desde a spec do handbook §3 e não tinha nó para ele.
   // Cardinalidade é onde o custo mora, e é decisão de atributo — coisa que se
   // toma na instrumentação e se paga na fatura, meses depois.
-  { id: "cardinality-and-the-bill", title: "Cardinality and the bill", href: "#", status: "coming", side: "left", y: 926, phase: 5 },
+  { id: "cardinality-and-the-bill", title: "Cardinality and the bill", href: "labs/cardinality-and-the-bill", status: "available", side: "left", y: 926, phase: 5 },
   { id: "the-rollout", title: "The rollout", href: "#", status: "coming", side: "right", y: 926, phase: 5 },
 ];
 

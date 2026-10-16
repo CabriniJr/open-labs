@@ -1,0 +1,256 @@
+---
+import { MAL_ENTENDIDOS_DA_CARDINALIDADE } from "@ovh/otel-domain";
+import { CardinalidadeLab } from "../../components/CardinalidadeLab.tsx";
+import { Predicao } from "../../components/Predicao.tsx";
+import SiteFooter from "../../components/SiteFooter.astro";
+import SiteNav from "../../components/SiteNav.astro";
+import Base from "../../layouts/Base.astro";
+import { url } from "../../lib/urls";
+import "../../styles/docs.css";
+import "../../components/CardinalidadeLab.css";
+import "../../components/Predicao.css";
+---
+
+<Base
+  domain="otel"
+  title="Cardinality and the bill — OpenLabs"
+  description="A metric stream is identified by its attribute set, so the number of streams is the product of the distinct values — not the sum. One attribute with 8 000 values does not add 8 000 streams to a metric that had 288; it multiplies them."
+>
+  <SiteNav current="labs" />
+
+  <main id="content">
+    <section class="lab-head editorial">
+      <div class="prose">
+        <p class="lab-head__eyebrow mono">
+          <a href={url("handbooks/otel")}>OpenTelemetry Visual Handbook</a> · lab
+        </p>
+        <h1>One attribute is not one more column</h1>
+        <p>
+          An account manager asks which customer is affected. You have a latency
+          histogram with route, status and method on it, so you add
+          <code>enduser.id</code> and ship it. The metric had 288 streams. It
+          now has <b>2 304 000</b> — and nothing warned you, because nothing was
+          wrong: a stream is identified by its attribute set, so attributes
+          <b>multiply</b>.
+        </p>
+        <p>
+          Below is that arithmetic, with your numbers. Turn attributes on and
+          off, and correct the value counts to your own service — the default
+          numbers are a mid-sized shop and the only ones that matter are yours.
+          Watch the product written out, not just the total: it is the whole
+          argument.
+        </p>
+      </div>
+      <aside class="lab-head__note mono">
+        <p>No simulation here, and that is deliberate.</p>
+        <p>Cardinality is not a flow — it is a product. See <code>DECISIONS.md</code> §9.</p>
+      </aside>
+    </section>
+
+    <section class="lab-palco">
+      <CardinalidadeLab client:visible />
+    </section>
+
+    <section class="lab-prosa editorial">
+      <div class="prose">
+        <h2>Break it</h2>
+        <ol>
+          <li>
+            <b>Turn on <code>enduser.id</code>.</b> Four orders of magnitude, from
+            one checkbox. This is the whole lab, and it is why the answer to
+            &ldquo;can we break this down by customer?&rdquo; is never yes or no —
+            it is a multiplication you do before answering.
+          </li>
+          <li>
+            <b>Switch the instrument from Histogram to Counter.</b> The stream
+            count does not move and the volume collapses, because a histogram
+            publishes a point per bucket plus the sum and the count. A histogram
+            is the expensive instrument <em>before</em> any attribute is added,
+            and most teams reach for it by default.
+          </li>
+          <li>
+            <b>Now turn on <code>cardinality_limit</code>.</b> The bill stops
+            growing and the warning appears: the excess attribute sets fold into
+            one <code>otel.metric.overflow</code> stream. Read that number
+            carefully — it is how many breakdowns you are paying to produce and
+            cannot read. The limit protects the invoice, not the question.
+          </li>
+          <li>
+            <b>Set <code>k8s.pod.name</code> to 40 and think about deploys.</b>
+            The product is over values actually <em>seen</em>, so each rollout
+            retires 40 pod names and mints 40 more. The old streams stay until
+            retention rolls them off — which is why cardinality incidents outlive
+            the change that caused them by days.
+          </li>
+        </ol>
+
+        <h2>Predict before you look</h2>
+        <p>
+          Answer first, then compute it above. Predicting and being wrong is what
+          makes the answer stick.
+        </p>
+      </div>
+      <div class="lab-predicao">
+        <Predicao
+          client:visible
+          pergunta="A histogram has http.route (12 values), http.response.status_code (6) and http.request.method (4). You add enduser.id, which has 8 000 values in production. How many streams does the metric have afterwards?"
+          opcoes={[
+            "2 304 000 — the attribute multiplies the existing streams",
+            "8 288 — the existing 288 streams plus one per customer",
+            "8 000 — one stream per customer, since that is the finest breakdown",
+          ]}
+          correta={0}
+          revelacao="12 × 6 × 4 = 288 streams before. A stream is identified by its full attribute set, so every one of those 288 now exists once per customer: 288 × 8 000 = 2 304 000. The sum reading (8 288) is the intuition that attributes are columns, and it is wrong by three orders of magnitude here — which is exactly how a cardinality incident starts, since the change looks like one line of code."
+        />
+      </div>
+    </section>
+
+    <section class="lab-prosa editorial">
+      <div class="prose">
+        <h2>What people get wrong</h2>
+        <p>
+          Every row below is a belief worth naming, because the arithmetic above
+          is arranged to take it apart. The right column is the specification,
+          with the link.
+        </p>
+      </div>
+      <div class="lab-mal-entendidos">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">What people believe</th>
+              <th scope="col">What the spec says</th>
+            </tr>
+          </thead>
+          <tbody>
+            {
+              MAL_ENTENDIDOS_DA_CARDINALIDADE.map((m) => (
+                <tr>
+                  <td>{m.crenca}</td>
+                  <td>
+                    {m.spec}{" "}
+                    <a href={m.fonte} rel="noreferrer noopener" target="_blank">
+                      source
+                    </a>
+                  </td>
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="lab-prosa editorial">
+      <div class="prose">
+        <h2>Check it against a real SDK</h2>
+        <p>
+          This lab is arithmetic, so it owes you a way to confirm the arithmetic
+          is the SDK's and not ours. It is — and the counterpart already exists:
+          <code>labs/three-pillars/</code> runs a real SDK against a real
+          Collector, and <code>PILLARS_USER_ATTRIBUTE</code> is exactly the move
+          this lab charges you for.
+        </p>
+        <ol>
+          <li>
+            In <code>labs/three-pillars/compose.yaml</code>, leave
+            <code>PILLARS_USER_ATTRIBUTE</code> as <code>false</code> and run
+            <code>docker compose up --build</code>. In the Collector's output,
+            count the distinct attribute sets on
+            <code>http.server.request.duration</code> — route times status.
+          </li>
+          <li>
+            Set it to <code>true</code> and run again. The count is multiplied by
+            the number of distinct users the app emits, not increased by it.
+          </li>
+        </ol>
+        <p>
+          That is the one claim this lab makes about the world, and it is
+          checkable. <b>What it deliberately does not claim is a price:</b> every
+          vendor bills on a different unit, so the lab computes volume — which is
+          mechanical — and leaves the price field for you to fill from your own
+          invoice. A number we invented would be the most expensive kind of
+          mistake this project can make.
+        </p>
+      </div>
+    </section>
+
+    <section class="lab-prosa editorial">
+      <div class="prose">
+        <h2>Read the theory</h2>
+        <p>
+          <a href={url("handbooks/otel/labs/three-pillars")}>Three pillars, one
+          blind spot</a> is where this starts: a metric is a decision to throw the
+          individual away and keep the count, and cardinality is the price of
+          taking that decision back one attribute at a time.
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <SiteFooter />
+</Base>
+
+<style>
+  .lab-head {
+    padding-block: var(--space-4) var(--space-2);
+  }
+
+  .lab-head__eyebrow {
+    margin: 0 0 var(--space-1);
+    color: var(--accent);
+    font-size: var(--size-step--1);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  h1 {
+    margin: 0 0 var(--space-2);
+    font-size: var(--size-step-2);
+    max-width: 24ch;
+  }
+
+  .lab-head__note {
+    align-self: end;
+    color: var(--ink-muted);
+    font-size: var(--size-step--1);
+  }
+
+  .lab-head__note p {
+    margin: 0 0 0.35rem;
+  }
+
+  .lab-palco {
+    margin-block: var(--space-2) var(--space-4);
+  }
+
+  .lab-prosa {
+    padding-block-end: var(--space-4);
+  }
+
+  .lab-predicao {
+    grid-column: 1 / -1;
+    margin-block-start: var(--space-2);
+    max-width: var(--measure);
+  }
+
+  .lab-mal-entendidos {
+    grid-column: 1 / -1;
+    margin-block-start: var(--space-2);
+    overflow-x: auto;
+  }
+
+  .lab-mal-entendidos table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: var(--size-step--1);
+  }
+
+  .lab-mal-entendidos th,
+  .lab-mal-entendidos td {
+    border-block-end: 1px solid var(--border);
+    padding: var(--space-1) var(--space-2);
+    text-align: start;
+    vertical-align: top;
+  }
+</style>

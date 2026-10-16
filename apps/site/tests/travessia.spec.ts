@@ -147,8 +147,12 @@ const AINDA_ROLA_NO_MOBILE: ReadonlySet<string> = new Set([
 for (const lab of [...LABS_PUBLICADOS]) {
   test(`${lab} — a página não rola na horizontal`, async ({ page }, info) => {
     await page.goto(lab);
-    await expect(page.locator(".dui-stage")).toBeVisible({ timeout: 20_000 });
-    // O palco e as ilhas acabam de assentar; medir antes mede o meio do caminho.
+    // Lab PhET-like não tem palco (ADR §9), então esperar por um travaria aqui.
+    // O que vale para os dois é a página ter corpo e as ilhas terem assentado —
+    // medir antes disso mede o meio do caminho.
+    await expect(page.locator("main")).toBeVisible();
+    const palcos = await page.locator(".dui-stage").count();
+    if (palcos > 0) await expect(page.locator(".dui-stage").first()).toBeVisible({ timeout: 20_000 });
     await page.waitForTimeout(1200);
     const { scrollW, clientW } = await page.evaluate(() => ({
       scrollW: document.documentElement.scrollWidth,
