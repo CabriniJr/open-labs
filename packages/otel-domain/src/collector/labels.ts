@@ -32,8 +32,19 @@ export const MAL_ENTENDIDOS_DO_COLLECTOR: readonly MalEntendido[] = [
       "A processor belongs to ONE pipeline. A receiver that feeds two pipelines hands each " +
       "of them its own copy, so a filter in one changes nothing in the other — and the " +
       "exporter you were not looking at keeps exporting everything.",
-    fonte: "https://opentelemetry.io/docs/collector/configuration/#pipelines",
+    fonte: "https://opentelemetry.io/docs/collector/architecture/",
     onde: "filtro",
+  },
+  {
+    crenca: "Two pipelines fed by the same receiver run independently of each other.",
+    spec:
+      "They share the receiver, and the hand-off is a synchronous call: the receiver passes " +
+      "the data to a fan-out consumer, which calls the first processor of each pipeline. If " +
+      "one of them blocks, the others do not get the data and the receiver stops taking in " +
+      "new data — so a slow exporter in the pipeline you do not care about is back-pressure " +
+      "on the one you do.",
+    fonte: "https://opentelemetry.io/docs/collector/architecture/",
+    onde: "receiver",
   },
   {
     crenca: "`processors:` is the set of processors the pipeline uses.",

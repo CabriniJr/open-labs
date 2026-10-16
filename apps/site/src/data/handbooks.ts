@@ -221,7 +221,8 @@ const OTEL: Handbook = {
     {
       id: "agent-or-gateway-is-a-blast-radius",
       title: "Agent or gateway is a blast-radius question",
-      status: "coming",
+      status: "available",
+      href: "handbooks/otel/articles/agent-or-gateway-is-a-blast-radius",
       phase: 3,
     },
 
