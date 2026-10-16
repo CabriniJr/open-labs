@@ -370,10 +370,32 @@ test("a legenda troca de registro ao descer, e concorda com o desenho", async ({
   await expect(legenda).toContainText("control");
   await expect(legenda).not.toContainText("supply");
 
-  // circuito › bit0 › XOR › NAND: o último degrau é esquemático
+  /*
+    circuito › bit0 › XOR › NAND: o último degrau é esquemático.
+
+    Cada degrau espera o próximo nível APARECER antes de clicar, e o último é
+    nomeado por id em vez de `.first()`. As duas coisas consertam a mesma
+    corrida, e ela foi medida: depois do segundo duplo-clique o palco mostra
+    `bit0-xor1-g1..g4`, as quatro portas do XOR — mas antes do re-render o
+    conjunto `[data-fechado="true"]` são os CINCO filhos de `bit0`, com
+    `bit0-xor1` em primeiro. Clicar no primeiro ali reclica o que acabou de
+    abrir, o terceiro degrau nunca acontece, e o registro fica em `blocos`.
+
+    É a mesma assinatura que o teste da tinta deste arquivo já carrega escrita:
+    `.first()` de um conjunto que muda não é um elemento, e passa sozinho para
+    reprovar na suíte cheia. Observada uma vez em três rodadas completas, e não
+    reproduzível isolada — o que torna a espera parte da prova, e não um
+    paliativo: agora cada degrau afirma que pousou.
+  */
   await page.locator('.dui-stage__objeto[data-id="bit0"]').first().dblclick();
+  await expect(page.locator('.dui-stage__objeto[data-id="bit0-xor1"]')).toBeVisible();
+
   await page.locator('.dui-stage__objeto[data-id="bit0-xor1"]').first().dblclick();
-  await page.locator('.dui-stage__objeto[data-fechado="true"]').first().dblclick();
+  const noXor = page.locator('.dui-stage__objeto[data-id="bit0-xor1-g1"]');
+  await expect(noXor, "o nível do XOR não abriu: o degrau seguinte clicaria no lugar errado")
+    .toBeVisible({ timeout: 10_000 });
+
+  await noXor.dblclick();
 
   await expect(legenda).toHaveAttribute("data-registro", "esquematico", { timeout: 10_000 });
   await expect(legenda).toContainText("supply");
