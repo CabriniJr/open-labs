@@ -24,12 +24,16 @@ processors:
     limit_mib: 64
     spike_limit_mib: 16
 
+  # <handbook:trecho id="o-que-fecha-o-lote">
   batch:
     # Os mesmos dois números do lab da tela. O `timeout` é a metade que a frase
     # "ele manda quando enche" esquece: sem ele, tráfego baixo guardaria a
     # telemetria até o lote encher, o que pode ser nunca.
+    # <handbook:lacuna>
     send_batch_size: 4
     timeout: 3s
+    # </handbook:lacuna>
+  # </handbook:trecho>
 
   # O filtro do lab, e ele está numa pipeline SÓ. É o experimento inteiro:
   # ligar isto não muda nada no que `otlp/backend` exporta.
@@ -51,10 +55,14 @@ exporters:
 service:
   pipelines:
     # A pipeline que o backend lê. Sem filtro: recebe tudo, inclusive /health.
+    # <handbook:trecho id="a-ordem-dos-processors">
     traces:
       receivers: [otlp]
+      # <handbook:lacuna>
       processors: [memory_limiter, batch]
+      # </handbook:lacuna>
       exporters: [otlp/backend]
+    # </handbook:trecho>
 
     # A pipeline que ninguém estava olhando. MESMO receiver, filtro próprio.
     traces/audit:

@@ -91,36 +91,58 @@ function embaralharPorSemente<T>(itens: readonly T[], semente: string): readonly
 }
 
 /**
- * A versão do BOM, lida do `pom.xml` **do lab a que o exercício pertence**.
+ * A versão **da coisa a que o arquivo pertence**, para a tela mostrar ao lado
+ * do código.
  *
- * Era fixa em `labs/providers/` enquanto só havia exercício de um lab, e isso
- * ficou errado no instante em que entrou o segundo: a tela mostraria a versão
- * de outro projeto ao lado do código deste. Os três labs usam 1.65.0 hoje, então
- * o defeito nasceria **invisível** — apareceria no dia em que um deles subisse
- * de versão, como um número que não bate com o `pom.xml` que o leitor abre.
+ * Era fixa em `labs/providers/` enquanto só havia exercício de um lab, e virou
+ * "o `pom.xml` ao lado do arquivo" quando entrou o segundo — porque a tela
+ * mostraria a versão de outro projeto. Agora ela aprende a segunda coisa: nem
+ * todo exercício é sobre Java.
  *
- * O caminho vem do próprio exercício, que já aponta para o arquivo que roda.
+ * Um exercício sobre `collector.yaml` não tem `pom.xml` nenhum, e a versão que
+ * importa ali **não é a do SDK** — é a tag da imagem do Collector que o
+ * `compose.yaml` sobe. Dizer "1.65.0" ao lado de uma configuração de Collector
+ * seria um número certo sobre a coisa errada, que é pior que número nenhum.
+ *
+ * As duas leituras são de fonte única: o `pom.xml` e o `compose.yaml` que já
+ * existem no lab.
  */
-function versaoDoBom(arquivo: string): string {
-  const lab = /^(labs\/[^/]+\/app)\//u.exec(arquivo)?.[1];
+function versaoDoArquivo(arquivo: string): string {
+  const lab = /^(labs\/[^/]+)\//u.exec(arquivo)?.[1];
   if (lab === undefined) {
     throw new Error(
-      `exercício aponta para "${arquivo}", que não está em labs/<slug>/app/ — ` +
-        "a versão do SDK que a tela mostra é lida do `pom.xml` ao lado do arquivo",
+      `exercício aponta para "${arquivo}", que não está em labs/<slug>/ — ` +
+        "a versão que a tela mostra é lida do lab ao lado do arquivo",
     );
   }
-  const caminho = `${lab}/pom.xml`;
-  const pom = readFileSync(new URL(caminho, RAIZ), "utf8");
-  const achado =
-    /<artifactId>opentelemetry-bom<\/artifactId>\s*<version>([^<]+)<\/version>/u.exec(pom);
-  const versao = achado?.[1];
-  if (versao === undefined) {
+
+  // Java sob `app/`: a versão é a do BOM do OpenTelemetry.
+  if (arquivo.startsWith(`${lab}/app/`)) {
+    const caminho = `${lab}/app/pom.xml`;
+    const pom = readFileSync(new URL(caminho, RAIZ), "utf8");
+    const achado =
+      /<artifactId>opentelemetry-bom<\/artifactId>\s*<version>([^<]+)<\/version>/u.exec(pom);
+    if (achado?.[1] === undefined) {
+      throw new Error(
+        `não achei a versão do opentelemetry-bom em ${caminho} — ` +
+          "a tela mostra esse número, e ele não pode ser escrito em dois lugares",
+      );
+    }
+    return achado[1];
+  }
+
+  // Qualquer outra coisa no lab é configuração, e quem a executa é a imagem.
+  const caminho = `${lab}/compose.yaml`;
+  const compose = readFileSync(new URL(caminho, RAIZ), "utf8");
+  const achado = /image:\s*otel\/opentelemetry-collector-contrib:([^\s]+)/u.exec(compose);
+  if (achado?.[1] === undefined) {
     throw new Error(
-      `não achei a versão do opentelemetry-bom em ${caminho} — ` +
-        "a tela mostra esse número, e ele não pode ser escrito em dois lugares",
+      `não achei a tag da imagem do Collector em ${caminho} — ` +
+        `o exercício sobre "${arquivo}" mostra essa versão, e ela tem de sair de ` +
+        "onde o compose a declara",
     );
   }
-  return versao;
+  return `collector ${achado[1]}`;
 }
 
 export function montarExercicio(definicao: DefinicaoDeExercicio): ExercicioMontado {
@@ -172,7 +194,7 @@ export function montarExercicio(definicao: DefinicaoDeExercicio): ExercicioMonta
     cenario: definicao.cenario,
     pergunta: definicao.pergunta,
     arquivo: definicao.arquivo,
-    versao: versaoDoBom(definicao.arquivo),
+    versao: versaoDoArquivo(definicao.arquivo),
     antes: desindentar(linhas.slice(0, iAbre)),
     depois: desindentar(linhas.slice(iFecha + 1)),
     certo,

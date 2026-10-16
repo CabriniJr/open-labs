@@ -1,5 +1,6 @@
 ---
-import { MAL_ENTENDIDOS_DO_COLLECTOR } from "@ovh/otel-domain";
+import { EXERCICIOS_DO_COLLECTOR, MAL_ENTENDIDOS_DO_COLLECTOR } from "@ovh/otel-domain";
+import { Exercicio } from "../../components/Exercicio.tsx";
 import { CollectorLab } from "../../components/CollectorLab.tsx";
 import { Predicao } from "../../components/Predicao.tsx";
 import SiteFooter from "../../components/SiteFooter.astro";
@@ -12,6 +13,10 @@ import "../../components/Predicao.css";
 import "../../components/PainelDaCarga.css";
 import "@ovh/depth-ui/src/stage.css";
 import "../../components/Explorer.css";
+import "../../components/Exercicio.css";
+import { montarExercicio } from "../../lib/exercicios";
+
+const exercicios = EXERCICIOS_DO_COLLECTOR.map(montarExercicio);
 ---
 
 <Base
@@ -105,6 +110,30 @@ import "../../components/Explorer.css";
           correta={0}
           revelacao="A receiver named in two pipelines is one instance, and the data is fanned out: each pipeline gets its own copy, and a processor only ever sees the copy that entered its own pipeline. Nothing is split and nothing is shared — which is also why the receiver's own throughput does not double when you add a second pipeline, but your egress does."
         />
+      </div>
+    </section>
+
+    <section class="lab-prosa editorial">
+      <div class="prose">
+        <h2>Configure it</h2>
+        <p>
+          Two lines from the <code>collector.yaml</code> that actually runs in
+          <code>labs/collector-pipeline/</code>. The correct block is lifted out
+          of that file, so it cannot drift from the config that boots. The first
+          one is the thesis the stage above cannot show you: the order of
+          <code>processors:</code> is the behaviour, and changing the order
+          changes the drawing — which a skeleton cannot do with a slider.
+        </p>
+        <p>
+          Both wrong answers are valid YAML, boot cleanly, and export telemetry.
+          That is the whole difficulty of a Collector: nothing type-checks a
+          config, and nothing fails.
+        </p>
+      </div>
+      <div class="lab-exercicios">
+        {exercicios.map((exercicio) => (
+          <Exercicio client:visible exercicio={exercicio} />
+        ))}
       </div>
     </section>
 
