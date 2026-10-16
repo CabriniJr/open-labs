@@ -90,15 +90,33 @@ function embaralharPorSemente<T>(itens: readonly T[], semente: string): readonly
   return [...itens.slice(giro), ...itens.slice(0, giro)];
 }
 
-/** A versão do BOM, lida do `pom.xml`: uma fonte só para o número que a tela mostra. */
-function versaoDoBom(): string {
-  const pom = readFileSync(new URL("labs/providers/app/pom.xml", RAIZ), "utf8");
+/**
+ * A versão do BOM, lida do `pom.xml` **do lab a que o exercício pertence**.
+ *
+ * Era fixa em `labs/providers/` enquanto só havia exercício de um lab, e isso
+ * ficou errado no instante em que entrou o segundo: a tela mostraria a versão
+ * de outro projeto ao lado do código deste. Os três labs usam 1.65.0 hoje, então
+ * o defeito nasceria **invisível** — apareceria no dia em que um deles subisse
+ * de versão, como um número que não bate com o `pom.xml` que o leitor abre.
+ *
+ * O caminho vem do próprio exercício, que já aponta para o arquivo que roda.
+ */
+function versaoDoBom(arquivo: string): string {
+  const lab = /^(labs\/[^/]+\/app)\//u.exec(arquivo)?.[1];
+  if (lab === undefined) {
+    throw new Error(
+      `exercício aponta para "${arquivo}", que não está em labs/<slug>/app/ — ` +
+        "a versão do SDK que a tela mostra é lida do `pom.xml` ao lado do arquivo",
+    );
+  }
+  const caminho = `${lab}/pom.xml`;
+  const pom = readFileSync(new URL(caminho, RAIZ), "utf8");
   const achado =
     /<artifactId>opentelemetry-bom<\/artifactId>\s*<version>([^<]+)<\/version>/u.exec(pom);
   const versao = achado?.[1];
   if (versao === undefined) {
     throw new Error(
-      "não achei a versão do opentelemetry-bom em labs/providers/app/pom.xml — " +
+      `não achei a versão do opentelemetry-bom em ${caminho} — ` +
         "a tela mostra esse número, e ele não pode ser escrito em dois lugares",
     );
   }
@@ -154,7 +172,7 @@ export function montarExercicio(definicao: DefinicaoDeExercicio): ExercicioMonta
     cenario: definicao.cenario,
     pergunta: definicao.pergunta,
     arquivo: definicao.arquivo,
-    versao: versaoDoBom(),
+    versao: versaoDoBom(definicao.arquivo),
     antes: desindentar(linhas.slice(0, iAbre)),
     depois: desindentar(linhas.slice(iFecha + 1)),
     certo,
