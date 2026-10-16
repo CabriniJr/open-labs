@@ -8,6 +8,7 @@
     { "path": "packages/depth-ui" },
     { "path": "packages/model-format" },
     { "path": "packages/mermaid-skeleton" },
+    { "path": "packages/handbook-format" },
     { "path": "apps/site" }
   ]
 }

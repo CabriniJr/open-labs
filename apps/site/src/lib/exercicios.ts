@@ -1,7 +1,6 @@
-import { existsSync, readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { pathToFileURL } from "node:url";
+import { readFileSync } from "node:fs";
 import type { DefinicaoDeExercicio, Distrator } from "@ovh/otel-domain";
+import { raizDoRepoUrl } from "./raiz.js";
 
 /**
  * A extração, e ela roda no **build**.
@@ -11,30 +10,7 @@ import type { DefinicaoDeExercicio, Distrator } from "@ovh/otel-domain";
  * no sistema de arquivos — o que é obrigatório, porque ela roda no navegador.
  */
 
-/**
- * A raiz do repositório, achada subindo até o `pnpm-workspace.yaml`.
- *
- * Contar pastas a partir de `import.meta.url` não serve: no `astro build` este
- * módulo é empacotado em `dist/chunks/`, e a mesma contagem apontava para
- * `apps/labs/` — um caminho que não existe. A âncora tem de ser um arquivo que
- * só existe na raiz, e a busca falha dizendo o que procurava.
- */
-function raizDoRepo(): URL {
-  let dir = process.cwd();
-  for (;;) {
-    if (existsSync(join(dir, "pnpm-workspace.yaml"))) return pathToFileURL(`${dir}/`);
-    const acima = dirname(dir);
-    if (acima === dir) {
-      throw new Error(
-        `não achei a raiz do repositório (pnpm-workspace.yaml) subindo de ${process.cwd()} — ` +
-          "o exercício lê o arquivo que roda a partir dela",
-      );
-    }
-    dir = acima;
-  }
-}
-
-const RAIZ = raizDoRepo();
+const RAIZ = raizDoRepoUrl();
 
 export interface BlocoDeCodigo {
   readonly id: string;

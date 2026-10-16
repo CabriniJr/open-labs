@@ -16,6 +16,7 @@
     "@ovh/cpu-domain": "workspace:*",
     "@ovh/depth-core": "workspace:*",
     "@ovh/depth-ui": "workspace:*",
+    "@ovh/handbook-format": "workspace:*",
     "@ovh/otel-domain": "workspace:*",
     "astro": "^5.2.0",
     "react": "^19.0.0",

@@ -1,0 +1,111 @@
+# O handbook de algoritmos, e o primeiro escrito no contrato em arquivo.
+#
+# Ele existe porque a pergunta que este motor responde não é sobre hardware: é
+# sobre coisas que se movem entre peças — e um algoritmo é isso, visto de perto.
+# Uma pilha é uma caixa que guarda, uma fila é uma esteira com política, uma
+# ordenação é carga trocando de lugar.
+#
+# Este arquivo é o caminho dourado: ver `docs/handbooks.md`.
+apiVersion: openlabs/handbook/v1
+
+id: algorithms
+name: Algorithms Visual Handbook
+subject: algorithms
+tagline: An algorithm is a system of parts. Watch the items move.
+blurb: >-
+  A stack is a box with things in it; a queue is a belt with a policy; a sort is
+  a load changing places. Every model here runs, and the answer comes out of
+  parts moving — never out of a script.
+model: algo.model
+stage: building
+
+maintainers:
+  - name: Luigi Cabrini
+    github: CabriniJr
+
+# Violeta, que é a distância que faz os três handbooks se distinguirem numa aba
+# só. As espécies aqui são os itens que trocam de lugar, e a mais discreta é a
+# que já está no lugar certo.
+theme:
+  light:
+    accent: "#6d28d9"
+    flow: "#6d28d9"
+    dropped: "#b8442a"
+    ok: "#3f7a52"
+    mutation: "#c2410c"
+    processor: "#6d28d9"
+    conduit: "#3f7a52"
+    species: ["#6d28d9", "#0e7490", "#b45309", "#3f7a52"]
+  dark:
+    accent: "#c4a7f7"
+    flow: "#c4a7f7"
+    processor: "#c4a7f7"
+    species: ["#c4a7f7", "#22d3ee", "#e3b341", "#3fb950"]
+
+# As fases sobem pela mesma escada de sempre: primeiro a estrutura que guarda,
+# depois o algoritmo que a usa, depois o algoritmo que decide.
+phases:
+  - number: 1
+    title: What holds the data
+    line: "Stack, queue, table: the boxes everything else is built on."
+  - number: 2
+    title: One pass at a time
+    line: Evaluation and traversal, as items travelling between parts.
+  - number: 3
+    title: Sorting
+    line: The same load, changing places — and what each swap costs.
+  - number: 4
+    title: Greedy
+    line: Deciding with what is in front of you, and when that is enough.
+  - number: 5
+    title: Dynamic programming
+    line: A table that remembers, so the same work is never done twice.
+
+articles:
+  - id: a-stack-is-a-box
+    title: A stack is a box
+    status: coming
+    phase: 1
+  - id: fifo-and-backpressure
+    title: FIFO, and what happens when it is full
+    status: coming
+    phase: 1
+  - id: postfix-needs-no-parentheses
+    title: Postfix needs no parentheses
+    status: coming
+    phase: 2
+  - id: what-a-swap-costs
+    title: What a swap costs
+    status: coming
+    phase: 3
+  - id: when-greedy-is-right
+    title: When greedy is right
+    status: coming
+    phase: 4
+  - id: the-table-that-remembers
+    title: The table that remembers
+    status: coming
+    phase: 5
+
+labs:
+  - id: rpn
+    title: A stack machine, running
+    status: available
+    phase: 2
+    href: labs/rpn
+  - id: fifo
+    title: A queue, and what fills it
+    status: coming
+    phase: 1
+  - id: sorting
+    title: Sorting, swap by swap
+    status: coming
+    phase: 3
+  - id: greedy
+    title: Greedy, and the case it misses
+    status: coming
+    phase: 4
+  - id: dynamic
+    title: The table that remembers
+    status: coming
+    phase: 5

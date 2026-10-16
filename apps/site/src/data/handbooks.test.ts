@@ -171,3 +171,109 @@ describe("o catálogo não promete o que não abre, nem esconde o que abre", () 
     }
   });
 });
+
+/**
+ * A prova da compatibilidade entre versões do contrato — e ela é uma igualdade,
+ * não um argumento.
+ *
+ * O `algorithms` era um objeto TypeScript escrito à mão neste diretório, e
+ * passou a ser `handbooks/algorithms/handbook.yaml`. Isso é uma migração entre
+ * duas versões reais do contrato (`typescript` → `openlabs/handbook/v1`), e a
+ * promessa do formato é que uma migração **não muda o handbook**.
+ *
+ * Então o objeto que estava escrito aqui fica aqui, congelado, como expectativa
+ * — e o teste compara campo por campo com o que o leitor produz hoje. É a única
+ * forma de a frase "migrar é mecânico" ser verificável: se o leitor da `v1`
+ * entender uma cor, uma fase ou um href de um jeito diferente do que o site
+ * entendia, isto cai mostrando os dois valores.
+ *
+ * NÃO ATUALIZE este objeto para acompanhar edição de conteúdo do handbook. Ele
+ * não descreve o `algorithms` de hoje; ele descreve o que a versão anterior do
+ * contrato dizia no dia da migração. Conteúdo novo entra no manifesto, e a
+ * expectativa certa para ele é o próprio manifesto.
+ */
+const ALGORITHMS_NA_VERSAO_ANTERIOR = {
+  id: "algorithms",
+  tema: {
+    claro: {
+      acento: "#6d28d9",
+      fluxo: "#6d28d9",
+      descarte: "#b8442a",
+      ok: "#3f7a52",
+      mutacao: "#c2410c",
+      processador: "#6d28d9",
+      conduite: "#3f7a52",
+      especies: ["#6d28d9", "#0e7490", "#b45309", "#3f7a52"],
+    },
+    escuro: {
+      acento: "#c4a7f7",
+      fluxo: "#c4a7f7",
+      processador: "#c4a7f7",
+      especies: ["#c4a7f7", "#22d3ee", "#e3b341", "#3fb950"],
+    },
+  },
+  name: "Algorithms Visual Handbook",
+  subject: "algorithms",
+  tagline: "An algorithm is a system of parts. Watch the items move.",
+  blurb:
+    "A stack is a box with things in it; a queue is a belt with a policy; a " +
+    "sort is a load changing places. Every model here runs, and the answer " +
+    "comes out of parts moving — never out of a script.",
+  model: "algo.model",
+  stage: "building",
+  phases: [
+    { number: 1, title: "What holds the data", line: "Stack, queue, table: the boxes everything else is built on." },
+    { number: 2, title: "One pass at a time", line: "Evaluation and traversal, as items travelling between parts." },
+    { number: 3, title: "Sorting", line: "The same load, changing places — and what each swap costs." },
+    { number: 4, title: "Greedy", line: "Deciding with what is in front of you, and when that is enough." },
+    { number: 5, title: "Dynamic programming", line: "A table that remembers, so the same work is never done twice." },
+  ],
+  articles: [
+    { id: "a-stack-is-a-box", title: "A stack is a box", status: "coming", phase: 1 },
+    { id: "fifo-and-backpressure", title: "FIFO, and what happens when it is full", status: "coming", phase: 1 },
+    { id: "postfix-needs-no-parentheses", title: "Postfix needs no parentheses", status: "coming", phase: 2 },
+    { id: "what-a-swap-costs", title: "What a swap costs", status: "coming", phase: 3 },
+    { id: "when-greedy-is-right", title: "When greedy is right", status: "coming", phase: 4 },
+    { id: "the-table-that-remembers", title: "The table that remembers", status: "coming", phase: 5 },
+  ],
+  labs: [
+    { id: "rpn", title: "A stack machine, running", status: "available", phase: 2, href: "labs/rpn" },
+    { id: "fifo", title: "A queue, and what fills it", status: "coming", phase: 1 },
+    { id: "sorting", title: "Sorting, swap by swap", status: "coming", phase: 3 },
+    { id: "greedy", title: "Greedy, and the case it misses", status: "coming", phase: 4 },
+    { id: "dynamic", title: "The table that remembers", status: "coming", phase: 5 },
+  ],
+} as const;
+
+describe("migrar de uma versão do contrato para a outra não muda o handbook", () => {
+  const migrado = handbookOf("algorithms");
+
+  it("o handbook submetido existe no catálogo", () => {
+    // Se o manifesto não carregar, o build do site já falha — mas este teste
+    // roda sem o build, e é o que diz ao autor que o arquivo dele entrou.
+    expect(migrado, "handbooks/algorithms/handbook.yaml não entrou no catálogo").toBeDefined();
+  });
+
+  it.each(
+    (Object.keys(ALGORITHMS_NA_VERSAO_ANTERIOR) as (keyof typeof ALGORITHMS_NA_VERSAO_ANTERIOR)[]).map(
+      (campo) => [campo] as const,
+    ),
+  )("%s é idêntico ao que a versão anterior dizia", (campo) => {
+    expect(migrado?.[campo]).toEqual(ALGORITHMS_NA_VERSAO_ANTERIOR[campo]);
+  });
+
+  it("e o carregado traz o que só o contrato novo tem: dono e versão", () => {
+    /*
+      A migração não muda o handbook, mas o contrato novo pede duas coisas que o
+      antigo não tinha — e elas são a razão de ele existir: quem mantém, e
+      contra qual versão foi escrito. Sem dono declarado, manutenção volta para
+      quem mantém a casa, que é o que o caminho dourado existe para evitar.
+    */
+    const comExtras = migrado as unknown as {
+      readonly mantenedores?: readonly { readonly github: string }[];
+      readonly apiVersion?: string;
+    };
+    expect(comExtras.apiVersion).toBe("openlabs/handbook/v1");
+    expect(comExtras.mantenedores?.length ?? 0).toBeGreaterThan(0);
+  });
+});

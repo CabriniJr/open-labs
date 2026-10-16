@@ -50,6 +50,9 @@ importers:
       '@ovh/depth-ui':
         specifier: workspace:*
         version: link:../../packages/depth-ui
+      '@ovh/handbook-format':
+        specifier: workspace:*
+        version: link:../../packages/handbook-format
       '@ovh/otel-domain':
         specifier: workspace:*
         version: link:../../packages/otel-domain
@@ -127,6 +130,15 @@ importers:
       jsdom:
         specifier: ^25.0.1
         version: 25.0.1
+
+  packages/handbook-format:
+    dependencies:
+      yaml:
+        specifier: ^2.5.0
+        version: 2.9.0
+      zod:
+        specifier: ^3.23.8
+        version: 3.25.76
 
   packages/mermaid-skeleton:
     dependencies:

@@ -13,6 +13,7 @@ export default defineWorkspace([
         "packages/algo-domain/src/**/*.test.ts",
         "packages/model-format/src/**/*.test.ts",
         "packages/mermaid-skeleton/src/**/*.test.ts",
+        "packages/handbook-format/src/**/*.test.ts",
         "apps/site/src/**/*.test.ts",
         "packages/depth-ui/src/**/*.test.ts",
         "scripts/**/*.test.mjs",
