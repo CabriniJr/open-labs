@@ -18,9 +18,26 @@ const LAB = "labs/cardinality-and-the-bill/";
 
 async function abrir(page: import("@playwright/test").Page): Promise<void> {
   await page.goto(LAB);
-  // Ilha `client:visible` na dobra: ela hidrata sozinha, e a espera é pelo
-  // conteúdo que só existe depois disso.
   await expect(page.locator(".cardinalidade__produto")).toBeVisible({ timeout: 20_000 });
+
+  /*
+    Esperar a HIDRATAÇÃO, e não a visibilidade.
+
+    A ilha é `client:visible`, e o HTML do servidor já traz o conteúdo — então
+    "visível" não quer dizer "escutando". Escrito só com a espera de
+    visibilidade, `corrigir a contagem de valores` reprovou no CI em `[mobile]`
+    com `Expected: > 288, Received: 288`: o `fill` aconteceu num input que
+    ainda não tinha `onChange` ligado, e o React recriou o valor do estado.
+
+    O repositório já tinha esta resposta escrita em `exercicio.spec.ts`, com a
+    mesma razão: `ssr` sai do `astro-island` quando a hidratação acaba. E o
+    motivo de eu não ter visto antes vale registrar — rodei este arquivo só com
+    `--project=desktop`, onde a dobra é outra.
+  */
+  await expect(page.locator("astro-island:has(.cardinalidade)").first()).not.toHaveAttribute(
+    "ssr",
+    /.*/u,
+  );
 }
 
 const numeros = (texto: string): readonly number[] =>
@@ -108,7 +125,6 @@ test("corrigir a contagem de valores muda a conta na hora", async ({ page }) => 
 
   const rota = page.getByLabel("distinct values of http.route");
   await rota.fill("24");
-  await rota.dispatchEvent("change");
 
   const depois = numeros((await produto.textContent()) ?? "").at(-1) ?? 0;
   expect(depois).toBeGreaterThan(antes);
