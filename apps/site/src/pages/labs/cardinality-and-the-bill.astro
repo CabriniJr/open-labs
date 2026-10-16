@@ -179,10 +179,14 @@ import "../../components/Predicao.css";
       <div class="prose">
         <h2>Read the theory</h2>
         <p>
-          <a href={url("handbooks/otel/labs/three-pillars")}>Three pillars, one
-          blind spot</a> is where this starts: a metric is a decision to throw the
-          individual away and keep the count, and cardinality is the price of
-          taking that decision back one attribute at a time.
+          <a href={url("handbooks/otel/articles/what-an-attribute-costs")}
+            >What an attribute costs</a
+          > is the prose version of this arithmetic, and it carries the part a
+          calculator cannot: why the decision is taken in instrumentation code by
+          one developer and paid for by everyone a month later. It starts from
+          <a href={url("handbooks/otel/articles/what-a-signal-is")}>What a signal
+          is</a> — a metric throws the individual away, and an attribute is how
+          you take part of that back.
         </p>
       </div>
     </section>

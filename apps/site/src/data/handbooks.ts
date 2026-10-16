@@ -166,9 +166,11 @@ const OTEL: Handbook = {
    * ninguém escreveu é link morto em produção, e o leitor só descobre clicando.
    * Há teste dos dois lados.
    *
-   * Nota sobre o frontmatter: nenhum artigo do OTel declara `lab` ainda, porque
-   * nenhum lab do OTel está no ar e a página do artigo renderiza o campo como
-   * "open the lab →". O primeiro lab publicado leva o campo consigo.
+   * Nota sobre o frontmatter: dizia aqui que "nenhum artigo do OTel declara
+   * `lab` ainda, porque nenhum lab do OTel está no ar". Envelheceu —
+   * `who-owns-the-pipeline` aponta para `labs/providers` desde a entrega 4, e
+   * cinco labs do OTel estão publicados. Quem declara `lab` ganha o
+   * "open the lab →" na própria página.
    */
   articles: [
     {
@@ -237,6 +239,13 @@ const OTEL: Handbook = {
       phase: 4,
     },
 
+    {
+      id: "what-an-attribute-costs",
+      title: "What an attribute costs",
+      status: "available",
+      phase: 5,
+      href: "handbooks/otel/articles/what-an-attribute-costs",
+    },
     { id: "the-cost-of-keeping-everything", title: "The cost of keeping everything", status: "coming", phase: 5 },
     {
       id: "sampling-is-a-statement-about-ignorance",

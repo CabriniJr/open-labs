@@ -1,3 +1,4 @@
+import { existsSync, readdirSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { HANDBOOKS, handbookOf, readyCount, type Handbook } from "./handbooks.js";
 
@@ -114,6 +115,46 @@ describe("o catálogo não promete o que não abre, nem esconde o que abre", () 
       expect(daLista).toEqual(doMapa);
     },
   );
+
+  it("todo artigo escrito está na lista, e toda entrada pronta tem arquivo", () => {
+    /*
+      A lista de artigos é escrita à mão — e tem de ser, porque ela carrega a
+      ORDEM de leitura e os nós por escrever, que não existem como arquivo. O
+      que não pode é divergir do disco, e as duas direções erram diferente:
+
+      - artigo escrito e fora da lista some do handbook. O texto existe, a
+        página existe, e nenhum leitor chega nela;
+      - entrada "available" sem arquivo é link morto em produção, que o
+        docblock da lista já nomeia como a coisa que ela existe para evitar.
+
+      Esta é a guarda derivada que faltava. A âncora escrita à mão do teste
+      abaixo continua valendo por outra razão: ela pega os dois lados
+      concordando estando os dois errados.
+    */
+    const raiz = new URL("../content/articles/", import.meta.url);
+    for (const handbook of HANDBOOKS) {
+      const dir = new URL(`${handbook.id}/`, raiz);
+      const noDisco = existsSync(dir)
+        ? readdirSync(dir)
+            .filter((f) => f.endsWith(".md"))
+            .map((f) => f.replace(/\.md$/u, ""))
+            .sort()
+        : [];
+      const naLista = handbook.articles.filter((a) => a.status === "available");
+
+      expect(
+        naLista.map((a) => a.id).sort(),
+        `${handbook.id}: artigo escrito e fora da lista some do handbook; ` +
+          "entrada pronta sem arquivo é link morto",
+      ).toEqual(noDisco);
+
+      // E o href de cada um aponta para o próprio slug: um href trocado entre
+      // dois artigos passaria na checagem de cima.
+      for (const a of naLista) {
+        expect(a.href, a.id).toBe(`handbooks/${handbook.id}/articles/${a.id}`);
+      }
+    }
+  });
 
   it("os labs que existem de verdade estão marcados como prontos", () => {
     // As páginas que o site publica hoje. Escrito à mão de propósito: é a
