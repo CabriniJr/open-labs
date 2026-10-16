@@ -111,11 +111,15 @@ public final class Pillars {
 
     Tracer rastro = otel.getTracer("checkout.http");
     Logger registro = otel.getLogsBridge().get("checkout.http");
+    // <handbook:trecho id="o-nome-e-a-unidade-do-medidor">
     DoubleHistogram duracao =
         otel.getMeter("checkout.http")
+            // <handbook:lacuna>
             .histogramBuilder("http.server.request.duration")
             .setUnit("ms")
+            // </handbook:lacuna>
             .build();
+    // </handbook:trecho>
 
     boolean registrarTudo = ligado("PILLARS_LOG_EVERYTHING");
     boolean comUsuario = ligado("PILLARS_USER_ATTRIBUTE");
@@ -134,7 +138,11 @@ public final class Pillars {
 
         // 2. O medidor guarda a CONTAGEM. Os baldes já existiam antes desta
         //    medição, e é por isso que a identidade não volta.
+        // <handbook:trecho id="quais-atributos-no-medidor">
+        // <handbook:lacuna>
         var atributos = Attributes.builder().put(ROUTE, rota).put(STATUS, erro ? "500" : "200");
+        // </handbook:lacuna>
+        // </handbook:trecho>
         if (comUsuario) atributos.put(USER, usuario);
         duracao.record(latencia, atributos.build());
 

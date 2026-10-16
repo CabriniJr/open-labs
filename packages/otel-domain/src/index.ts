@@ -59,6 +59,7 @@ export type { Amostrador, Decisao } from "./providers/sampler.js";
 // Os exercícios de instrumentação: definição, sem a resposta certa.
 export { EXERCICIOS_DOS_PROVEDORES } from "./exercicios/providers.js";
 export { EXERCICIOS_DA_ANATOMIA } from "./exercicios/anatomia.js";
+export { EXERCICIOS_DOS_PILARES } from "./exercicios/pilares.js";
 export type { DefinicaoDeExercicio, Distrator } from "./exercicios/tipos.js";
 
 // O lab dos três pilares: as mesmas requisições, três gravadores.
