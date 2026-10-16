@@ -122,34 +122,37 @@ for (const lab of LABS) {
  * 16/10/2026: `providers` com 528px num viewport de 412, `three-pillars` com
  * 464, e a anatomia com 864 depois de ganhar exercícios.
  *
- * A causa da anatomia era a pior e já está consertada: o cartão do exercício é
- * item de grid, item de grid tem `min-width: auto` (min-content), e com
- * `white-space: pre` min-content é a linha mais longa do código — o cartão
- * crescia até caber a linha e arrastava a página. O conserto mora em
- * `Exercicio.css`, porque `astro-island` é `display: contents` e a raiz do
- * componente é que recebe o layout.
+ * Os três tinham a MESMA causa, em três camadas, e ela vale escrita porque é um
+ * defeito de família e não três acidentes: todo item de grid tem
+ * `min-width: auto`, que é **min-content**, e no cartão de exercício o
+ * min-content é sempre uma coisa que não quebra — a linha mais longa do `<pre>`,
+ * um identificador Java de 50 caracteres num distrator, um caminho de arquivo na
+ * linha de origem. Cada camada só apareceu depois de a de cima ser consertada,
+ * porque o maior esconde o menor.
  *
- * As duas que sobram são DÍVIDA DECLARADA, e a declaração é medida: o conjunto
- * abaixo não isenta, ele **afirma que ainda rola**. No dia em que alguém
- * consertar `providers`, este teste cai pedindo que o nome saia da lista — que é
- * o contrário de uma isenção, que silenciaria para sempre.
+ * O conserto mora todo em `Exercicio.css` (`astro-island` é `display: contents`,
+ * então a raiz do componente é que recebe o layout): `min-width: 0` no cartão e
+ * nos `<li>`, e `overflow-wrap: anywhere` no bloco e na origem. `anywhere` e
+ * não `break-word` porque só `anywhere` entra no cálculo do min-content — foi
+ * exatamente por isso que uma tentativa anterior com `break-word` não mudou
+ * nenhum número medido, e ela foi retirada em vez de mantida como comentário
+ * afirmando um conserto que não acontecia.
  *
- * E a dívida é **do mobile**, não das páginas: medida no desktop, `providers` e
- * `three-pillars` não rolam. Escrita como fato absoluto, a afirmação reprovava
- * no desktop — a lista precisa dizer onde o número foi medido, senão ela afirma
- * mais do que alguém olhou.
+ * Com isso as três páginas medem 412 em 412. A lista abaixo ficou **vazia de
+ * propósito e continua existindo**: ela é o lugar onde uma dívida de rolagem se
+ * declara medida, e o teste dela afirma que a dívida ainda existe em vez de
+ * isentar a página — no dia em que alguém consertar um nome que esteja aqui, o
+ * teste cai pedindo que o nome saia, que é o contrário de um silêncio
+ * permanente.
  */
-const AINDA_ROLA_NO_MOBILE: ReadonlySet<string> = new Set([
-  "labs/providers/",
-  "labs/three-pillars/",
-]);
+const AINDA_ROLA_NO_MOBILE: ReadonlySet<string> = new Set<string>([]);
 
 for (const lab of [...LABS_PUBLICADOS]) {
   test(`${lab} — a página não rola na horizontal`, async ({ page }, info) => {
     await page.goto(lab);
     // Lab PhET-like não tem palco (ADR §9), então esperar por um travaria aqui.
-    // O que vale para os dois é a página ter corpo e as ilhas terem assentado —
-    // medir antes disso mede o meio do caminho.
+    // O que vale para qualquer forma é a página ter corpo e as ilhas terem
+    // assentado — medir antes disso mede o meio do caminho.
     await expect(page.locator("main")).toBeVisible();
     const palcos = await page.locator(".dui-stage").count();
     if (palcos > 0) await expect(page.locator(".dui-stage").first()).toBeVisible({ timeout: 20_000 });

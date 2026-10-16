@@ -70,6 +70,28 @@
   list-style: none;
 }
 
+/*
+  O mesmo defeito do cartão, um nível mais fundo — e ele sobreviveu à primeira
+  correção porque cada `<li>` também é item de grid, com o mesmo
+  `min-width: auto`.
+
+  Medido no mobile de 412px antes disto: em `labs/providers/` o `li` do
+  distrator media 483 dentro de um `<ul>` corretamente preso em 322, e
+  arrastava a página para 528. O texto era
+  `Tracer tracer = SdkTracerProvider.builder().build().get(...)`: uma única
+  palavra sem ponto de quebra, que é o min-content do `li`.
+
+  Por que `anywhere` e não `break-word`: só `anywhere` entra no cálculo do
+  min-content. Com `break-word` a linha quebraria DEPOIS de o item já ter
+  pedido a largura inteira — foi por isso que a tentativa anterior não mudou
+  nenhum número medido. E a quebra fica dentro do bloco em vez de uma rolagem
+  aninhada porque o bloco é um `<button>` arrastável: barra de rolagem dentro
+  de alvo de arraste é um gesto disputado.
+*/
+.exercicio__blocos > li {
+  min-width: 0;
+}
+
 .exercicio__bloco {
   width: 100%;
   padding: 0.5rem 0.7rem;
@@ -80,6 +102,7 @@
   font-family: var(--font-mono);
   font-size: var(--size-step--1);
   text-align: left;
+  overflow-wrap: anywhere;
   cursor: grab;
 }
 
@@ -114,9 +137,19 @@
   line-height: 1.6;
 }
 
+/*
+  A origem é um caminho de arquivo, e caminho não tem ponto de quebra: `/` não
+  é oportunidade de quebra em CSS. Medido em `labs/providers/` no mobile de
+  412px, esta linha sozinha pedia 442 de largura dentro de um cartão preso em
+  322 e, com `overflow` visível, empurrava a página inteira para 487 — era o
+  que sobrava depois de consertar o cartão e os blocos.
+
+  `anywhere` pela mesma razão de lá: é a única forma que entra no min-content.
+*/
 .exercicio__aviso,
 .exercicio__origem {
   margin: var(--space-1) 0 0;
+  overflow-wrap: anywhere;
   color: var(--ink-faint);
   font-size: var(--size-step--1);
 }
