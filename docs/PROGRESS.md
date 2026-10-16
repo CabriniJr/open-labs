@@ -2644,3 +2644,104 @@ Estado: **1226 unitários (104 arquivos)** — 72 novos —, **e2e 323 com zero 
 boundaries, catálogo e build verdes. `mvn compile` verde nos três labs reais com Java.
 
 Dois dos quinze labs que o roadmap prometia saíram de `coming` para publicados.
+
+## Entrega 18 — A amostragem, a dívida de rolagem fechada, e duas matérias ✅
+
+Quatro coisas, nesta ordem, e a primeira é a que eu havia declarado como dívida minha.
+
+### A dívida de rolagem horizontal era o mesmo defeito em três camadas
+
+`providers` (528px num viewport de 412) e `three-pillars` (464) eram a dívida medida que a
+entrega 17 deixou escrita. Eu havia dito ao Luigi que o que sobrava era prosa e não era do
+cartão. **Estava errado**, e a medição é curta: o `li` do distrator media 483 dentro de um `<ul>`
+corretamente preso em 322.
+
+É o mesmo defeito do cartão, duas camadas abaixo: **todo item de grid tem `min-width: auto`**,
+que é min-content, e no cartão de exercício min-content é sempre algo que não quebra — a linha
+mais longa do `<pre>`, um identificador Java de 50 caracteres, um caminho de arquivo na linha de
+origem. Cada camada só apareceu depois de a de cima sair, porque a maior esconde a menor.
+
+`overflow-wrap: anywhere` e não `break-word` **porque só `anywhere` entra no cálculo do
+min-content**. É exatamente por isso que a tentativa com `break-word` da entrega 17 não mudou
+nenhum número medido — e ela foi retirada em vez de mantida com um comentário afirmando um
+conserto que não acontecia.
+
+As três páginas medem 412 em 412. `AINDA_ROLA_NO_MOBILE` ficou **vazio e continua existindo**: é
+o lugar onde uma dívida de rolagem se declara medida, e o teste dela afirma que a dívida existe
+em vez de isentar a página.
+
+### `head-vs-tail-sampling`: o terceiro lab vindo de `.mmd`
+
+Cenário de fluxo pela régua da ADR §9 — carga atravessando partes, e o **instante** de cada
+decisão é a posição dela no desenho. Sete nós, nove arestas, topologia toda no esqueleto.
+
+Três teses, cada uma cobrada comparando dois runs do mesmo mundo:
+
+1. **head sampling decide antes de o erro existir.** O erro mora no último span de propósito. O
+   head está *antes* do leque no desenho, e há teste cobrando isso do esqueleto: mover o head
+   para depois do balanceador deixaria o lab rodando e passaria a ensinar que as duas
+   amostragens são intercambiáveis;
+2. **tail sampling guarda o erro e cobra memória.** A retenção é um número do run em cada
+   gateway;
+3. **sem roteamento por trace, o trace chega quebrado.** Cada gateway decide certo sobre o
+   pedaço que recebeu, e o pedaço não era um trace. Em produção nada reporta isso, porque nenhum
+   backend sabe quantos spans o trace tinha — o modelo sabe, e é por isso que aqui o defeito é
+   um número.
+
+A diferença mecânica com o lab do Collector tem teste no esqueleto: lá duas arestas saem da
+**mesma porta**, e isso é cópia; aqui são **duas portas**, e isso é escolha. Um receiver copia,
+um balanceador decide.
+
+**Dois defeitos meus, corrigidos por medição e não por revisão:**
+
+- a primeira versão decidia com `trace % N`. Com "um erro a cada 4" e "guarde 1 em 4" os restos
+  coincidem e o head sampler aparecia guardando **todos** os erros — o lab provaria o contrário
+  do que ensina. Agora a decisão passa por um hash do id, que é o que o `TraceIdRatioBased` de
+  verdade faz, e há teste cobrando que o erro seja cortado justamente nesse alinhamento;
+- os dois painéis de gateway mostravam a **soma** dos dois. Mentira pequena, consequência grande
+  num lab cuja tese é cada instância decidir com o pedaço dela. O estado virou por instância, e o
+  e2e cobra que os números divirjam — o que só é possível com o tráfego em 1, e é por isso que
+  esse controle existe na página.
+
+### A contraparte real, e as fontes conferidas em vez de lembradas
+
+`labs/head-vs-tail-sampling/` sobe: a aplicação, o collector que só roteia, e **dois** collectors
+que amostram na cauda rodando o mesmo `tail.yaml`.
+
+A conferência das fontes rendeu três correções que a memória não daria: os caminhos da
+documentação mudaram de `/docs/collector/deployment/` para `/docs/collector/deploy/`; o
+exportador foi renomeado de `loadbalancing` para `load_balancing`; e a página `architecture/`
+afirma que o leque de um receiver é uma chamada **síncrona** — se o primeiro processor de uma
+pipeline travar, as outras não recebem e o receiver para de aceitar dado. Isso entrou como
+mal-entendido novo no lab do Collector, com fonte.
+
+Três exercícios, em **três arquivos diferentes**, e isso é a lição: a decisão de amostragem é
+tomada em três lugares de três donos diferentes — o amostrador do SDK, o `routing_key`, as
+políticas. Nenhum dos três vê o arquivo dos outros dois, e cada um pode, sozinho, apagar o trace
+do erro.
+
+### Duas matérias, e a regra de pareamento honrada
+
+- **"Agent or gateway is a blast-radius question"** (fase 3): o `collector-pipeline` estava no ar
+  sem teoria apontando para ele. A tese é que a forma do deployment é o que cada forma *consegue
+  saber* — o agente sabe onde roda, o gateway sabe o que mais chegou;
+- **"Sampling is a statement about what you will not know"** (fase 5): a teoria do lab novo.
+  Inclui o que a documentação diz e quase ninguém compõe: **dois amostradores em série se
+  multiplicam**.
+
+### Um conserto que apareceu de lado
+
+A linha de origem do exercício dizia "OpenTelemetry Java" fixo no componente. Com os exercícios
+de YAML da entrega 17, a página do Collector passou a dizer "OpenTelemetry Java collector
+0.160.0" — número certo com o nome errado em volta. Quem sabe qual é a coisa agora é quem a lê do
+disco.
+
+E o lab nasceu com página `head-and-tail-sampling` e id de mapa `head-vs-tail-sampling`. Todos os
+outros labs têm id igual ao slug, e a divergência quebraria a guarda derivada que visita
+`labs/<id>/` para cobrar a contagem de exercícios — ela caiu, e o nome foi unificado.
+
+Estado: **1276 unitários (106 arquivos)**, **e2e 343 com zero falhas**, typecheck, boundaries,
+catálogo e build (44 páginas) verdes. `mvn compile` verde nos quatro labs reais com Java.
+
+Três dos quinze labs do roadmap do OTel seguem publicados, e a fase 5 ganhou lab, matéria e
+exercícios no mesmo dia.

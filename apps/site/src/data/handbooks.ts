@@ -251,7 +251,8 @@ const OTEL: Handbook = {
     {
       id: "sampling-is-a-statement-about-ignorance",
       title: "Sampling is a statement about what you will not know",
-      status: "coming",
+      status: "available",
+      href: "handbooks/otel/articles/sampling-is-a-statement-about-ignorance",
       phase: 5,
     },
     { id: "the-rollout-nobody-noticed", title: "The rollout nobody noticed", status: "coming", phase: 5 },
