@@ -13,7 +13,9 @@
     "boundaries": "node scripts/check-boundaries.mjs",
     "catalogo": "node scripts/check-catalogo.mjs",
     "build": "pnpm --filter @ovh/site build",
-    "dev": "pnpm --filter @ovh/site dev"
+    "dev": "pnpm --filter @ovh/site dev",
+    "handbooks": "node scripts/handbook.mjs check",
+    "codeowners": "node scripts/handbook.mjs codeowners"
   },
   "devDependencies": {
     "@testing-library/react": "^16.1.0",

@@ -24,6 +24,11 @@ jobs:
       - run: pnpm --filter @ovh/site exec astro sync
       - run: pnpm boundaries
       - run: pnpm catalogo
+      # O caminho dourado dos handbooks submetidos: o mesmo comando que o autor
+      # roda antes de abrir PR. Vem antes do typecheck porque é o mais barato e
+      # o que erra mais, e o relato dele é para humano.
+      - run: pnpm handbooks
+      - run: pnpm codeowners
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm build

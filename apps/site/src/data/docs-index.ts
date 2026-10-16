@@ -51,6 +51,9 @@ export const THEMES: readonly Theme[] = [
     title: "Escrever um lab",
     blurb: "O formato que um handbook usa — hoje ainda proposta.",
     chapters: [
+      // Primeiro da lista de propósito: é a porta de quem chega de fora
+      // querendo publicar, e os outros três são o que ele precisa depois.
+      { id: "handbooks", title: "Submeter um handbook", status: "stable" },
       { id: "authoring", title: "Guia de autoria", status: "draft" },
       { id: "model-format", title: "Formato do modelo", status: "proposal" },
       { id: "stack", title: "O que reaproveitar", status: "draft" },
