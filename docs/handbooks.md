@@ -56,7 +56,7 @@ fields:
 | `subject` | one or two words, for the label on the catalogue card |
 | `tagline` | one sentence: what the reader will be able to *see* |
 | `blurb` | two or three sentences for the catalogue card |
-| `model` | the `.model` this handbook instantiates (`otel.model`, `cpu.model`, …) |
+| `model` | the interactive model or family of models (`otel.model`, `cpu.model`, a state model, …) |
 | `stage` | `building` or `planned` |
 | `maintainers` | at least one `{ name, github }`. This is ownership, not credit |
 | `theme` | the closed set of colours this handbook paints. See §4 |
@@ -151,8 +151,11 @@ So a submitted handbook can:
 - point `available` labs at pages that exist.
 
 To add a lab that runs, follow `docs/authoring.md`: the model goes in a domain
-package, the topology in a `.mmd` skeleton, the page in the site. The check tells
-you this by name if you announce a lab whose page does not exist.
+package and the page in the site. A compositional flow scenario uses a `.mmd`
+skeleton as its structural contract; a state model or direct manipulation lab
+has its own contract. The Kubernetes handbook demonstrates the state model
+path without importing the flow engine. The check tells you by name if you
+announce a lab whose page does not exist.
 
 **The interactive roadmap map** is the other gap. `map` is a drawing with
 coordinates, and the two oldest handbooks (OTel, CPU) still live in TypeScript

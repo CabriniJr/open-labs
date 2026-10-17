@@ -1,5 +1,51 @@
 # Progresso
 
+## POC — Framework interativo e Kubernetes Pod lifecycle
+
+16/10/2026, a pedido do Luigi. O framework passa a declarar explicitamente
+mais de uma forma de interação: **Mermaid é contrato dos cenários do motor de
+fluxos**; estado/reconciliação e manipulação direta não precisam passar por ele.
+A decisão está no capítulo “Framework interativo e Pod lifecycle”, acessível
+no índice de autoria. A apresentação da landing e do catálogo foi alinhada à
+mesma distinção.
+
+Em 17/10, Luigi explicitou a direção de experiência: “um Instruqt para conceitos
+e teoria”, com inspiração nos diagramas animados do KodeKloud. O capítulo de
+arquitetura registra a jornada prever, alterar, observar, explicar e transferir,
+e a regra de que movimento deve corresponder a mudanças do modelo. Studio
+AI-first e distribuição privada/versionada seguem como direção de produto.
+
+`interactive-core` é uma biblioteca pequena de eventos, transições, snapshots e
+histórico limitado, sem dependência de Mermaid, `depth-core` ou `depth-ui`.
+`kubernetes-domain` é sua primeira POC: interpreta um subconjunto de manifestos
+Pod/Deployment e deriva reconciliação, binding por requests, início, restart,
+OOM, exclusão e liberação das reservas. Não é implementação de Kubernetes.
+
+O Kubernetes Visual Handbook entra no catálogo com artigo e lab. A interface,
+inspirada na árvore de recursos do Argo, mantém manifesto desejado separado do
+observado e apresenta ownership, node de cada Pod, CPU/memória disponíveis,
+inspector, eventos, carga sintética e replay. Seis experimentos exercitam os
+casos; escala é explicitamente do Deployment, restart é do container.
+
+As guardas de fronteira incluem o runtime independente e o novo domínio.
+Os manifestos da contraparte real são comparados aos iniciais do lab e servidos
+diretamente dos arquivos do repo, sem cópia divergente no diretório público.
+Há 28 testes novos de domínio/histórico e testes de browser desktop/mobile.
+
+**Limite de verificação:** a tentativa de subir kind v0.27.0 / Kubernetes
+v1.32.2 neste container foi bloqueada pelo kubelet sem `/dev/kmsg`, antes da
+inicialização do API server. A contraparte ainda não tem verificação ao vivo;
+seu README registra o protocolo para fazê-la em um cluster descartável.
+
+O handbook usa o contrato `openlabs/handbook/v1` em
+`handbooks/kubernetes/handbook.yaml`, com maintainer e CODEOWNERS derivados,
+aproveitando o caminho de autoria recém-entregue pelo Claude. Não acrescenta
+outro objeto de catálogo em TypeScript.
+
+O trabalho incorpora os commits da branch de conteúdo até `2fcd287`. Os
+resultados dos portões desta POC são registrados na PR; não houve promoção
+para produção ou alteração de uma instância Kubernetes externa.
+
 Registro do que já foi feito, sessão a sessão. **Atualize este arquivo ao fechar cada
 sessão**, antes do último commit — é daqui que a próxima sessão descobre onde parou,
 sem reler o histórico do git.

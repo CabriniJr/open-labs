@@ -57,6 +57,11 @@ export const THEMES: readonly Theme[] = [
       { id: "authoring", title: "Guia de autoria", status: "draft" },
       { id: "model-format", title: "Formato do modelo", status: "proposal" },
       { id: "stack", title: "O que reaproveitar", status: "draft" },
+      {
+        id: "superpowers/specs/2026-10-16-interactive-framework-pod-lifecycle-design",
+        title: "Framework interativo e Pod lifecycle",
+        status: "draft",
+      },
     ],
   },
   {

@@ -1,5 +1,12 @@
 # Decisões e ideias consolidadas
 
+**Atualização de 16/10/2026:** o framework admite interações além do motor de
+fluxos. Mermaid continua contrato canônico dos cenários de fluxo; estado,
+reconciliação e manipulação direta têm contratos próprios. O Pod lifecycle
+inaugura o Kubernetes Visual Handbook sem importar o motor de fluxos. Detalhes
+e limites no capítulo **Framework interativo e Pod lifecycle**, no índice
+“Escrever um lab”.
+
 **Data:** 2026-08-28, com o enquadramento revisto em 2026-08-29
 **Papel deste documento:** ponto de entrada. As ideias que sobreviveram, as que foram
 recusadas, e as réguas que decidem discussão futura. Os outros documentos aprofundam; este

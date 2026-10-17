@@ -1,5 +1,19 @@
 # Authoring a lab
 
+## Choose the interaction before choosing the engine
+
+A handbook can mix interaction models. Mermaid is the canonical structural
+contract for **flow-engine scenarios**, not a universal requirement:
+
+- Hierarchical flow: `.mmd` + domain behaviours + `depth-core`.
+- Stateful experiment: explicit events/transitions + `interactive-core`, with
+  the native input of the domain. See `kubernetes-domain` and Pod lifecycle.
+- Direct manipulation: a pure domain function, as in the cardinality lab.
+
+All paths owe the same source traceability, observable consequences and honest
+limits. A relationship tree is not necessarily a message-flow graph. The flow
+engine is optional; scientific and pedagogical fidelity are not.
+
 ## The pipeline
 
 1. **Question first.** Open an issue whose title is the question the lab answers.

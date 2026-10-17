@@ -10,3 +10,5 @@
 
 /handbooks/algorithms/ @CabriniJr
 /apps/site/src/content/articles/algorithms/ @CabriniJr
+/handbooks/kubernetes/ @CabriniJr
+/apps/site/src/content/articles/kubernetes/ @CabriniJr
