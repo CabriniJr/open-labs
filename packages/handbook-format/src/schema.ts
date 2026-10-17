@@ -169,7 +169,7 @@ export const CORPO_COMUM = {
   subject: z.string().min(1),
   tagline: z.string().min(1),
   blurb: z.string().min(1),
-  /** O `.model` que este handbook instancia no motor. */
+  /** O modelo ou família de modelos interativos deste handbook. */
   model: z.string().min(1),
   stage: z.enum(["building", "planned"]),
   maintainers: z.array(MantenedorSchema).min(1),

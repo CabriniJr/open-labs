@@ -1,6 +1,8 @@
 {
   "files": [],
   "references": [
+    { "path": "packages/interactive-core" },
+    { "path": "packages/kubernetes-domain" },
     { "path": "packages/otel-domain" },
     { "path": "packages/cpu-domain" },
     { "path": "packages/algo-domain" },

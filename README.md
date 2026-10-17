@@ -1,11 +1,15 @@
 # OpenLabs
 
-Handbooks that run. Every subject is a `.model` on the same compositional
-engine — you take the model apart instead of reading about it.
+Handbooks that run. Flow scenarios use a compositional engine and a canonical
+Mermaid contract; stateful experiments and direct manipulation use the model
+that fits the subject. You experiment with the mechanism instead of only
+reading about it.
 
-Hoje são dois: o **OpenTelemetry Visual Handbook** (`otel.model`), do grafo de
-serviços até os bytes no fio, e o **RISC-V Visual Handbook** (`cpu.model`), do
-diagrama de blocos até o transistor. O motor não sabe qual é o assunto — é isso
+O **OpenTelemetry Visual Handbook** (`otel.model`) vai do grafo de
+serviços até os bytes no fio, e o **CPU Visual Handbook** (`cpu.model`) vai do
+diagrama de blocos até o transistor. Há também **Algorithms** (a máquina RPN) e
+o **Kubernetes Visual Handbook**, com a POC de Pod lifecycle a partir de manifesto,
+em um modelo de estado independente do motor de fluxos. O motor não sabe qual é o assunto — é isso
 que faz o segundo handbook custar menos que o primeiro.
 
 Todo handbook tem a mesma anatomia: **roadmap** (a ordem em que os conceitos se
@@ -16,8 +20,8 @@ GitHub Pages a partir de `main`.
 
 ## Why
 
-Most material on a technical subject shows a diagram and a config file. Here the
-diagram **is** the running mechanism, and it is the same state seen from more than
+Most material on a technical subject shows a diagram and a config file. In a
+compositional flow lab, the diagram **is** the running mechanism: the same state seen from more than
 one depth: only the leaves have behaviour, and everything above is the result of
 running what is inside it. What you read at the bottom is what produced the picture
 at the top.
@@ -35,9 +39,11 @@ handbook is where we find out whether the first one leaked domain into it.
 | `apps/site` | The Astro site: content, pages, one scenario per lab |
 | `packages/depth-core` | The deterministic engine. Knows no domain at all — two guard lists prove it |
 | `packages/depth-ui` | Visual primitives. Also domain-neutral |
+| `packages/interactive-core` | Domain-neutral event/snapshot runtime for experiments outside the flow engine |
+| `packages/kubernetes-domain` | Manifest-driven Pod lifecycle, reconciliation and resource reservations |
 | `packages/otel-domain` | The only place OpenTelemetry exists: OTLP types, `traceparent` |
 | `packages/cpu-domain` | The only place a register exists: the RV32I subset, the assembler, the datapath |
-| `labs/<slug>` | The compose that runs for real |
+| `labs/<slug>` | The real counterpart: compose, native manifests and verification steps |
 | `docs/` | Specs, ADRs, the design canvas, and the authoring guide |
 
 The boundary between engine and domain is enforced by `pnpm boundaries` in CI,
