@@ -31,6 +31,14 @@ jobs:
       - run: pnpm codeowners
       - run: pnpm typecheck
       - run: pnpm test
+      # The installable SDK must work without workspace links, sources or tsc.
+      - run: pnpm sdk:pack
+      - run: pnpm sdk:smoke
+      - uses: actions/upload-artifact@v4
+        with:
+          name: openlabs-sdk-${{ github.sha }}
+          path: dist/sdk/
+          if-no-files-found: error
       - run: pnpm build
       - run: pnpm --filter @ovh/site exec playwright install --with-deps chromium
       - run: pnpm --filter @ovh/site test:e2e

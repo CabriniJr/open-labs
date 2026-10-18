@@ -111,6 +111,7 @@ function conferirArtigos(h: HandbookNormalizado): readonly string[] {
 export function conferirArquivosDeArtigo(
   h: HandbookNormalizado,
   slugsNoDisco: readonly string[],
+  pastaDeArtigos = "articles",
 ): readonly string[] {
   const problemas: string[] = [];
   const noDisco = new Set(slugsNoDisco);
@@ -120,7 +121,7 @@ export function conferirArquivosDeArtigo(
     if (!noDisco.has(artigo.id)) {
       problemas.push(
         `o artigo "${artigo.id}" está anunciado como pronto e não existe como arquivo. ` +
-          `Esperado: apps/site/src/content/articles/${h.id}/${artigo.id}.md`,
+          `Esperado: ${pastaDeArtigos}/${artigo.id}.md`,
       );
     }
   }

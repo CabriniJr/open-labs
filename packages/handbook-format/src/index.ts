@@ -42,3 +42,11 @@ export {
   lerSubmissoes,
 } from "./ler.js";
 export type { LeituraDeSubmissao } from "./ler.js";
+
+export { lerArtigo, conferirArtigos } from "./artigos.js";
+export type { ArquivoDeArtigo, LeituraDeArtigo } from "./artigos.js";
+export { VERSAO_DO_PACOTE, criarPacote, lerPacote, labsExigidos } from "./bundle.js";
+export type { PacoteDeHandbook, LeituraDePacote } from "./bundle.js";
+export { criarManifesto } from "./criar.js";
+export { lerProjeto } from "./projeto.js";
+export type { LeituraDeProjeto } from "./projeto.js";

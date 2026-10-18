@@ -1,5 +1,26 @@
 # Progresso
 
+## Autoria independente — SDK e artefatos alpha
+
+18/10/2026, continuação pedida pelo Luigi. A autoria passa a ter uma prova fora
+do monorepo: `pnpm sdk:pack` produz tarballs compilados de `handbook-format` e
+`interactive-core`, com versões alpha explícitas e índice SHA-256. Não publica
+registry, tag ou produção. `pnpm sdk:smoke` instala os artefatos em um projeto
+externo, cria, confere, exporta e consome um handbook, além de executar replay
+e ramificação do runtime sem workspace, Astro ou compilador.
+
+O CLI instalado fornece `new`, `check --json`, `export`, `inspect` e `versions`.
+Seu layout é `handbook.yaml` + `articles/`. O gerador e a régua mecânica de
+artigos são comuns ao comando do repo. O leitor do bundle valida estrutura,
+versões e conteúdo; um export congelado da PR #17 prova que o wire format v1
+continua legível. A saída `/contract` não importa filesystem.
+
+O bundle leva conteúdo, e `labsExigidos` explicita as implementações que o host
+precisa fornecer. Não há distribuição automática de labs, ABI de plugin ou
+Studio completo. A documentação no índice de autoria registra a arquitetura e
+o caminho externo, com a mesma direção de experiências guiadas para conceitos.
+Os resultados dos portões são registrados na PR desta entrega.
+
 ## POC — Framework interativo e Kubernetes Pod lifecycle
 
 16/10/2026, a pedido do Luigi. O framework passa a declarar explicitamente

@@ -1,5 +1,11 @@
 # Decisões e ideias consolidadas
 
+**Atualização de 18/10/2026:** a autoria independente tem artefatos alpha
+instaláveis de `handbook-format` e `interactive-core`, com prova de consumo
+fora do monorepo. O bundle v1 transporta conteúdo; as implementações de labs
+são dependências explícitas do host. O capítulo **Independent handbook authoring**,
+no índice de autoria, descreve o caminho e seus limites.
+
 **Atualização de 16/10/2026:** o framework admite interações além do motor de
 fluxos. Mermaid continua contrato canônico dos cenários de fluxo; estado,
 reconciliação e manipulação direta têm contratos próprios. O Pod lifecycle

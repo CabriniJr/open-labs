@@ -99,7 +99,7 @@ export function lerSubmissao(
           .filter((f) => f.endsWith(".md"))
           .map((f) => f.replace(/\.md$/u, ""))
       : [];
-    problemas.push(...conferirArquivosDeArtigo(lido.handbook, slugs));
+    problemas.push(...conferirArquivosDeArtigo(lido.handbook, slugs, pasta));
   }
 
   return problemas.length > 0

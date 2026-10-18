@@ -60,6 +60,12 @@ pnpm typecheck
 pnpm build
 ```
 
+For authoring outside this checkout, `pnpm sdk:pack` builds installable alpha
+tarballs for the authoring SDK and the independent state runtime;
+`pnpm sdk:smoke` proves they work in a separate project. See
+[Independent handbook authoring](docs/standalone-authoring.md). Content bundles
+carry articles and lab requirements; lab implementations are supplied by the host.
+
 ## Deploy
 
 O caminho-base não é constante: quem chama o build declara onde o site vai servir.

@@ -203,14 +203,21 @@ by field. That equality is what makes "migrating is mechanical" a measured fact.
 
 ## 7. Using a handbook outside this repository
 
+An installable alpha SDK now supports authoring in a separate project. The
+chapter “Independent handbook authoring” in the authoring index covers tarball
+installation, the external CLI, bundle validation and host lab requirements.
+The in-repository command below remains supported.
+
 ```
 node scripts/handbook.mjs export my-handbook --out my-handbook.json
 ```
 
-A portable bundle: the normalized manifest plus every article with its body, in
+A portable **content** bundle: the normalized manifest plus every article with its body, in
 one JSON file carrying its own `bundleVersion` and the `apiVersion` of the
 contract inside it. Anything that can read JSON can render your handbook without
-this monorepo, this Astro, or this directory layout.
+this monorepo, this Astro, or this directory layout. Lab implementations are
+not included: a consumer must resolve the available lab routes against its
+installed catalog before offering those labs as runnable.
 
 The command refuses to export a handbook that does not pass `check`. Exporting
 something broken would hand a broken artefact to an environment with no way to
