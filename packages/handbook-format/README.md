@@ -5,7 +5,7 @@ Pre-release authoring SDK for OpenLabs handbooks. Node.js 24 or newer.
 Install a release tarball in your own project, then use the CLI:
 
 ```sh
-npm install /path/to/ovh-handbook-format-0.1.0-alpha.1.tgz
+npm install /path/to/ovh-handbook-format-0.1.0-alpha.2.tgz
 npx --no-install openlabs-handbook new networking --github your-handle --name "Your Name"
 cd networking
 ../node_modules/.bin/openlabs-handbook check

@@ -66,6 +66,11 @@ tarballs for the authoring SDK and the independent state runtime;
 [Independent handbook authoring](docs/standalone-authoring.md). Content bundles
 carry articles and lab requirements; lab implementations are supplied by the host.
 
+The alpha **Handbook Studio** at `/studio/` provides local curriculum and article
+editing, learner preview, contract diagnostics, source ZIPs and bundle export.
+It also prepares an authoring brief for use with your assistant. See the
+[Studio guide](docs/studio.md).
+
 ## Deploy
 
 O caminho-base não é constante: quem chama o build declara onde o site vai servir.

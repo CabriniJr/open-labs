@@ -58,12 +58,13 @@ try {
   execFileSync(process.execPath, ["--input-type=module", "-e", `
     import assert from 'node:assert/strict';
     import { readFileSync } from 'node:fs';
-    import { lerPacote, labsExigidos } from '@ovh/handbook-format/contract';
+    import { lerPacote, labsExigidos, lerManifesto, serializarManifesto } from '@ovh/handbook-format/contract';
     import { InteractiveSession } from '@ovh/interactive-core';
     const result = lerPacote(JSON.parse(readFileSync('kubernetes.json', 'utf8')));
     assert(result.ok);
     assert.equal(result.value.articles[0].id, 'a-pod-is-not-its-container');
     assert.equal(labsExigidos(result.value)[0].href, 'labs/pod-lifecycle');
+    assert.deepEqual(lerManifesto(serializarManifesto(result.value.handbook), 'consumer').handbook, result.value.handbook);
     const session = new InteractiveSession({ id: 'counter', initial: () => 0, transition: (s, e) => s + e }, 10);
     session.dispatch(2); session.dispatch(4); session.seek(1); session.dispatch(3);
     assert.equal(session.state, 5); assert.equal(session.length, 2);

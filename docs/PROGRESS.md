@@ -1,5 +1,30 @@
 # Progresso
 
+## Handbook Studio — edição local e autoria assistida
+
+18/10/2026, continuação pedida pelo Luigi. `/studio/` entrega uma primeira
+interface de autoria com fontes, editor, diagnósticos do SDK e prévia do aluno.
+É possível criar um handbook, abrir bundle v1 ou ZIP de fontes, editar currículo
+e artigos, criar rascunhos sem inventar bibliografia e exportar o mesmo bundle
+validado pelo CLI. O exemplo inicial é o Kubernetes Handbook.
+
+Fontes inválidas podem ser salvas localmente e baixadas em ZIP; export de
+release exige os portões mecânicos. Abertura falha não substitui o projeto,
+há restauração do anterior em sessão, e armazenamento bloqueado mantém edição
+e download disponíveis. Labs só ganham link de execução se o host os conhece.
+A prévia sanitiza Markdown e mantém os degraus textuais e fontes primárias.
+
+O briefing para Claude/outro assistente reúne objetivo, arquivos e diagnósticos,
+com a jornada prever, alterar, observar, explicar e transferir. É um handoff
+explícito por arquivo/clipboard, sem chamada de modelo ou envio automático.
+Ainda não há edição de comportamento de lab, Git sync, colaboração ou publicação.
+
+O SDK `handbook-format` avança para `0.1.0-alpha.2`: o leitor de manifesto passa
+à entrada sem I/O e ganha escritor v1, conferido por round-trip do bundle
+congelado. `interactive-core` permanece em `alpha.1`. O Studio usa essa entrada
+no browser; o pacote instalado continua passando no smoke externo.
+Os resultados finais dos portões são registrados na PR desta entrega.
+
 ## Autoria independente — SDK e artefatos alpha
 
 18/10/2026, continuação pedida pelo Luigi. A autoria passa a ter uma prova fora

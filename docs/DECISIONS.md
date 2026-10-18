@@ -1,5 +1,11 @@
 # Decisões e ideias consolidadas
 
+**Studio alpha, 18/10/2026:** a primeira interface local de autoria reutiliza o
+contrato do SDK, edita currículo/artigos, preserva rascunhos inválidos e exporta
+fontes ou bundle validado. O briefing assistido é preparado para compartilhar
+com Claude/outro assistente, sem chamada automática de modelo. O capítulo
+**Handbook Studio**, no índice de autoria, descreve os fluxos e os limites.
+
 **Atualização de 18/10/2026:** a autoria independente tem artefatos alpha
 instaláveis de `handbook-format` e `interactive-core`, com prova de consumo
 fora do monorepo. O bundle v1 transporta conteúdo; as implementações de labs

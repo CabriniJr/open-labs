@@ -48,5 +48,7 @@ export type { ArquivoDeArtigo, LeituraDeArtigo } from "./artigos.js";
 export { VERSAO_DO_PACOTE, criarPacote, lerPacote, labsExigidos } from "./bundle.js";
 export type { PacoteDeHandbook, LeituraDePacote } from "./bundle.js";
 export { criarManifesto } from "./criar.js";
+export { serializarManifesto } from "./manifesto.js";
+export type { LeituraDeManifesto } from "./manifesto.js";
 export { lerProjeto } from "./projeto.js";
 export type { LeituraDeProjeto } from "./projeto.js";

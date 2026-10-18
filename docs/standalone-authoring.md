@@ -36,7 +36,7 @@ scenarios; this release does not change or distribute that engine.
 mkdir company-training
 cd company-training
 npm init -y
-npm install /path/to/ovh-handbook-format-0.1.0-alpha.1.tgz
+npm install /path/to/ovh-handbook-format-0.1.0-alpha.2.tgz
 npx --no-install openlabs-handbook new networking --github your-handle --name "Your Name"
 cd networking
 ../node_modules/.bin/openlabs-handbook check
@@ -117,6 +117,7 @@ identity. Code is Apache-2.0; the project's editorial content remains under
 its content license. Authors and hosts must carry their own content licensing.
 
 This establishes a working distribution boundary. Registry publication,
-signed releases, the lab-extension ABI, private hosting configuration and the
-AI-first Studio remain separate work. The future Studio can reuse the same
-contract and diagnostics instead of inventing another content format.
+signed releases, the lab-extension ABI and private hosting configuration remain
+separate work. The alpha **Handbook Studio**, available in the main navigation,
+now reuses this contract and diagnostics for local curriculum/article editing,
+source ZIPs and validated bundles. Its guide is in the authoring index.
