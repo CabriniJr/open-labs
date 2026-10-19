@@ -1,11 +1,9 @@
 /**
  * A moldura do site fala a língua da página, e não uma só.
  *
- * O handbook é em inglês, por alcance; a documentação de projeto é em
- * português, porque é onde o Luigi pensa. Traduzir uma das duas é decisão
- * editorial ainda não tomada — o que **não** pode é uma página declarar
- * `lang="en"` e mostrar uma navegação em português, que é o que quebra leitor
- * de tela e tradutor automático.
+ * O HTML sem JavaScript preserva a língua original de cada página. A camada
+ * de tradução aplica a preferência do leitor ao conteúdo e à moldura, com
+ * catálogos locais; o atributo lang acompanha o idioma escolhido.
  */
 export type Lang = "en" | "pt-BR";
 

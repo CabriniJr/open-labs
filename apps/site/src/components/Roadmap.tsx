@@ -1,3 +1,4 @@
+import { localeReady } from "../lib/i18n.js";
 import { EXERCICIOS_DOS_PROVEDORES } from "@ovh/otel-domain";
 import { useEffect, useState } from "react";
 import { lerPlacar } from "../lib/placar.js";
@@ -115,7 +116,7 @@ export function Roadmap({ mapa }: { readonly mapa: RoadmapMap }) {
   const completed = done.length;
 
   return (
-    <div className="roadmap">
+    <div ref={localeReady} className="roadmap">
       <div className="roadmap__progress">
         <span className="roadmap__progress-label mono">Your progress</span>
         <span className="roadmap__progress-count mono">

@@ -41,5 +41,7 @@ jobs:
           path: dist/sdk/
           if-no-files-found: error
       - run: pnpm build
+      - run: pnpm locale:inventory
+      - run: pnpm locale:check
       - run: pnpm --filter @ovh/site exec playwright install --with-deps chromium
       - run: pnpm --filter @ovh/site test:e2e
