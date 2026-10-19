@@ -8,9 +8,9 @@ import { labs as otelLabs, phases as otelPhases } from "./roadmap.js";
 /**
  * O catálogo do OpenLabs.
  *
- * O projeto deixou de ser um handbook e passou a ser a casa de vários: cada
- * handbook é um `.model` rodando no mesmo motor composicional. O que muda de
- * um para o outro é o domínio — o motor não sabe qual é.
+ * O projeto é a casa de vários handbooks. Cada lab escolhe o modelo de
+ * interação que serve ao assunto: fluxo composicional, estado ou manipulação
+ * direta. Os motores compartilhados não sabem qual é o domínio.
  *
  * Todo handbook tem a mesma anatomia, e é ela que dá a página:
  * **roadmap** (a ordem em que os conceitos se sustentam), **artigos** (o texto
@@ -66,7 +66,7 @@ export interface Handbook {
   readonly subject: string;
   readonly tagline: string;
   readonly blurb: string;
-  /** O `.model` que este handbook instancia no motor. */
+  /** Referência ao modelo principal. O contrato de execução é próprio do lab. */
   readonly model: string;
   readonly stage: "building" | "planned";
   /**

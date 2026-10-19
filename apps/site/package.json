@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build",
+    "build": "node ../../scripts/build-delivery-host.mjs && astro build",
     "preview": "astro preview",
     "test:e2e": "playwright test"
   },
@@ -17,9 +17,15 @@
     "@ovh/depth-core": "workspace:*",
     "@ovh/depth-ui": "workspace:*",
     "@ovh/handbook-format": "workspace:*",
+    "@ovh/handbook-catalog": "workspace:*",
+    "@ovh/interactive-core": "workspace:*",
+    "@ovh/kubernetes-domain": "workspace:*",
     "@ovh/otel-domain": "workspace:*",
     "@ovh/splunk-domain": "workspace:*",
     "astro": "^5.2.0",
+    "dompurify": "^3.4.17",
+    "fflate": "^0.8.3",
+    "marked": "^18.1.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },

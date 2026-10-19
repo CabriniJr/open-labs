@@ -1,4 +1,5 @@
 ---
+import LabAssessment from "../../components/LabAssessment.astro";
 import { EXERCICIOS_DO_COLLECTOR, MAL_ENTENDIDOS_DO_COLLECTOR } from "@ovh/otel-domain";
 import { Exercicio } from "../../components/Exercicio.tsx";
 import { CollectorLab } from "../../components/CollectorLab.tsx";
@@ -186,6 +187,7 @@ const exercicios = EXERCICIOS_DO_COLLECTOR.map(montarExercicio);
         </p>
       </div>
     </section>
+    <LabAssessment href="labs/collector-pipeline" />
   </main>
 
   <SiteFooter />

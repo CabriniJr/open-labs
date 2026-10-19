@@ -49,14 +49,28 @@ export const THEMES: readonly Theme[] = [
   {
     id: "authoring",
     title: "Escrever um lab",
-    blurb: "O formato que um handbook usa — hoje ainda proposta.",
+    blurb: "Contratos, autoria e distribuição de handbooks interativos.",
     chapters: [
       // Primeiro da lista de propósito: é a porta de quem chega de fora
       // querendo publicar, e os outros três são o que ele precisa depois.
       { id: "handbooks", title: "Submeter um handbook", status: "stable" },
+      { id: "standalone-authoring", title: "Independent handbook authoring", status: "draft" },
+      { id: "studio", title: "Handbook Studio", status: "draft" },
+      { id: "delivery", title: "Runnable handbook deliveries", status: "draft" },
+      { id: "assessments", title: "Interactive assessments", status: "draft" },
       { id: "authoring", title: "Guia de autoria", status: "draft" },
       { id: "model-format", title: "Formato do modelo", status: "proposal" },
       { id: "stack", title: "O que reaproveitar", status: "draft" },
+      {
+        id: "superpowers/specs/2026-10-16-interactive-framework-pod-lifecycle-design",
+        title: "Framework interativo e Pod lifecycle",
+        status: "draft",
+      },
+      {
+        id: "superpowers/specs/2026-10-18-independent-authoring-design",
+        title: "Autoria independente e distribuição",
+        status: "draft",
+      },
     ],
   },
   {

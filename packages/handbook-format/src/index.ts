@@ -49,3 +49,16 @@ export {
   ExercicioSchema,
 } from "./exercicio.js";
 export type { DefinicaoDeExercicio, Distrator } from "./exercicio.js";
+
+export { lerArtigo, conferirArtigos } from "./artigos.js";
+export type { ArquivoDeArtigo, LeituraDeArtigo } from "./artigos.js";
+export { VERSAO_DO_PACOTE, VERSAO_DO_PACOTE_COM_AVALIACOES, VERSOES_DO_PACOTE, criarPacote, lerPacote, labsExigidos } from "./bundle.js";
+export type { PacoteDeHandbook, LeituraDePacote } from "./bundle.js";
+export { criarManifesto } from "./criar.js";
+export { serializarManifesto } from "./manifesto.js";
+export type { LeituraDeManifesto } from "./manifesto.js";
+export { lerProjeto } from "./projeto.js";
+export type { LeituraDeProjeto } from "./projeto.js";
+export * from "./delivery.js";
+export * from "./assessments.js";
+export { readAssessmentFile } from "./assessment-file.js";

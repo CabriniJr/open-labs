@@ -1,5 +1,150 @@
 # Progresso
 
+## Avaliações interativas e revisão por educadores
+
+19/10/2026. Checkpoints no fim dos labs e um simulado final por handbook usam
+o novo contrato `assessment-set/v1`, sem depender de motor de fluxos.
+Escolha simples, múltipla resposta, ordenação, associação e análise de código
+têm correção determinística. Nota 0–10, pontos, percentual e aproveitamento
+por objetivo aparecem após a entrega, junto de gabarito, razões dos distratores,
+fontes e sugestão de revisão prática. Ordenação/associação oferecem arraste e
+controles equivalentes de teclado/toque. Tentativas entregues ficam travadas;
+uma nova tentativa preserva histórico local de até 20 registros por versão.
+
+O Studio incorpora `assessments.json` nas fontes, autosave, briefing e prévia.
+O educador revisa questões com checklist, nome, notas, estado e digest do
+conteúdo/fontes/objetivo. Mudanças tornam a aprovação obsoleta. Relatórios de
+tentativa podem ser abertos e recalculados contra o banco original. Identidade
+autenticada, turmas e diário compartilhado ainda são fronteiras de serviço.
+
+O Kubernetes tem três questões de checkpoint e sete no final, com os cinco
+tipos e quatro objetivos. As questões são originais, sustentadas pela documentação
+Kubernetes CC BY 4.0, e estão explicitamente em revisão. Não foi inventada
+aprovação humana nem copiado banco externo. Outros handbooks exibem que suas
+avaliações ainda não foram escritas. Proveniência e licença de itens externos
+fazem parte do contrato para futuras importações.
+
+`handbook-format` alpha.4 lê bundles v1 e v2: conteúdo sem avaliações mantém
+v1 exato; avaliações usam v2, com exemplares congelados de conformidade.
+O manifesto segue v1; o host alpha.2 monta as mesmas avaliações nas entregas
+independentes. Resultados dos portões completos ficam registrados na PR.
+O capítulo **Interactive assessments** detalha a estrutura e os limites.
+
+## Entregas executáveis e contratos de interação
+
+19/10/2026. A integração de Mermaid, SDK independente e Studio foi mergeada
+na `main` pela PR #20 após sucesso do CI completo. Esta continuação separa
+contratos de conteúdo, implementação de lab, host compilado e entrega.
+`handbook-format` alpha.3 mantém o bundle v1 original e adiciona `lab/v1`,
+`host-template/v1` e `delivery/v1`, sem colocar catálogo de domínio no SDK.
+
+O Studio oferece **Delivery**: compatibilidade por id, rota e versão exata,
+recusa de labs desconhecidos e ZIP executável montado localmente. O comando
+`pnpm delivery:build` usa a mesma montagem. `apps/runner` contém três adapters
+reais: Pod lifecycle (estado), Collector (fluxo, com `.mmd` canônico incluído)
+e cardinalidade (manipulação direta). Não é necessário instalar dependências
+para consumir uma entrega: `node serve.mjs` verifica os arquivos antes de servir.
+
+A prova fora do checkout confere execução, recusa de conteúdo alterado e
+arquivos não publicados. Testes de browser baixam a entrega pelo Studio e
+interagem com os três tipos em desktop/mobile sem acesso a origens externas.
+Os resultados finais da suíte completa ficam registrados na PR desta entrega.
+As organizações podem hospedar os arquivos privadamente; autenticação,
+deploy automático e distribuição geral de novos adapters ainda são próximos
+passos. O capítulo **Runnable handbook deliveries** detalha o limite.
+
+## Handbook Studio — edição local e autoria assistida
+
+18/10/2026, continuação pedida pelo Luigi. `/studio/` entrega uma primeira
+interface de autoria com fontes, editor, diagnósticos do SDK e prévia do aluno.
+É possível criar um handbook, abrir bundle v1 ou ZIP de fontes, editar currículo
+e artigos, criar rascunhos sem inventar bibliografia e exportar o mesmo bundle
+validado pelo CLI. O exemplo inicial é o Kubernetes Handbook.
+
+Fontes inválidas podem ser salvas localmente e baixadas em ZIP; export de
+release exige os portões mecânicos. Abertura falha não substitui o projeto,
+há restauração do anterior em sessão, e armazenamento bloqueado mantém edição
+e download disponíveis. Labs só ganham link de execução se o host os conhece.
+A prévia sanitiza Markdown e mantém os degraus textuais e fontes primárias.
+
+O briefing para Claude/outro assistente reúne objetivo, arquivos e diagnósticos,
+com a jornada prever, alterar, observar, explicar e transferir. É um handoff
+explícito por arquivo/clipboard, sem chamada de modelo ou envio automático.
+Ainda não há edição de comportamento de lab, Git sync, colaboração ou publicação.
+
+O SDK `handbook-format` avança para `0.1.0-alpha.2`: o leitor de manifesto passa
+à entrada sem I/O e ganha escritor v1, conferido por round-trip do bundle
+congelado. `interactive-core` permanece em `alpha.1`. O Studio usa essa entrada
+no browser; o pacote instalado continua passando no smoke externo.
+Os resultados finais dos portões são registrados na PR desta entrega.
+
+## Autoria independente — SDK e artefatos alpha
+
+18/10/2026, continuação pedida pelo Luigi. A autoria passa a ter uma prova fora
+do monorepo: `pnpm sdk:pack` produz tarballs compilados de `handbook-format` e
+`interactive-core`, com versões alpha explícitas e índice SHA-256. Não publica
+registry, tag ou produção. `pnpm sdk:smoke` instala os artefatos em um projeto
+externo, cria, confere, exporta e consome um handbook, além de executar replay
+e ramificação do runtime sem workspace, Astro ou compilador.
+
+O CLI instalado fornece `new`, `check --json`, `export`, `inspect` e `versions`.
+Seu layout é `handbook.yaml` + `articles/`. O gerador e a régua mecânica de
+artigos são comuns ao comando do repo. O leitor do bundle valida estrutura,
+versões e conteúdo; um export congelado da PR #17 prova que o wire format v1
+continua legível. A saída `/contract` não importa filesystem.
+
+O bundle leva conteúdo, e `labsExigidos` explicita as implementações que o host
+precisa fornecer. Não há distribuição automática de labs, ABI de plugin ou
+Studio completo. A documentação no índice de autoria registra a arquitetura e
+o caminho externo, com a mesma direção de experiências guiadas para conceitos.
+Os resultados dos portões são registrados na PR desta entrega.
+
+## POC — Framework interativo e Kubernetes Pod lifecycle
+
+16/10/2026, a pedido do Luigi. O framework passa a declarar explicitamente
+mais de uma forma de interação: **Mermaid é contrato dos cenários do motor de
+fluxos**; estado/reconciliação e manipulação direta não precisam passar por ele.
+A decisão está no capítulo “Framework interativo e Pod lifecycle”, acessível
+no índice de autoria. A apresentação da landing e do catálogo foi alinhada à
+mesma distinção.
+
+Em 17/10, Luigi explicitou a direção de experiência: “um Instruqt para conceitos
+e teoria”, com inspiração nos diagramas animados do KodeKloud. O capítulo de
+arquitetura registra a jornada prever, alterar, observar, explicar e transferir,
+e a regra de que movimento deve corresponder a mudanças do modelo. Studio
+AI-first e distribuição privada/versionada seguem como direção de produto.
+
+`interactive-core` é uma biblioteca pequena de eventos, transições, snapshots e
+histórico limitado, sem dependência de Mermaid, `depth-core` ou `depth-ui`.
+`kubernetes-domain` é sua primeira POC: interpreta um subconjunto de manifestos
+Pod/Deployment e deriva reconciliação, binding por requests, início, restart,
+OOM, exclusão e liberação das reservas. Não é implementação de Kubernetes.
+
+O Kubernetes Visual Handbook entra no catálogo com artigo e lab. A interface,
+inspirada na árvore de recursos do Argo, mantém manifesto desejado separado do
+observado e apresenta ownership, node de cada Pod, CPU/memória disponíveis,
+inspector, eventos, carga sintética e replay. Seis experimentos exercitam os
+casos; escala é explicitamente do Deployment, restart é do container.
+
+As guardas de fronteira incluem o runtime independente e o novo domínio.
+Os manifestos da contraparte real são comparados aos iniciais do lab e servidos
+diretamente dos arquivos do repo, sem cópia divergente no diretório público.
+Há 28 testes novos de domínio/histórico e testes de browser desktop/mobile.
+
+**Limite de verificação:** a tentativa de subir kind v0.27.0 / Kubernetes
+v1.32.2 neste container foi bloqueada pelo kubelet sem `/dev/kmsg`, antes da
+inicialização do API server. A contraparte ainda não tem verificação ao vivo;
+seu README registra o protocolo para fazê-la em um cluster descartável.
+
+O handbook usa o contrato `openlabs/handbook/v1` em
+`handbooks/kubernetes/handbook.yaml`, com maintainer e CODEOWNERS derivados,
+aproveitando o caminho de autoria recém-entregue pelo Claude. Não acrescenta
+outro objeto de catálogo em TypeScript.
+
+O trabalho incorpora os commits da branch de conteúdo até `2fcd287`. Os
+resultados dos portões desta POC são registrados na PR; não houve promoção
+para produção ou alteração de uma instância Kubernetes externa.
+
 Registro do que já foi feito, sessão a sessão. **Atualize este arquivo ao fechar cada
 sessão**, antes do último commit — é daqui que a próxima sessão descobre onde parou,
 sem reler o histórico do git.

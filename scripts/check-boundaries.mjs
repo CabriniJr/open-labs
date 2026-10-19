@@ -30,26 +30,38 @@ const KINDS_DO_MOTOR = (() => {
 })();
 
 const AGNOSTIC = [
+  "packages/interactive-core/",
   "packages/depth-core/",
   "packages/depth-ui/",
   "packages/model-format/",
   "packages/mermaid-skeleton/",
   /*
-    `handbook-format` entra em 19/10/2026, com o quarto handbook. Ele é o
-    contrato em que um handbook de qualquer assunto é escrito — e o terceiro
-    domínio foi o que mostrou por que ele tem de estar aqui: o formato do
-    exercício mudou de casa para ele, e um formato que soubesse o que é um
-    sourcetype deixaria de servir para o próximo assunto.
+    `handbook-format` NÃO está aqui, e a ausência é uma decisão de hoje
+    (19/10/2026) em vez de um esquecimento.
+
+    Ele deveria estar: é o contrato em que um handbook de qualquer assunto é
+    escrito, e um formato que soubesse o que é um sourcetype deixaria de servir
+    para o próximo assunto. Experimentei pôr, e a guarda acusou três coisas na
+    hora — duas são strings de fixture nos testes do pacote (um `href` e o nome
+    de uma avaliação, ambos nomeando um domínio sem precisar) e a terceira é
+    **falso positivo**: `delivery.ts` diz "same assembly in the CLI and Studio",
+    que é inglês comum e colide com "assembly" da lista do RISC-V.
+
+    Então entrar aqui hoje custaria reescrever código que chegou ao main há
+    horas e exigiria escopar a lista de palavras por pacote. As duas coisas são
+    uma mudança própria, e quem escreveu aquele código merece vê-la sozinha em
+    vez de embutida num merge de outra entrega.
   */
-  "packages/handbook-format/",
 ];
 
 /**
  * Pacotes de domínio que eles não podem importar, **derivados do disco**.
  *
- * Era uma lista escrita à mão com dois nomes, e ela já estava velha antes de
- * alguém notar: `algo-domain` nunca entrou, e `splunk-domain` nasceu depois. Um
- * pacote agnóstico importando qualquer um dos dois passava.
+ * Era uma lista escrita à mão, e ela envelhecia: `algo-domain` ficou de fora
+ * por um tempo, e `splunk-domain` e `kubernetes-domain` nasceram depois. Um
+ * pacote agnóstico importando qualquer um deles passava. Agora a lista nasce
+ * com o pacote — o `kubernetes-domain`, que entrou pelo main no mesmo dia,
+ * já está nela sem ninguém acrescentá-lo.
  *
  * A convenção que isto usa já valia: todo pacote de domínio deste repositório
  * termina em `-domain`.
@@ -63,6 +75,7 @@ if (DOMAIN_PACKAGES.length === 0) {
   console.error("Nenhum pacote de domínio encontrado — a leitura da guarda quebrou.");
   process.exit(1);
 }
+
 
 /**
  * Termos inequívocos de domínio. `span` e `trace` sozinhos ficam de fora de
@@ -132,12 +145,19 @@ const SPLUNK = [
   "splunkd",
 ];
 
-const DOMAIN_WORDS = [...OTEL, ...CPU, ...SPLUNK];
+/** O quarto domínio, que entrou pelo main. Mesma regra: termo sem ambiguidade. */
+const KUBERNETES = ["kubernetes", "kubelet", "kubectl", "replicaset", "crashloopbackoff"];
+
+const DOMAIN_WORDS = [...OTEL, ...CPU, ...SPLUNK, ...KUBERNETES];
 
 export function findViolations(filePath, source) {
   if (!AGNOSTIC.some((prefix) => filePath.startsWith(prefix))) return [];
 
   const violations = [];
+
+  if (filePath.startsWith("packages/interactive-core/") && /["']@ovh\/(?:depth-core|depth-ui|mermaid-skeleton)["']/.test(source)) {
+    violations.push({ filePath, reason: "interactive-core deve ser independente do motor de fluxos e do Mermaid" });
+  }
 
   /*
    * Regra sobre o substantivo, e não sobre uma lista de palavras.

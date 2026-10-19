@@ -1,7 +1,10 @@
 import { readFileSync, readdirSync, existsSync } from "node:fs";
-import { parse as parseYaml } from "yaml";
-import { conferirHandbook, conferirArquivosDeArtigo } from "./conferir.js";
-import { lerDocumento, type HandbookNormalizado } from "./versoes.js";
+import { conferirArquivosDeArtigo } from "./conferir.js";
+import type { HandbookNormalizado } from "./versoes.js";
+import { lerManifesto, type LeituraDeManifesto } from "./manifesto.js";
+export { lerManifesto } from "./manifesto.js";
+import { readAssessmentFile } from "./assessment-file.js";
+import type { AssessmentSet } from "./assessments.js";
 
 /**
  * Ler handbooks do disco, e **falhar alto**.
@@ -19,34 +22,7 @@ import { lerDocumento, type HandbookNormalizado } from "./versoes.js";
 export const PASTA_DE_SUBMISSOES = "handbooks";
 export const NOME_DO_MANIFESTO = "handbook.yaml";
 
-export interface LeituraDeSubmissao {
-  readonly id: string;
-  readonly origem: string;
-  readonly handbook?: HandbookNormalizado;
-  readonly problemas: readonly string[];
-}
-
-/** Lê e confere um manifesto já em texto. `origem` só aparece nas mensagens. */
-export function lerManifesto(texto: string, origem: string): LeituraDeSubmissao {
-  let doc: unknown;
-  try {
-    doc = parseYaml(texto);
-  } catch (erro) {
-    return {
-      id: origem,
-      origem,
-      problemas: [`YAML inválido: ${erro instanceof Error ? erro.message : String(erro)}`],
-    };
-  }
-
-  const lido = lerDocumento(doc);
-  if (!lido.ok) return { id: origem, origem, problemas: lido.errors };
-
-  const problemas = conferirHandbook(lido.value);
-  return problemas.length > 0
-    ? { id: lido.value.id, origem, problemas }
-    : { id: lido.value.id, origem, handbook: lido.value, problemas: [] };
-}
+export type LeituraDeSubmissao = LeituraDeManifesto & { readonly assessments?: AssessmentSet };
 
 /**
  * Lê a submissão de um diretório.
@@ -99,12 +75,14 @@ export function lerSubmissao(
           .filter((f) => f.endsWith(".md"))
           .map((f) => f.replace(/\.md$/u, ""))
       : [];
-    problemas.push(...conferirArquivosDeArtigo(lido.handbook, slugs));
+    problemas.push(...conferirArquivosDeArtigo(lido.handbook, slugs, pasta));
   }
 
+  const assessment = readAssessmentFile(dir, lido.handbook);
+  problemas.push(...assessment.problemas);
   return problemas.length > 0
     ? { id: lido.handbook.id, origem: caminho, problemas }
-    : lido;
+    : { ...lido, ...assessment };
 }
 
 /** Todas as submissões de `<raiz>/handbooks/`, em ordem de id. */

@@ -1,4 +1,5 @@
 ---
+import LabAssessment from "../../components/LabAssessment.astro";
 import { EXERCICIOS_DOS_PROVEDORES, MAL_ENTENDIDOS } from "@ovh/otel-domain";
 import { Exercicio } from "../../components/Exercicio.tsx";
 import { Predicao } from "../../components/Predicao.tsx";
@@ -207,6 +208,7 @@ const exercicios = EXERCICIOS_DOS_PROVEDORES.map(montarExercicio);
         </ol>
       </div>
     </section>
+    <LabAssessment href="labs/providers" />
   </main>
 
   <SiteFooter />

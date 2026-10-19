@@ -603,6 +603,14 @@
 @media (max-width: 820px) {
   .site-nav {
     flex-wrap: wrap;
+    gap: .65rem 1rem;
+  }
+  .site-nav nav {
+    order: 2;
+    flex-basis: 100%;
+    justify-content: space-between;
+    gap: .6rem;
+    margin-left: 0;
   }
   /* Quando a barra quebra, o alternador cai sozinho na linha de baixo; sem
      isto ele fica encostado à esquerda e a quebra parece defeito. */

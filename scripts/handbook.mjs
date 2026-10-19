@@ -133,67 +133,9 @@ function cmdNew() {
   const dir = join(SUBMISSOES, id);
   if (existsSync(dir)) falhar(`${dir} já existe`, "Escolha outro id ou edite o manifesto que está lá.");
 
-  const titulo = id
-    .split("-")
-    .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
-    .join(" ");
-
-  const manifesto = `# ${titulo} — um handbook do OpenLabs.
-#
-# O caminho dourado inteiro está em docs/handbooks.md. O resumo:
-#   1. edite este arquivo;
-#   2. rode: node scripts/handbook.mjs check ${id}
-#   3. escreva os artigos em apps/site/src/content/articles/${id}/<id-do-artigo>.md
-#      e troque o status do item para "available" com o href que o check pedir;
-#   4. abra o PR. Você é o dono deste diretório.
-apiVersion: ${formato.VERSAO_ATUAL}
-
-id: ${id}
-name: ${titulo} Visual Handbook
-subject: ${id.replace(/-/g, " ")}
-tagline: One sentence that says what the reader will be able to see.
-blurb: >-
-  Two or three sentences on what this handbook teaches and why the models in it
-  run instead of being drawn. This text goes on the card in the catalogue.
-model: ${id}.model
-stage: planned
-
-# Quem mantém. É daqui que sai o CODEOWNERS deste diretório.
-maintainers:
-  - name: ${nome}
-    github: ${github}
-
-# A identidade visual, e o conjunto do que ela pinta é FECHADO: fundo e
-# tipografia são da casa. Cor é hex de seis dígitos porque o contraste é
-# medido em teste — ver docs/handbooks.md.
-theme:
-  light:
-    accent: "#425cc7"
-    flow: "#425cc7"
-    dropped: "#b8442a"
-    ok: "#3f7a52"
-    mutation: "#f5a800"
-    processor: "#425cc7"
-    conduit: "#3f7a52"
-    species: ["#7c5cd6", "#3f7a52", "#c2410c", "#0e7490"]
-  dark:
-    accent: "#8fa2ee"
-
-# A ordem das fases É o currículo: é a ordem em que os conceitos se sustentam.
-# Toda fase precisa de pelo menos um item, mesmo que ainda como "coming".
-phases:
-  - number: 1
-    title: The first idea
-    line: What the reader has to believe before anything else works.
-
-articles:
-  - id: the-first-article
-    title: The first article
-    status: coming
-    phase: 1
-
-labs: []
-`;
+  let manifesto;
+  try { manifesto = formato.criarManifesto({ id, nome, github }); }
+  catch (erro) { falhar("dados do handbook inválidos", erro.message); }
 
   mkdirSync(dir, { recursive: true });
   writeFileSync(join(dir, "handbook.yaml"), manifesto, "utf8");
@@ -264,6 +206,11 @@ function conferirNoRepo(handbook) {
     }
   }
 
+  const pasta = join(ARTIGOS, handbook.id);
+  const arquivos = existsSync(pasta) ? readdirSync(pasta).filter((f) => f.endsWith(".md")).map((f) => ({
+    id: f.slice(0, -3), markdown: readFileSync(join(pasta, f), "utf8"),
+  })) : [];
+  problemas.push(...formato.conferirArtigos(handbook, arquivos));
   return problemas;
 }
 
@@ -276,8 +223,6 @@ function conferirNoRepo(handbook) {
  * handbook fora daqui lê um arquivo e não precisa do nosso Astro, do nosso
  * monorepo nem desta árvore de pastas. E quem exporta não perde o vínculo: o
  * `apiVersion` do contrato viaja dentro do pacote. */
-const VERSAO_DO_PACOTE = "openlabs/bundle/v1";
-
 function cmdExport() {
   const id = livres[0];
   if (id === undefined) falhar("falta o id", "node scripts/handbook.mjs export algorithms");
@@ -298,12 +243,11 @@ function cmdExport() {
         .map((f) => ({ id: f.replace(/\.md$/, ""), markdown: readFileSync(join(pasta, f), "utf8") }))
     : [];
 
-  const pacote = {
-    bundleVersion: VERSAO_DO_PACOTE,
-    exportedAt: new Date().toISOString().slice(0, 10),
-    handbook: lido.handbook,
-    articles: artigos,
-  };
+  const extras = conferirNoRepo(lido.handbook);
+  if (extras.length) falhar("não exporto um handbook que não passa no check", extras.join("\n"));
+  let pacote;
+  try { pacote = formato.criarPacote(lido.handbook, artigos, new Date().toISOString().slice(0, 10), lido.assessments); }
+  catch (erro) { falhar("não exporto um handbook que não passa no check", erro.message); }
 
   const json = `${JSON.stringify(pacote, null, 2)}\n`;
   const saida = opcao("out");

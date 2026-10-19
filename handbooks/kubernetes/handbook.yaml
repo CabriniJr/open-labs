@@ -1,0 +1,56 @@
+apiVersion: openlabs/handbook/v1
+id: kubernetes
+name: Kubernetes Visual Handbook
+subject: Kubernetes
+tagline: Declare a workload. Watch the system reconcile it.
+blurb: >-
+  Edit a native manifest and inspect the difference between desired state,
+  Pod identity, container restarts and node reservations. Interactive state
+  models, with no flow engine required.
+model: pod-lifecycle · state model
+stage: building
+maintainers:
+  - name: Luigi Cabrini
+    github: CabriniJr
+theme:
+  light:
+    accent: "#285fce"
+    flow: "#285fce"
+    dropped: "#b8442a"
+    ok: "#3f7a52"
+    mutation: "#c2410c"
+    processor: "#285fce"
+    conduit: "#3f7a52"
+    species: ["#285fce", "#0e7490", "#b45309", "#6d28d9"]
+  dark:
+    accent: "#9bbdff"
+    flow: "#9bbdff"
+    processor: "#9bbdff"
+    species: ["#9bbdff", "#22d3ee", "#e3b341", "#c4a7f7"]
+phases:
+  - number: 1
+    title: A workload becomes real
+    line: The manifest, the owner, the Pod and the node are different things.
+  - number: 2
+    title: Keeping the promise
+    line: Updates, availability and the reconciliation decisions still to explore.
+articles:
+  - id: a-pod-is-not-its-container
+    title: A Pod is not its container
+    status: available
+    phase: 1
+    href: handbooks/kubernetes/articles/a-pod-is-not-its-container
+  - id: a-rollout-is-not-a-restart
+    title: A rollout is not a restart
+    status: coming
+    phase: 2
+labs:
+  - id: pod-lifecycle
+    title: A manifest, a Pod, and the controller that replaces it
+    status: available
+    phase: 1
+    href: labs/pod-lifecycle
+  - id: rolling-updates
+    title: What remains available during an update
+    status: coming
+    phase: 2

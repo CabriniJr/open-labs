@@ -1,0 +1,24 @@
+---
+import { HandbookStudio } from "../components/HandbookStudio";
+import SiteNav from "../components/SiteNav.astro";
+import SiteFooter from "../components/SiteFooter.astro";
+import Base from "../layouts/Base.astro";
+import { HANDBOOKS } from "../data/handbooks";
+import { url } from "../lib/urls";
+import manifest from "../../../../handbooks/kubernetes/handbook.yaml?raw";
+import article from "../content/articles/kubernetes/a-pod-is-not-its-container.md?raw";
+import assessments from "../../../../handbooks/kubernetes/assessments.json?raw";
+import "../styles/docs.css";
+import "../components/HandbookStudio.css";
+import "../components/AssessmentPlayer.css";
+const example = { manifest, articles: [{ id: "a-pod-is-not-its-container", markdown: article }], assessments };
+const hostLabs = HANDBOOKS.flatMap((h) => h.labs).filter((l) => l.status === "available" && l.href?.startsWith("labs/")).map((l) => ({ href: l.href!, url: url(l.href!), title: l.title }));
+---
+<Base title="Handbook Studio — OpenLabs" description="Author a guided concept experience: edit your curriculum and articles, inspect contract diagnostics, preview the handbook, and export validated content.">
+  <SiteNav current="studio" />
+  <main id="content" class="studio-page">
+    <div class="studio-intro"><div><p class="studio-eyebrow">OPENLABS / AUTHORING STUDIO · ALPHA</p><h1>Make the next idea tangible.</h1><p>Shape the curriculum. Explain the mechanism. Check the contract.<br />An independent workspace for the handbook you want to teach.</p></div><a class="studio-guide" href={url("docs/studio")}>Authoring guide ↗</a></div>
+    <HandbookStudio client:only="react" example={example} hostLabs={hostLabs} deliveryTemplateUrl={url("delivery-host")}><p slot="fallback" class="prose">The Studio needs JavaScript to edit local files. The authoring guide also describes the standalone CLI.</p></HandbookStudio>
+  </main>
+  <SiteFooter />
+</Base>

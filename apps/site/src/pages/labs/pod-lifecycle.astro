@@ -1,0 +1,56 @@
+---
+import LabAssessment from "../../components/LabAssessment.astro";
+import { PodLifecycleLab } from "../../components/PodLifecycleLab.tsx";
+import { Predicao } from "../../components/Predicao.tsx";
+import SiteFooter from "../../components/SiteFooter.astro";
+import SiteNav from "../../components/SiteNav.astro";
+import Base from "../../layouts/Base.astro";
+import { url } from "../../lib/urls";
+import "../../styles/docs.css";
+import "../../components/PodLifecycleLab.css";
+import "../../components/Predicao.css";
+---
+
+<Base domain="kubernetes" title="Pod lifecycle — Kubernetes Visual Handbook" description="Edit a Kubernetes manifest and watch reconciliation, scheduling, container restarts and resource reservations change in a local interactive experiment.">
+  <SiteNav current="labs" />
+  <main id="content" class="podlab-page">
+    <section class="lab-head editorial">
+      <div class="prose">
+        <p class="lab-head__eyebrow mono"><a href={url("handbooks/kubernetes")}>Kubernetes Visual Handbook</a> · interactive lab / POC</p>
+        <h1>You declare it.<br />Who keeps it running?</h1>
+        <p>Two replicas are ready. Change one number in the manifest: more Pods appear, node reservations grow, and eventually a Pod has nowhere to go. Delete a Pod and watch its owner replace it. Then try the same thing without an owner.</p>
+        <p>The tree shows <b>resource ownership</b>; the badges show node assignments. Every status, counter and event below comes from one state model.</p>
+      </div>
+      <aside class="lab-head__note mono"><p>MANIFEST → DESIRED STATE → RECONCILIATION</p><p>A local experiment, inspired by Argo's resource tree. It does not connect to a cluster.</p></aside>
+    </section>
+
+    <section class="lab-palco" aria-label="Pod lifecycle experiment"><PodLifecycleLab client:visible /></section>
+
+    <section class="lab-prosa editorial">
+      <div class="prose">
+        <h2>Break it, one field at a time</h2>
+        <ol>
+          <li><b>Change <code>replicas: 2</code> to <code>6</code>, then Apply and Run.</b> The Deployment's ReplicaSet creates the missing Pods. Each node fits four requests of 500m; placement consumes requests, not CPU limits.</li>
+          <li><b>Request <code>3000m</code> of CPU and set its limit to <code>4000m</code>.</b> Neither 2000m node fits one Pod. Both nodes together have 4000m free, but a Pod cannot straddle them.</li>
+          <li><b>Choose “Memory limit exceeded”.</b> The synthetic process needs 192 Mi, above its 128Mi limit. The container is OOM-killed and restarted with backoff. Its Pod UID and reservation stay. Lower the working set to 96 Mi to let it recover.</li>
+          <li><b>Delete a selected Pod.</b> A Deployment replaces it with a new UID. Load “A Pod without a controller” and repeat: no replacement appears. Reapplying the manifest after deletion creates the standalone Pod again.</li>
+          <li><b>Try “Image pull fails”.</b> Scheduling succeeds and requests are reserved, yet the Pod remains Pending. <code>ImagePullBackOff</code> is a waiting reason, not a Pod phase.</li>
+          <li><b>Scale to zero.</b> Pods enter Terminating. Their reservations are released after the declared grace period, not when you click Apply.</li>
+        </ol>
+        <h2>Three jobs, three different identities</h2>
+        <p>The controller maintains a replica count; the scheduler binds a new Pod to a node; the kubelet manages containers on that node. Restarting a container keeps the Pod UID. Replacing a Pod gives it a new UID. A Pod is scheduled once, rather than moved between nodes. <a href="https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#pod-lifetime">Pod lifetime →</a></p>
+        <p><code>requests</code> determine scheduling reservations. CPU limits can throttle; memory limits can lead to an OOM kill. Neither automatically changes the replica count. <a href="https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/">Resource management →</a></p>
+        <h2>The boundary of this experiment</h2>
+        <p>This POC uses two fixed nodes, first-fit placement and a synthetic working set. Startup takes two simulated steps; restart backoff is deliberately shortened. It supports one container, explicit CPU/memory requests and the Deployment's <code>Recreate</code> strategy. Unknown manifest fields are rejected so that an unsupported setting cannot appear to work.</p>
+        <p>It does not implement the Kubernetes scheduler, API server or Linux cgroups. It omits HPA, node autoscaling, probes, sidecars, affinity, storage, networking, quotas and node-pressure eviction. The gauges show <b>unreserved allocatable capacity</b>, not live cluster usage or a sizing recommendation. The simulated image catalog is explicit.</p>
+        <h2>Run the counterpart</h2>
+        <p><a href={url("labs/pod-lifecycle/README.md")}>Manifest files and commands →</a> Apply them to a disposable cluster with kubectl. Observe scheduling, deletion/replacement and image-pull failure against the real API. Real scheduling and timing depend on that cluster; the synthetic load is not a measurement of nginx.</p>
+        <p><a href={url("labs/pod-lifecycle/deployment.yaml")}>Download Deployment →</a> · <a href={url("labs/pod-lifecycle/pod.yaml")}>Download standalone Pod →</a></p>
+        <p><a href={url("handbooks/kubernetes/articles/a-pod-is-not-its-container")}>Read: a Pod is not its container →</a></p>
+      </div>
+      <div class="lab-predicao"><Predicao client:visible pergunta="A container is OOM-killed and restarted. Does the Pod get a new UID?" opcoes={["Yes, every restart creates a Pod", "No, the container restarts inside the same Pod"]} correta={1} revelacao="A container restart keeps the Pod UID and its node. A controller replacing a deleted Pod creates a new UID. Watch both operations in the experiment." /></div>
+    </section>
+    <LabAssessment href="labs/pod-lifecycle" />
+  </main>
+  <SiteFooter />
+</Base>

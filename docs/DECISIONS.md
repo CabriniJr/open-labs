@@ -1,5 +1,39 @@
 # Decisões e ideias consolidadas
 
+**Avaliações, 19/10/2026:** a jornada de estudo inclui checkpoint por lab e
+avaliação final por handbook. São conteúdo portável com objetivos, gabaritos,
+resoluções, fontes, pontos e revisão editorial, independentes dos motores.
+As predições/exercícios imediatos permanecem durante o lab; a avaliação revela
+as resoluções após a entrega. Bundles v2 transportam os bancos; o leitor mantém
+v1. O capítulo **Interactive assessments** descreve os cinco tipos iniciais e
+a fronteira entre prática local e gestão autenticada de turmas.
+
+**Contratos e entregas, 19/10/2026:** conteúdo (`handbook/v1`, `bundle/v1`),
+implementação (`lab/v1`) e execução/distribuição (`host-template/v1`,
+`delivery/v1`) têm contratos separados. `flow` exige o Mermaid canônico;
+`state` exige seu runtime de estado; `direct` usa manipulação dedicada.
+O Studio monta ZIPs executáveis com versões e integridade verificadas.
+O capítulo **Runnable handbook deliveries** registra o contrato e os limites.
+
+**Studio alpha, 18/10/2026:** a primeira interface local de autoria reutiliza o
+contrato do SDK, edita currículo/artigos, preserva rascunhos inválidos e exporta
+fontes ou bundle validado. O briefing assistido é preparado para compartilhar
+com Claude/outro assistente, sem chamada automática de modelo. O capítulo
+**Handbook Studio**, no índice de autoria, descreve os fluxos e os limites.
+
+**Atualização de 18/10/2026:** a autoria independente tem artefatos alpha
+instaláveis de `handbook-format` e `interactive-core`, com prova de consumo
+fora do monorepo. O bundle v1 transporta conteúdo; as implementações de labs
+são dependências explícitas do host. O capítulo **Independent handbook authoring**,
+no índice de autoria, descreve o caminho e seus limites.
+
+**Atualização de 16/10/2026:** o framework admite interações além do motor de
+fluxos. Mermaid continua contrato canônico dos cenários de fluxo; estado,
+reconciliação e manipulação direta têm contratos próprios. O Pod lifecycle
+inaugura o Kubernetes Visual Handbook sem importar o motor de fluxos. Detalhes
+e limites no capítulo **Framework interativo e Pod lifecycle**, no índice
+“Escrever um lab”.
+
 **Data:** 2026-08-28, com o enquadramento revisto em 2026-08-29
 **Papel deste documento:** ponto de entrada. As ideias que sobreviveram, as que foram
 recusadas, e as réguas que decidem discussão futura. Os outros documentos aprofundam; este
@@ -26,9 +60,12 @@ OTel. Um repositório chamado *OTel Visual Handbook* cujo próximo entregável �
 datapath RV32I mente no título — e a mentira não é cosmética: sugere que o motor é de
 telemetria, quando o motor é justamente **o que não sabe o que é um span**.
 
-- **OpenLabs** é a casa: um motor composicional, e vários handbooks rodando nele
-- **Cada handbook é um `.model`** — `otel.model` (F4), `cpu.model` (F6). O que muda de
-  um para outro é o domínio, nunca o motor. É a mesma fronteira que o CI já guarda
+- **OpenLabs** é a casa: um framework de handbooks interativos, com motor
+  composicional, runtime de estado e implementações de manipulação direta
+- **Cada handbook reúne conteúdo e labs**, que podem usar modelos distintos.
+  `otel.model` (F4) e `cpu.model` (F6) compartilham o motor composicional;
+  Kubernetes usa estado/reconciliação. O domínio continua fora dos runtimes,
+  com fronteiras verificadas pelo CI
 - **Todo handbook tem a mesma anatomia**, e é ela que dá a página: **roadmap** (a ordem
   em que os conceitos se sustentam) · **artigos** (o texto que explica) · **labs** (o
   modelo que roda). Um handbook sem as três não está pronto, e a página diz isso em vez
@@ -216,8 +253,8 @@ que exige o motor.
 
 Nomenclatura · a ferramenta ensina e não opera · `model` é ilha com porto · reuso não é
 requisito · playground é editor de grafo com regras · segue com o motor · a gramática ·
-os quatro níveis como tipos de coisa · **o motor é pilar e não é obrigatório** (§9) · **o projeto é OpenLabs, e cada handbook é um
-`.model` com roadmap, artigos e labs** (o enquadramento, no topo).
+os quatro níveis como tipos de coisa · **o motor é pilar e não é obrigatório** (§9) · **o projeto é OpenLabs, e cada handbook tem
+roadmap, artigos e labs com contratos de interação próprios** (o enquadramento, no topo).
 
 ### Abertas, e nesta ordem de urgência
 

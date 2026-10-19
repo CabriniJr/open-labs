@@ -1,0 +1,431 @@
+{
+  "apiVersion": "openlabs/assessment-set/v1",
+  "id": "kubernetes-concepts",
+  "version": "0.1.0",
+  "handbook": "kubernetes",
+  "title": "Kubernetes concept assessments",
+  "objectives": [
+    {
+      "id": "identity",
+      "title": "Distinguish Pod identity from container restarts"
+    },
+    {
+      "id": "resources",
+      "title": "Separate resource requests, limits and actual use"
+    },
+    {
+      "id": "placement",
+      "title": "Reason about placement on individual nodes"
+    },
+    {
+      "id": "reconciliation",
+      "title": "Explain controller, scheduler and kubelet responsibilities"
+    }
+  ],
+  "sources": [
+    {
+      "id": "pod-lifecycle",
+      "title": "Kubernetes documentation — Pod lifecycle",
+      "url": "https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/",
+      "license": {
+        "id": "CC-BY-4.0",
+        "url": "https://creativecommons.org/licenses/by/4.0/"
+      }
+    },
+    {
+      "id": "resources",
+      "title": "Kubernetes documentation — Resource management for Pods and containers",
+      "url": "https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/",
+      "license": {
+        "id": "CC-BY-4.0",
+        "url": "https://creativecommons.org/licenses/by/4.0/"
+      }
+    },
+    {
+      "id": "components",
+      "title": "Kubernetes documentation — Cluster architecture and components",
+      "url": "https://kubernetes.io/docs/concepts/overview/components/",
+      "license": {
+        "id": "CC-BY-4.0",
+        "url": "https://creativecommons.org/licenses/by/4.0/"
+      }
+    }
+  ],
+  "questions": [
+    {
+      "id": "restart-identity",
+      "revision": 1,
+      "type": "single-choice",
+      "prompt": "A container is OOM-killed and restarted inside a Pod. What happens to the Pod UID?",
+      "objective": "identity",
+      "points": 1,
+      "explanation": "A container restart and a Pod replacement are different events. Restarting the container preserves the Pod identity and node assignment. A replacement Pod is a new API object with a new UID.",
+      "sourceIds": [
+        "pod-lifecycle"
+      ],
+      "provenance": {
+        "kind": "original",
+        "author": "OpenLabs contributors",
+        "license": {
+          "id": "CC-BY-SA-4.0",
+          "url": "https://creativecommons.org/licenses/by-sa/4.0/"
+        }
+      },
+      "review": {
+        "status": "in-review",
+        "notes": "Original practice question. An educator should review factual accuracy, distractors and objective alignment."
+      },
+      "remediation": "Load “Memory limit exceeded” in the lab, advance time and compare the Pod UID with its container restart counter.",
+      "options": [
+        {
+          "id": "same-uid",
+          "text": "The Pod keeps its UID.",
+          "explanation": "Correct. The kubelet can restart the container within the existing Pod."
+        },
+        {
+          "id": "new-uid",
+          "text": "Every container restart creates a new Pod UID.",
+          "explanation": "This confuses a container restart with replacement of the Pod object."
+        },
+        {
+          "id": "new-node",
+          "text": "The existing Pod moves to another node.",
+          "explanation": "An existing Pod is not rescheduled onto another node. A replacement is a different Pod."
+        }
+      ],
+      "correct": "same-uid"
+    },
+    {
+      "id": "requests-and-limits",
+      "revision": 1,
+      "type": "multiple-response",
+      "prompt": "Select every correct statement about requests and limits in this lab.",
+      "objective": "resources",
+      "points": 2,
+      "explanation": "The scheduler places Pods using requests. Limits constrain runtime use: CPU may be throttled and a memory limit can lead to an OOM kill. Neither setting changes the desired replica count. The lab models these qualitatively.",
+      "sourceIds": [
+        "resources"
+      ],
+      "provenance": {
+        "kind": "original",
+        "author": "OpenLabs contributors",
+        "license": {
+          "id": "CC-BY-SA-4.0",
+          "url": "https://creativecommons.org/licenses/by-sa/4.0/"
+        }
+      },
+      "review": {
+        "status": "in-review",
+        "notes": "Original practice question. An educator should review factual accuracy, distractors and objective alignment."
+      },
+      "remediation": "Keep replicas unchanged, raise a CPU request, then change a memory limit and observe the different effects.",
+      "options": [
+        {
+          "id": "requests-place",
+          "text": "CPU and memory requests are used for placement.",
+          "explanation": "Correct. The scheduler checks whether a node can satisfy the requested resources."
+        },
+        {
+          "id": "memory-kill",
+          "text": "Exceeding a memory limit can cause the container to be OOM-killed.",
+          "explanation": "Correct. The lab demonstrates an OOM kill followed by restart under its restart policy."
+        },
+        {
+          "id": "limits-scale",
+          "text": "Raising a CPU limit creates extra replicas.",
+          "explanation": "A CPU limit does not change spec.replicas. This lab has no HPA."
+        },
+        {
+          "id": "requests-usage",
+          "text": "A CPU request is a measurement of current CPU usage.",
+          "explanation": "A request is a scheduling/resource reservation input, not a live usage measurement."
+        }
+      ],
+      "correct": [
+        "requests-place",
+        "memory-kill"
+      ]
+    },
+    {
+      "id": "startup-sequence",
+      "revision": 1,
+      "type": "ordering",
+      "prompt": "Order a successful startup in this lab, from creation to ready. Its model uses two fixed startup steps and no probes.",
+      "objective": "reconciliation",
+      "points": 2,
+      "explanation": "The ReplicaSet creates a Pod; the scheduler binds it to one node; the kubelet starts its container; the lab then marks it Ready. Real startup timing and readiness depend on the workload and cluster.",
+      "sourceIds": [
+        "pod-lifecycle",
+        "components"
+      ],
+      "provenance": {
+        "kind": "original",
+        "author": "OpenLabs contributors",
+        "license": {
+          "id": "CC-BY-SA-4.0",
+          "url": "https://creativecommons.org/licenses/by-sa/4.0/"
+        }
+      },
+      "review": {
+        "status": "in-review",
+        "notes": "Original practice question. An educator should review factual accuracy, distractors and objective alignment."
+      },
+      "remediation": "Load “Healthy deployment”, rewind the history and inspect the Created, Scheduled and Started events.",
+      "items": [
+        {
+          "id": "ready",
+          "text": "Pod becomes Ready in the lab"
+        },
+        {
+          "id": "created",
+          "text": "ReplicaSet creates the Pod object"
+        },
+        {
+          "id": "started",
+          "text": "Kubelet starts the container"
+        },
+        {
+          "id": "scheduled",
+          "text": "Scheduler binds the Pod to a node"
+        }
+      ],
+      "correct": [
+        "created",
+        "scheduled",
+        "started",
+        "ready"
+      ],
+      "scoring": "per-item"
+    },
+    {
+      "id": "who-does-what",
+      "revision": 1,
+      "type": "matching",
+      "prompt": "Match each responsibility to the component that performs it. Targets may be used more than once.",
+      "objective": "reconciliation",
+      "points": 3,
+      "explanation": "Desired count, node assignment and container management are separate responsibilities. The resource tree shows ownership; the node badge shows a scheduling assignment.",
+      "sourceIds": [
+        "components",
+        "pod-lifecycle"
+      ],
+      "provenance": {
+        "kind": "original",
+        "author": "OpenLabs contributors",
+        "license": {
+          "id": "CC-BY-SA-4.0",
+          "url": "https://creativecommons.org/licenses/by-sa/4.0/"
+        }
+      },
+      "review": {
+        "status": "in-review",
+        "notes": "Original practice question. An educator should review factual accuracy, distractors and objective alignment."
+      },
+      "remediation": "Delete a selected Pod and inspect which events concern creation, scheduling and starting.",
+      "items": [
+        {
+          "id": "create",
+          "text": "Creates a replacement to maintain the replica count",
+          "target": "controller",
+          "explanation": "The ReplicaSet controller reconciles actual Pod count with desired replicas."
+        },
+        {
+          "id": "bind",
+          "text": "Selects a node for a new unscheduled Pod",
+          "target": "scheduler",
+          "explanation": "The scheduler binds an unscheduled Pod to a suitable node."
+        },
+        {
+          "id": "start",
+          "text": "Ensures the container starts on the assigned node",
+          "target": "kubelet",
+          "explanation": "The kubelet manages containers on its node."
+        }
+      ],
+      "targets": [
+        {
+          "id": "kubelet",
+          "text": "Kubelet"
+        },
+        {
+          "id": "controller",
+          "text": "ReplicaSet controller"
+        },
+        {
+          "id": "scheduler",
+          "text": "Scheduler"
+        }
+      ],
+      "scoring": "per-item"
+    },
+    {
+      "id": "does-this-pod-fit",
+      "revision": 1,
+      "type": "code-analysis",
+      "prompt": "Each of the two lab nodes has 2000m allocatable CPU and no reservations. What happens to a Pod using this container resource fragment?",
+      "objective": "placement",
+      "points": 3,
+      "explanation": "A Pod must fit on a single node. A 3000m request cannot fit either 2000m node, even though their combined free CPU is 4000m. Placement uses the request, not the limit.",
+      "sourceIds": [
+        "resources"
+      ],
+      "provenance": {
+        "kind": "original",
+        "author": "OpenLabs contributors",
+        "license": {
+          "id": "CC-BY-SA-4.0",
+          "url": "https://creativecommons.org/licenses/by-sa/4.0/"
+        }
+      },
+      "review": {
+        "status": "in-review",
+        "notes": "Original practice question. An educator should review factual accuracy, distractors and objective alignment."
+      },
+      "remediation": "Apply a 3000m CPU request with a 4000m limit. Inspect Pending and the node reservation gauges.",
+      "language": "yaml",
+      "code": "resources:\n  requests:\n    cpu: 3000m\n    memory: 256Mi\n  limits:\n    cpu: 4000m\n    memory: 512Mi",
+      "options": [
+        {
+          "id": "pending",
+          "text": "It remains Pending because neither node can fit the CPU request.",
+          "explanation": "Correct. The request is checked against each candidate node separately."
+        },
+        {
+          "id": "split",
+          "text": "It runs by combining free CPU across both nodes.",
+          "explanation": "A single Pod cannot split its CPU request across nodes."
+        },
+        {
+          "id": "limit-place",
+          "text": "It reserves 4000m because placement uses limits.",
+          "explanation": "Placement uses requests. The CPU limit constrains runtime use rather than declaring a scheduling reservation."
+        }
+      ],
+      "correct": "pending"
+    },
+    {
+      "id": "delete-owned-pod",
+      "revision": 1,
+      "type": "single-choice",
+      "prompt": "You delete a Pod owned by the lab Deployment while its desired replicas remain two. What should you observe after reconciliation?",
+      "objective": "identity",
+      "points": 1,
+      "explanation": "The ReplicaSet observes a missing replica and creates another Pod. The replacement has a new UID. With a standalone Pod, no ReplicaSet maintains that count.",
+      "sourceIds": [
+        "pod-lifecycle"
+      ],
+      "provenance": {
+        "kind": "original",
+        "author": "OpenLabs contributors",
+        "license": {
+          "id": "CC-BY-SA-4.0",
+          "url": "https://creativecommons.org/licenses/by-sa/4.0/"
+        }
+      },
+      "review": {
+        "status": "in-review",
+        "notes": "Original practice question. An educator should review factual accuracy, distractors and objective alignment."
+      },
+      "remediation": "Compare “Healthy deployment” with “A Pod without a controller” and delete a selected Pod in each.",
+      "options": [
+        {
+          "id": "replacement",
+          "text": "A replacement Pod appears with a new UID.",
+          "explanation": "Correct. Reconciliation restores the desired count with a new object."
+        },
+        {
+          "id": "same-object",
+          "text": "The deleted Pod returns with the same UID.",
+          "explanation": "An API object that was deleted is not the same object as its replacement."
+        },
+        {
+          "id": "owner-deleted",
+          "text": "Deleting the child also deletes its ReplicaSet.",
+          "explanation": "Deleting one owned Pod does not delete its controller."
+        }
+      ],
+      "correct": "replacement"
+    },
+    {
+      "id": "memory-pressure",
+      "revision": 1,
+      "type": "code-analysis",
+      "prompt": "The lab uses restartPolicy Always. Its synthetic container working set is 192 Mi. What does this resource fragment demonstrate?",
+      "objective": "resources",
+      "points": 2,
+      "explanation": "The synthetic working set exceeds the 128Mi limit. The lab kills and restarts the container with backoff; the Pod UID and scheduling reservation remain. The 64Mi request governs placement, not the runtime maximum.",
+      "sourceIds": [
+        "resources",
+        "pod-lifecycle"
+      ],
+      "provenance": {
+        "kind": "original",
+        "author": "OpenLabs contributors",
+        "license": {
+          "id": "CC-BY-SA-4.0",
+          "url": "https://creativecommons.org/licenses/by-sa/4.0/"
+        }
+      },
+      "review": {
+        "status": "in-review",
+        "notes": "Original practice question. An educator should review factual accuracy, distractors and objective alignment."
+      },
+      "remediation": "Choose “Memory limit exceeded”, watch restarts, then lower the synthetic working set to 96 Mi.",
+      "language": "yaml",
+      "code": "resources:\n  requests:\n    cpu: 500m\n    memory: 64Mi\n  limits:\n    cpu: 1000m\n    memory: 128Mi",
+      "options": [
+        {
+          "id": "oom",
+          "text": "The container is OOM-killed and may restart inside the same Pod.",
+          "explanation": "Correct. Under this lab policy the container restarts, preserving the Pod identity."
+        },
+        {
+          "id": "request-ceiling",
+          "text": "The container stops using memory at exactly its 64Mi request.",
+          "explanation": "The request is not a hard runtime memory ceiling."
+        },
+        {
+          "id": "new-node",
+          "text": "The same Pod moves to another node to escape the limit.",
+          "explanation": "Changing nodes is not how an existing Pod responds to a container memory limit."
+        }
+      ],
+      "correct": "oom"
+    }
+  ],
+  "assessments": [
+    {
+      "id": "pod-lifecycle-checkpoint",
+      "title": "Check your Pod lifecycle reasoning",
+      "description": "Three questions after the experiment. Apply the mechanisms you observed; this is a practice checkpoint.",
+      "scope": {
+        "kind": "lab",
+        "lab": "pod-lifecycle"
+      },
+      "questions": [
+        "restart-identity",
+        "who-does-what",
+        "does-this-pod-fit"
+      ],
+      "passPercentage": 70
+    },
+    {
+      "id": "kubernetes-final",
+      "title": "Kubernetes handbook assessment",
+      "description": "A cumulative practice assessment of the currently available Pod lifecycle material. Future handbook phases are not covered yet.",
+      "scope": {
+        "kind": "handbook"
+      },
+      "questions": [
+        "restart-identity",
+        "requests-and-limits",
+        "startup-sequence",
+        "who-does-what",
+        "does-this-pod-fit",
+        "delete-owned-pod",
+        "memory-pressure"
+      ],
+      "passPercentage": 70
+    }
+  ]
+}

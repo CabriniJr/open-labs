@@ -1,4 +1,5 @@
 ---
+import LabAssessment from "../../components/LabAssessment.astro";
 import { EXERCICIOS_DOS_PILARES } from "@ovh/otel-domain";
 import { Exercicio } from "../../components/Exercicio.tsx";
 import { PilaresLab } from "../../components/PilaresLab.tsx";
@@ -142,6 +143,7 @@ const exercicios = EXERCICIOS_DOS_PILARES.map(montarExercicio);
         </p>
       </div>
     </section>
+    <LabAssessment href="labs/three-pillars" />
   </main>
 
   <SiteFooter />

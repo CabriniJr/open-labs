@@ -1,0 +1,18 @@
+---
+import { HANDBOOKS } from "../data/handbooks";
+import { bankForHandbook } from "../lib/assessment-catalog";
+import { AssessmentPlayer } from "./AssessmentPlayer";
+import { url } from "../lib/urls";
+import "./AssessmentPlayer.css";
+interface Props { href: string }
+const { href } = Astro.props;
+const handbook = HANDBOOKS.find((h) => h.labs.some((l) => l.status === "available" && l.href === href));
+const bank = handbook ? bankForHandbook(handbook) : undefined;
+const lab = handbook?.labs.find((l) => l.href === href);
+const assessment = bank?.assessments.find((a) => a.scope.kind === "lab" && a.scope.lab === lab?.id);
+---
+{handbook && <section class="lab-assessment-slot" aria-label="End-of-lab assessment">
+  {bank && assessment ? <AssessmentPlayer bank={bank} assessmentId={assessment.id} client:visible /> : <div class="lab-assessment-coming"><h2>Check your understanding</h2><p>The assessment for this lab has not been authored yet.</p></div>}
+  <p><a href={`${url(`handbooks/${handbook.id}`)}#assessment`}>Continue to the handbook assessment →</a></p>
+</section>}
+<style>.lab-assessment-slot { max-width: 85rem; margin-inline: auto; padding: 1rem clamp(1rem, 3vw, 2rem); }.lab-assessment-coming { padding: 1.5rem; border: 1px solid var(--rule); border-radius: var(--radius-2); }.lab-assessment-coming p { color: var(--ink-muted); }</style>

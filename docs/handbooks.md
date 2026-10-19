@@ -56,7 +56,7 @@ fields:
 | `subject` | one or two words, for the label on the catalogue card |
 | `tagline` | one sentence: what the reader will be able to *see* |
 | `blurb` | two or three sentences for the catalogue card |
-| `model` | the `.model` this handbook instantiates (`otel.model`, `cpu.model`, …) |
+| `model` | the interactive model or family of models (`otel.model`, `cpu.model`, a state model, …) |
 | `stage` | `building` or `planned` |
 | `maintainers` | at least one `{ name, github }`. This is ownership, not credit |
 | `theme` | the closed set of colours this handbook paints. See §4 |
@@ -85,6 +85,12 @@ fields:
   link.
 
 ## 3. Articles
+
+An optional `assessments.json` beside the manifest adds exit checkpoints for
+available labs and one cumulative assessment. It is content with its own
+versioned contract, source/provenance metadata and educator review records.
+See **Interactive assessments** in the authoring index. When present it travels
+in bundle v2; the manifest and older content-only bundle v1 remain readable.
 
 One Markdown file per article, in `apps/site/src/content/articles/<id>/`, named
 `<article-id>.md` — the same id the manifest uses. The frontmatter:
@@ -140,10 +146,11 @@ diverge.
 
 ## 5. What the manifest does **not** describe
 
-**Behaviour.** A lab that runs is a model — objects, wires, parameters, and the
-behaviour that animates them — and behaviour is TypeScript. No data format in
-this repository describes it, and inventing one that half-describes it would be
-worse than saying this plainly.
+**Behaviour.** A lab that runs has a domain model and behavior in TypeScript.
+Compositional flows use objects, wires and parameters; state/reconciliation and
+direct manipulation use their own structures. No handbook manifest describes
+executable behavior. A lab descriptor identifies the model, interaction kind,
+version and runtime requirements; it does not replace the model's contract.
 
 So a submitted handbook can:
 
@@ -151,8 +158,11 @@ So a submitted handbook can:
 - point `available` labs at pages that exist.
 
 To add a lab that runs, follow `docs/authoring.md`: the model goes in a domain
-package, the topology in a `.mmd` skeleton, the page in the site. The check tells
-you this by name if you announce a lab whose page does not exist.
+package and the page in the site. A compositional flow scenario uses a `.mmd`
+skeleton as its structural contract; a state model or direct manipulation lab
+has its own contract. The Kubernetes handbook demonstrates the state model
+path without importing the flow engine. The check tells you by name if you
+announce a lab whose page does not exist.
 
 ### What a submitted lab gets for free
 
@@ -211,14 +221,27 @@ by field. That equality is what makes "migrating is mechanical" a measured fact.
 
 ## 7. Using a handbook outside this repository
 
+An installable alpha SDK now supports authoring in a separate project. The
+chapter “Independent handbook authoring” in the authoring index covers tarball
+installation, the external CLI, bundle validation and host lab requirements.
+The in-repository command below remains supported.
+
 ```
 node scripts/handbook.mjs export my-handbook --out my-handbook.json
 ```
 
-A portable bundle: the normalized manifest plus every article with its body, in
+A portable **content** bundle: the normalized manifest plus every article with its body, in
 one JSON file carrying its own `bundleVersion` and the `apiVersion` of the
 contract inside it. Anything that can read JSON can render your handbook without
-this monorepo, this Astro, or this directory layout.
+this monorepo, this Astro, or this directory layout. Lab implementations are
+not included: a consumer must resolve the available lab routes against its
+installed catalog before offering those labs as runnable.
+
+For a complete executable distribution, the Studio's **Delivery** panel or
+`pnpm delivery:build` joins that bundle to a compatible compiled host. The
+chapter **Runnable handbook deliveries** describes its separate release
+contract, including canonical Mermaid files for flow labs. The bundle v1
+wire format remains unchanged.
 
 The command refuses to export a handbook that does not pass `check`. Exporting
 something broken would hand a broken artefact to an environment with no way to

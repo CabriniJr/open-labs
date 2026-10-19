@@ -8,23 +8,29 @@
     "node": "24.x"
   },
   "scripts": {
-    "typecheck": "tsc -b --pretty false",
+    "typecheck": "tsc -b --pretty false && tsc -p apps/runner --pretty false",
     "test": "vitest run",
     "boundaries": "node scripts/check-boundaries.mjs",
     "catalogo": "node scripts/check-catalogo.mjs",
     "build": "pnpm --filter @ovh/site build",
     "dev": "pnpm --filter @ovh/site dev",
     "handbooks": "node scripts/handbook.mjs check",
-    "codeowners": "node scripts/handbook.mjs codeowners"
+    "codeowners": "node scripts/handbook.mjs codeowners",
+    "sdk:pack": "node scripts/sdk-release.mjs",
+    "sdk:smoke": "node scripts/sdk-smoke.mjs",
+    "delivery:build": "node scripts/delivery.mjs",
+    "delivery:smoke": "node scripts/delivery-smoke.mjs"
   },
   "devDependencies": {
     "@testing-library/react": "^16.1.0",
     "@vitejs/plugin-react": "^4.3.4",
     "fast-check": "^4.9.0",
+    "fflate": "^0.8.3",
     "jsdom": "^25.0.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "typescript": "^5.6.3",
+    "vite": "^6.4.3",
     "vitest": "^2.1.4"
   },
   "license": "Apache-2.0"

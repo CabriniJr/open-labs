@@ -3,7 +3,6 @@ title: "A universal forwarder does not parse"
 dek: "The machine that reads your log file is the one machine in the path that does not understand it. It cuts the stream into 64K blocks, tags each block with where it came from, and forwards — so every setting about what an event is has no effect there, and the ones that do have effect are a different, shorter list."
 handbook: splunk
 phase: 1
-lab: labs/splunk-ingest
 sources:
   - id: splunk-types-of-forwarders
     author: "Splunk Inc."
@@ -107,7 +106,7 @@ this from a working configuration, because from every other point of view it
 *is* a working configuration — the data arrives, it is indexed, it is
 searchable. It is just searchable as twelve events instead of one.
 
-The [lab for this phase](../../../../labs/splunk-ingest/) is that sentence,
+The [lab of the next phase](../../../../labs/splunk-ingest/) is that sentence,
 running: move the file between three machines and watch the stack trace split
 and reassemble while every other number on the screen stays the same.
 
