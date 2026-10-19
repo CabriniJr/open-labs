@@ -74,6 +74,11 @@ editing, learner preview, contract diagnostics, source ZIPs and bundle export.
 It also prepares an authoring brief for use with your assistant. See the
 [Studio guide](docs/studio.md).
 
+The hamburger settings menu selects English or Brazilian Portuguese and light,
+dark or system appearance. Local language packs cover the published content,
+Studio and assessments, including the independent host. Native code, manifests
+and Mermaid contracts retain their source form. See [Language and appearance](docs/localization.md).
+
 Interactive assessments add end-of-lab checkpoints and a final handbook exam,
 with five question types, points, objective breakdowns and explained resolutions
 after submission. The Studio supports question-bank sources, educator review

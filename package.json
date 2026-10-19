@@ -4,7 +4,7 @@
   "type": "module",
   "packageManager": "pnpm@11.24.0",
   "engines": {
-    "//": "A Vercel NÃO lê .nvmrc — ela lê daqui. Sem este campo o deploy roda numa versão de Node diferente da do CI e da máquina, e a primeira coisa que se descobre é no build que quebra. Mantenha em dia com .nvmrc.",
+    "//": "A Vercel N\u00c3O l\u00ea .nvmrc \u2014 ela l\u00ea daqui. Sem este campo o deploy roda numa vers\u00e3o de Node diferente da do CI e da m\u00e1quina, e a primeira coisa que se descobre \u00e9 no build que quebra. Mantenha em dia com .nvmrc.",
     "node": "24.x"
   },
   "scripts": {
@@ -19,13 +19,16 @@
     "sdk:pack": "node scripts/sdk-release.mjs",
     "sdk:smoke": "node scripts/sdk-smoke.mjs",
     "delivery:build": "node scripts/delivery.mjs",
-    "delivery:smoke": "node scripts/delivery-smoke.mjs"
+    "delivery:smoke": "node scripts/delivery-smoke.mjs",
+    "locale:inventory": "node scripts/locale-inventory.mjs",
+    "locale:check": "node scripts/check-locales.mjs"
   },
   "devDependencies": {
     "@testing-library/react": "^16.1.0",
     "@vitejs/plugin-react": "^4.3.4",
     "fast-check": "^4.9.0",
     "fflate": "^0.8.3",
+    "franc-min": "6.2.0",
     "jsdom": "^25.0.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

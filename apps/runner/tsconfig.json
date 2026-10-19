@@ -1,1 +1,17 @@
-{ "extends": "../../tsconfig.base.json", "compilerOptions": { "composite": false, "noEmit": true, "jsxImportSource": "react", "types": ["vite/client", "node"] }, "include": ["src", "serve.ts"] }
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": false,
+    "noEmit": true,
+    "jsxImportSource": "react",
+    "types": [
+      "vite/client",
+      "node"
+    ],
+    "resolveJsonModule": true
+  },
+  "include": [
+    "src",
+    "serve.ts"
+  ]
+}

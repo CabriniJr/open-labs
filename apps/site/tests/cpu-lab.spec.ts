@@ -57,7 +57,7 @@ test("erro de montagem aparece com linha e coluna", async ({ page }) => {
 
   const erro = page.locator(".cpu-lab__erros li").first();
   await expect(erro).toContainText("1:");
-  await expect(erro).toContainText("x0 a x31");
+  await expect(erro).toContainText("x0 to x31");
 });
 
 test("a segunda view mostra o mesmo run mais de perto", async ({ page }) => {

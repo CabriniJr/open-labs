@@ -1,3 +1,4 @@
+import { localeReady } from "../lib/i18n.js";
 import { useEffect, useRef, useState } from "react";
 import { InteractiveSession } from "@ovh/interactive-core";
 import {
@@ -125,7 +126,7 @@ export function PodLifecycleLab() {
   const settled = state.workload !== null && summary.ready === summary.desired && state.pods.every((p) => p.deletionAt === null);
   const health = degraded ? "Degraded" : settled ? "Healthy" : "Progressing";
 
-  return <div className="podlab" data-testid="pod-lifecycle-lab" data-hydrated={hydrated}>
+  return <div ref={localeReady} className="podlab" data-testid="pod-lifecycle-lab" data-hydrated={hydrated}>
     <div className="podlab-topbar">
       <div className="podlab-brand"><span className="podlab-kube" aria-hidden="true">⎈</span><div><strong>Pod lifecycle</strong><small>LOCAL SANDBOX / DEFAULT NAMESPACE</small></div></div>
       <div className="podlab-badges"><span data-health={health} className="podlab-health">● {health}</span><span className="podlab-sync">{dirty ? "Unapplied changes" : "Manifest applied"}</span></div>

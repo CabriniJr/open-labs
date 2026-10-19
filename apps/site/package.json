@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "astro dev",
-    "build": "node ../../scripts/build-delivery-host.mjs && astro build",
+    "build": "node ../../scripts/build-delivery-host.mjs && astro build && node ../../scripts/build-locale-search.mjs",
     "preview": "astro preview",
     "test:e2e": "playwright test"
   },

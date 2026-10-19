@@ -64,5 +64,9 @@ const { title, description, lang = "en", domain = "otel" } = Astro.props;
   </head>
   <body>
     <slot />
+    <script>
+      import { startI18n } from "../lib/i18n";
+      void startI18n();
+    </script>
   </body>
 </html>

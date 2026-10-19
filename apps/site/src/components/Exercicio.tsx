@@ -1,3 +1,4 @@
+import { localeReady } from "../lib/i18n.js";
 import { useState } from "react";
 import type { ExercicioMontado } from "../lib/exercicios.js";
 import { registrar } from "../lib/placar.js";
@@ -38,7 +39,7 @@ export function Exercicio({ exercicio }: ExercicioProps) {
     : undefined;
 
   return (
-    <div className="exercicio" data-respondeu={respondeu ? "true" : undefined}>
+    <div ref={localeReady} className="exercicio" data-respondeu={respondeu ? "true" : undefined}>
       <p className="exercicio__cenario">{exercicio.cenario}</p>
       <p className="exercicio__pergunta">{exercicio.pergunta}</p>
 

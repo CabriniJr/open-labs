@@ -42,7 +42,7 @@ test("recupera texto inválido no reload e permite baixar fontes sem liberar exp
   await open(page);
   await page.getByRole("textbox", { name: "Edit handbook.yaml", exact: true }).fill("id: [unfinished");
   await expect(page.getByRole("button", { name: "Export bundle" })).toBeDisabled();
-  await expect(page.getByRole("region", { name: "Validation diagnostics" })).toContainText("YAML inválido");
+  await expect(page.getByRole("region", { name: "Validation diagnostics" })).toContainText("Invalid YAML");
   await expect.poll(() => page.evaluate(() => localStorage.getItem("openlabs-studio-project-v1"))).toContain("unfinished");
   await page.reload();
   await expect(page.getByTestId("handbook-studio")).toHaveAttribute("data-hydrated", "true");
@@ -124,5 +124,5 @@ test("armazenamento bloqueado deixa a edição e o download disponíveis", async
   await expect(page.getByText("Download sources to keep a copy", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Download sources", exact: true })).toBeEnabled();
   await page.getByRole("textbox", { name: "Edit handbook.yaml", exact: true }).fill("invalid: [");
-  await expect(page.getByRole("region", { name: "Validation diagnostics" })).toContainText("YAML inválido");
+  await expect(page.getByRole("region", { name: "Validation diagnostics" })).toContainText("Invalid YAML");
 });

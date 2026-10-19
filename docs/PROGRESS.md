@@ -1,5 +1,24 @@
 # Progresso
 
+## Português, inglês e configurações
+
+19/10/2026. A PR #22 integrou avaliações e revisão editorial à main com CI
+completo verde. A continuação adiciona menu hambúrguer compartilhado para idioma
+e aparência, persistência local e catálogos estáticos para português brasileiro
+e inglês. A varredura inclui páginas publicadas, controles/estados de labs,
+Studio, questões e resoluções. Os catálogos iniciais são assistidos, com
+sobrescritas editoriais para terminologia e trechos científicos; não representam
+revisão linguística humana integral. O capítulo **Language and appearance**
+descreve o processo e a revisão.
+
+A camada altera texto e rótulos acessíveis após hidratação, preservando código,
+inputs de autoria, ids, URLs, gabaritos e Mermaid canônico. O host alpha.3 leva
+os mesmos catálogos e configurações na entrega. Busca local bilíngue compara
+texto original e traduzido. O site e as entregas não chamam serviços de tradução;
+o helper de geração é explícito e destinado somente a fontes já públicas.
+CI confere cobertura e preservação dos slots de interpolação. Os resultados
+finais de testes e publicação são registrados na PR desta continuação.
+
 ## Avaliações interativas e revisão por educadores
 
 19/10/2026. Checkpoints no fim dos labs e um simulado final por handbook usam
