@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import type { DefinicaoDeExercicio, Distrator } from "@ovh/otel-domain";
+import type { DefinicaoDeExercicio, Distrator } from "@ovh/handbook-format";
 import { raizDoRepoUrl } from "./raiz.js";
 
 /**
@@ -91,6 +91,55 @@ function embaralharPorSemente<T>(itens: readonly T[], semente: string): readonly
  * As duas leituras são de fonte única: o `pom.xml` e o `compose.yaml` que já
  * existem no lab.
  */
+/**
+ * O que executa um arquivo deste lab, e onde a versão disso está escrita.
+ *
+ * Uma tabela, e não uma cadeia de `if`, porque a terceira entrada foi o que
+ * mostrou o defeito da segunda: com a entrada do Splunk, o MESMO `compose.yaml`
+ * sobe duas imagens de produtos diferentes — o forwarder universal e o Splunk
+ * Enterprise — e qual delas executa um arquivo depende da pasta em que ele
+ * está. Uma cadeia de `if` resolveria isso também, e esconderia que a pergunta
+ * tem duas partes: "quem executa este caminho?" e "onde o número dele está?".
+ *
+ * `quando` casa contra o caminho **relativo ao lab**, para a regra não repetir
+ * o slug.
+ */
+const EXECUTORES: readonly {
+  readonly quando: RegExp;
+  /** O que a tela escreve antes do número. */
+  readonly nome: string;
+  /** Onde o número está, relativo ao lab, e como achá-lo lá dentro. */
+  readonly arquivo: string;
+  readonly padrao: RegExp;
+}[] = [
+  {
+    // Java sob `app/`: a versão é a do BOM do OpenTelemetry, e não de imagem.
+    quando: /^app\//u,
+    nome: "OpenTelemetry Java",
+    arquivo: "app/pom.xml",
+    padrao: /<artifactId>opentelemetry-bom<\/artifactId>\s*<version>([^<]+)<\/version>/u,
+  },
+  {
+    quando: /^uf\//u,
+    nome: "Splunk Universal Forwarder",
+    arquivo: "compose.yaml",
+    padrao: /image:\s*splunk\/universalforwarder:([^\s]+)/u,
+  },
+  {
+    quando: /^(idx|hf)\//u,
+    nome: "Splunk Enterprise",
+    arquivo: "compose.yaml",
+    padrao: /image:\s*splunk\/splunk:([^\s]+)/u,
+  },
+  {
+    // O caso mais antigo, e agora o último: configuração de Collector na raiz.
+    quando: /^[^/]+$/u,
+    nome: "OpenTelemetry Collector",
+    arquivo: "compose.yaml",
+    padrao: /image:\s*otel\/opentelemetry-collector-contrib:([^\s]+)/u,
+  },
+];
+
 function versaoDoArquivo(arquivo: string): string {
   const lab = /^(labs\/[^/]+)\//u.exec(arquivo)?.[1];
   if (lab === undefined) {
@@ -100,33 +149,26 @@ function versaoDoArquivo(arquivo: string): string {
     );
   }
 
-  // Java sob `app/`: a versão é a do BOM do OpenTelemetry.
-  if (arquivo.startsWith(`${lab}/app/`)) {
-    const caminho = `${lab}/app/pom.xml`;
-    const pom = readFileSync(new URL(caminho, RAIZ), "utf8");
-    const achado =
-      /<artifactId>opentelemetry-bom<\/artifactId>\s*<version>([^<]+)<\/version>/u.exec(pom);
-    if (achado?.[1] === undefined) {
-      throw new Error(
-        `não achei a versão do opentelemetry-bom em ${caminho} — ` +
-          "a tela mostra esse número, e ele não pode ser escrito em dois lugares",
-      );
-    }
-    return `OpenTelemetry Java ${achado[1]}`;
-  }
-
-  // Qualquer outra coisa no lab é configuração, e quem a executa é a imagem.
-  const caminho = `${lab}/compose.yaml`;
-  const compose = readFileSync(new URL(caminho, RAIZ), "utf8");
-  const achado = /image:\s*otel\/opentelemetry-collector-contrib:([^\s]+)/u.exec(compose);
-  if (achado?.[1] === undefined) {
+  const relativo = arquivo.slice(lab.length + 1);
+  const executor = EXECUTORES.find((e) => e.quando.test(relativo));
+  if (executor === undefined) {
     throw new Error(
-      `não achei a tag da imagem do Collector em ${caminho} — ` +
-        `o exercício sobre "${arquivo}" mostra essa versão, e ela tem de sair de ` +
-        "onde o compose a declara",
+      `não sei o que executa "${arquivo}" — acrescente uma entrada em EXECUTORES. ` +
+        "A tela mostra a versão de quem executa o arquivo ao lado do código, e " +
+        "um número certo sobre a coisa errada é pior que número nenhum",
     );
   }
-  return `OpenTelemetry Collector ${achado[1]}`;
+
+  const caminho = `${lab}/${executor.arquivo}`;
+  const achado = executor.padrao.exec(readFileSync(new URL(caminho, RAIZ), "utf8"));
+  if (achado?.[1] === undefined) {
+    throw new Error(
+      `não achei a versão de ${executor.nome} em ${caminho} — ` +
+        `o exercício sobre "${arquivo}" mostra esse número, e ele tem de sair de ` +
+        "onde o lab já o declara, e não de uma segunda cópia",
+    );
+  }
+  return `${executor.nome} ${achado[1]}`;
 }
 
 export function montarExercicio(definicao: DefinicaoDeExercicio): ExercicioMontado {

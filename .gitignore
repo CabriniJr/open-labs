@@ -12,3 +12,7 @@ playwright-report/
 # Build local do lab Java: o repo guarda a fonte, não o artefato.
 target/
 dependency-reduced-pom.xml
+
+# Config local do Playwright: ela só troca o caminho do binário do Chromium
+# para o do contêiner em que o agente roda. Não é do projeto.
+apps/site/playwright.local.config.ts

@@ -42,3 +42,10 @@ export {
   lerSubmissoes,
 } from "./ler.js";
 export type { LeituraDeSubmissao } from "./ler.js";
+export {
+  conferirExercicios,
+  DistratorSchema,
+  exerciciosPorLab,
+  ExercicioSchema,
+} from "./exercicio.js";
+export type { DefinicaoDeExercicio, Distrator } from "./exercicio.js";

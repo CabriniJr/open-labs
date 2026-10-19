@@ -56,6 +56,9 @@ importers:
       '@ovh/otel-domain':
         specifier: workspace:*
         version: link:../../packages/otel-domain
+      '@ovh/splunk-domain':
+        specifier: workspace:*
+        version: link:../../packages/splunk-domain
       astro:
         specifier: ^5.2.0
         version: 5.18.2(@types/node@26.4.0)(rollup@4.63.0)(typescript@5.9.3)(yaml@2.9.0)
@@ -172,6 +175,24 @@ importers:
       '@ovh/depth-ui':
         specifier: workspace:*
         version: link:../depth-ui
+      '@ovh/handbook-format':
+        specifier: workspace:*
+        version: link:../handbook-format
+      '@ovh/mermaid-skeleton':
+        specifier: workspace:*
+        version: link:../mermaid-skeleton
+
+  packages/splunk-domain:
+    dependencies:
+      '@ovh/depth-core':
+        specifier: workspace:*
+        version: link:../depth-core
+      '@ovh/depth-ui':
+        specifier: workspace:*
+        version: link:../depth-ui
+      '@ovh/handbook-format':
+        specifier: workspace:*
+        version: link:../handbook-format
       '@ovh/mermaid-skeleton':
         specifier: workspace:*
         version: link:../mermaid-skeleton

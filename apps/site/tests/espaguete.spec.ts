@@ -1,7 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { cruzamentos as cruzamentosDe, meada } from "@ovh/depth-ui";
-import { MAPA_OTEL } from "../src/data/roadmap.js";
-import { MAPA_CPU } from "../src/data/roadmap-cpu.js";
+import { HANDBOOKS } from "../src/data/handbooks.js";
 
 /**
  * Quanto espaguete cada figura tem, medido no que foi desenhado.
@@ -158,6 +157,15 @@ const TETOS = [
    * pipeline é contada em lugares diferentes, que não é o que o Collector faz.
    */
   { lab: "labs/collector-pipeline/", nome: "a pipeline do collector", cruzamentos: 1 },
+  /*
+   * Zero, e aqui o número é o argumento: a tese do lab é que o parsing
+   * acontece numa estação, e um desenho em linha reta é o que diz isso. As
+   * duas linhas entre o nível do meio e o indexador saem de portas diferentes
+   * e chegam na mesma caixa sem se cruzar, porque elas não são rotas
+   * alternativas — são naturezas diferentes de carga, e só uma viaja por run.
+   * O dia em que este número subir, o desenho deixou de ser uma esteira.
+   */
+  { lab: "labs/splunk-ingest/", nome: "a ingestão do Splunk", cruzamentos: 0 },
   // A landing: o herói roda o mesmo motor e entra na mesma medida. Três caixas
   // em fila não têm por que cruzar — e é justamente por ser óbvio que o teto
   // fica escrito: o dia em que ele subir, subiu por alguma coisa.
@@ -313,15 +321,19 @@ for (const teto of TETOS) {
  * continua verde cobrindo os antigos, que é o defeito que este repositório já
  * pagou em outras guardas.
  *
- * A fonte é o roadmap, que é onde um lab é declarado publicado. Lab com
- * `status: "available"` e `href` de verdade é um lab que tem palco, e palco tem
- * desenho.
+ * A fonte é o **catálogo**, e era o roadmap até 19/10/2026. A troca tem razão
+ * mecânica: o roadmap só existe para os dois handbooks mais antigos — é o `map`
+ * com coordenadas, que é a lacuna declarada do contrato em arquivo. Um handbook
+ * submetido não tem mapa nenhum, então um lab dele passava inteiro por fora
+ * desta varredura, e por fora da de rolagem horizontal. O catálogo tem os labs
+ * dos dois tipos de handbook, e é lá que `status: "available"` significa "tem
+ * página".
  */
 const PUBLICADOS: readonly string[] = [
   ...new Set(
-    [...MAPA_OTEL.labs, ...MAPA_CPU.labs]
-      .filter((lab) => lab.status === "available" && lab.href !== "#")
-      .map((lab) => `${lab.href.replace(/\/$/u, "")}/`),
+    HANDBOOKS.flatMap((h) => h.labs)
+      .filter((lab) => lab.status === "available" && (lab.href ?? "#") !== "#")
+      .map((lab) => `${(lab.href ?? "").replace(/\/$/u, "")}/`),
   ),
 ].sort();
 
