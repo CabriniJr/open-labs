@@ -30,7 +30,8 @@ test("edita o currículo e exporta o mesmo bundle consumido pelo SDK", async ({ 
   const pending = page.waitForEvent("download");
   await page.getByRole("button", { name: "Export bundle" }).click();
   const result = JSON.parse((await downloaded(await pending)).toString());
-  expect(result.bundleVersion).toBe("openlabs/bundle/v1");
+  expect(result.bundleVersion).toBe("openlabs/bundle/v2");
+  expect(result.assessments.apiVersion).toBe("openlabs/assessment-set/v1");
   expect(result.handbook.name).toBe("Kubernetes at Work");
   expect(result.articles[0].markdown).toContain("#src-resources");
   await importBundle(page, result);

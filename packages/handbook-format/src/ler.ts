@@ -3,6 +3,8 @@ import { conferirArquivosDeArtigo } from "./conferir.js";
 import type { HandbookNormalizado } from "./versoes.js";
 import { lerManifesto, type LeituraDeManifesto } from "./manifesto.js";
 export { lerManifesto } from "./manifesto.js";
+import { readAssessmentFile } from "./assessment-file.js";
+import type { AssessmentSet } from "./assessments.js";
 
 /**
  * Ler handbooks do disco, e **falhar alto**.
@@ -20,7 +22,7 @@ export { lerManifesto } from "./manifesto.js";
 export const PASTA_DE_SUBMISSOES = "handbooks";
 export const NOME_DO_MANIFESTO = "handbook.yaml";
 
-export type LeituraDeSubmissao = LeituraDeManifesto;
+export type LeituraDeSubmissao = LeituraDeManifesto & { readonly assessments?: AssessmentSet };
 
 /**
  * Lê a submissão de um diretório.
@@ -76,9 +78,11 @@ export function lerSubmissao(
     problemas.push(...conferirArquivosDeArtigo(lido.handbook, slugs, pasta));
   }
 
+  const assessment = readAssessmentFile(dir, lido.handbook);
+  problemas.push(...assessment.problemas);
   return problemas.length > 0
     ? { id: lido.handbook.id, origem: caminho, problemas }
-    : lido;
+    : { ...lido, ...assessment };
 }
 
 /** Todas as submissões de `<raiz>/handbooks/`, em ordem de id. */

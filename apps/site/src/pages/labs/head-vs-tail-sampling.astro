@@ -1,4 +1,5 @@
 ---
+import LabAssessment from "../../components/LabAssessment.astro";
 import { EXERCICIOS_DA_AMOSTRAGEM, MAL_ENTENDIDOS_DA_AMOSTRAGEM } from "@ovh/otel-domain";
 import { AmostragemLab } from "../../components/AmostragemLab.tsx";
 import { Exercicio } from "../../components/Exercicio.tsx";
@@ -195,6 +196,7 @@ const exercicios = EXERCICIOS_DA_AMOSTRAGEM.map(montarExercicio);
         </p>
       </div>
     </section>
+    <LabAssessment href="labs/head-vs-tail-sampling" />
   </main>
 
   <SiteFooter />

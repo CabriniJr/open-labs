@@ -23,15 +23,15 @@ export async function buildDeliveryHost() {
 
   // Preserve the actual bundled dependencies' license notices in the release.
   mkdirSync(join(templateDir, "third-party"), { recursive: true });
-  for (const [name, from] of [["react", ""], ["react-dom", ""], ["scheduler", "node_modules/react-dom"], ["marked", "apps/site"], ["dompurify", "apps/site"], ["yaml", "packages/handbook-format"], ["zod", "packages/handbook-format"]]) {
+  for (const [name, from, entry] of [["react", ""], ["react-dom", ""], ["scheduler", "node_modules/react-dom"], ["marked", "apps/site"], ["dompurify", "apps/site"], ["yaml", "packages/handbook-format"], ["zod", "packages/handbook-format"], ["@noble/hashes", "packages/handbook-format", "@noble/hashes/sha2.js"]]) {
     const require = createRequire(realpathSync(join(root, from, "package.json")));
-    let directory = dirname(require.resolve(name));
+    let directory = dirname(require.resolve(entry ?? name));
     while (!existsSync(join(directory, "package.json")) || JSON.parse(readFileSync(join(directory, "package.json"), "utf8")).name !== name) {
       const parent = dirname(directory); if (parent === directory) throw new Error(`Cannot find license package: ${name}`); directory = parent;
     }
     const licenses = readdirSync(directory).filter((f) => /^(license|copying|notice)(\.|$)/iu.test(f));
     if (!licenses.length) throw new Error(`No license notice found for ${name}`);
-    for (const file of licenses) cpSync(join(directory, file), join(templateDir, "third-party", `${name}-${file}`));
+    for (const file of licenses) cpSync(join(directory, file), join(templateDir, "third-party", `${name.replaceAll("/", "-").replaceAll("@", "")}-${file}`));
   }
   writeFileSync(join(templateDir, "README.md"), "# OpenLabs runnable handbook\n\nRequires Node.js 24 or newer. Extract the complete archive and run:\n\n    node serve.mjs --port 4173\n\nOpen http://127.0.0.1:4173. No npm install or repository checkout is needed.\nThe server checks every release asset before listening and serves only pinned files.\nThe complete directory can also be hosted by your existing static server under HTTPS.\nUse your organization's access controls for private hosting.\nContent and reviewed lab implementations are packaged separately inside one release.\nThe content checksum detects changes; it is not a publisher signature.\nSee release.json, LICENSE, LICENSE-content and third-party/ for provenance.\n");
   const paths = readdirSync(templateDir, { recursive: true, withFileTypes: true }).filter((f) => f.isFile()).map((f) => relative(templateDir, join(f.parentPath, f.name)).replaceAll("\\", "/")).sort();

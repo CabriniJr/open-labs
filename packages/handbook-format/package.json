@@ -1,6 +1,6 @@
 {
   "name": "@ovh/handbook-format",
-  "version": "0.1.0-alpha.3",
+  "version": "0.1.0-alpha.4",
   "license": "Apache-2.0",
   "private": true,
   "type": "module",
@@ -20,6 +20,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@noble/hashes": "2.0.1",
     "yaml": "^2.5.0",
     "zod": "^3.23.8"
   },

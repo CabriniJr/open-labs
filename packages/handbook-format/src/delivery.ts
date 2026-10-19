@@ -1,11 +1,12 @@
 import { z } from "zod";
 import { IdSchema } from "./schema.js";
 import { labsExigidos, lerPacote, type PacoteDeHandbook } from "./bundle.js";
+import { VersionSchema } from "./version.js";
+export { VersionSchema } from "./version.js";
 
 export const LAB_API_VERSION = "openlabs/lab/v1";
 export const HOST_TEMPLATE_API_VERSION = "openlabs/host-template/v1";
 export const DELIVERY_API_VERSION = "openlabs/delivery/v1";
-export const VersionSchema = z.string().regex(/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*))*)?$/u, "Use an explicit version, for example 0.1.0-alpha.1");
 export const AssetPathSchema = z.string().min(1).refine((s) => /^[a-zA-Z0-9_./-]+$/u.test(s) && !s.startsWith("/") && s.split("/").every((p) => p !== "" && p !== "." && p !== ".."), "Use a relative artifact path without traversal");
 const RuntimeSchema = z.object({ id: IdSchema, version: VersionSchema }).strict();
 const InteractionSchema = z.discriminatedUnion("kind", [

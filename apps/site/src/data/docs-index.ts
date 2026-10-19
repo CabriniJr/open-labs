@@ -57,6 +57,7 @@ export const THEMES: readonly Theme[] = [
       { id: "standalone-authoring", title: "Independent handbook authoring", status: "draft" },
       { id: "studio", title: "Handbook Studio", status: "draft" },
       { id: "delivery", title: "Runnable handbook deliveries", status: "draft" },
+      { id: "assessments", title: "Interactive assessments", status: "draft" },
       { id: "authoring", title: "Guia de autoria", status: "draft" },
       { id: "model-format", title: "Formato do modelo", status: "proposal" },
       { id: "stack", title: "O que reaproveitar", status: "draft" },

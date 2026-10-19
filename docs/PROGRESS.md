@@ -1,5 +1,35 @@
 # Progresso
 
+## Avaliações interativas e revisão por educadores
+
+19/10/2026. Checkpoints no fim dos labs e um simulado final por handbook usam
+o novo contrato `assessment-set/v1`, sem depender de motor de fluxos.
+Escolha simples, múltipla resposta, ordenação, associação e análise de código
+têm correção determinística. Nota 0–10, pontos, percentual e aproveitamento
+por objetivo aparecem após a entrega, junto de gabarito, razões dos distratores,
+fontes e sugestão de revisão prática. Ordenação/associação oferecem arraste e
+controles equivalentes de teclado/toque. Tentativas entregues ficam travadas;
+uma nova tentativa preserva histórico local de até 20 registros por versão.
+
+O Studio incorpora `assessments.json` nas fontes, autosave, briefing e prévia.
+O educador revisa questões com checklist, nome, notas, estado e digest do
+conteúdo/fontes/objetivo. Mudanças tornam a aprovação obsoleta. Relatórios de
+tentativa podem ser abertos e recalculados contra o banco original. Identidade
+autenticada, turmas e diário compartilhado ainda são fronteiras de serviço.
+
+O Kubernetes tem três questões de checkpoint e sete no final, com os cinco
+tipos e quatro objetivos. As questões são originais, sustentadas pela documentação
+Kubernetes CC BY 4.0, e estão explicitamente em revisão. Não foi inventada
+aprovação humana nem copiado banco externo. Outros handbooks exibem que suas
+avaliações ainda não foram escritas. Proveniência e licença de itens externos
+fazem parte do contrato para futuras importações.
+
+`handbook-format` alpha.4 lê bundles v1 e v2: conteúdo sem avaliações mantém
+v1 exato; avaliações usam v2, com exemplares congelados de conformidade.
+O manifesto segue v1; o host alpha.2 monta as mesmas avaliações nas entregas
+independentes. Resultados dos portões completos ficam registrados na PR.
+O capítulo **Interactive assessments** detalha a estrutura e os limites.
+
 ## Entregas executáveis e contratos de interação
 
 19/10/2026. A integração de Mermaid, SDK independente e Studio foi mergeada

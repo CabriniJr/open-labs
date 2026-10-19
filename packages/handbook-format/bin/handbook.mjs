@@ -36,7 +36,7 @@ try {
     const lido = lerPacote(JSON.parse(readFileSync(resolve(positionals[0]), "utf8")));
     if (!lido.ok) throw new Error(lido.errors.join("\n"));
     const p = lido.value;
-    const summary = { id: p.handbook.id, bundleVersion: p.bundleVersion, apiVersion: p.handbook.apiVersion, articles: p.articles.length, requiredLabs: labsExigidos(p) };
+    const summary = { id: p.handbook.id, bundleVersion: p.bundleVersion, apiVersion: p.handbook.apiVersion, articles: p.articles.length, requiredLabs: labsExigidos(p), ...(p.assessments ? { assessments: p.assessments.assessments.length, questions: p.assessments.questions.length } : {}) };
     if (values.json) console.log(JSON.stringify(summary, null, 2));
     else console.log(`✓ ${summary.id}: ${summary.articles} artigo(s), ${summary.apiVersion}\nLabs exigidos da instalação (código não incluído): ${summary.requiredLabs.map((l) => l.href).join(", ") || "nenhum"}`);
   } else {
@@ -47,7 +47,7 @@ try {
       if (!report.ok) process.exitCode = 1;
     } else {
       if (!project.handbook || project.problemas.length) throw new Error(relatoDeProblemas(project.origem, project.problemas));
-      const bundle = criarPacote(project.handbook, project.articles, new Date().toISOString().slice(0, 10));
+      const bundle = criarPacote(project.handbook, project.articles, new Date().toISOString().slice(0, 10), project.assessments);
       const json = `${JSON.stringify(bundle, null, 2)}\n`;
       if (values.out) {
         writeFileSync(resolve(values.out), json);

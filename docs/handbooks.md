@@ -86,6 +86,12 @@ fields:
 
 ## 3. Articles
 
+An optional `assessments.json` beside the manifest adds exit checkpoints for
+available labs and one cumulative assessment. It is content with its own
+versioned contract, source/provenance metadata and educator review records.
+See **Interactive assessments** in the authoring index. When present it travels
+in bundle v2; the manifest and older content-only bundle v1 remain readable.
+
 One Markdown file per article, in `apps/site/src/content/articles/<id>/`, named
 `<article-id>.md` — the same id the manifest uses. The frontmatter:
 

@@ -30,6 +30,22 @@ describe("o projeto do Studio usa o mesmo contrato do SDK", () => {
     const changed = { ...project, articles: [{ ...project.articles[0]!, markdown: project.articles[0]!.markdown + "\n[claim](#src-invented)" }] };
     expect(validateProject(changed).diagnostics).toContainEqual(expect.objectContaining({ file: "articles/a-pod-is-not-its-container.md", message: expect.stringContaining("invented") }));
   });
+  it("mantém avaliações e rascunhos inválidos em fontes, autosave e bundle v2", () => {
+    const source = readFileSync(new URL("../../../../packages/handbook-format/src/conformance/assessment-set-v1.json", import.meta.url), "utf8");
+    const assessed = { ...project, assessments: source };
+    expect(validateProject(assessed).diagnostics).toEqual([]);
+    expect(readDraft(saveableDraft(assessed))).toEqual(assessed);
+    expect(projectFromZip(projectZip(assessed))).toEqual(assessed);
+    const bundle = exportProject(assessed, "2026-10-19");
+    expect(JSON.parse(bundle).bundleVersion).toBe("openlabs/bundle/v2");
+    expect(validateProject(projectFromBundle(bundle)).assessments).toEqual(JSON.parse(source));
+    expect(draftArticle(assessed, "a-rollout-is-not-a-restart").assessments).toBe(source);
+    const invalid = { ...assessed, assessments: "{unfinished" };
+    expect(projectFromZip(projectZip(invalid)).assessments).toBe("{unfinished");
+    expect(validateProject(invalid).diagnostics.some((d) => d.file === "assessments.json")).toBe(true);
+    expect(() => exportProject(invalid, "2026-10-19")).toThrow(/diagnostics/u);
+    expect(aiBrief(assessed, "Improve assessment distractors")).toContain(JSON.stringify(source));
+  });
   it("rascunhar um item atualiza o currículo sem fabricar fontes", () => {
     const drafted = draftArticle(project, "a-rollout-is-not-a-restart");
     const result = validateProject(drafted);

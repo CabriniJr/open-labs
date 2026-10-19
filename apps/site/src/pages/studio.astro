@@ -7,9 +7,11 @@ import { HANDBOOKS } from "../data/handbooks";
 import { url } from "../lib/urls";
 import manifest from "../../../../handbooks/kubernetes/handbook.yaml?raw";
 import article from "../content/articles/kubernetes/a-pod-is-not-its-container.md?raw";
+import assessments from "../../../../handbooks/kubernetes/assessments.json?raw";
 import "../styles/docs.css";
 import "../components/HandbookStudio.css";
-const example = { manifest, articles: [{ id: "a-pod-is-not-its-container", markdown: article }] };
+import "../components/AssessmentPlayer.css";
+const example = { manifest, articles: [{ id: "a-pod-is-not-its-container", markdown: article }], assessments };
 const hostLabs = HANDBOOKS.flatMap((h) => h.labs).filter((l) => l.status === "available" && l.href?.startsWith("labs/")).map((l) => ({ href: l.href!, url: url(l.href!), title: l.title }));
 ---
 <Base title="Handbook Studio — OpenLabs" description="Author a guided concept experience: edit your curriculum and articles, inspect contract diagnostics, preview the handbook, and export validated content.">

@@ -1,4 +1,5 @@
 ---
+import LabAssessment from "../../components/LabAssessment.astro";
 import { EXERCICIOS_DA_ANATOMIA } from "@ovh/otel-domain";
 import { AnatomiaLab } from "../../components/AnatomiaLab.tsx";
 import { Exercicio } from "../../components/Exercicio.tsx";
@@ -145,6 +146,7 @@ const exercicios = EXERCICIOS_DA_ANATOMIA.map(montarExercicio);
         </p>
       </div>
     </section>
+    <LabAssessment href="labs/anatomy-of-a-trace" />
   </main>
 
   <SiteFooter />

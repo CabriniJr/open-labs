@@ -29,8 +29,9 @@ the compositional flow engine still uses Mermaid as its structural contract.
 
 **Open project** accepts either:
 
-- a validated `openlabs/bundle/v1` JSON export from the CLI or Studio;
-- a source ZIP containing `handbook.yaml` and `articles/<id>.md`, optionally
+- a validated `openlabs/bundle/v1` or `v2` JSON export from the CLI or Studio;
+- a source ZIP containing `handbook.yaml`, optional `assessments.json` and
+  `articles/<id>.md`, optionally
   under one enclosing folder. A source ZIP can contain an unfinished draft.
 
 The source ZIP is the standalone project's layout. To prepare one from that
@@ -38,11 +39,12 @@ project, archive only those files:
 
 ```sh
 zip -r networking-sources.zip handbook.yaml articles
+# Include assessments.json too when the project has a bank.
 ```
 
 **Download sources** preserves the current file text, including invalid text.
-**Export bundle** validates through the SDK before writing the existing v1
-artifact. Importing a bundle reconstructs editable YAML from its normalized
+**Export bundle** validates through the SDK before writing v1 for content alone
+or v2 when an assessment bank is included. Importing a bundle reconstructs editable YAML from its normalized
 metadata; comments that were never in the bundle cannot be recovered.
 The source ZIP retains the exact YAML text. Creating an article is a structured
 curriculum edit and rewrites the manifest using the v1 writer.
@@ -72,6 +74,14 @@ model, send your files to an AI provider or hold an API key. You decide where
 to share the brief.
 
 ## Deliver a runnable handbook
+
+**Assessments** adds or imports `assessments.json`. Use its source editor and
+diagnostics to author the bank, **Preview assessment** to answer a checkpoint
+or final, and the educator checklist to review individual questions. Exported
+source ZIPs preserve draft bank text. Content bundles with assessments use v2;
+content-only bundles retain v1. **Open attempt report** recomputes a submitted
+result against its original bank. The chapter **Interactive assessments** covers
+scoring, review states, public-bank provenance and current service boundaries.
 
 Open **Delivery** to inspect the installed labs, interaction types and exact
 versions. Set the handbook release version and select **Download runnable

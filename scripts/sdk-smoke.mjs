@@ -73,6 +73,22 @@ try {
     assert.equal(session.state, 5); assert.equal(session.length, 2);
   `], { cwd: consumer, stdio: "pipe" });
   const invalid = JSON.parse(readFileSync(join(consumer, "kubernetes.json"), "utf8"));
+  copyFileSync(join(root, "handbooks", "kubernetes", "assessments.json"), join(kube, "assessments.json"));
+  cli(["check", "--dir", kube]);
+  cli(["export", "--dir", kube, "--out", join(consumer, "assessed.json")]);
+  execFileSync(process.execPath, ["--input-type=module", "-e", `
+    import assert from 'node:assert/strict';
+    import { readFileSync } from 'node:fs';
+    import { lerPacote, gradeAssessment, questionDigest, reviewIsCurrent } from '@ovh/handbook-format/contract';
+    const read = lerPacote(JSON.parse(readFileSync('assessed.json', 'utf8'))); assert(read.ok);
+    assert.equal(read.value.bundleVersion, 'openlabs/bundle/v2');
+    const bank = read.value.assessments;
+    const answers = Object.fromEntries(bank.questions.map(q => [q.id, q.type === 'matching' ? Object.fromEntries(q.items.map(i => [i.id, i.target])) : q.correct]));
+    assert.equal(gradeAssessment(bank, 'kubernetes-final', answers).grade, 10);
+    const q = bank.questions[0];
+    q.review = { status: 'approved', reviewer: 'External smoke fixture', reviewedAt: new Date().toISOString(), contentDigest: questionDigest(q, bank), notes: 'Fixture only' };
+    assert(reviewIsCurrent(q, bank)); q.points += 1; assert(!reviewIsCurrent(q, bank));
+  `], { cwd: consumer, stdio: 'pipe' });
   invalid.bundleVersion = "openlabs/bundle/v99";
   writeFileSync(join(consumer, "future.json"), JSON.stringify(invalid));
   assert.match(cli(["inspect", "future.json"], consumer, 1).stderr, /bundleVersion/u);

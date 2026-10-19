@@ -12,6 +12,9 @@ import {
 } from "../../data/handbooks";
 import "../../components/Roadmap.css";
 import "../../styles/docs.css";
+import { bankForHandbook } from "../../lib/assessment-catalog";
+import { AssessmentPlayer } from "../../components/AssessmentPlayer";
+import "../../components/AssessmentPlayer.css";
 
 export function getStaticPaths() {
   return HANDBOOKS.map((handbook) => ({ params: { id: handbook.id }, props: { handbook } }));
@@ -22,6 +25,8 @@ interface Props {
 }
 
 const { handbook } = Astro.props;
+const assessmentBank = bankForHandbook(handbook);
+const finalAssessment = assessmentBank?.assessments.find((a) => a.scope.kind === "handbook");
 
 /**
  * Todo handbook tem a mesma anatomia — roadmap, artigos, labs — e a página é
@@ -171,6 +176,9 @@ if (orfaos.length > 0) {
           ))
         }
       </div>
+    </section>
+    <section class="hb-section" id="assessment" aria-label="Final handbook assessment">
+      {assessmentBank && finalAssessment ? <AssessmentPlayer bank={assessmentBank} assessmentId={finalAssessment.id} client:visible /> : <><h2>Handbook assessment</h2><p class="hb-section__lede">The cumulative assessment has not been authored yet. Available labs and articles remain open for study.</p></>}
     </section>
   </main>
 

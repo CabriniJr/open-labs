@@ -1,4 +1,5 @@
 ---
+import LabAssessment from "../../components/LabAssessment.astro";
 import { CpuLab } from "../../components/CpuLab.tsx";
 import SiteFooter from "../../components/SiteFooter.astro";
 import SiteNav from "../../components/SiteNav.astro";
@@ -53,6 +54,7 @@ import "../../components/Explorer.css";
     <section class="lab-stage">
       <CpuLab client:only="react" />
     </section>
+    <LabAssessment href="labs/cpu" />
   </main>
 
   <SiteFooter />

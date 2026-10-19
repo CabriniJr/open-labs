@@ -5,7 +5,7 @@ Pre-release authoring SDK for OpenLabs handbooks. Node.js 24 or newer.
 Install a release tarball in your own project, then use the CLI:
 
 ```sh
-npm install /path/to/ovh-handbook-format-0.1.0-alpha.3.tgz
+npm install /path/to/ovh-handbook-format-0.1.0-alpha.4.tgz
 npx --no-install openlabs-handbook new networking --github your-handle --name "Your Name"
 cd networking
 ../node_modules/.bin/openlabs-handbook check
@@ -42,7 +42,7 @@ The SDK package version, the handbook `apiVersion`, and `bundleVersion` serve
 different purposes. An alpha SDK can continue to read the existing v1 contract.
 The bundle format remains compatible with the original export command.
 
-Alpha.3 also exports lab descriptors (`flow`, `state`, `direct`), host templates
+The SDK also exports lab descriptors (`flow`, `state`, `direct`), host templates
 and runnable delivery contracts. `flow` requires its canonical Mermaid source;
 the other kinds do not require the flow engine. Exact runtime and implementation
 versions are checked independently of content versions.
@@ -64,3 +64,17 @@ include a host implementation or load code from a received bundle.
 
 Code: Apache-2.0. Content bundled by authors keeps its own license; this package
 does not grant a license to that content.
+
+Alpha.4 adds optional `assessments.json` in independent projects. The CLI exports
+it in bundle v2 while retaining the original content-only v1 reader/exporter.
+`readAssessments`, `gradeAssessment` and `readAssessmentAttempt` provide portable
+validation and correction for single choice, multiple response, ordering,
+matching and code analysis. Results include points, grade, achievement percentage
+and objective breakdown. Questions require resolutions, distractor rationale,
+remediation, source references and original/adapted/reproduced provenance.
+
+`questionDigest` and `reviewIsCurrent` bind educator approval to the question,
+referenced sources and objective. They record editorial review, not authenticated
+identity. Attempt reports pin the bank content and are regraded on import;
+they do not establish a trusted student identity. The host controls when to show
+resolutions. This SDK never executes a received code snippet or a grading script.

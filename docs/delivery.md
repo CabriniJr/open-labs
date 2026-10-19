@@ -33,7 +33,10 @@ duplicate identities and mismatched descriptors prevent release or execution.
 
 ## Independent content and runtime releases
 
-The existing `openlabs/handbook/v1` and `openlabs/bundle/v1` remain unchanged.
+The existing `openlabs/handbook/v1` and `openlabs/bundle/v1` remain readable.
+Optional assessment banks travel in `openlabs/bundle/v2`; content-only exports
+keep v1. The alpha.2 portable host mounts end-of-lab and final assessments with
+late feedback, objective scores and local attempt reports. See **Interactive assessments**.
 Authors can edit and release content without changing an engine. A bundle
 contains the normalized curriculum and Markdown; it never installs lab code.
 
@@ -45,7 +48,7 @@ package versions and an author's release version have different purposes.
 Explicit release versions use `major.minor.patch`, optionally with a SemVer
 prerelease suffix. This alpha uses exact compatibility, with no range solver.
 
-The generic assembly API lives in `@ovh/handbook-format/contract` (alpha.3).
+The generic assembly API lives in `@ovh/handbook-format/contract` (alpha.4).
 The separate `handbook-catalog` package holds this host's reviewed lab catalog.
 It keeps subject-specific installation decisions out of the SDK.
 
