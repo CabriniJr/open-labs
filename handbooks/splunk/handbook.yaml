@@ -1,0 +1,137 @@
+# O handbook de Splunk, e ele foi submetido pelo caminho dourado — este arquivo
+# é a prova de que o caminho serve para um assunto que a casa não conhecia.
+#
+# Por que Splunk tem lugar num motor de fluxos: o produto inteiro é um
+# **pipeline**. A documentação dele não descreve módulos, descreve quatro fases
+# por onde o dado passa — input, parsing, indexing, search — e a regra que mais
+# custa dinheiro em produção é sobre QUAL COMPONENTE executa cada fase. Isso não
+# é um diagrama: é coisa se movendo entre peças, que é exatamente o que este
+# motor roda.
+#
+# O caminho dourado inteiro está em docs/handbooks.md.
+apiVersion: openlabs/handbook/v1
+
+id: splunk
+name: Splunk Visual Handbook
+subject: splunk
+tagline: Four phases, and the only question that matters is which machine runs each one.
+blurb: >-
+  Splunk is a pipeline before it is a search bar. A forwarder that does not
+  parse, a parsing phase that happens exactly once, a bucket that ages on disk,
+  and a search that is split between two tiers. Every model here runs, and the
+  numbers come out of the run.
+model: splunk.model
+stage: building
+
+# Quem mantém. É daqui que sai o CODEOWNERS deste diretório.
+maintainers:
+  - name: Luigi Cabrini
+    github: CabriniJr
+
+# Terracota, e a escolha é por distância: azul é do OTel, verde-água é do RISC-V
+# e violeta é do de algoritmos. O acento foi MEDIDO antes de ser escolhido —
+# 6,81:1 sobre o papel claro e 7,46:1 sobre o escuro — porque identidade que
+# custa legibilidade não é identidade, é banner.
+#
+# A espécie mais proeminente é o evento já quebrado (o que o parsing produziu);
+# a mais discreta é o bloco cru de 64K, que é o que o forwarder universal
+# manda e que ninguém consegue pesquisar.
+theme:
+  light:
+    accent: "#9a3412"
+    flow: "#9a3412"
+    dropped: "#b8442a"
+    ok: "#3f7a52"
+    mutation: "#c2410c"
+    processor: "#9a3412"
+    conduit: "#3f7a52"
+    species: ["#9a3412", "#0e7490", "#6d28d9", "#3f7a52"]
+  dark:
+    accent: "#f0883e"
+    flow: "#f0883e"
+    processor: "#f0883e"
+    species: ["#f0883e", "#22d3ee", "#c4a7f7", "#3fb950"]
+
+# As fases seguem o pipeline da própria documentação, e a ordem é o currículo:
+# cada uma só faz sentido depois da anterior, e é por isso que quase todo erro
+# de Splunk em produção é um ajuste feito na fase errada.
+phases:
+  - number: 1
+    title: Where the data comes in
+    line: "Inputs, forwarders, and what a universal forwarder actually sends."
+  - number: 2
+    title: Where a byte stream becomes events
+    line: Parsing happens once, on the first component that can do it.
+  - number: 3
+    title: Where it lands
+    line: "An index is directories that age: hot, warm, cold, frozen."
+  - number: 4
+    title: What the search can read
+    line: What was decided at index time, and what is still negotiable.
+  - number: 5
+    title: When one machine is not enough
+    line: Load balancing, replication, and the two factors that are not the same promise.
+  - number: 6
+    title: Who owns the configuration
+    line: Deployment apps, layering, and why the same file wins in two different places.
+
+articles:
+  - id: a-universal-forwarder-does-not-parse
+    title: A universal forwarder does not parse
+    status: available
+    href: handbooks/splunk/articles/a-universal-forwarder-does-not-parse
+    phase: 1
+  - id: an-input-is-a-promise-about-metadata
+    title: An input is a promise about metadata
+    status: coming
+    phase: 1
+  - id: parsing-happens-once
+    title: Parsing happens once, and you choose where
+    status: available
+    href: handbooks/splunk/articles/parsing-happens-once
+    phase: 2
+  - id: a-bucket-is-a-directory-that-ages
+    title: A bucket is a directory that ages
+    status: available
+    href: handbooks/splunk/articles/a-bucket-is-a-directory-that-ages
+    phase: 3
+  - id: index-time-is-a-decision-you-keep
+    title: Index time is the decision you cannot take back
+    status: coming
+    phase: 4
+  - id: the-search-head-delegates-what-it-can
+    title: The search head delegates what it can
+    status: coming
+    phase: 4
+  - id: two-factors-two-promises
+    title: Replication is durability; search factor is patience
+    status: coming
+    phase: 5
+  - id: the-deployment-server-is-pull
+    title: The deployment server does not push
+    status: coming
+    phase: 6
+
+labs:
+  - id: splunk-ingest
+    title: Where parsing happens, and what it costs
+    status: available
+    phase: 2
+    href: labs/splunk-ingest
+  - id: splunk-buckets
+    title: An index ageing, bucket by bucket
+    status: available
+    phase: 3
+    href: labs/splunk-buckets
+  - id: splunk-search-split
+    title: What runs on the indexer, and what comes up to the search head
+    status: coming
+    phase: 4
+  - id: splunk-cluster
+    title: A peer dies, and the two factors answer differently
+    status: coming
+    phase: 5
+  - id: splunk-config-layers
+    title: The same setting, in four files
+    status: coming
+    phase: 6

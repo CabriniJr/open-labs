@@ -2968,3 +2968,83 @@ em TypeScript. As duas coisas estão em `docs/handbooks.md` e na ADR §10, com o
 Estado: **1354 unitários (110 arquivos)**, typecheck, fronteira, catálogo, `handbooks`,
 `codeowners`, build (46 páginas) e varredura de links verdes. CI ganhou os dois portões
 novos.
+
+## Entrega 20 — o quarto handbook, e ele veio de fora
+
+**19/10/2026.** Splunk, submetido pelo caminho dourado. Dois labs de fluxo, três artigos,
+seis exercícios, duas contrapartes que sobem, e a confirmação do que a entrega 19 prometeu:
+`handbooks/splunk/handbook.yaml` é o manifesto inteiro, e o CODEOWNERS saiu dele.
+
+### Por que Splunk tem lugar num motor de fluxos
+
+O produto é um pipeline antes de ser uma barra de busca. A documentação dele não descreve
+módulos, descreve **quatro fases** por onde o dado passa — input, parsing, indexing,
+search — e a regra que mais custa em produção é sobre qual componente executa cada fase.
+Isso não é um diagrama: é coisa se movendo entre peças, que é o que este motor roda.
+
+### Lab 1 (fase 2): onde o parsing acontece
+
+A fase de parsing acontece **uma vez**, no primeiro componente capaz dela. Disso sai um
+defeito que não dá erro nenhum: um `props.conf` com `LINE_BREAKER` é correto ou é inerte
+dependendo de em qual máquina está. Três lugares × duas topologias = seis combinações, e
+**duas** funcionam.
+
+O terceiro experimento é o que acontece com times que nunca tocaram na configuração: alguém
+põe um heavy forwarder no caminho por razão de rede, a fase se muda com ele, e o stack trace
+de doze linhas volta a entrar como doze eventos. Ninguém editou nada.
+
+### Lab 2 (fase 3): a escada dos baldes
+
+Até onde dá para pesquisar **não é uma configuração** — é o que sobra da conta entre quatro
+limites e o volume diário. Com os defaults de verdade (500 000 MB de índice, 188 697 600
+segundos de retenção) e 20 GB em disco por dia, a janela é de 26 dias. O número 26 não está
+escrito em lugar nenhum, e é por isso que esta pergunta é respondida errado de boa-fé:
+quem responde cita o número da configuração que tem o nome da coisa perguntada.
+
+E congelar é **apagar**, a menos que alguém tenha escrito `coldToFrozenDir`. Ligar e desligar
+o arquivo no lab não muda nenhum outro número da tela — é a diferença invisível.
+
+### O teste que achou a região em que o meu modelo não vale
+
+Pedi 60 GB de índice com os 300 baldes mornos do default, e o teste reprovou com uma janela
+de 11 dias onde a conta dá 3. A causa é real: o morno sozinho cabe 225 GB, o Splunk congela
+o balde mais velho do **índice** (que ali seria um morno), e um nó deste motor conhece
+apenas o próprio estado.
+
+Em vez de modelar errado uma região inteira de configuração em silêncio, ela passou a ser
+**medida e nomeada na tela**: quando `maxWarmDBCount × maxDataSize` passa do limite do
+índice, o lab diz que o modelo para ali e manda baixar um dos dois. Limite declarado em vez
+de mentira pequena.
+
+### O que mudou na casa por causa do quarto handbook
+
+- **o formato do exercício saiu do `otel-domain` para o `handbook-format`**, junto das regras
+  que valem para todo exercício do repositório. Ele é domínio-neutro, e deixá-lo lá
+  obrigaria o segundo domínio a importar o primeiro ou a manter uma cópia;
+- **duas varreduras de tela passaram a sair do catálogo, e não do roadmap.** O `map` existe
+  só nos dois handbooks mais antigos, então um lab de handbook submetido passava inteiro por
+  fora da medição de cruzamentos e da de rolagem horizontal no telefone — a que já achou
+  três defeitos. Está em `docs/handbooks.md`: é o que um lab submetido ganha de graça;
+- **`versaoDoArquivo` virou tabela.** O mesmo `compose.yaml` do lab novo sobe duas imagens
+  de produtos diferentes, e qual delas executa um arquivo depende da pasta;
+- **a fronteira motor↔domínio deriva a lista de pacotes de domínio do disco** (a escrita à
+  mão tinha dois nomes e já estava velha: `algo-domain` nunca entrou nela), ganhou a lista
+  de termos do terceiro domínio, e passou a vigiar o `handbook-format` — que é o contrato em
+  que um handbook de qualquer assunto é escrito. Ela acusou duas palavras de assunto num
+  docblock meu no mesmo dia. De 97 para 107 arquivos varridos.
+
+### O que foi verificado nas contrapartes, e o que não foi
+
+Toda configuração dos dois labs foi lida contra a documentação atual, com o link em cima de
+cada linha — e as páginas da Splunk estão bloqueadas por DNS neste contêiner, então a
+leitura foi pelo texto citado das páginas oficiais na busca, nunca de memória. Isso corrigiu
+coisas que eu teria escrito erradas: o grupo de captura do `LINE_BREAKER` **não** come a
+data da linha seguinte (o evento seguinte começa no fim do grupo), e `EVENT_BREAKER` existe
+para distribuição entre indexadores, não para impedir evento quebrado.
+
+O que não foi verificado: um run. Este contêiner não tem daemon de Docker, e os dois README
+dizem isso em vez de prometer que sobem.
+
+Estado: **1 483 unitários (116 arquivos)**, typecheck, fronteira, catálogo, `handbooks`,
+`codeowners`, build (52 páginas) e varredura de links verdes. E2E: 10 testes novos de tela,
+mais os dois labs entrando nas varreduras de desenho e de rolagem horizontal.

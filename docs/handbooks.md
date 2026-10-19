@@ -164,6 +164,17 @@ has its own contract. The Kubernetes handbook demonstrates the state model
 path without importing the flow engine. The check tells you by name if you
 announce a lab whose page does not exist.
 
+### What a submitted lab gets for free
+
+Since 19 October 2026, the screen guards derive the list of labs to sweep from
+the **catalogue** rather than from the two oldest handbooks' roadmap maps. So a
+lab announced as `available` in your manifest is automatically measured for
+horizontal overflow at phone width, and is required to have a measured ceiling
+for how many of its wires cross. Neither of those is optional and neither needs
+you to remember a test file: the first one fails in CI if your page scrolls
+sideways on a 412px screen, and the second one fails naming your lab and asking
+for the number that the measurement gave.
+
 **The interactive roadmap map** is the other gap. `map` is a drawing with
 coordinates, and the two oldest handbooks (OTel, CPU) still live in TypeScript
 because of it. That is the honest reason, written down rather than discovered.

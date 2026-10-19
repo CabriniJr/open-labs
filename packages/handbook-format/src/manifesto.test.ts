@@ -8,7 +8,7 @@ describe("o contrato editável sem filesystem", () => {
   it("reconstitui o manifesto do bundle sem perder metadados normalizados", () => {
     const read = lerPacote(bundle); if (!read.ok) throw new Error(read.errors.join("\n"));
     const h = read.value.handbook;
-    const rich = { ...h, reference: { title: "A model", author: "An author", where: "A primary source", href: "handbooks/kubernetes/reference", line: "Attribution survives editing." } };
+    const rich = { ...h, reference: { title: "A model", author: "An author", where: "A primary source", href: "handbooks/example/reference", line: "Attribution survives editing." } };
     const result = lerManifesto(serializarManifesto(rich), "browser");
     expect(result.problemas).toEqual([]);
     expect(result.handbook).toEqual(rich);

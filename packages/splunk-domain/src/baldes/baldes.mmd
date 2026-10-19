@@ -1,0 +1,29 @@
+---
+id: splunk-buckets
+title: How far back you can search is not a setting
+seed: 3
+edgeTicks: 1
+params:
+  gb-por-dia: 20
+  horas-por-tick: 12
+  max-data-size-mb: 750
+  max-warm: 300
+  max-total-gb: 500
+  retencao-dias: 2184
+  arquivar: 0
+---
+flowchart LR
+  eventos([indexed events]):::origem
+  quente[hot buckets]:::balde
+  morno[warm buckets]:::balde
+  frio[cold buckets]:::balde
+  congelado[(frozen)]:::saida
+
+  eventos -- "grava:evento"   --> quente
+  quente  -- "rola:balde"     --> morno
+  morno   -- "rola:balde"     --> frio
+  frio    -- "congela:balde"  --> congelado
+
+  classDef origem family:processor,kind:source
+  classDef balde  family:processor,kind:buffer
+  classDef saida  family:processor,kind:store

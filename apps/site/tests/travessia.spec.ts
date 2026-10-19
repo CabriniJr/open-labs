@@ -1,13 +1,19 @@
 import { expect, test } from "@playwright/test";
-import { MAPA_OTEL } from "../src/data/roadmap.js";
-import { MAPA_CPU } from "../src/data/roadmap-cpu.js";
+import { HANDBOOKS } from "../src/data/handbooks.js";
 
-/** Os labs publicados, lidos do roadmap: lista derivada não envelhece. */
+/**
+ * Os labs publicados, lidos do **catálogo**: lista derivada não envelhece.
+ *
+ * Era o roadmap, e o roadmap só existe para os dois handbooks mais antigos (o
+ * `map` com coordenadas é a lacuna declarada do contrato em arquivo). Um lab de
+ * handbook submetido ficava fora desta varredura — inclusive fora da checagem
+ * de rolagem horizontal no telefone, que é a que já achou três defeitos.
+ */
 const LABS_PUBLICADOS: readonly string[] = [
   ...new Set(
-    [...MAPA_OTEL.labs, ...MAPA_CPU.labs]
-      .filter((lab) => lab.status === "available" && lab.href !== "#")
-      .map((lab) => `${lab.href.replace(/\/$/u, "")}/`),
+    HANDBOOKS.flatMap((h) => h.labs)
+      .filter((lab) => lab.status === "available" && (lab.href ?? "#") !== "#")
+      .map((lab) => `${(lab.href ?? "").replace(/\/$/u, "")}/`),
   ),
 ].sort();
 
