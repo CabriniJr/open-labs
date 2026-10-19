@@ -74,8 +74,12 @@ test("Studio traduz controles e conserva fontes editáveis", async ({ page }) =>
   const source = await page.getByRole("textbox", { name: "Edit handbook.yaml", exact: true }).inputValue();
   await choose(page, "pt-BR");
   await expect(page.getByRole("button", { name: "Exportar bundle", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Exemplo de Kubernetes", exact: true })).toBeVisible();
+  await expect(page.locator(".studio-valid")).toHaveText("✓ Pronto para exportar");
   expect(await page.locator(".studio-editor > textarea").inputValue()).toBe(source);
   await page.getByRole("button", { name: "Avaliações", exact: true }).click();
+  await expect(page.getByText("AVALIE · EXPLIQUE · MELHORE", { exact: true })).toBeVisible();
+  await expect(page.locator(".studio-review-layout h3 + p")).toContainText("1 ponto");
   await expect(page.getByRole("button", { name: "Aprovar esta questão", exact: true })).toBeVisible();
   await expect(page.getByRole("textbox", { name: "Nome do educador", exact: true })).toBeVisible();
 });
