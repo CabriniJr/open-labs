@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { JSDOM } from "jsdom";
 import ts from "typescript";
 import { franc } from "franc-min";
+import { OVERRIDES } from "../apps/site/src/locales/overrides.ts";
 
 const root = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const messages = new Map();
@@ -21,6 +22,9 @@ function candidate(text) {
   return true;
 }
 function language(text, hint = "en") {
+  // Reviewed source/target pairs take precedence over statistical detection.
+  if (Object.hasOwn(OVERRIDES["pt-BR"], text)) return "en";
+  if (Object.hasOwn(OVERRIDES.en, text)) return "pt-BR";
   if (["Handbooks", "Labs", "labs", "roadmap"].includes(text)) return "en";
   const english = (text.match(/\b(?:the|and|you|your|this|that|which|what|when|where|how|with|without|from|are|is|has|have|does|not|before|after|for|in|of|as|to|on|can|will|must|should)\b/giu) ?? []).length;
   const portuguese = (text.match(/\b(?:uma?|não|são|para|com|por|que|seu|sua|ou|isso|esta|esse|de|do|da|das|dos|ao|na|no|duas|pontas|cargas|formas|antigas|histograma|hoje|acumula|anatomia|tinha|varreduras|depois|gente|mensagens|alvo|fases|entrega|linhas|alternativa|arraste|mudanças|folhas|ativas|fora|gerava|juntar|fontes|motor|composicional|regime|notáveis|novo|ganhou|oferece|olhar|telas|onde|ele|organizar|corredores|consulta|quatro|peças|roteiro|setas|vermelhas|submeter|ver|mecanismo|verde|virou|pertence|rascunho|proposta|progresso|andamento|escrever|iguais|vale)\b/giu) ?? []).length;
