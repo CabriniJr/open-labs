@@ -7,6 +7,7 @@ export default defineWorkspace([
       name: "node",
       environment: "node",
       include: [
+        "packages/handbook-catalog/src/**/*.test.ts",
         "packages/interactive-core/src/**/*.test.ts",
         "packages/kubernetes-domain/src/**/*.test.ts",
         "packages/depth-core/src/**/*.test.ts",

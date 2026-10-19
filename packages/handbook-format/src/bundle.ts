@@ -55,6 +55,6 @@ export function criarPacote(handbook: HandbookNormalizado, articles: readonly Ar
 }
 
 /** Dependências que a instalação precisa resolver: o bundle NÃO leva o lab. */
-export function labsExigidos(pacote: PacoteDeHandbook): readonly { readonly id: string; readonly href: string }[] {
+export function labsExigidos(pacote: Pick<PacoteDeHandbook, "handbook">): readonly { readonly id: string; readonly href: string }[] {
   return pacote.handbook.labs.filter((l) => l.status === "available" && l.href !== undefined).map((l) => ({ id: l.id, href: l.href! }));
 }

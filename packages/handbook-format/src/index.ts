@@ -52,3 +52,4 @@ export { serializarManifesto } from "./manifesto.js";
 export type { LeituraDeManifesto } from "./manifesto.js";
 export { lerProjeto } from "./projeto.js";
 export type { LeituraDeProjeto } from "./projeto.js";
+export * from "./delivery.js";

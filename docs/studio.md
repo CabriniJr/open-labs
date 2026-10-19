@@ -16,7 +16,9 @@ as an editable example and uses the same contract as the standalone CLI.
 4. Inspect the roadmap as a learner would see it. Installed labs can be opened
    in a separate tab. Unresolved labs explicitly require a host implementation.
 5. Download editable sources at any time, or export a content bundle once all
-   mechanical checks pass. Scientific review remains the author's job.
+   mechanical checks pass. **Delivery** additionally assembles the runnable
+   host and required lab contracts into a versioned ZIP. Scientific review
+   remains the author's job.
 
 Invalid text stays in the editor. While the manifest is invalid the Studio
 does not show a stale curriculum as if it represented the current source.
@@ -69,6 +71,23 @@ between content and installed lab implementations. The Studio does not call a
 model, send your files to an AI provider or hold an API key. You decide where
 to share the brief.
 
+## Deliver a runnable handbook
+
+Open **Delivery** to inspect the installed labs, interaction types and exact
+versions. Set the handbook release version and select **Download runnable
+release**. The SDK checks the content and capabilities, verifies the prebuilt
+host assets and writes `release.json`, `handbook.json` and the runtime files.
+Missing lab implementations block this export rather than producing dead links.
+
+Extract the ZIP and run `node serve.mjs` using Node.js 24, or serve the files on
+your existing HTTPS host. No npm install is needed by a learner. All assembly
+happens locally; only static runtime assets are fetched from the Studio host.
+See **Runnable handbook deliveries** in the authoring index for private hosting,
+integrity checks and exact compatibility rules.
+
+This ZIP is a runnable release, distinct from the editable source ZIP accepted
+by **Open project**. Keep the sources or content bundle for subsequent edits.
+
 ## Preview and distribution limits
 
 The reading preview sanitizes Markdown output, omits images and executable embeds,
@@ -76,8 +95,9 @@ and activates primary-source links using HTTPS. It is a reading aid, not an
 execution environment for arbitrary labs. The host's known lab catalog decides
 which lab links can run here. A bundle never installs lab code.
 
-This alpha edits curriculum and articles. It does not author a lab's TypeScript
-behavior, host a private organization, synchronize with Git, provide multiplayer
-editing or publish a release. It produces the same validated artifacts that the
-independent SDK consumes. The next integration can add those capabilities
-without inventing another handbook contract.
+This alpha edits curriculum and articles and assembles runnable releases. The
+host includes Pod lifecycle, Collector pipeline and cardinality adapters. Adding
+another implementation requires a reviewed host build. The Studio does not yet
+author TypeScript behavior, synchronize with Git, provide multiplayer editing
+or deploy a release automatically. Private organization authentication belongs
+to the infrastructure serving the release.

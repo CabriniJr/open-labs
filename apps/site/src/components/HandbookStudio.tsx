@@ -1,8 +1,9 @@
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, FormEvent } from "react";
-import { criarManifesto, lerArtigo } from "@ovh/handbook-format/contract";
-import { marked } from "marked";
-import DOMPurify from "dompurify";
+import { checkDelivery, criarManifesto, lerArtigo } from "@ovh/handbook-format/contract";
+import { STATIC_HOST, STATIC_LABS } from "@ovh/handbook-catalog";
+import { downloadDelivery } from "../lib/delivery.js";
+import { previewHtml } from "../lib/article-html.js";
 import {
   aiBrief, draftArticle, exportProject, MAX_PROJECT_BYTES, projectFromBundle, projectFromZip,
   projectZip, readDraft, saveableDraft, STUDIO_STORAGE_KEY, validateProject,
@@ -10,7 +11,7 @@ import {
 import type { StudioProject } from "../lib/studio.js";
 
 interface HostLab { readonly href: string; readonly url: string; readonly title: string }
-interface Props { readonly example: StudioProject; readonly hostLabs: readonly HostLab[] }
+interface Props { readonly example: StudioProject; readonly hostLabs: readonly HostLab[]; readonly deliveryTemplateUrl: string }
 
 function download(name: string, value: string | Uint8Array, type: string) {
   const blob = new Blob([typeof value === "string" ? value : new Uint8Array(value).buffer], { type });
@@ -20,34 +21,7 @@ function download(name: string, value: string | Uint8Array, type: string) {
   window.setTimeout(() => URL.revokeObjectURL(uri), 1000);
 }
 
-/** Preview sanitizes Markdown output, without images or executable embeds. */
-function previewHtml(markdown: string): string {
-  const clean = DOMPurify.sanitize(marked.parse(markdown, { async: false }), {
-    ALLOWED_TAGS: ["p", "h1", "h2", "h3", "h4", "h5", "h6", "a", "strong", "em", "del", "code", "pre", "ul", "ol", "li", "blockquote", "hr", "br", "table", "thead", "tbody", "tr", "td", "th"],
-    ALLOWED_ATTR: ["href", "title"],
-  });
-  const doc = new DOMParser().parseFromString(clean, "text/html");
-  for (const heading of doc.querySelectorAll("h1")) {
-    const replacement = doc.createElement("h2"); replacement.append(...heading.childNodes); heading.replaceWith(replacement);
-  }
-  for (const link of doc.querySelectorAll("a")) {
-    const href = link.getAttribute("href") ?? "";
-    if (href.startsWith("#src-")) link.setAttribute("href", href.replace("#src-", "#studio-src-"));
-    else if (/^https:\/\//u.test(href)) { link.setAttribute("rel", "noopener noreferrer"); link.setAttribute("target", "_blank"); }
-    else link.removeAttribute("href");
-  }
-  for (const quote of doc.querySelectorAll("blockquote")) {
-    const first = quote.querySelector("p");
-    const match = /^\[!deeper\]\s*(.*)/u.exec(first?.textContent ?? "");
-    if (!match) continue;
-    const detail = doc.createElement("details"), summary = doc.createElement("summary");
-    summary.textContent = match[1] || "Go deeper"; first?.remove();
-    detail.append(summary, ...quote.childNodes); quote.replaceWith(detail);
-  }
-  return doc.body.innerHTML;
-}
-
-export function HandbookStudio({ example, hostLabs }: Props) {
+export function HandbookStudio({ example, hostLabs, deliveryTemplateUrl }: Props) {
   const [project, setProject] = useState<StudioProject>(example);
   const [hydrated, setHydrated] = useState(false);
   const [autosave, setAutosave] = useState(true);
@@ -61,6 +35,9 @@ export function HandbookStudio({ example, hostLabs }: Props) {
   const [view, setView] = useState<"roadmap" | "article">("roadmap");
   const [previewArticle, setPreviewArticle] = useState(example.articles[0]?.id ?? "");
   const [briefOpen, setBriefOpen] = useState(false);
+  const [deliveryOpen, setDeliveryOpen] = useState(false);
+  const [deliveryBusy, setDeliveryBusy] = useState(false);
+  const [releaseVersion, setReleaseVersion] = useState("0.1.0");
   const [goal, setGoal] = useState("Improve this learning sequence: what should the learner predict, change, observe, explain and transfer?");
   const input = useRef<HTMLInputElement>(null);
 
@@ -81,6 +58,7 @@ export function HandbookStudio({ example, hostLabs }: Props) {
   const deferred = useDeferredValue(project);
   const validation = useMemo(() => validateProject(deferred), [deferred]);
   const { handbook, diagnostics } = validation;
+  const deliveryPlan = handbook ? checkDelivery({ handbook }, STATIC_LABS, STATIC_HOST) : { errors: ["Resolve the manifest diagnostics first."], labs: [] };
   const validating = deferred !== project;
   const article = project.articles.find((a) => `articles/${a.id}.md` === selected);
   const text = selected === "handbook.yaml" ? project.manifest : article?.markdown ?? "";
@@ -118,6 +96,15 @@ export function HandbookStudio({ example, hostLabs }: Props) {
       setNewForm(false);
     });
   };
+  const release = async () => {
+    setDeliveryBusy(true); setError("");
+    try {
+      const bytes = await downloadDelivery(project, releaseVersion, new URL(deliveryTemplateUrl, location.href).href);
+      download(`${handbook?.id ?? "handbook"}-${releaseVersion}.zip`, bytes, "application/zip");
+      setMessage("Runnable release downloaded. Extract it and run node serve.mjs to open the handbook.");
+    } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
+    finally { setDeliveryBusy(false); }
+  };
   const theme = { "--studio-accent-light": handbook?.tema.claro.acento, "--studio-accent-dark": handbook?.tema.escuro.acento ?? handbook?.tema.claro.acento } as CSSProperties;
 
   return <div className="studio" data-testid="handbook-studio" data-hydrated={hydrated}>
@@ -133,8 +120,10 @@ export function HandbookStudio({ example, hostLabs }: Props) {
     </div>
 
     {newForm && <form className="studio-new" onSubmit={create}><label>Handbook id<input name="id" placeholder="networking" pattern="[a-z0-9]+(-[a-z0-9]+)*" required autoFocus /></label><label>Maintainer name<input name="name" autoComplete="name" required /></label><label>GitHub handle<input name="github" placeholder="your-handle" required /></label><button className="studio-primary" type="submit">Create handbook</button><button type="button" onClick={() => setNewForm(false)}>Cancel</button></form>}
-    <div className="studio-subbar"><span><b className={diagnostics.length ? "studio-issues" : "studio-valid"}>{validating ? "Checking…" : diagnostics.length ? `${diagnostics.length} issue${diagnostics.length === 1 ? "" : "s"}` : "✓ Ready to export"}</b><span className="studio-contract">handbook/v1</span></span><div>{previous && <button onClick={() => { const old = previous; replace(old, "Restored the previous project."); }}>Restore previous</button>}<button onClick={() => replace(example, "Opened the Kubernetes example. Your previous project can be restored.")}>Kubernetes example</button><button className={briefOpen ? "studio-active" : ""} aria-expanded={briefOpen} onClick={() => setBriefOpen(!briefOpen)}>AI brief</button></div></div>
+    <div className="studio-subbar"><span><b className={diagnostics.length ? "studio-issues" : "studio-valid"}>{validating ? "Checking…" : diagnostics.length ? `${diagnostics.length} issue${diagnostics.length === 1 ? "" : "s"}` : "✓ Ready to export"}</b><span className="studio-contract">handbook/v1</span></span><div>{previous && <button onClick={() => { const old = previous; replace(old, "Restored the previous project."); }}>Restore previous</button>}<button onClick={() => replace(example, "Opened the Kubernetes example. Your previous project can be restored.")}>Kubernetes example</button><button aria-expanded={deliveryOpen} onClick={() => setDeliveryOpen(!deliveryOpen)}>Delivery</button><button className={briefOpen ? "studio-active" : ""} aria-expanded={briefOpen} onClick={() => setBriefOpen(!briefOpen)}>AI brief</button></div></div>
     {error && <p className="studio-error" role="alert">{error}</p>}
+
+    {deliveryOpen && <section className="studio-delivery" aria-label="Runnable delivery"><div><p className="studio-eyebrow">DELIVER THE EXPERIENCE</p><h2>A handbook people can run.</h2><p>Package the content with the supported lab implementations and a static host. The recipient extracts one ZIP and runs <code>node serve.mjs</code>; no repository or npm installation is needed.</p><p>Sources and content bundles remain independent. A runnable release pins the host, lab versions and file checksums.</p></div><div><label htmlFor="release-version">Release version</label><input id="release-version" value={releaseVersion} onChange={(e) => setReleaseVersion(e.target.value)} /><ul>{deliveryPlan.labs.map((lab) => <li key={lab.id}><strong>{lab.title}</strong><small>{lab.interaction.kind} · lab {lab.version}{lab.interaction.kind === "flow" ? " · canonical Mermaid contract included" : ""}</small></li>)}</ul>{deliveryPlan.errors.length > 0 && <ul className="studio-issues">{deliveryPlan.errors.map((e) => <li key={e}>{e}</li>)}</ul>}{diagnostics.length > 0 && <p className="studio-issues">Resolve the content diagnostics before packaging.</p>}<button className="studio-primary" disabled={deliveryBusy || validating || diagnostics.length > 0 || deliveryPlan.errors.length > 0} onClick={() => void release()}>{deliveryBusy ? "Packaging…" : "Download runnable release"}</button><p className="studio-muted">Node.js 24+ for the included local server. Existing static hosting can serve the same files.</p></div></section>}
 
     {briefOpen && <section className="studio-brief" aria-label="AI authoring brief"><div><p className="studio-eyebrow">AUTHOR WITH YOUR ASSISTANT</p><h2>Give the next change a clear brief.</h2><p>Prepare the objective, source files and current diagnostics for Claude or another assistant. Review the returned changes and open their source archive here.</p><p>Your files stay in this browser. This action prepares a brief; it does not call a model.</p><label htmlFor="studio-goal">What should the assistant help with?</label><textarea id="studio-goal" value={goal} onChange={(e) => setGoal(e.target.value)} rows={4} /><div className="studio-actions"><button onClick={() => run(() => download("openlabs-authoring-brief.md", brief, "text/markdown"))}>Download AI brief</button><button onClick={() => { if (!navigator.clipboard) { setError("Clipboard unavailable. Download the brief instead."); return; } void navigator.clipboard.writeText(brief).then(() => setMessage("Brief copied. Share it with your assistant when ready.")).catch(() => setError("Clipboard unavailable. Download the brief instead.")); }}>Copy brief</button></div></div><label className="studio-brief-output">Prepared brief<textarea aria-label="Prepared AI brief" readOnly value={brief} /></label></section>}
 

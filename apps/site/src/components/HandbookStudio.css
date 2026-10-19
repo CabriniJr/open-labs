@@ -101,5 +101,12 @@
 .studio-brief p { color: var(--ink-muted); line-height: 1.7; font-size: .82rem; }
 .studio-brief textarea { display: block; width: 100%; margin: .6rem 0 1rem; padding: .8rem; color: var(--ink); background: var(--paper); border: 1px solid var(--rule); border-radius: var(--radius-1); resize: vertical; font: .76rem/1.6 var(--font-body); }
 .studio-brief-output textarea { height: 370px; font: .7rem/1.6 var(--font-mono); }
+.studio-delivery { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; padding: 1.5rem; border-bottom: 1px solid var(--rule); }
+.studio-delivery h2 { font-size: 1.6rem; letter-spacing: -.035em; }
+.studio-delivery p { font-size: .82rem; line-height: 1.8; color: var(--ink-muted); }
+.studio-delivery ul { padding-left: 1rem; font-size: .8rem; }
+.studio-delivery li { margin: .6rem 0; }
+.studio-delivery small { display: block; color: var(--ink-muted); margin-top: .3rem; }
+@media (max-width: 650px) { .studio-delivery { display: block; padding: 1rem; } }
 @media (max-width: 1100px) { .studio-workspace { grid-template-columns: 190px minmax(0, 1fr); } .studio-preview { grid-column: 1 / -1; border-top: 1px solid var(--rule); } .studio-editor { border-right: 0; } .studio-preview-body { max-height: none; } }
 @media (max-width: 650px) { .studio-page { padding-top: 1.5rem; } .studio-intro { display: block; padding: 0 1rem; margin-bottom: 1.4rem; } .studio-guide { display: inline-block; margin-top: 1rem; } .studio { width: calc(100% - 1rem); } .studio-workspace { display: block; } .studio-files { border-right: 0; border-bottom: 1px solid var(--rule); } .studio-files .studio-panel-head { display: none; } .studio-folder, .studio-file-note { display: none; } .studio .studio-file { padding: .45rem; } .studio-add { margin-top: .5rem; display: flex; gap: .6rem; align-items: end; } .studio-add label { flex: 1; min-width: 0; } .studio-add button { width: auto; flex-shrink: 0; } .studio-editor > textarea { height: 400px; } .studio-toolbar { padding: 1rem; } .studio-actions { gap: .4rem; } .studio-actions button { padding: .55rem .6rem; font-size: .76rem; } .studio-preview-body { padding: 1rem; } .studio-new { display: block; } .studio-new label { margin-bottom: .8rem; } .studio-new button { margin: .5rem .4rem 0 0; } .studio-brief { display: block; padding: 1rem; } .studio-brief-output { margin-top: 1.5rem; } }

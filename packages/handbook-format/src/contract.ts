@@ -6,3 +6,4 @@ export * from "./artigos.js";
 export * from "./bundle.js";
 export * from "./manifesto.js";
 export * from "./criar.js";
+export * from "./delivery.js";

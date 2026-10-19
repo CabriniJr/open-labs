@@ -1,5 +1,28 @@
 # Progresso
 
+## Entregas executáveis e contratos de interação
+
+19/10/2026. A integração de Mermaid, SDK independente e Studio foi mergeada
+na `main` pela PR #20 após sucesso do CI completo. Esta continuação separa
+contratos de conteúdo, implementação de lab, host compilado e entrega.
+`handbook-format` alpha.3 mantém o bundle v1 original e adiciona `lab/v1`,
+`host-template/v1` e `delivery/v1`, sem colocar catálogo de domínio no SDK.
+
+O Studio oferece **Delivery**: compatibilidade por id, rota e versão exata,
+recusa de labs desconhecidos e ZIP executável montado localmente. O comando
+`pnpm delivery:build` usa a mesma montagem. `apps/runner` contém três adapters
+reais: Pod lifecycle (estado), Collector (fluxo, com `.mmd` canônico incluído)
+e cardinalidade (manipulação direta). Não é necessário instalar dependências
+para consumir uma entrega: `node serve.mjs` verifica os arquivos antes de servir.
+
+A prova fora do checkout confere execução, recusa de conteúdo alterado e
+arquivos não publicados. Testes de browser baixam a entrega pelo Studio e
+interagem com os três tipos em desktop/mobile sem acesso a origens externas.
+Os resultados finais da suíte completa ficam registrados na PR desta entrega.
+As organizações podem hospedar os arquivos privadamente; autenticação,
+deploy automático e distribuição geral de novos adapters ainda são próximos
+passos. O capítulo **Runnable handbook deliveries** detalha o limite.
+
 ## Handbook Studio — edição local e autoria assistida
 
 18/10/2026, continuação pedida pelo Luigi. `/studio/` entrega uma primeira
