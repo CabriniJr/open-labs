@@ -1,0 +1,108 @@
+/*
+  O lab da amostragem.
+
+  A gramática é a do lab do Collector de propósito: mesmo palco largo, mesmo
+  placar entre o palco e os controles, mesmas classes com outro prefixo. Quem
+  acabou de ler a página do Collector não reaprende a usar esta — e as duas
+  perguntas que os dois placares fazem têm a mesma forma, que é a de uma
+  pergunta de plantão.
+
+  Aqui o placar tem TRÊS respostas, e a terceira é a que não existe no outro
+  lab: o trace que chegou quebrado. Ela acende sozinha, porque é o único número
+  da tela que nenhum contador de produção reportaria.
+*/
+.amostragem-lab {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.amostragem-lab__palco {
+  display: grid;
+  gap: var(--space-2);
+}
+
+/* O placar: a pergunta, e dois números que a respondem. */
+.amostragem-lab__placar {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--space-2);
+  background: var(--surface);
+}
+
+.amostragem-lab__pergunta {
+  margin: 0 0 var(--space-2);
+  font-size: var(--size-step-0);
+}
+
+.amostragem-lab__respostas {
+  display: grid;
+  gap: var(--space-2);
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+}
+
+.amostragem-lab__resposta {
+  display: grid;
+  gap: 0.15rem;
+  border-inline-start: 3px solid var(--border);
+  padding-inline-start: var(--space-2);
+}
+
+/*
+  O destaque é da resposta que contradiz a expectativa — o erro que não está
+  lá, ou o trace que está lá pela metade. Ele acende a partir do estado, nunca
+  por escolha de quem escreveu a página.
+*/
+.amostragem-lab__resposta[data-destaque="true"] {
+  border-inline-start-color: var(--accent);
+}
+
+.amostragem-lab__rotulo {
+  color: var(--muted);
+  font-size: var(--size-step--1);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.amostragem-lab__resposta b {
+  font-size: var(--size-step-2);
+  line-height: 1.1;
+}
+
+.amostragem-lab__nota {
+  color: var(--muted);
+  font-size: var(--size-step--1);
+}
+
+.amostragem-lab__controles {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.amostragem-lab__tick {
+  color: var(--muted);
+}
+
+.amostragem-lab__campo {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 13rem;
+  font-size: var(--size-step--1);
+}
+
+.amostragem-lab__campo input[type="range"] {
+  width: 100%;
+}
+
+.amostragem-lab__switch {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: var(--size-step--1);
+}
+
+/* O aviso do trace quebrado: a cor do descarte, porque é perda. */
+.amostragem-lab__resposta[data-destaque="quebrado"] {
+  border-inline-start-color: var(--descarte, var(--accent));
+}

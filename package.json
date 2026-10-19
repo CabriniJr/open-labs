@@ -13,7 +13,11 @@
     "boundaries": "node scripts/check-boundaries.mjs",
     "catalogo": "node scripts/check-catalogo.mjs",
     "build": "pnpm --filter @ovh/site build",
-    "dev": "pnpm --filter @ovh/site dev"
+    "dev": "pnpm --filter @ovh/site dev",
+    "handbooks": "node scripts/handbook.mjs check",
+    "codeowners": "node scripts/handbook.mjs codeowners",
+    "sdk:pack": "node scripts/sdk-release.mjs",
+    "sdk:smoke": "node scripts/sdk-smoke.mjs"
   },
   "devDependencies": {
     "@testing-library/react": "^16.1.0",

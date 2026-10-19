@@ -159,6 +159,44 @@ async function tinta(page: import("@playwright/test").Page, seletor: string) {
   });
 }
 
+/**
+ * A tinta **depois** de a transição parar, e não durante.
+ *
+ * `tinta` lê o estilo computado no instante em que é chamada, e logo depois de
+ * uma troca de entradas o preenchimento está no meio da transição do CSS —
+ * `stage.css` dá 160ms ao `fill`.
+ *
+ * Medido, e o número é o que decide o conserto: em regime a croma da porta
+ * acesa fica **0.059** acima da apagada, três vezes o limiar de 0.02 que o
+ * teste cobra. Na primeira leitura depois do `fill` ela cai para 0.047, e num
+ * runner mais lento o CI mediu 0.013 e reprovou.
+ *
+ * Ou seja: o limiar não é o problema, e afrouxá-lo esconderia justamente o
+ * defeito que este teste existe para pegar — a porta acesa cair na tinta da
+ * apagada. O que faltava era medir **estado**, e estado é o que duas leituras
+ * iguais em sequência provam.
+ *
+ * O orçamento é dez vezes a transição. Estourá-lo não é lentidão: é tinta que
+ * não assenta, e isso é achado, não ruído — por isso levanta em vez de
+ * devolver a última medida e deixar a asserção reprovar com a mensagem errada.
+ */
+async function tintaEstavel(
+  page: import("@playwright/test").Page,
+  seletor: string,
+): Promise<Awaited<ReturnType<typeof tinta>>> {
+  let anterior = await tinta(page, seletor);
+  for (let i = 0; i < 20; i += 1) {
+    await page.waitForTimeout(80);
+    const agora = await tinta(page, seletor);
+    if (agora.fill === anterior.fill) return agora;
+    anterior = agora;
+  }
+  throw new Error(
+    `a tinta de ${seletor} não assentou em 1,6s (a transição do fill é 160ms): ` +
+      `última leitura ${anterior.fill}`,
+  );
+}
+
 test("a porta acesa é desenhada acesa, e continua acesa", async ({ page }) => {
   await page.goto("labs/gates/");
   await expect(page.locator(".dui-stage")).toBeVisible({ timeout: 15_000 });
@@ -194,8 +232,8 @@ test("a porta acesa é desenhada acesa, e continua acesa", async ({ page }) => {
   const BAIXA = `.dui-stage__objeto[data-id="${await escolher(false)}"]`;
   await expect(page.locator(BAIXA)).toBeVisible();
 
-  const alta = await tinta(page, ALTA);
-  const baixa = await tinta(page, BAIXA);
+  const alta = await tintaEstavel(page, ALTA);
+  const baixa = await tintaEstavel(page, BAIXA);
 
   expect(alta.fill).not.toBe(baixa.fill);
   expect(alta.cor).toBeGreaterThan(baixa.cor + 0.02);
@@ -229,8 +267,10 @@ test("a porta acesa é desenhada acesa, e continua acesa", async ({ page }) => {
   const porTema: Record<string, { alta: number; baixaFill: string }> = {};
   for (const tema of ["dark", "light"] as const) {
     await noTema(page, tema);
-    const a = await tinta(page, ALTA);
-    const b = await tinta(page, BAIXA);
+    // Trocar de tema também transita: a mesma corrida da primeira medida, no
+    // mesmo teste, pela mesma razão.
+    const a = await tintaEstavel(page, ALTA);
+    const b = await tintaEstavel(page, BAIXA);
     expect(a.cor, `a porta acesa é a colorida no tema ${tema}`).toBeGreaterThan(b.cor + 0.02);
     porTema[tema] = { alta: a.cor, baixaFill: b.fill };
   }
@@ -330,10 +370,32 @@ test("a legenda troca de registro ao descer, e concorda com o desenho", async ({
   await expect(legenda).toContainText("control");
   await expect(legenda).not.toContainText("supply");
 
-  // circuito › bit0 › XOR › NAND: o último degrau é esquemático
+  /*
+    circuito › bit0 › XOR › NAND: o último degrau é esquemático.
+
+    Cada degrau espera o próximo nível APARECER antes de clicar, e o último é
+    nomeado por id em vez de `.first()`. As duas coisas consertam a mesma
+    corrida, e ela foi medida: depois do segundo duplo-clique o palco mostra
+    `bit0-xor1-g1..g4`, as quatro portas do XOR — mas antes do re-render o
+    conjunto `[data-fechado="true"]` são os CINCO filhos de `bit0`, com
+    `bit0-xor1` em primeiro. Clicar no primeiro ali reclica o que acabou de
+    abrir, o terceiro degrau nunca acontece, e o registro fica em `blocos`.
+
+    É a mesma assinatura que o teste da tinta deste arquivo já carrega escrita:
+    `.first()` de um conjunto que muda não é um elemento, e passa sozinho para
+    reprovar na suíte cheia. Observada uma vez em três rodadas completas, e não
+    reproduzível isolada — o que torna a espera parte da prova, e não um
+    paliativo: agora cada degrau afirma que pousou.
+  */
   await page.locator('.dui-stage__objeto[data-id="bit0"]').first().dblclick();
+  await expect(page.locator('.dui-stage__objeto[data-id="bit0-xor1"]')).toBeVisible();
+
   await page.locator('.dui-stage__objeto[data-id="bit0-xor1"]').first().dblclick();
-  await page.locator('.dui-stage__objeto[data-fechado="true"]').first().dblclick();
+  const noXor = page.locator('.dui-stage__objeto[data-id="bit0-xor1-g1"]');
+  await expect(noXor, "o nível do XOR não abriu: o degrau seguinte clicaria no lugar errado")
+    .toBeVisible({ timeout: 10_000 });
+
+  await noXor.dblclick();
 
   await expect(legenda).toHaveAttribute("data-registro", "esquematico", { timeout: 10_000 });
   await expect(legenda).toContainText("supply");

@@ -115,7 +115,7 @@ export const labs: readonly RoadmapLab[] = [
   // Quem não sabe o que um provider decide não tem como avaliar o que um
   // Collector muda depois.
   { id: "providers", title: "The three providers", href: "labs/providers", status: "available", side: "left", y: 490, phase: 3 },
-  { id: "collector-pipeline", title: "The Collector pipeline", href: "#", status: "coming", side: "left", y: 546, phase: 3 },
+  { id: "collector-pipeline", title: "The Collector pipeline", href: "labs/collector-pipeline", status: "available", side: "left", y: 546, phase: 3 },
   { id: "agent-or-gateway", title: "Agent or gateway", href: "#", status: "coming", side: "right", y: 546, phase: 3 },
 
   { id: "manual-spans", title: "Manual spans", href: "#", status: "coming", side: "left", y: 680, phase: 4 },
@@ -125,12 +125,12 @@ export const labs: readonly RoadmapLab[] = [
   { id: "propagating-through-a-queue", title: "Propagating through a queue", href: "#", status: "coming", side: "left", y: 736, phase: 4 },
   { id: "host-and-kubernetes-signals", title: "Host and Kubernetes signals", href: "#", status: "coming", side: "right", y: 736, phase: 4 },
 
-  { id: "head-vs-tail-sampling", title: "Head vs tail sampling", href: "#", status: "coming", side: "left", y: 870, phase: 5 },
+  { id: "head-vs-tail-sampling", title: "Head vs tail sampling", href: "labs/head-vs-tail-sampling", status: "available", side: "left", y: 870, phase: 5 },
   { id: "backpressure-and-drops", title: "Backpressure and drops", href: "#", status: "coming", side: "right", y: 870, phase: 5 },
   // A fase 5 fala de custo desde a spec do handbook §3 e não tinha nó para ele.
   // Cardinalidade é onde o custo mora, e é decisão de atributo — coisa que se
   // toma na instrumentação e se paga na fatura, meses depois.
-  { id: "cardinality-and-the-bill", title: "Cardinality and the bill", href: "#", status: "coming", side: "left", y: 926, phase: 5 },
+  { id: "cardinality-and-the-bill", title: "Cardinality and the bill", href: "labs/cardinality-and-the-bill", status: "available", side: "left", y: 926, phase: 5 },
   { id: "the-rollout", title: "The rollout", href: "#", status: "coming", side: "right", y: 926, phase: 5 },
 ];
 

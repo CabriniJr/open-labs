@@ -1,12 +1,16 @@
 {
   "files": [],
   "references": [
+    { "path": "packages/interactive-core" },
+    { "path": "packages/kubernetes-domain" },
     { "path": "packages/otel-domain" },
     { "path": "packages/cpu-domain" },
     { "path": "packages/algo-domain" },
     { "path": "packages/depth-core" },
     { "path": "packages/depth-ui" },
     { "path": "packages/model-format" },
+    { "path": "packages/mermaid-skeleton" },
+    { "path": "packages/handbook-format" },
     { "path": "apps/site" }
   ]
 }

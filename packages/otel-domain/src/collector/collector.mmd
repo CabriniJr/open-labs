@@ -1,0 +1,48 @@
+---
+id: otel-collector-pipeline
+title: Um receiver, duas pipelines, e uma cópia para cada
+seed: 7
+edgeTicks: 1
+params:
+  spans-por-tick: 3
+  tamanho-do-lote: 4
+  timeout-do-lote: 3
+  limite-de-memoria: 6
+  filtrar-health-checks: 0
+---
+flowchart LR
+  app([app]):::aplicacao
+  receiver[otlp receiver]:::receptor
+
+  limiter[memory_limiter]:::guarda
+  lote[batch]:::acumulador
+  exportador[otlp exporter]:::saida
+
+  filtro[filter]:::guarda
+  depuracao[debug exporter]:::saida
+
+  backend[(backend)]:::destino
+  console[(stdout)]:::destino
+  descartes[(dropped)]:::descarte
+
+  app      -- "receber:span"    --> receiver
+
+  receiver -- "pipeline:span"   --> limiter
+  receiver -- "pipeline:span"   --> filtro
+
+  limiter  -- "admitido:span"   --> lote
+  limiter  -- "recusado:span"   --> descartes
+  lote     -- "lote:batch"      --> exportador
+  exportador -- "otlp:batch"    --> backend
+
+  filtro   -- "passou:span"     --> depuracao
+  filtro   -- "barrado:span"    --> descartes
+  depuracao -- "linha:span"     --> console
+
+  classDef aplicacao  family:processor,kind:source
+  classDef receptor   family:processor,kind:router
+  classDef guarda     family:processor,kind:router
+  classDef acumulador family:processor,kind:buffer
+  classDef saida      family:conduit,kind:channel
+  classDef destino    family:processor,kind:store
+  classDef descarte   family:processor,kind:store

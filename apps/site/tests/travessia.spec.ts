@@ -1,4 +1,15 @@
 import { expect, test } from "@playwright/test";
+import { MAPA_OTEL } from "../src/data/roadmap.js";
+import { MAPA_CPU } from "../src/data/roadmap-cpu.js";
+
+/** Os labs publicados, lidos do roadmap: lista derivada não envelhece. */
+const LABS_PUBLICADOS: readonly string[] = [
+  ...new Set(
+    [...MAPA_OTEL.labs, ...MAPA_CPU.labs]
+      .filter((lab) => lab.status === "available" && lab.href !== "#")
+      .map((lab) => `${lab.href.replace(/\/$/u, "")}/`),
+  ),
+].sort();
 
 /**
  * **A vista de fora não pode discordar do próprio interior.**
@@ -17,6 +28,7 @@ import { expect, test } from "@playwright/test";
 
 const LABS = [
   "labs/providers/",
+  "labs/collector-pipeline/",
   "labs/cpu/",
   "labs/gates/",
   "labs/micro/",
@@ -99,5 +111,66 @@ for (const lab of LABS) {
         expect(encostou, `${lab} · ${caixa}: linha termina em ${fim.x},${fim.y} e nenhuma entrada do interior começa ali`).toBe(true);
       }
     }
+  });
+}
+
+/**
+ * Nenhum lab publicado rola na horizontal.
+ *
+ * A regra existia para `cpu`, `gates` e `rpn`, cada uma escrita no spec do seu
+ * lab — e por isso as páginas do OTel nunca foram medidas. Quando foram, em
+ * 16/10/2026: `providers` com 528px num viewport de 412, `three-pillars` com
+ * 464, e a anatomia com 864 depois de ganhar exercícios.
+ *
+ * Os três tinham a MESMA causa, em três camadas, e ela vale escrita porque é um
+ * defeito de família e não três acidentes: todo item de grid tem
+ * `min-width: auto`, que é **min-content**, e no cartão de exercício o
+ * min-content é sempre uma coisa que não quebra — a linha mais longa do `<pre>`,
+ * um identificador Java de 50 caracteres num distrator, um caminho de arquivo na
+ * linha de origem. Cada camada só apareceu depois de a de cima ser consertada,
+ * porque o maior esconde o menor.
+ *
+ * O conserto mora todo em `Exercicio.css` (`astro-island` é `display: contents`,
+ * então a raiz do componente é que recebe o layout): `min-width: 0` no cartão e
+ * nos `<li>`, e `overflow-wrap: anywhere` no bloco e na origem. `anywhere` e
+ * não `break-word` porque só `anywhere` entra no cálculo do min-content — foi
+ * exatamente por isso que uma tentativa anterior com `break-word` não mudou
+ * nenhum número medido, e ela foi retirada em vez de mantida como comentário
+ * afirmando um conserto que não acontecia.
+ *
+ * Com isso as três páginas medem 412 em 412. A lista abaixo ficou **vazia de
+ * propósito e continua existindo**: ela é o lugar onde uma dívida de rolagem se
+ * declara medida, e o teste dela afirma que a dívida ainda existe em vez de
+ * isentar a página — no dia em que alguém consertar um nome que esteja aqui, o
+ * teste cai pedindo que o nome saia, que é o contrário de um silêncio
+ * permanente.
+ */
+const AINDA_ROLA_NO_MOBILE: ReadonlySet<string> = new Set<string>([]);
+
+for (const lab of [...LABS_PUBLICADOS]) {
+  test(`${lab} — a página não rola na horizontal`, async ({ page }, info) => {
+    await page.goto(lab);
+    // Lab PhET-like não tem palco (ADR §9), então esperar por um travaria aqui.
+    // O que vale para qualquer forma é a página ter corpo e as ilhas terem
+    // assentado — medir antes disso mede o meio do caminho.
+    await expect(page.locator("main")).toBeVisible();
+    const palcos = await page.locator(".dui-stage").count();
+    if (palcos > 0) await expect(page.locator(".dui-stage").first()).toBeVisible({ timeout: 20_000 });
+    await page.waitForTimeout(1200);
+    const { scrollW, clientW } = await page.evaluate(() => ({
+      scrollW: document.documentElement.scrollWidth,
+      clientW: document.documentElement.clientWidth,
+    }));
+
+    if (info.project.name === "mobile" && AINDA_ROLA_NO_MOBILE.has(lab)) {
+      expect(
+        scrollW,
+        `${lab} está em AINDA_ROLA_NO_MOBILE e parou de rolar — tire-o da lista`,
+      ).toBeGreaterThan(clientW + 1);
+      return;
+    }
+    expect(scrollW, `${lab} rola ${scrollW - clientW}px na horizontal`).toBeLessThanOrEqual(
+      clientW + 1,
+    );
   });
 }

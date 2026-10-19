@@ -1,0 +1,49 @@
+# Um gateway que amostra na cauda. As DUAS instâncias do lab rodam este arquivo.
+#
+# É o mesmo config nos dois de propósito: as instâncias são idênticas, e o que
+# distingue uma decisão correta de uma errada não está aqui — está no
+# `routing_key` do `gateway.yaml`, que decide se este processador vê o trace
+# inteiro ou um pedaço dele.
+#
+# `tail_sampling` existe só no `otelcol-contrib`, e o README dele diz a condição
+# com essas palavras: "All spans for a given trace MUST be received by the same
+# collector instance for effective sampling decisions."
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+
+processors:
+  tail_sampling:
+    # A janela: quanto este processador segura os spans antes de decidir. Ela é
+    # memória, e é memória gasta inclusive com os traces que vão ser jogados
+    # fora — o preço de decidir tarde.
+    decision_wait: 5s
+    num_traces: 1000
+    expected_new_traces_per_sec: 10
+    # <handbook:trecho id="as-politicas-da-cauda">
+    # As políticas são OR: o trace é mantido se QUALQUER uma casar. Então a
+    # primeira guarda o que falhou, e a segunda é a linha de base do tráfego
+    # normal — sem ela, o backend não teria com o que comparar o erro.
+    # <handbook:lacuna>
+    policies:
+      - name: tudo-que-falhou
+        type: status_code
+        status_code: { status_codes: [ERROR] }
+      - name: linha-de-base
+        type: probabilistic
+        probabilistic: { sampling_percentage: 10 }
+    # </handbook:lacuna>
+    # </handbook:trecho>
+
+exporters:
+  debug:
+    verbosity: basic
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [tail_sampling]
+      exporters: [debug]

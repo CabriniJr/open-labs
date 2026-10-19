@@ -1,0 +1,71 @@
+# O Collector sob estudo, e este arquivo É o desenho do lab.
+#
+# Compare com `packages/otel-domain/src/collector/collector.mmd`: um receiver,
+# duas pipelines, o `filter` numa só. O mmd desenha a mesma coisa que este YAML
+# declara, e é por isso que o lab pode afirmar o que afirma — a tese não é do
+# simulador, é deste arquivo.
+#
+# O ponto a ler: `otlp` aparece em `receivers:` DAS DUAS pipelines, e isso é um
+# receiver só. O Collector o instancia uma vez e entrega uma cópia a cada
+# pipeline. Nada é dividido entre elas, e nada é compartilhado.
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+
+processors:
+  # `processors:` é LISTA ORDENADA, e a ordem é o comportamento. O
+  # `memory_limiter` vem antes do `batch` de propósito: antes, ele decide sobre
+  # spans individuais; depois, decidiria sobre lotes já montados — e aí recusar
+  # um lote joga fora N spans de uma vez, com a memória do lote já alocada.
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 64
+    spike_limit_mib: 16
+
+  # <handbook:trecho id="o-que-fecha-o-lote">
+  batch:
+    # Os mesmos dois números do lab da tela. O `timeout` é a metade que a frase
+    # "ele manda quando enche" esquece: sem ele, tráfego baixo guardaria a
+    # telemetria até o lote encher, o que pode ser nunca.
+    # <handbook:lacuna>
+    send_batch_size: 4
+    timeout: 3s
+    # </handbook:lacuna>
+  # </handbook:trecho>
+
+  # O filtro do lab, e ele está numa pipeline SÓ. É o experimento inteiro:
+  # ligar isto não muda nada no que `otlp/backend` exporta.
+  filter/health:
+    error_mode: ignore
+    traces:
+      span:
+        - 'name == "GET /health"'
+
+exporters:
+  otlp/backend:
+    endpoint: backend:4317
+    tls:
+      insecure: true
+
+  debug:
+    verbosity: basic
+
+service:
+  pipelines:
+    # A pipeline que o backend lê. Sem filtro: recebe tudo, inclusive /health.
+    # <handbook:trecho id="a-ordem-dos-processors">
+    traces:
+      receivers: [otlp]
+      # <handbook:lacuna>
+      processors: [memory_limiter, batch]
+      # </handbook:lacuna>
+      exporters: [otlp/backend]
+    # </handbook:trecho>
+
+    # A pipeline que ninguém estava olhando. MESMO receiver, filtro próprio.
+    traces/audit:
+      receivers: [otlp]
+      processors: [filter/health]
+      exporters: [debug]

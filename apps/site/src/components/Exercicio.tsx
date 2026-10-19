@@ -103,7 +103,7 @@ export function Exercicio({ exercicio }: ExercicioProps) {
         e a spec do handbook exige que toda afirmação técnica seja rastreável.
       */}
       <p className="exercicio__origem mono">
-        {exercicio.arquivo} · OpenTelemetry Java {exercicio.versao}
+        {exercicio.arquivo} · {exercicio.versao}
       </p>
     </div>
   );

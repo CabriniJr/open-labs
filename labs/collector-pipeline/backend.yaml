@@ -1,0 +1,24 @@
+# O "backend" do lab: um segundo Collector que só recebe e imprime.
+#
+# Ele existe para a primeira pipeline ter um destino de verdade, e a escolha de
+# usar um Collector em vez de um Jaeger é deliberada: assim o compose não
+# depende de nenhuma interface, e o que se conta é o que entrou — que é
+# exatamente a pergunta do lab ("quantos /health chegaram?").
+#
+# Agente → gateway é também a topologia real mais comum, então o segundo
+# processo não é um artifício de teste.
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+
+exporters:
+  debug:
+    verbosity: basic
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      exporters: [debug]

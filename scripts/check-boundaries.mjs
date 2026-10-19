@@ -30,13 +30,15 @@ const KINDS_DO_MOTOR = (() => {
 })();
 
 const AGNOSTIC = [
+  "packages/interactive-core/",
   "packages/depth-core/",
   "packages/depth-ui/",
   "packages/model-format/",
+  "packages/mermaid-skeleton/",
 ];
 
 /** Pacotes de domínio que eles não podem importar. */
-const DOMAIN_PACKAGES = ["@ovh/otel-domain", "@ovh/cpu-domain"];
+const DOMAIN_PACKAGES = ["@ovh/otel-domain", "@ovh/cpu-domain", "@ovh/algo-domain", "@ovh/kubernetes-domain"];
 
 /**
  * Termos inequívocos de domínio. `span` e `trace` sozinhos ficam de fora de
@@ -86,12 +88,16 @@ const CPU = [
   "instruction set",
 ];
 
-const DOMAIN_WORDS = [...OTEL, ...CPU];
+const DOMAIN_WORDS = [...OTEL, ...CPU, "kubernetes", "kubelet", "kubectl", "replicaset", "crashloopbackoff"];
 
 export function findViolations(filePath, source) {
   if (!AGNOSTIC.some((prefix) => filePath.startsWith(prefix))) return [];
 
   const violations = [];
+
+  if (filePath.startsWith("packages/interactive-core/") && /["']@ovh\/(?:depth-core|depth-ui|mermaid-skeleton)["']/.test(source)) {
+    violations.push({ filePath, reason: "interactive-core deve ser independente do motor de fluxos e do Mermaid" });
+  }
 
   /*
    * Regra sobre o substantivo, e não sobre uma lista de palavras.

@@ -1,0 +1,30 @@
+# Um receiver, duas pipelines, contra o Collector de verdade.
+#
+# Para ver a tese: suba, espere, e compare as duas contagens.
+#
+#   docker compose up --build
+#
+# `backend` imprime o que a pipeline `traces` exportou — e `/health` está lá,
+# com o filtro ligado. `collector` imprime o que a pipeline `traces/audit`
+# deixou passar, e `/health` não está. O filtro é o mesmo arquivo, o receiver é
+# o mesmo, e o resultado é diferente porque a cópia é por pipeline.
+services:
+  backend:
+    image: otel/opentelemetry-collector-contrib:0.160.0
+    command: ["--config=/etc/backend.yaml"]
+    volumes:
+      - ./backend.yaml:/etc/backend.yaml:ro,z
+
+  collector:
+    image: otel/opentelemetry-collector-contrib:0.160.0
+    command: ["--config=/etc/collector.yaml"]
+    depends_on: [backend]
+    volumes:
+      - ./collector.yaml:/etc/collector.yaml:ro,z
+
+  shop:
+    build: ./app
+    depends_on: [collector]
+    environment:
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://collector:4317
+      PIPELINE_SPANS: "240"

@@ -1,5 +1,24 @@
 # Decisões e ideias consolidadas
 
+**Studio alpha, 18/10/2026:** a primeira interface local de autoria reutiliza o
+contrato do SDK, edita currículo/artigos, preserva rascunhos inválidos e exporta
+fontes ou bundle validado. O briefing assistido é preparado para compartilhar
+com Claude/outro assistente, sem chamada automática de modelo. O capítulo
+**Handbook Studio**, no índice de autoria, descreve os fluxos e os limites.
+
+**Atualização de 18/10/2026:** a autoria independente tem artefatos alpha
+instaláveis de `handbook-format` e `interactive-core`, com prova de consumo
+fora do monorepo. O bundle v1 transporta conteúdo; as implementações de labs
+são dependências explícitas do host. O capítulo **Independent handbook authoring**,
+no índice de autoria, descreve o caminho e seus limites.
+
+**Atualização de 16/10/2026:** o framework admite interações além do motor de
+fluxos. Mermaid continua contrato canônico dos cenários de fluxo; estado,
+reconciliação e manipulação direta têm contratos próprios. O Pod lifecycle
+inaugura o Kubernetes Visual Handbook sem importar o motor de fluxos. Detalhes
+e limites no capítulo **Framework interativo e Pod lifecycle**, no índice
+“Escrever um lab”.
+
 **Data:** 2026-08-28, com o enquadramento revisto em 2026-08-29
 **Papel deste documento:** ponto de entrada. As ideias que sobreviveram, as que foram
 recusadas, e as réguas que decidem discussão futura. Os outros documentos aprofundam; este
@@ -347,3 +366,81 @@ que nenhum modelo sustenta, que é o defeito mais caro do projeto. A trava é a 
 outros: **contraparte real**. Se o lab diz algo sobre o mundo, o repositório tem de ter como
 conferir contra a coisa de verdade — e sem modelo por baixo, essa dívida fica *maior*, não
 menor.
+
+---
+
+## 10. Handbook é submissão, e o contrato tem versão
+
+*Decidido em 2026-10-16. O caminho para quem submete está em `handbooks.md`; esta seção
+decide, e cria a régua.*
+
+### O problema
+
+Publicar um handbook exigia editar TypeScript dentro do site: `apps/site/src/data/handbooks.ts`,
+mais o mapa, mais um arquivo de tema. Isso faz duas coisas ruins ao mesmo tempo, e as duas
+são estruturais:
+
+- quem domina um assunto precisa aprender a casa inteira antes de escrever a primeira
+  linha. O custo de entrada não é o conteúdo, é o monorepo;
+- quem mantém a casa fica dono de conteúdo que não é dele. Um handbook de terceiro no meio
+  do nosso código é código nosso para sempre.
+
+### A decisão
+
+**Um handbook é um diretório com um manifesto, e o manifesto tem dono declarado.**
+`handbooks/<id>/handbook.yaml`, contrato em arquivo, zero TypeScript. O `CODEOWNERS` é
+**derivado** dos manifestos — submeter é também assumir a propriedade.
+
+Três consequências que valem estar escritas, porque cada uma foi uma escolha contra uma
+alternativa mais arrumada:
+
+1. **Os artigos de uma submissão moram onde moram os nossos**
+   (`apps/site/src/content/articles/<id>/`), e não dentro do diretório do autor. A pasta
+   do autor ficaria mais arrumada; o preço seria conteúdo submetido **com guardas mais
+   fracas** que o nosso — fonte citada nas duas direções, degrau de drill-down, catálogo e
+   disco concordando. Arrumação não paga promessa enfraquecida.
+2. **O manifesto não descreve comportamento, e isso fica dito.** Lab que roda é modelo, e
+   modelo é TypeScript. Inventar um formato que descrevesse comportamento pela metade seria
+   pior que recusar: o autor descobriria o limite depois de escrever.
+3. **O `map` é a razão honesta de OTel e CPU seguirem em TypeScript.** Ele é desenho com
+   coordenadas, e o contrato em arquivo não desenha. Escrito, em vez de descoberto por quem
+   tentar migrar.
+
+### A régua nova: compatibilidade é mecanismo, não boa vontade
+
+**A release que introduz uma versão nova do contrato continua lendo a anterior.** A régua
+que isso cria, e que decide discussão futura sobre formato:
+
+> Toda versão suportada tem **exemplar de conformidade**, e o exemplar carrega em cada
+> suíte. Uma versão só sai da lista quando existe migração automática para a seguinte.
+
+O que a régua impede, concretamente: a limpeza silenciosa. "Ninguém mais usa aquele
+formato" é uma frase que alguém diz num refactor, e o custo cai em quem não está na sala.
+Com a régua, apagar o leitor de uma versão listada **derruba a suíte nomeando a versão** — a
+decisão de aposentar passa a ser deliberada, que é o que ela tem de ser.
+
+E a recusa separa as duas direções, que erram diferente: quem escreveu contra uma versão
+**mais nova** está com o site velho e é mandado atualizar a casa (nada no arquivo dele está
+errado); quem escreveu contra uma **aposentada** é mandado migrar. "Versão inválida" manda
+os dois procurarem no lugar errado.
+
+### Por que duas versões já existem hoje
+
+Porque a promessa só vale se for verificável agora, e não sobre um `v2` futuro que ninguém
+pode testar. Os três handbooks originais são objetos TypeScript escritos à mão — essa é,
+literalmente, a versão anterior deste contrato, e ela está na lista **com esse nome**: não é
+"o jeito antigo", é `typescript`, estado `anterior`, com data.
+
+A prova é uma igualdade medida: o `algorithms` migrou para `openlabs/handbook/v1`, e o
+objeto que estava escrito no site ficou congelado em `handbooks.test.ts` como expectativa,
+comparado campo por campo com o que o leitor produz. Cor, fase, href, status: idênticos. É
+o que faz "migrar é mecânico" ser um fato e não uma frase.
+
+### Onde isto poderia mentir em silêncio
+
+Um manifesto válido descreve um handbook que **não ensina nada** — fases bem-numeradas,
+itens todos `coming`, tema bonito. O formato não tem como cobrar currículo, e não deve
+tentar: a régua da §9 e a exigência de fonte primária continuam sendo trabalho de revisão
+humana. O que o formato garante é que nada **desaparece em silêncio**; o que ele não
+garante é que valha a pena ler. Essa distinção precisa estar na cabeça de quem revisa um
+PR de handbook, e é a última seção de `handbooks.md` justamente por isso.

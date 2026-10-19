@@ -50,12 +50,30 @@ importers:
       '@ovh/depth-ui':
         specifier: workspace:*
         version: link:../../packages/depth-ui
+      '@ovh/handbook-format':
+        specifier: workspace:*
+        version: link:../../packages/handbook-format
+      '@ovh/interactive-core':
+        specifier: workspace:*
+        version: link:../../packages/interactive-core
+      '@ovh/kubernetes-domain':
+        specifier: workspace:*
+        version: link:../../packages/kubernetes-domain
       '@ovh/otel-domain':
         specifier: workspace:*
         version: link:../../packages/otel-domain
       astro:
         specifier: ^5.2.0
         version: 5.18.2(@types/node@26.4.0)(rollup@4.63.0)(typescript@5.9.3)(yaml@2.9.0)
+      dompurify:
+        specifier: ^3.4.17
+        version: 3.4.17
+      fflate:
+        specifier: ^0.8.3
+        version: 0.8.3
+      marked:
+        specifier: ^18.1.1
+        version: 18.1.1
       react:
         specifier: ^19.0.0
         version: 19.2.8
@@ -128,6 +146,45 @@ importers:
         specifier: ^25.0.1
         version: 25.0.1
 
+  packages/handbook-format:
+    dependencies:
+      yaml:
+        specifier: ^2.5.0
+        version: 2.9.0
+      zod:
+        specifier: ^3.23.8
+        version: 3.25.76
+    devDependencies:
+      '@types/node':
+        specifier: ^26.4.0
+        version: 26.4.0
+
+  packages/interactive-core: {}
+
+  packages/kubernetes-domain:
+    dependencies:
+      '@ovh/interactive-core':
+        specifier: workspace:*
+        version: link:../interactive-core
+      yaml:
+        specifier: ^2.5.0
+        version: 2.9.0
+      zod:
+        specifier: ^3.23.0
+        version: 3.25.76
+
+  packages/mermaid-skeleton:
+    dependencies:
+      '@ovh/depth-core':
+        specifier: workspace:*
+        version: link:../depth-core
+      '@ovh/model-format':
+        specifier: workspace:*
+        version: link:../model-format
+      yaml:
+        specifier: ^2.5.0
+        version: 2.9.0
+
   packages/model-format:
     dependencies:
       '@ovh/depth-core':
@@ -148,6 +205,9 @@ importers:
       '@ovh/depth-ui':
         specifier: workspace:*
         version: link:../depth-ui
+      '@ovh/mermaid-skeleton':
+        specifier: workspace:*
+        version: link:../mermaid-skeleton
 
 packages:
 
@@ -1211,6 +1271,9 @@ packages:
   '@types/react@19.2.18':
     resolution: {integrity: sha512-AnzbBERsrLKtk2XSfTbYRLjQPdy116Sty4q+T+Bp3IC4l6jNBvreVPAHmpq9qhXQM7CXZPjLVmGMw9sy+hxQ3w==}
 
+  '@types/trusted-types@2.0.7':
+    resolution: {integrity: sha512-ScaPdn1dQczgbl0QFTeTOmVHFULt394XJgOQNoyVhZ6r2vLnMLJfBPd53SB52T/3G36VI1/g2MZaX0cwDuXsfw==}
+
   '@types/unist@3.0.3':
     resolution: {integrity: sha512-ko/gIFJRv177XgZsZcBwnqJN5x/Gien8qNOn0D5bQU/zAzVf9Zt3BlcUiLqhV9y4ARk0GbT3tnUiPNgnTXzc/Q==}
 
@@ -1532,6 +1595,9 @@ packages:
     resolution: {integrity: sha512-cgwlv/1iFQiFnU96XXgROh8xTeetsnJiDsTc7TYCLFd9+/WNkIqPTxiM/8pSd8VIrhXGTf1Ny1q1hquVqDJB5w==}
     engines: {node: '>= 4'}
 
+  dompurify@3.4.17:
+    resolution: {integrity: sha512-B/pSlYVHQ58kqISD/yDjuJ1yfzI34m1gF4lAod2bwSRhiN4K5Cl3H8Af7hqB2PmTL911tdEudnnXn5FnhRoz0w==}
+
   domutils@3.2.2:
     resolution: {integrity: sha512-6kZKyUajlDuqlHKVX1w7gyslj9MPIXzIFiz/rGu35uC1wMi+kMhQwGhl4lt9unC9Vb9INnY9Z3/ZA3+FhASLaw==}
 
@@ -1630,6 +1696,9 @@ packages:
     peerDependenciesMeta:
       picomatch:
         optional: true
+
+  fflate@0.8.3:
+    resolution: {integrity: sha512-tbZNuJrLwGUp3zshBtdy4W+ORxZuIh8a5ilyIEQDC5rY1f3U20JMry0Ll3WBzU58EZKsEuJFXhb5gwv8CsPvgA==}
 
   flattie@1.1.1:
     resolution: {integrity: sha512-9UbaD6XdAL97+k/n+N7JwX46K/M6Zc6KcFYskrYL8wbBV/Uyk0CTAMY0VT+qiK5PM7AIc9aTWYtq65U7T+aCNQ==}
@@ -1850,6 +1919,11 @@ packages:
 
   markdown-table@3.0.4:
     resolution: {integrity: sha512-wiYz4+JrLyb/DqW2hkFJxP7Vd7JuTDm77fvbM8VfEQdmSMqcImWeeRbHwZjBjIFki/VaMK2BhFi7oUUZeM5bqw==}
+
+  marked@18.1.1:
+    resolution: {integrity: sha512-zEGgrtUG8crk+TrMacJSVABU4DYDDkS8uqgU3ohrn/2fW9C2AEfUrO3m6IhpIpQpl7YcVpiXXC9cSMWDANT3dg==}
+    engines: {node: '>= 20'}
+    hasBin: true
 
   math-intrinsics@1.1.0:
     resolution: {integrity: sha512-/IXtbwEk5HTPyEwyKX6hGkYXxM9nbj64B+ilVJnC/R6B0pH5G4V3b0pVbL7DBj4tkhBAppbQUlf6F6Xl9LHu1g==}
@@ -3502,6 +3576,9 @@ snapshots:
     dependencies:
       csstype: 3.2.3
 
+  '@types/trusted-types@2.0.7':
+    optional: true
+
   '@types/unist@3.0.3': {}
 
   '@ungap/structured-clone@1.4.0': {}
@@ -3889,6 +3966,10 @@ snapshots:
     dependencies:
       domelementtype: 2.3.0
 
+  dompurify@3.4.17:
+    optionalDependencies:
+      '@types/trusted-types': 2.0.7
+
   domutils@3.2.2:
     dependencies:
       dom-serializer: 2.0.0
@@ -4037,6 +4118,8 @@ snapshots:
   fdir@6.5.0(picomatch@4.0.7):
     optionalDependencies:
       picomatch: 4.0.7
+
+  fflate@0.8.3: {}
 
   flattie@1.1.1: {}
 
@@ -4321,6 +4404,8 @@ snapshots:
       source-map-js: 1.2.1
 
   markdown-table@3.0.4: {}
+
+  marked@18.1.1: {}
 
   math-intrinsics@1.1.0: {}
 

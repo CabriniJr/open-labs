@@ -1,4 +1,6 @@
 ---
+import { EXERCICIOS_DOS_PILARES } from "@ovh/otel-domain";
+import { Exercicio } from "../../components/Exercicio.tsx";
 import { PilaresLab } from "../../components/PilaresLab.tsx";
 import { Predicao } from "../../components/Predicao.tsx";
 import SiteFooter from "../../components/SiteFooter.astro";
@@ -11,6 +13,10 @@ import "../../components/Predicao.css";
 import "../../components/PainelDaCarga.css";
 import "@ovh/depth-ui/src/stage.css";
 import "../../components/Explorer.css";
+import "../../components/Exercicio.css";
+import { montarExercicio } from "../../lib/exercicios";
+
+const exercicios = EXERCICIOS_DOS_PILARES.map(montarExercicio);
 ---
 
 <Base
@@ -101,6 +107,24 @@ import "../../components/Explorer.css";
           correta={0}
           revelacao="A histogram bucket holds a count. The values that produced it were discarded when the measurement was recorded — in the process, before anything was exported. That is not compression, so there is nothing to decompress: the only mechanical path from an aggregate back to an individual request is an exemplar, and it is a sample kept on purpose, not a recovery."
         />
+      </div>
+    </section>
+
+    <section class="lab-prosa editorial">
+      <div class="prose">
+        <h2>Instrument it</h2>
+        <p>
+          Two decisions from the file that actually runs in
+          <code>labs/three-pillars/</code>. The correct block is lifted out of
+          that file, so it cannot drift from the code that compiles. Both wrong
+          answers err on the side of looking more careful — more attributes, a
+          clearer name — which is how they happen.
+        </p>
+      </div>
+      <div class="lab-exercicios">
+        {exercicios.map((exercicio) => (
+          <Exercicio client:visible exercicio={exercicio} />
+        ))}
       </div>
     </section>
 

@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { exerciciosPorLab } from "../../../packages/otel-domain/src/exercicios/todos.js";
 
 /**
  * O que só a página responde. As regras sobre a definição e sobre a extração têm
@@ -61,3 +62,28 @@ test("a escolha não se refaz, e o placar do mapa conta o de primeira", async ({
   await page.goto("handbooks/otel/");
   await expect(page.locator(".roadmap__placar").first()).toContainText("first try");
 });
+
+/**
+ * A cobertura, e ela é derivada: a lista de páginas e a contagem de exercícios
+ * saem do pacote de domínio, não de um número escrito aqui.
+ *
+ * É o que falta às asserções de comportamento acima. Elas provam que o
+ * componente funciona, e provariam isso igual se alguém apagasse a seção de uma
+ * das páginas — o lab ficaria sem exercício nenhum e a suíte seguiria verde.
+ *
+ * A extração já tem guarda melhor: `montarExercicio` levanta no BUILD quando o
+ * marcador não está no arquivo que roda. O que ela não cobre é a página não
+ * chamar a extração.
+ */
+const PAGINAS: readonly (readonly [string, number])[] = [...exerciciosPorLab()];
+
+for (const [lab, quantos] of PAGINAS) {
+  test(`o lab ${lab} mostra os ${quantos} exercícios que o domínio declara`, async ({ page }) => {
+    await page.goto(`labs/${lab}/`);
+    const secoes = page.locator(".exercicio");
+    await secoes.first().scrollIntoViewIfNeeded();
+    await expect(secoes).toHaveCount(quantos);
+    // E a lacuna nasce vazia em todos: a resposta não é dada de graça.
+    await expect(page.locator('.exercicio__lacuna[data-cheia="true"]')).toHaveCount(0);
+  });
+}

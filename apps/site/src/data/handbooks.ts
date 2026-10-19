@@ -1,4 +1,6 @@
+import { carregarSubmissoes } from "@ovh/handbook-format";
 import type { TemaCompleto } from "../lib/tema.js";
+import { raizDoRepo } from "../lib/raiz.js";
 import { MAPA_OTEL, type RoadmapMap } from "./roadmap.js";
 import { MAPA_CPU } from "./roadmap-cpu.js";
 import { labs as otelLabs, phases as otelPhases } from "./roadmap.js";
@@ -6,9 +8,9 @@ import { labs as otelLabs, phases as otelPhases } from "./roadmap.js";
 /**
  * O catálogo do OpenLabs.
  *
- * O projeto deixou de ser um handbook e passou a ser a casa de vários: cada
- * handbook é um `.model` rodando no mesmo motor composicional. O que muda de
- * um para o outro é o domínio — o motor não sabe qual é.
+ * O projeto é a casa de vários handbooks. Cada lab escolhe o modelo de
+ * interação que serve ao assunto: fluxo composicional, estado ou manipulação
+ * direta. Os motores compartilhados não sabem qual é o domínio.
  *
  * Todo handbook tem a mesma anatomia, e é ela que dá a página:
  * **roadmap** (a ordem em que os conceitos se sustentam), **artigos** (o texto
@@ -64,7 +66,7 @@ export interface Handbook {
   readonly subject: string;
   readonly tagline: string;
   readonly blurb: string;
-  /** O `.model` que este handbook instancia no motor. */
+  /** Referência ao modelo principal. O contrato de execução é próprio do lab. */
   readonly model: string;
   readonly stage: "building" | "planned";
   /**
@@ -166,9 +168,11 @@ const OTEL: Handbook = {
    * ninguém escreveu é link morto em produção, e o leitor só descobre clicando.
    * Há teste dos dois lados.
    *
-   * Nota sobre o frontmatter: nenhum artigo do OTel declara `lab` ainda, porque
-   * nenhum lab do OTel está no ar e a página do artigo renderiza o campo como
-   * "open the lab →". O primeiro lab publicado leva o campo consigo.
+   * Nota sobre o frontmatter: dizia aqui que "nenhum artigo do OTel declara
+   * `lab` ainda, porque nenhum lab do OTel está no ar". Envelheceu —
+   * `who-owns-the-pipeline` aponta para `labs/providers` desde a entrega 4, e
+   * cinco labs do OTel estão publicados. Quem declara `lab` ganha o
+   * "open the lab →" na própria página.
    */
   articles: [
     {
@@ -219,7 +223,8 @@ const OTEL: Handbook = {
     {
       id: "agent-or-gateway-is-a-blast-radius",
       title: "Agent or gateway is a blast-radius question",
-      status: "coming",
+      status: "available",
+      href: "handbooks/otel/articles/agent-or-gateway-is-a-blast-radius",
       phase: 3,
     },
 
@@ -237,11 +242,19 @@ const OTEL: Handbook = {
       phase: 4,
     },
 
+    {
+      id: "what-an-attribute-costs",
+      title: "What an attribute costs",
+      status: "available",
+      phase: 5,
+      href: "handbooks/otel/articles/what-an-attribute-costs",
+    },
     { id: "the-cost-of-keeping-everything", title: "The cost of keeping everything", status: "coming", phase: 5 },
     {
       id: "sampling-is-a-statement-about-ignorance",
       title: "Sampling is a statement about what you will not know",
-      status: "coming",
+      status: "available",
+      href: "handbooks/otel/articles/sampling-is-a-statement-about-ignorance",
       phase: 5,
     },
     { id: "the-rollout-nobody-noticed", title: "The rollout nobody noticed", status: "coming", phase: 5 },
@@ -389,77 +402,30 @@ const CPU: Handbook = {
 };
 
 /**
- * O terceiro handbook: algoritmos como sistemas de peças.
+ * Os handbooks submetidos, lidos do disco em `handbooks/<id>/handbook.yaml`.
  *
- * Ele existe porque a pergunta que este motor responde não é sobre hardware. É
- * sobre **coisas que se movem entre peças** — e um algoritmo é isso, visto de
- * perto: uma pilha é uma caixa que guarda, uma fila é uma esteira com política,
- * uma ordenação é carga trocando de lugar. Modelar assim não é analogia: é o
- * mesmo motor, com outro domínio, e o desenho sai do que rodou.
+ * Esta é a porta do caminho dourado (`docs/handbooks.md`): quem quer publicar
+ * um handbook escreve **um diretório**, com dono declarado no próprio
+ * manifesto, e não toca em TypeScript nenhum. O catálogo deixou de ser uma
+ * lista de objetos escritos à mão e passou a ser o que existe mais o que foi
+ * submetido.
  *
- * As fases sobem pela mesma escada de sempre — primeiro a estrutura que guarda,
- * depois o algoritmo que a usa, depois o algoritmo que decide.
+ * Os dois de cima — OTel e CPU — continuam em TypeScript, e isso não é
+ * provisório nem dívida: eles trazem `map`, que é um desenho com coordenadas, e
+ * o contrato em arquivo não descreve desenho. O caminho dourado diz o limite em
+ * vez de escondê-lo, e `versoes.ts` chama o legado pelo nome — é a **versão
+ * anterior** do contrato, suportada com exemplar e teste, não "o jeito antigo".
+ *
+ * O `algorithms` foi o primeiro a migrar porque é o que não usa nada do que
+ * falta: sem mapa, sem referência externa. A prova de que a migração não mudou
+ * nada está em `handbooks.test.ts`, que compara o carregado com o objeto que
+ * estava escrito aqui, campo por campo.
  */
-const ALGORITHMS: Handbook = {
-  id: "algorithms",
-  /**
-   * Violeta, que é a distância que faz os três se distinguirem numa aba só. As
-   * espécies aqui são os itens que trocam de lugar, e a mais discreta é a que
-   * já está no lugar certo.
-   */
-  tema: {
-    claro: {
-      acento: "#6d28d9",
-      fluxo: "#6d28d9",
-      descarte: "#b8442a",
-      ok: "#3f7a52",
-      mutacao: "#c2410c",
-      processador: "#6d28d9",
-      conduite: "#3f7a52",
-      especies: ["#6d28d9", "#0e7490", "#b45309", "#3f7a52"],
-    },
-    escuro: { acento: "#c4a7f7", fluxo: "#c4a7f7", processador: "#c4a7f7", especies: ["#c4a7f7", "#22d3ee", "#e3b341", "#3fb950"] },
-  },
-  name: "Algorithms Visual Handbook",
-  subject: "algorithms",
-  tagline: "An algorithm is a system of parts. Watch the items move.",
-  blurb:
-    "A stack is a box with things in it; a queue is a belt with a policy; a " +
-    "sort is a load changing places. Every model here runs, and the answer " +
-    "comes out of parts moving — never out of a script.",
-  model: "algo.model",
-  stage: "building",
-  phases: [
-    { number: 1, title: "What holds the data", line: "Stack, queue, table: the boxes everything else is built on." },
-    { number: 2, title: "One pass at a time", line: "Evaluation and traversal, as items travelling between parts." },
-    { number: 3, title: "Sorting", line: "The same load, changing places — and what each swap costs." },
-    { number: 4, title: "Greedy", line: "Deciding with what is in front of you, and when that is enough." },
-    { number: 5, title: "Dynamic programming", line: "A table that remembers, so the same work is never done twice." },
-  ],
-  articles: [
-    { id: "a-stack-is-a-box", title: "A stack is a box", status: "coming", phase: 1 },
-    { id: "fifo-and-backpressure", title: "FIFO, and what happens when it is full", status: "coming", phase: 1 },
-    { id: "postfix-needs-no-parentheses", title: "Postfix needs no parentheses", status: "coming", phase: 2 },
-    { id: "what-a-swap-costs", title: "What a swap costs", status: "coming", phase: 3 },
-    { id: "when-greedy-is-right", title: "When greedy is right", status: "coming", phase: 4 },
-    { id: "the-table-that-remembers", title: "The table that remembers", status: "coming", phase: 5 },
-  ],
-  labs: [
-    {
-      id: "rpn",
-      title: "A stack machine, running",
-      status: "available",
-      phase: 2,
-      href: "labs/rpn",
-    },
-    { id: "fifo", title: "A queue, and what fills it", status: "coming", phase: 1 },
-    { id: "sorting", title: "Sorting, swap by swap", status: "coming", phase: 3 },
-    { id: "greedy", title: "Greedy, and the case it misses", status: "coming", phase: 4 },
-    { id: "dynamic", title: "The table that remembers", status: "coming", phase: 5 },
-  ],
-};
+const SUBMETIDOS: readonly Handbook[] = carregarSubmissoes(raizDoRepo(), {
+  raizDosArtigos: `${raizDoRepo()}/apps/site/src/content/articles`,
+});
 
-export const HANDBOOKS: readonly Handbook[] = [OTEL, CPU, ALGORITHMS];
+export const HANDBOOKS: readonly Handbook[] = [OTEL, CPU, ...SUBMETIDOS];
 
 export function handbookOf(id: string): Handbook | undefined {
   return HANDBOOKS.find((handbook) => handbook.id === id);

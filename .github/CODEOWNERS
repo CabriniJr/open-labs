@@ -1,0 +1,14 @@
+# GERADO — não edite à mão.
+#
+# Sai do campo `maintainers` de cada handbooks/<id>/handbook.yaml.
+# Regenerar:  node scripts/handbook.mjs codeowners --write
+# Conferir:   node scripts/handbook.mjs codeowners
+#
+# A promessa do caminho dourado é que quem submete mantém o seu: estes
+# caminhos são o diretório do manifesto e a pasta dos artigos daquele
+# handbook, que é tudo o que uma submissão possui.
+
+/handbooks/algorithms/ @CabriniJr
+/apps/site/src/content/articles/algorithms/ @CabriniJr
+/handbooks/kubernetes/ @CabriniJr
+/apps/site/src/content/articles/kubernetes/ @CabriniJr

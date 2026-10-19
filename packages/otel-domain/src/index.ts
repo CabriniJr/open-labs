@@ -58,7 +58,65 @@ export type { Amostrador, Decisao } from "./providers/sampler.js";
 
 // Os exercícios de instrumentação: definição, sem a resposta certa.
 export { EXERCICIOS_DOS_PROVEDORES } from "./exercicios/providers.js";
+export { EXERCICIOS_DA_ANATOMIA } from "./exercicios/anatomia.js";
+export { EXERCICIOS_DOS_PILARES } from "./exercicios/pilares.js";
+export { EXERCICIOS_DO_COLLECTOR } from "./exercicios/collector.js";
+export { EXERCICIOS_DA_AMOSTRAGEM } from "./exercicios/amostragem.js";
 export type { DefinicaoDeExercicio, Distrator } from "./exercicios/tipos.js";
+
+// Cardinalidade e a conta: lab PhET-like, SEM motor (ADR §9). Aritmética sobre
+// um produto cartesiano, e nenhum preço afirmado em lugar nenhum.
+export { calcular, fatorDeEntrada, pontosPorSerie } from "./cardinalidade/modelo.js";
+export type { Atributo, Conta, TipoDeMetrica } from "./cardinalidade/modelo.js";
+export {
+  ATRIBUTOS_DA_CARDINALIDADE,
+  ROTULOS_DA_CARDINALIDADE,
+  MAL_ENTENDIDOS_DA_CARDINALIDADE,
+} from "./cardinalidade/labels.js";
+
+// O lab do Collector: um receiver, duas pipelines, uma cópia para cada.
+export { collectorWorld, PARAMS_DO_COLLECTOR } from "./collector/world.js";
+export type {
+  SpanDoCollector,
+  EstadoDaApp,
+  EstadoDoReceiver,
+  EstadoDoLimiter,
+  EstadoDoLote,
+  EstadoDoFiltro,
+  EstadoDoDestino,
+  EstadoDoDescarte,
+} from "./collector/world.js";
+export { estadoDoCollector, LEITOR_DO_SPAN_DO_COLLECTOR } from "./collector/estado.js";
+export type { EstadoDoCollector } from "./collector/estado.js";
+export { VIEW_COLLECTOR, VIEWS_DO_COLLECTOR } from "./collector/views.js";
+export {
+  ROTULOS_COLLECTOR,
+  ROTAS_DO_COLLECTOR,
+  ROTA_FILTRADA,
+  MAL_ENTENDIDOS_DO_COLLECTOR,
+} from "./collector/labels.js";
+
+// O lab da amostragem: head decide antes de saber; tail precisa do trace inteiro.
+export { amostragemWorld, PARAMS_DA_AMOSTRAGEM, hashDoTrace } from "./amostragem/world.js";
+export type {
+  SpanAmostrado,
+  EstadoDaAppAmostrada,
+  EstadoDoHead,
+  EstadoDoBalanceador,
+  EstadoDoTail,
+  TraceAberto,
+  TraceNoBackend,
+  EstadoDoBackendDeTraces,
+  EstadoDoDescarteDeTraces,
+} from "./amostragem/world.js";
+export { estadoDaAmostragem, LEITOR_DO_SPAN_AMOSTRADO } from "./amostragem/estado.js";
+export type { EstadoDaAmostragem, EstadoDeUmGateway } from "./amostragem/estado.js";
+export { VIEW_AMOSTRAGEM, VIEWS_DA_AMOSTRAGEM } from "./amostragem/views.js";
+export {
+  ROTULOS_AMOSTRAGEM,
+  SERVICOS_DO_TRACE,
+  MAL_ENTENDIDOS_DA_AMOSTRAGEM,
+} from "./amostragem/labels.js";
 
 // O lab dos três pilares: as mesmas requisições, três gravadores.
 export { pilaresWorld, PARAMS_DOS_PILARES, latenciaDe } from "./pilares/world.js";

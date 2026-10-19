@@ -1,5 +1,97 @@
 # Progresso
 
+## Handbook Studio — edição local e autoria assistida
+
+18/10/2026, continuação pedida pelo Luigi. `/studio/` entrega uma primeira
+interface de autoria com fontes, editor, diagnósticos do SDK e prévia do aluno.
+É possível criar um handbook, abrir bundle v1 ou ZIP de fontes, editar currículo
+e artigos, criar rascunhos sem inventar bibliografia e exportar o mesmo bundle
+validado pelo CLI. O exemplo inicial é o Kubernetes Handbook.
+
+Fontes inválidas podem ser salvas localmente e baixadas em ZIP; export de
+release exige os portões mecânicos. Abertura falha não substitui o projeto,
+há restauração do anterior em sessão, e armazenamento bloqueado mantém edição
+e download disponíveis. Labs só ganham link de execução se o host os conhece.
+A prévia sanitiza Markdown e mantém os degraus textuais e fontes primárias.
+
+O briefing para Claude/outro assistente reúne objetivo, arquivos e diagnósticos,
+com a jornada prever, alterar, observar, explicar e transferir. É um handoff
+explícito por arquivo/clipboard, sem chamada de modelo ou envio automático.
+Ainda não há edição de comportamento de lab, Git sync, colaboração ou publicação.
+
+O SDK `handbook-format` avança para `0.1.0-alpha.2`: o leitor de manifesto passa
+à entrada sem I/O e ganha escritor v1, conferido por round-trip do bundle
+congelado. `interactive-core` permanece em `alpha.1`. O Studio usa essa entrada
+no browser; o pacote instalado continua passando no smoke externo.
+Os resultados finais dos portões são registrados na PR desta entrega.
+
+## Autoria independente — SDK e artefatos alpha
+
+18/10/2026, continuação pedida pelo Luigi. A autoria passa a ter uma prova fora
+do monorepo: `pnpm sdk:pack` produz tarballs compilados de `handbook-format` e
+`interactive-core`, com versões alpha explícitas e índice SHA-256. Não publica
+registry, tag ou produção. `pnpm sdk:smoke` instala os artefatos em um projeto
+externo, cria, confere, exporta e consome um handbook, além de executar replay
+e ramificação do runtime sem workspace, Astro ou compilador.
+
+O CLI instalado fornece `new`, `check --json`, `export`, `inspect` e `versions`.
+Seu layout é `handbook.yaml` + `articles/`. O gerador e a régua mecânica de
+artigos são comuns ao comando do repo. O leitor do bundle valida estrutura,
+versões e conteúdo; um export congelado da PR #17 prova que o wire format v1
+continua legível. A saída `/contract` não importa filesystem.
+
+O bundle leva conteúdo, e `labsExigidos` explicita as implementações que o host
+precisa fornecer. Não há distribuição automática de labs, ABI de plugin ou
+Studio completo. A documentação no índice de autoria registra a arquitetura e
+o caminho externo, com a mesma direção de experiências guiadas para conceitos.
+Os resultados dos portões são registrados na PR desta entrega.
+
+## POC — Framework interativo e Kubernetes Pod lifecycle
+
+16/10/2026, a pedido do Luigi. O framework passa a declarar explicitamente
+mais de uma forma de interação: **Mermaid é contrato dos cenários do motor de
+fluxos**; estado/reconciliação e manipulação direta não precisam passar por ele.
+A decisão está no capítulo “Framework interativo e Pod lifecycle”, acessível
+no índice de autoria. A apresentação da landing e do catálogo foi alinhada à
+mesma distinção.
+
+Em 17/10, Luigi explicitou a direção de experiência: “um Instruqt para conceitos
+e teoria”, com inspiração nos diagramas animados do KodeKloud. O capítulo de
+arquitetura registra a jornada prever, alterar, observar, explicar e transferir,
+e a regra de que movimento deve corresponder a mudanças do modelo. Studio
+AI-first e distribuição privada/versionada seguem como direção de produto.
+
+`interactive-core` é uma biblioteca pequena de eventos, transições, snapshots e
+histórico limitado, sem dependência de Mermaid, `depth-core` ou `depth-ui`.
+`kubernetes-domain` é sua primeira POC: interpreta um subconjunto de manifestos
+Pod/Deployment e deriva reconciliação, binding por requests, início, restart,
+OOM, exclusão e liberação das reservas. Não é implementação de Kubernetes.
+
+O Kubernetes Visual Handbook entra no catálogo com artigo e lab. A interface,
+inspirada na árvore de recursos do Argo, mantém manifesto desejado separado do
+observado e apresenta ownership, node de cada Pod, CPU/memória disponíveis,
+inspector, eventos, carga sintética e replay. Seis experimentos exercitam os
+casos; escala é explicitamente do Deployment, restart é do container.
+
+As guardas de fronteira incluem o runtime independente e o novo domínio.
+Os manifestos da contraparte real são comparados aos iniciais do lab e servidos
+diretamente dos arquivos do repo, sem cópia divergente no diretório público.
+Há 28 testes novos de domínio/histórico e testes de browser desktop/mobile.
+
+**Limite de verificação:** a tentativa de subir kind v0.27.0 / Kubernetes
+v1.32.2 neste container foi bloqueada pelo kubelet sem `/dev/kmsg`, antes da
+inicialização do API server. A contraparte ainda não tem verificação ao vivo;
+seu README registra o protocolo para fazê-la em um cluster descartável.
+
+O handbook usa o contrato `openlabs/handbook/v1` em
+`handbooks/kubernetes/handbook.yaml`, com maintainer e CODEOWNERS derivados,
+aproveitando o caminho de autoria recém-entregue pelo Claude. Não acrescenta
+outro objeto de catálogo em TypeScript.
+
+O trabalho incorpora os commits da branch de conteúdo até `2fcd287`. Os
+resultados dos portões desta POC são registrados na PR; não houve promoção
+para produção ou alteração de uma instância Kubernetes externa.
+
 Registro do que já foi feito, sessão a sessão. **Atualize este arquivo ao fechar cada
 sessão**, antes do último commit — é daqui que a próxima sessão descobre onde parou,
 sem reler o histórico do git.
@@ -2192,3 +2284,634 @@ arquivos que precisam; um setup compartilhado resolveria de vez e não foi feito
 
 Estado: **1093 unitários (93 arquivos), 283 e2e (21 puladas, zero falhas)**, typecheck,
 boundaries, catálogo e build verdes — os seis rodados na árvore final, depois de tudo pousar.
+
+## Entrega 16 — O mermaid pousa, e o medidor que ninguém lia ✅
+
+13/10/2026. A rodada era fechar o merge do esqueleto Mermaid (PR #16) e virou duas coisas: o
+merge, e o buraco que o merge deixou à vista.
+
+### O que o CI já dizia, e ninguém tinha lido
+
+A PR #16 estava **vermelha desde o terceiro commit**, e morria em 27 segundos — em
+`pnpm boundaries`, antes de chegar ao typecheck, ao test, ao build e ao e2e. A causa era de uma
+palavra: o commit que pôs `mermaid-skeleton` na lista dos agnósticos escreveu, no mesmo pacote,
+uma fixture chamada `otel-anatomy`. A guarda de fronteira passou a ler o pacote e achou "otel"
+dentro do motor.
+
+**A guarda estava certa**, e o conserto foi na fixture: ela é teste do motor, e a topologia dela
+não é de domínio nenhum. Vale anotar porque é a tentação óbvia — a guarda acusa, e o caminho
+curto é afrouxar a guarda.
+
+E o novo pacote **não estava nas referências do `tsconfig` da raiz**: `tsc -b` construía sete
+projetos e nenhum deles era o do parser e do compilador. Mil linhas fora do `pnpm typecheck`,
+verdes porque ninguém olhava.
+
+### O medidor que existia e ninguém lia
+
+A pergunta que abriu isto era de confiança no formato: o `.mmd` declara a porta de cada fio num
+**rótulo escrito à mão** (`call:request`, `export:span`). O que acontece se alguém errar uma
+letra?
+
+Medido antes de ser respondido. Com `cal:request` no lugar de `call:request`:
+
+- o parser aceita;
+- o compilador aceita — um nó com `override` **não tem porta validada**, porque o compilador não
+  pode saber por quais portas uma função emite;
+- `validateWorld` aceita, e o mundo é válido;
+- o run roda, e o livro-caixa marca `out:gateway.call.unwired: 11`.
+
+**O motor já media.** Onze emissões no vácuo, contadas, com nome e porta — e nenhum leitor. O
+que caía era um teste de comportamento três camadas abaixo, cobrando quatro spans e recebendo
+um; e a primeira suspeita de quem lê isso é do comportamento, que está certo.
+
+O que se perde sem isso não é o desenho: é o **sentido**. A anatomia com esse erro de uma letra
+continuava rodando, continuava válida, e passava a ensinar que um trace tem um span.
+
+Então o conserto não foi medir — foi **ler o medidor**: `emissoesPerdidas(state)` em
+`depth-core/meters.ts`, ao lado de `portCount`, e uma guarda por domínio que varre os mundos e
+cobra lista vazia. Com o typo, ela falha dizendo `gateway.call: 19 emissão(ões) sem fio` — nó,
+porta e contagem, na altura em que o erro foi cometido.
+
+**Os nove mundos do repositório passaram de primeira**, e isso é o que torna a guarda instalável
+sem exceção nenhuma: ela não documenta dívida, ela trava o próximo erro.
+
+### Três distinções que o livro-caixa não faz sozinho
+
+A guarda só vale se não gritar com o que é legítimo, e são três coisas parecidas que não são a
+mesma:
+
+- **descarte declarado** (`to: DROP`) não é perda — o autor pediu que caísse, e o buffer emitindo
+  por `drop` é o projeto cumprindo a regra de que descarte invisível é mentira;
+- **porta de controle** que entrega sinal não é perda: o escalonador só marca `unwired` quando
+  não houve destino de sinal tampouco;
+- **fio nenhum** é perda, e é a única das três.
+
+### A assimetria da chave, que inverteu a implementação
+
+A chave é `out:<nó>.<porta>.unwired`, e partir isso parecia detalhe. Não é:
+
+- `indexTree` **recusa** id com `.` ou `:` na construção — então o nó é garantidamente de um
+  pedaço só. (Um teste cobra isso de dentro de `perdas.test.ts`, e não só de `tree.test.ts`: se
+  um dia a regra afrouxar, a partida da chave tem de ser repensada junto.)
+- `validateWorld` só valida porta **que aparece num fio**. A porta deste balde é, por definição,
+  a de uma emissão sem fio — **a única do livro-caixa que nunca passou por validação nenhuma**, e
+  pode trazer um ponto dentro.
+
+Escrito primeiro com `lastIndexOf`, pela analogia com o `Inspector` da entrega 15. Está errado:
+com porta `a.b` daria nó `gen.a` e porta `b`, as duas inventadas. É `indexOf`, e a razão é a
+assimetria — o lado garantido é o do nó, não o da porta.
+
+### Duas sobras que o typecheck pegou e o vitest não
+
+`vitest` passou verde com `comTransistores: true` num mundo cuja opção se chama
+`transistoresNaUla`: propriedade desconhecida é ignorada em silêncio, e a variante "CPU aberta
+até o transistor" **testava a CPU comum duas vezes**. Rodava em 3ms e parecia ótimo; agora roda
+em 1370ms, que é o preço de abrir trinta e dois bits até o silício.
+
+É o argumento do typecheck em teste, e não só em código de produção: um teste que não typecheca
+mente com cara de verde.
+
+### A outra metade: o fio que não carrega nada
+
+A guarda de cima cobre uma direção — o comportamento fala e ninguém ouve. A inversa é um fio
+que sai de porta onde nada é emitido: o desenho mostra uma ligação que não existe. No typo de
+uma letra as duas acontecem juntas, e a primeira bastava. Separadas, não, e foi medido:
+acrescentando ao mmd uma aresta `gateway -- "metrics:foo" --> backend`, sem comportamento
+nenhum emitindo por `metrics`, **`sem-perda.test.ts` passa 8/8** e só a guarda nova acusa.
+São complementares, e é por isso que são duas.
+
+Para um material visual essa é a pior das duas: o leitor não tem como saber que aquela linha
+nunca carregou nada, e o desenho é o argumento.
+
+**A guarda é local à anatomia de propósito, e isso foi medido antes de decidido.** `portCount`
+lê `out:<nó>.<porta>`, e a chave de um fio que sai de COMPOSTO pertence às folhas de dentro
+dele. Na CPU, **67 dos 68** fios que essa conta chamaria de mortos saem de composto e carregam
+carga normalmente — uma guarda geral assim seria fábrica de falso positivo, que é como se
+ensina gente a ignorar guarda. Quem resolve a cadeia de bornes é `emissoesPorPorta`, por tick,
+e isso já estava resolvido uma vez para a camada de vista. A anatomia escapa porque o único
+composto dela é a raiz `sistema` e nenhum fio sai dela; a premissa é **cobrada em teste**, e
+cai primeiro no dia em que ela ganhar um `subgraph`.
+
+No `providers`, 6 dos 30 fios ficam mudos no cenário padrão e **todos** acordam no cenário que
+o lab existe para ensinar — descarte, fila cheia, `record-only`, collector caído. Nenhum fio
+do lab é decoração.
+
+E um susto que era erro de medida meu, anotado porque é o tipo de coisa que viraria "achado":
+o caminho de métricas parecia morto em todos os cenários. Não estava — `export-interval`
+padrão são 60 ticks, e a sonda rodava exatamente 60.
+
+### A terceira perna: o rótulo que mente
+
+O parser lê `call:request` como porta `call` e kind de mensagem `request`, e guarda os dois no
+`SkeletonEdge`. **O compilador usa a porta e descarta o kind** — `WorldSpec.wires` não tem campo
+para ele, e quem decide o kind do que viaja é `ctx.emit(kind, …)`, no comportamento.
+
+Então o mmd pode dizer `call:request` enquanto o comportamento emite `ctx.emit("pedido")`, e
+nada acusa. Não perde emissão: o fio existe e carrega. Não há fio morto: ele tem tráfego. O que
+se perde é só o que o rótulo promete — e a §3 do design é explícita em dizer que esse rótulo
+**é** o kind da mensagem no vocabulário do domínio.
+
+Num material em que o desenho é o argumento, essa é a mentira mais barata de cometer e a mais
+difícil de ver: o lab roda, ensina a topologia certa, e **nomeia errado o que passa por ela**.
+
+Medido como as outras duas. Com `call:pedido` no mmd e o comportamento emitindo `request`:
+`sem-perda.test.ts` passa 8/8, a guarda de fio morto passa, e só a nova acusa —
+`gateway.call: rótulo diz "pedido", viajou ["request"]`.
+
+Fecha o conjunto, e as três são distintas:
+
+| O que acontece | Quem acusa |
+|---|---|
+| emissão sai por porta sem fio | `emissoesPerdidas` (as três guardas de domínio) |
+| fio sai de porta onde nada é emitido | `fios.test.ts` — "carrega alguma coisa" |
+| rótulo nomeia o kind errado | `fios.test.ts` — "carrega o que o rótulo diz" |
+
+Nos três casos o mundo é válido, o run roda e nenhum erro aparece. É o que torna o conjunto
+necessário: o formato não falha alto, ele **ensina outra coisa**.
+
+### A tabela que ensinava a opção rejeitada
+
+A §4.2 da spec do design dizia que linha pontilhada é canal de **controle**. A `Nota 1` do
+exemplo põe as duas saídas lado a lado e recomenda **a outra** — traço é ênfase visual,
+`data`/`control` vem do prefixo do rótulo —, que é o que o parser implementa e o que
+`parse.test.ts` já fixava em teste. A §4.3 da própria spec já usava `control:tick`: a tabela
+contradizia a seção seguinte, e o documento que alguém lê primeiro ensinava a regra morta.
+
+Quem depende disso é a anatomia. O span **é dado** — chega no `inbox`, não em `ctx.signals` —
+e ainda assim sai por linha pontilhada, para dizer "sai pelo lado, não pela cadeia". Pela
+regra antiga ela teria de escolher entre o desenho certo e o fio certo.
+
+### A placa entra no catálogo nativo, e não precisou de sintaxe nova
+
+O buraco óbvio do compilador é o catálogo: nativamente ele montava `source`/`buffer`/`sink`, e
+`router`/`switch`/`store`/`sequencer`/`static` só existiam por `overrides` — é assim que a
+anatomia tem `router` e `store`. A tentação é atacar `router` primeiro, porque é o que os labs
+usam. Está errado: nele o que falta é **política de rota**, e declarar política é decisão de
+linguagem que a §6 manda aprovar antes de implementar.
+
+`static` é de outro tipo, e foi o que sobrou olhando o que o motor de fato exige. O `ObjectSpec`
+de uma placa é `{ id, kind, label, leaf }` **e nada mais**: sem `init`, sem `behavior`, porque
+`indexTree` recusa placa que aja — placa que age deixou de ser placa. O `.mmd` já traz id (o nó),
+kind (o `classDef`) e label. Não faltava nada.
+
+A recusa dizia "o formato ainda não declara o conteúdo dela", e é verdade para conteúdo **rico**
+— um recurso com atributos, uma tabela de limites. Só que esse conteúdo **nunca chegou ao motor
+nem pelo caminho do TS**: o `placa()` do lab dos provedores recebe um `PlacaDeRecurso`, usa
+`dados.titulo` como `label`, e para aí. Para a estrutura, o rótulo é o conteúdo — então a recusa
+guardava uma porta que não tinha nada atrás.
+
+Com isso o critério de morte do `.modelet.yaml` (§7 da spec: "quando o Mermaid cobrir `source`,
+`buffer`, `sink`") foi **atingido e passado** — o compilador de Mermaid monta um kind que o de
+modelet recusa.
+
+**Duas recusas que ficaram, e a segunda é a interessante.** Fio que CHEGA numa placa já era
+recusado por `validateWorld`; agora é recusado na compilação, mais cedo e com a frase que
+explica o que placa é, em vez de "não recebe por nenhuma porta". E fio que SAI de uma placa é
+**provadamente morto**: placa nunca tem behavior, logo nunca emite, logo aquele fio não
+carregaria nada em nenhum tick. É o único caso de fio morto que se recusa sem rodar o mundo —
+os outros dependem do run, e é por isso que as guardas da rodada são testes e não checagem
+estática.
+
+O erro de quem liga um fio numa placa não é ter errado a porta: é ter lido a placa como peça de
+fluxo. A mensagem responde isso, e não o sintoma.
+
+### As guardas saem da anatomia e viram peça do formato
+
+As três guardas nasceram amarradas à anatomia, e isso tinha prazo: quando o lab nº2 em `.mmd`
+aparecer, alguém copia e cola — e copia a ressalva de composto sem ler. Duas delas (fio sem
+emissão, rótulo que mente) viraram `conferir.ts` no `mermaid-skeleton`, com a API em três peças:
+`observarCanais(estados)` acumula o que viajou, `conferirDesenho(sk, spec, observado)` devolve só
+o que divergiu, `relatoDeDivergencias` escreve a mensagem. A terceira (emissão sem fio) fica no
+`depth-core`, porque não é do formato: vale para mundo escrito à mão também.
+
+**A ressalva de composto virou pré-condição que levanta, em vez de comentário.** Um chamador que
+ignora um aviso recebe uma lista de mentiras, e a próxima pessoa a ler o teste acredita nela.
+
+E aí o parser respondeu algo melhor do que a pré-condição: **ele não deixa um `.mmd` ligar fio
+num `subgraph`**, e recusa nas duas ordens — `"bloco" já é subgraph` quando o subgraph vem
+antes, `colide com outro id já usado` quando vem depois. Valia medir a segunda, porque a
+checagem olha `ctx.subgraphs`, que é preenchido na leitura, e a ordem inversa poderia escapar.
+Não escapa. Então para o caminho do mmd a pré-condição é rede de segunda camada: um composto só
+nasce de `subgraph`, e nenhum fio toca um. Ela segue valendo para quem apontar a conferência
+para um `WorldSpec` escrito em TS — que é como alguém a usaria num lab de CPU, e onde a conta
+ingênua erraria 67 de 68 vezes. O teste da ordem inversa mora junto da conferência, e não só em
+`parse.test.ts`, porque é a premissa de que ela depende.
+
+A anatomia virou a primeira consumidora, e o diagnóstico melhorou de graça: com `cal:request` no
+lugar de `call:request`, o relato agora mostra o **raio de propagação** — `gateway.cal` mudo mais
+`checkout.call`, `payments.call` e `checkout.export`, que emudecem porque a cadeia quebrou atrás.
+Antes a guarda local acusava um canal só.
+
+E os cenários de defeito ganharam a distinção que faltava: canal mudo ali é **esperado** —
+desligar a amostragem silencia os `export` de propósito, e cobrar lista vazia seria cobrar que o
+lab não ensinasse. O que vale nos cenários é a outra metade, que não depende de parâmetro: o que
+carrega tem de carregar o kind prometido. Com um teste a mais provando que o cenário muda algo,
+senão o filtro passaria mesmo com parâmetro inerte.
+
+### O CI vermelho que não era meu, e não era para ignorar
+
+`65586c9` reprovou em `[mobile] gates-lab: a porta acesa é desenhada acesa`, e o commit seguinte
+passou no mesmo teste. Nada no diff toca portas lógicas nem o CSS do palco. A saída fácil era
+chamar de flake. Medido, com uma sonda que lê o mesmo estilo seis vezes:
+
+| | alta | baixa | delta | limiar |
+|---|---|---|---|---|
+| em regime | 0.068 | 0.009 | **0.0594** | 0.02 ✅ |
+| primeira leitura | 0.056 | 0.009 | 0.0472 | 0.02 ✅ |
+| o que o CI pegou | 0.022 | 0.009 | **0.0131** | 0.02 ❌ |
+
+Em regime a margem é **três vezes** o limiar. O teste compara a croma em oklab durante a
+transição do `fill`, que `stage.css` declara em 160ms; num runner mais lento o quadro pego é mais
+cedo. O limiar não é o problema — afrouxá-lo esconderia justamente o defeito que o teste existe
+para pegar, que é a porta acesa cair na tinta da apagada.
+
+`tintaEstavel` espera o `fill` parar de mudar, com orçamento de 1,6s (dez vezes a transição), e
+**levanta** se estourar: tinta que não assenta é achado, não ruído, e devolver a última medida
+faria a asserção reprovar com a mensagem errada. Aplicado também no laço de temas do mesmo teste,
+que tem a corrida idêntica pela razão idêntica — ele mede logo depois de trocar o tema.
+
+### E a guarda que impede a guarda de envelhecer — que achou um furo na primeira volta
+
+O defeito que esta rodada inteira perseguiu é guarda que passa a não medir nada **sem avisar**.
+As varreduras `sem-perda` eram exatamente isso: lista de mundos escrita à mão. O lab novo entra,
+ninguém lembra do arquivo, e o verde continua verde cobrindo os antigos.
+
+A convenção que resolve já valia antes de ser usada: **todo construtor de mundo deste
+repositório termina em `World`**. Então a guarda é sobre a *superfície do pacote* — lê
+`Object.keys` do índice, filtra por `/World$/`, e compara com a lista varrida. Um construtor
+novo faz o teste cair **nomeando-o** e dizendo onde acrescentá-lo.
+
+Não é hipótese: **na primeira vez que ela rodou, achou `portaCmosWorld` de fora.** Exportado do
+`cpu-domain`, varredura escrita à mão na rodada anterior, ficou para trás. Os doze variantes
+dele (seis portas × com e sem atalho) estavam limpos — então o que se perdeu não foi um defeito,
+foi a garantia. Entraram na varredura, e a CPU passou de 7 para 20 testes.
+
+O limite fica declarado no próprio teste: construtor que não é exportado do índice é invisível
+para ela. É guarda sobre superfície pública, não sobre chamadas.
+
+Houve uma escolha de desenho a registrar: a lista de nomes (`CONSTRUTORES_VARRIDOS`) é segunda
+fonte da mesma verdade, e o projeto normalmente recusa isso. Ela fica porque existe só para a
+comparação nome-a-nome, e o preço está dito no docblock — um nome listado ali sem estar em `LABS`
+não é pego por nada. A alternativa seria a guarda chamar cada construtor, e os construtores não
+têm assinatura uniforme: `cpuWorld` quer uma imagem montada, `rpnWorld` quer tokens.
+
+### O guia de autoria ensinava um caminho que não existe mais
+
+A última coisa olhada foi a doc que um autor de lab lê primeiro, e ela estava três mudanças
+atrás:
+
+- mandava escrever em **`apps/site/src/labs/<slug>/scenario.ts`**, e esse diretório **não
+  existe**;
+- descrevia a API `Scenario<S>` com `initialState`/`step`. Ela ainda é exportada do
+  `depth-core`, e **nenhum lab a usa**: as únicas menções no repositório são o próprio motor e o
+  teste dele. Os sete componentes de lab vão todos por `new World(spec)`;
+- não mencionava **Mermaid nem `.mmd` uma única vez** — nem ela, nem `model-format.md`, nem
+  `kinds.md`. O formato que a spec declara canônico desde 16/09 era invisível nos três
+  documentos que um autor leria.
+
+Reescrito o que um lab **é** hoje, com as duas formas lado a lado (esqueleto Mermaid para labs
+novos; `WorldSpec` à mão para os oito que antecedem o formato, e sem obrigação de reescrever),
+mais a tabela das três guardas, que é o que um lab novo tem de satisfazer.
+
+`Engine`/`Scenario<S>` ficam no código, com uma nota dizendo que nenhum lab as usa e que se elas
+deviam continuar públicas é pergunta aberta. Remover superfície pública é decisão, não limpeza.
+
+**Uma afirmação minha foi corrigida pela leitura do motor.** Eu havia escrito que "um
+comportamento que ignora a fase roda duas vezes". Está pela metade: ele é chamado nas duas, sim,
+mas o escalonador **recusa em voz alta** emissão em porta cujo regime não casa com a fase,
+nomeando a porta — e o `state` devolvido na acomodação nunca é lido, que é o que separa lógica
+combinacional de elemento de memória. A mecânica real é mais útil que o aviso vago, e foi essa
+que ficou escrita.
+
+E o fio solto que o conserto do guia deixou: a §0 do `model-format.md` é literalmente a tabela
+"o que já é código, e o que ainda é proposta", e a decisão de 16/09 não estava nela. Ganhou uma
+§0.1 dizendo que o cenário saiu dali, que o `modelet` segue valendo para o agregado `.model`, e
+que nada implementado foi removido — o que não acontece mais é cenário novo nascer em YAML.
+
+Com a divergência registrada com precisão, porque ela é nova: **o compilador de Mermaid monta
+`static` e o de modelet não.** A linha da tabela que recusa `static` descreve o
+`compileModelet`, e segue correta. A tabela de contratos de cada compilador é local de
+propósito, e o `compile.ts` do `mermaid-skeleton` dizia isso no docblock desde que nasceu — a
+divergência era prevista, e agora é fato.
+
+O que **não** divergiu entrou junto, porque é a pergunta que alguém faria em seguida: `router`,
+`switch`, `store` e `sequencer` seguem recusados nos dois lados, e a razão é a mesma — falta
+política, não sintaxe — com o ponteiro para a spec que mediu isso.
+
+`kinds.md` ficou sem ponteiro de propósito: é o catálogo dos primitivos do motor, agnóstico de
+formato de autoria. Acrescentar Mermaid ali seria confundir as duas coisas.
+
+Estado: **1183 unitários (101 arquivos)** — 68 novos —, typecheck, boundaries, catálogo e build
+verdes. O e2e local falha num teste `[mobile]` por artefato de container (o Playwright 1.62.1
+procura chromium build 1234 e a imagem traz 1194, então o full chromium entra no lugar do
+headless shell e o `site-nav` fixo intercepta o clique); reproduz idêntico em `main`, onde o CI
+real está verde.
+
+
+## Entrega 17 — Dois labs, duas formas, e um diagnóstico meu que estava errado ✅
+
+16/10/2026. O pedido era amplo — gráficos, conteúdo, exercícios, mais labs — com uma restrição
+que decide tudo antes de qualquer código: **a ADR §9**. Ela tem duas perguntas em ordem, e a
+rodada aplicou as duas em vez de escolher a forma por gosto.
+
+### O conteúdo que faltava: duas de três contrapartes sem exercício
+
+O repositório tinha três contrapartes reais rodando em compose e **só uma com exercício**. A
+anatomia tinha `Service.java` desde a entrega 13 e nenhuma pergunta em cima dele.
+
+Os dois da anatomia são sobre a MESMA peça vista das duas pontas — qual contexto o serviço passa
+adiante —, e isso é deliberado: o defeito que o lab ensina não é erro de API, é **a árvore
+fechar parecendo completa com um salto a menos**, e esse resultado sai de qualquer das duas
+pontas errada. Cada exercício tem um distrator que produz um cenário que o painel do lab já
+mostra: `Context atual = recebido` é o `sem-instrumentacao`, `inject(Context.root(), …)` é o
+`derrubar-cabecalho-em`.
+
+Os dois dos pilares erram para o lado que **parece mais cuidadoso** — mais atributos, nome mais
+claro —, que é como eles acontecem: `trace_id` como atributo de métrica (a intenção está certa,
+e é para isso que exemplar existe), e `setUnit("milliseconds")` em vez do código UCUM.
+
+O Java ganhou só linhas de comentário, e `mvn compile` foi rodado antes e depois nos dois labs.
+
+Três consertos que o segundo conjunto obrigou: `versaoDoBom()` lia o `pom.xml` do *providers*
+fixo (a tela mostraria a versão de outro projeto, e os três usam 1.65.0 hoje — o defeito
+nasceria invisível); o teste varria uma lista escrita à mão, então as regras valiam para um
+conjunto e não para o outro; e o e2e cobrava comportamento do componente, que é o mesmo nas duas
+páginas, e seguiria verde se alguém apagasse a seção de uma delas.
+
+A cobertura passou a ser derivada do domínio — e **se estendeu sozinha** quando o terceiro
+conjunto entrou: 5 testes viraram 6 sem eu tocar nela.
+
+### O lab do motor: `collector-pipeline`, o primeiro a nascer em `.mmd`
+
+Régua: a pipeline do Collector **é** fluxo com camadas, e o protagonista é a **fábrica** — a
+pipeline é o assunto, não o span que passa. Logo motor, e em Mermaid.
+
+A tese é a mais barata de errar do Collector: um receiver declarado em duas pipelines é um
+receiver só, e entrega **uma cópia a cada**. Alguém põe um `filter` para cortar `/health`,
+confere no backend certo, vê que parou — e o segundo exporter seguiu mandando tudo.
+
+E ela é propriedade do **desenho**: duas arestas saem da mesma porta, o leque é nativo do motor,
+e o comportamento do receiver emite uma vez sem mencionar pipeline nenhuma — como no Collector,
+onde ele também não sabe quantas existem. Há teste cobrando isso **no esqueleto**, sem rodar
+nada. Medido: ligar o filtro deixa o backend em 44 spans, exatamente onde estava, e corta o
+stdout de 48 para 24.
+
+**Dois limites do formato achados ao construir**, na §7.1 da spec do design:
+
+- **o `.mmd` não expressa `DROP`.** O id de nó do parser é `[A-Za-z_][A-Za-z0-9_-]*`, e `@drop`
+  não casa; não há suporte a `DROP` em lugar nenhum do `mermaid-skeleton`. Contornado com um nó
+  contador explícito, e o contorno ficou **melhor** que o original: o Collector expõe
+  `otelcol_processor_refused_spans` — a perda dele é contador, não vazio;
+- **o `.mmd` declara topologia, então parâmetro não reordena processador.** A tese mais óbvia do
+  Collector (`processors:` é lista ordenada) **não cabe num lab de um mmd**, e ficou na tabela de
+  mal-entendidos sem ser simulada. A saída seria dois `.mmd` e um parâmetro escolhendo qual
+  compila — novo, e não aprovado.
+
+Contraparte real com o `collector.yaml` que **é** o desenho. A lacuna está declarada no README:
+sem daemon de Docker no container, `otelcol-contrib validate` não rodou, e a sintaxe evita de
+propósito as partes que mudaram entre versões.
+
+### O lab PhET-like: `cardinality-and-the-bill`
+
+Régua, primeira pergunta: cardinalidade **não é fluxo** — é o tamanho de um produto cartesiano.
+Logo lab separado, sem palco, sem `kinds`, sem importar o motor.
+
+A decisão de desenho que carrega a tese: **o produto aparece como produto.**
+`12 × 6 × 4 × 8 000 = 2 304 000` numa linha é o argumento inteiro; só o total seria um número
+grande sem mecanismo.
+
+**E o lab não afirma preço**, com trava nos dois níveis: um teste de unidade cobra que a `Conta`
+não tenha campo de preço, e um e2e cobra que a saída não mostre moeda até o leitor digitar a
+dele. A ADR nomeia isso como o defeito mais caro do projeto, e preço de fornecedor é exatamente
+o caso — cada um cobra por unidade diferente. O modelo calcula **volume**, que é mecânico.
+
+O limite de cardinalidade usa a **mesma leitura** do lab dos três pilares. Dois labs discordando
+da mesma spec seria pior que um lab faltando. E a contraparte real não é nova: `three-pillars` já
+roda um SDK de verdade, e `PILLARS_USER_ATTRIBUTE` é a jogada que este lab cobra.
+
+**Consequência estrutural da ADR na suíte:** lab sem palco não tem desenho para medir, então o
+teto de cruzamentos não se aplica. `SEM_PALCO` **não é isenção** — há teste cobrando que a página
+desses labs de fato não tenha `.dui-stage`. No dia em que um ganhar palco, ele cai pedindo um
+teto.
+
+### O gráfico, e um diagnóstico meu que estava errado
+
+A seção de exercícios quebrou `seguir-a-carga` no mobile. Medido em vez de contornado: a página
+foi de 412px de largura para **864** num viewport de 412.
+
+A causa levou três medições: o cartão do exercício é item de grid, item de grid tem
+`min-width: auto` — que é **min-content** —, e com `white-space: pre` min-content é a linha mais
+longa do código. O cartão crescia até caber a linha e arrastava a página; o `overflow-x: auto` do
+`<pre>` nunca entrava em ação porque o **contêiner** dele é que crescia.
+
+**A primeira hipótese estava no elemento errado,** e isso vale registrar: `min-width: 0` em
+`.lab-exercicios > *` não mudou nada, porque `astro-island` é `display: contents` — a ilha não é
+caixa nenhuma, e o item de grid é a **raiz do componente**. Fixes de layout de ilha moram no CSS
+do componente, não no da página.
+
+E a correção que mais importa: **nas duas sessões anteriores eu afirmei, duas vezes, que a falha
+de `[mobile] providers-lab` era artefato de container.** A reprodução em `main` era real, mas a
+causa não era o browser: a página rolava 812px num viewport de 412 desde a entrega 5, e era isso
+que jogava o clique sob o header fixo. Com o cartão consertado ela caiu para 528 e o teste passa
+3/3 — e a suíte e2e inteira fechou com **zero falhas** pela primeira vez neste container. O
+headless shell do CI não disparava, e foi o que me fez atribuir ao ambiente um defeito da página.
+
+Entrou a guarda que faltava: **nenhum lab publicado rola na horizontal**, com a lista derivada do
+roadmap. A regra existia só para `cpu`, `gates` e `rpn`, cada uma escrita no spec do seu lab — e
+por isso as páginas do OTel nunca foram medidas em quatro entregas. As duas que seguem rolando
+entram como **dívida medida**: o conjunto não isenta, ele afirma que ainda rola, e cai quando
+alguém consertar. E é escopada ao mobile, porque no desktop as duas não rolam.
+
+Tentei `overflow-wrap: break-word` no código inline. **Não mudou número nenhum**, então saiu:
+manter uma regra com um comentário afirmando que ela conserta algo é a mentira que este
+repositório mais tenta evitar.
+
+### E a guarda da entrega 16 pegou os dois labs novos, sozinha
+
+Três vezes, sem eu lembrar dela: nomeou `collectorWorld` fora da varredura de emissões perdidas,
+cobrou o teto de cruzamentos do lab novo, e o `SEM_PALCO` existe porque ela cobrou teto de um lab
+que não tem palco. Era o ponto de fazê-la derivada.
+
+Estado: **1226 unitários (104 arquivos)** — 72 novos —, **e2e 323 com zero falhas**, typecheck,
+boundaries, catálogo e build verdes. `mvn compile` verde nos três labs reais com Java.
+
+Dois dos quinze labs que o roadmap prometia saíram de `coming` para publicados.
+
+## Entrega 18 — A amostragem, a dívida de rolagem fechada, e duas matérias ✅
+
+Quatro coisas, nesta ordem, e a primeira é a que eu havia declarado como dívida minha.
+
+### A dívida de rolagem horizontal era o mesmo defeito em três camadas
+
+`providers` (528px num viewport de 412) e `three-pillars` (464) eram a dívida medida que a
+entrega 17 deixou escrita. Eu havia dito ao Luigi que o que sobrava era prosa e não era do
+cartão. **Estava errado**, e a medição é curta: o `li` do distrator media 483 dentro de um `<ul>`
+corretamente preso em 322.
+
+É o mesmo defeito do cartão, duas camadas abaixo: **todo item de grid tem `min-width: auto`**,
+que é min-content, e no cartão de exercício min-content é sempre algo que não quebra — a linha
+mais longa do `<pre>`, um identificador Java de 50 caracteres, um caminho de arquivo na linha de
+origem. Cada camada só apareceu depois de a de cima sair, porque a maior esconde a menor.
+
+`overflow-wrap: anywhere` e não `break-word` **porque só `anywhere` entra no cálculo do
+min-content**. É exatamente por isso que a tentativa com `break-word` da entrega 17 não mudou
+nenhum número medido — e ela foi retirada em vez de mantida com um comentário afirmando um
+conserto que não acontecia.
+
+As três páginas medem 412 em 412. `AINDA_ROLA_NO_MOBILE` ficou **vazio e continua existindo**: é
+o lugar onde uma dívida de rolagem se declara medida, e o teste dela afirma que a dívida existe
+em vez de isentar a página.
+
+### `head-vs-tail-sampling`: o terceiro lab vindo de `.mmd`
+
+Cenário de fluxo pela régua da ADR §9 — carga atravessando partes, e o **instante** de cada
+decisão é a posição dela no desenho. Sete nós, nove arestas, topologia toda no esqueleto.
+
+Três teses, cada uma cobrada comparando dois runs do mesmo mundo:
+
+1. **head sampling decide antes de o erro existir.** O erro mora no último span de propósito. O
+   head está *antes* do leque no desenho, e há teste cobrando isso do esqueleto: mover o head
+   para depois do balanceador deixaria o lab rodando e passaria a ensinar que as duas
+   amostragens são intercambiáveis;
+2. **tail sampling guarda o erro e cobra memória.** A retenção é um número do run em cada
+   gateway;
+3. **sem roteamento por trace, o trace chega quebrado.** Cada gateway decide certo sobre o
+   pedaço que recebeu, e o pedaço não era um trace. Em produção nada reporta isso, porque nenhum
+   backend sabe quantos spans o trace tinha — o modelo sabe, e é por isso que aqui o defeito é
+   um número.
+
+A diferença mecânica com o lab do Collector tem teste no esqueleto: lá duas arestas saem da
+**mesma porta**, e isso é cópia; aqui são **duas portas**, e isso é escolha. Um receiver copia,
+um balanceador decide.
+
+**Dois defeitos meus, corrigidos por medição e não por revisão:**
+
+- a primeira versão decidia com `trace % N`. Com "um erro a cada 4" e "guarde 1 em 4" os restos
+  coincidem e o head sampler aparecia guardando **todos** os erros — o lab provaria o contrário
+  do que ensina. Agora a decisão passa por um hash do id, que é o que o `TraceIdRatioBased` de
+  verdade faz, e há teste cobrando que o erro seja cortado justamente nesse alinhamento;
+- os dois painéis de gateway mostravam a **soma** dos dois. Mentira pequena, consequência grande
+  num lab cuja tese é cada instância decidir com o pedaço dela. O estado virou por instância, e o
+  e2e cobra que os números divirjam — o que só é possível com o tráfego em 1, e é por isso que
+  esse controle existe na página.
+
+### A contraparte real, e as fontes conferidas em vez de lembradas
+
+`labs/head-vs-tail-sampling/` sobe: a aplicação, o collector que só roteia, e **dois** collectors
+que amostram na cauda rodando o mesmo `tail.yaml`.
+
+A conferência das fontes rendeu três correções que a memória não daria: os caminhos da
+documentação mudaram de `/docs/collector/deployment/` para `/docs/collector/deploy/`; o
+exportador foi renomeado de `loadbalancing` para `load_balancing`; e a página `architecture/`
+afirma que o leque de um receiver é uma chamada **síncrona** — se o primeiro processor de uma
+pipeline travar, as outras não recebem e o receiver para de aceitar dado. Isso entrou como
+mal-entendido novo no lab do Collector, com fonte.
+
+Três exercícios, em **três arquivos diferentes**, e isso é a lição: a decisão de amostragem é
+tomada em três lugares de três donos diferentes — o amostrador do SDK, o `routing_key`, as
+políticas. Nenhum dos três vê o arquivo dos outros dois, e cada um pode, sozinho, apagar o trace
+do erro.
+
+### Duas matérias, e a regra de pareamento honrada
+
+- **"Agent or gateway is a blast-radius question"** (fase 3): o `collector-pipeline` estava no ar
+  sem teoria apontando para ele. A tese é que a forma do deployment é o que cada forma *consegue
+  saber* — o agente sabe onde roda, o gateway sabe o que mais chegou;
+- **"Sampling is a statement about what you will not know"** (fase 5): a teoria do lab novo.
+  Inclui o que a documentação diz e quase ninguém compõe: **dois amostradores em série se
+  multiplicam**.
+
+### Um conserto que apareceu de lado
+
+A linha de origem do exercício dizia "OpenTelemetry Java" fixo no componente. Com os exercícios
+de YAML da entrega 17, a página do Collector passou a dizer "OpenTelemetry Java collector
+0.160.0" — número certo com o nome errado em volta. Quem sabe qual é a coisa agora é quem a lê do
+disco.
+
+E o lab nasceu com página `head-and-tail-sampling` e id de mapa `head-vs-tail-sampling`. Todos os
+outros labs têm id igual ao slug, e a divergência quebraria a guarda derivada que visita
+`labs/<id>/` para cobrar a contagem de exercícios — ela caiu, e o nome foi unificado.
+
+Estado: **1276 unitários (106 arquivos)**, **e2e 343 com zero falhas**, typecheck, boundaries,
+catálogo e build (44 páginas) verdes. `mvn compile` verde nos quatro labs reais com Java.
+
+Três dos quinze labs do roadmap do OTel seguem publicados, e a fase 5 ganhou lab, matéria e
+exercícios no mesmo dia.
+
+## Entrega 19 — O caminho dourado: handbook é submissão, com versão ✅
+
+O pedido: qualquer pessoa ou agente cria, submete e **mantém** o handbook dela, usa em
+qualquer ambiente, e a casa sempre suporta a release anterior.
+
+### O que mudou de estrutura
+
+Publicar um handbook exigia editar `apps/site/src/data/handbooks.ts` mais o mapa mais um
+arquivo de tema. Isso cobrava o monorepo inteiro de quem só domina um assunto, e deixava
+quem mantém a casa dono de conteúdo de terceiro. Agora é `handbooks/<id>/handbook.yaml`:
+**um diretório, um dono, zero TypeScript.**
+
+O `algorithms` foi o primeiro a migrar, e a página dele hoje é gerada do manifesto — nome,
+fases, itens e tema vindos do arquivo.
+
+### A compatibilidade é mecanismo, e as duas versões são reais hoje
+
+`apiVersion` nomeia o **contrato**, não a release. A lista de versões suportadas tem estado,
+data e um leitor por versão, e é ela que o teste varre:
+
+- versão na lista tem **exemplar de conformidade**, e o exemplar carrega em cada suíte.
+  Apagar o leitor de uma versão listada derruba a suíte nomeando a versão;
+- a recusa separa as duas direções: quem escreveu contra uma versão **mais nova** é mandado
+  atualizar a casa (nada no arquivo dele está errado); quem escreveu contra uma
+  **aposentada** é mandado migrar. "Versão inválida" manda os dois procurarem no lugar
+  errado;
+- `migrate` existe com a tabela vazia, e isso é declarado: uma versão só pode ser aposentada
+  quando existe migração automática, e é ali que ela vai morar. Dizer "migrado" sem migrar
+  seria a mentira que este repositório mais combate.
+
+E as duas versões não são promessa sobre um `v2` futuro: os três handbooks originais são
+objetos TypeScript escritos à mão, que é **literalmente** a versão anterior deste contrato,
+e ela está na lista com esse nome.
+
+### A ferramenta, e o molde que nasce válido
+
+Cinco comandos em `node` puro — nada depende do Astro, de navegador, ou de estar dentro
+deste monorepo rodando:
+
+| comando | o que faz |
+| --- | --- |
+| `new` | escreve um manifesto **que passa no check** |
+| `check` | o mesmo comando que o CI roda |
+| `export` | pacote portátil em JSON: manifesto normalizado + artigos com corpo |
+| `migrate` | sobe o manifesto de versão |
+| `codeowners` | **deriva** o CODEOWNERS dos manifestos |
+
+A ponte com o schema (que é TypeScript) é o compilado, garantido em dia pela própria
+ferramenta. A alternativa seria uma segunda cópia das regras em JS — e duas cópias da mesma
+regra divergem, como já divergiram aqui entre o mapa e o catálogo de labs.
+
+### Andei o caminho antes de dizer que ele funciona — e achei um defeito meu
+
+Escrevi o primeiro artigo do handbook submetido ("A stack is a box", com o `sp` do RISC-V
+conferido no próprio psABI: `x2`, pilha crescendo para baixo, 128 bits de alinhamento).
+Trocar o status do item de `coming` para `available` **reprovou o meu teste de
+compatibilidade** — e o teste estava mal projetado, não o artigo.
+
+Ele comparava o manifesto **vivo** com a expectativa congelada, misturando duas coisas: "o
+leitor traduz fielmente" e "o conteúdo nunca muda". Agora o par é congelado dos dois lados,
+no pacote de formato: a entrada é o manifesto como ele estava no dia da migração, a saída é
+o objeto que o catálogo em TypeScript tinha. Conteúdo novo entra no manifesto vivo e não
+encosta nele. Com um teste a mais, cobrando que a expectativa cubra o handbook inteiro —
+senão alguém "conserta" uma divergência apagando o campo.
+
+Este é o argumento do caminho dourado em uma frase: ele só vale depois de alguém andá-lo, e
+quem o escreve é quem tem de andar primeiro.
+
+### O limite, escrito em vez de descoberto
+
+O manifesto **não descreve comportamento**: lab que roda é modelo, e modelo é TypeScript.
+E o `map` do roadmap é desenho com coordenadas, que é a razão honesta de OTel e CPU seguirem
+em TypeScript. As duas coisas estão em `docs/handbooks.md` e na ADR §10, com o porquê.
+
+Estado: **1354 unitários (110 arquivos)**, typecheck, fronteira, catálogo, `handbooks`,
+`codeowners`, build (46 páginas) e varredura de links verdes. CI ganhou os dois portões
+novos.

@@ -1,7 +1,7 @@
 ---
 interface Props {
   /** Qual item marcar como atual. */
-  current?: "home" | "docs" | "handbooks" | "labs" | undefined;
+  current?: "home" | "docs" | "handbooks" | "labs" | "studio" | undefined;
   /** A busca só existe onde há o que buscar: nas páginas de documentação. */
   search?: boolean | undefined;
   lang?: Lang | undefined;
@@ -26,6 +26,7 @@ import { chrome, type Lang } from "../lib/chrome-strings";
       >{t.handbooks}</a
     >
     <a href={url("labs")} aria-current={current === "labs" ? "page" : undefined}>{t.labs}</a>
+    <a href={url("studio")} aria-current={current === "studio" ? "page" : undefined}>Studio</a>
     <a href={url("docs")} aria-current={current === "docs" ? "page" : undefined}>{t.docs}</a>
     <a href="https://github.com/CabriniJr/open-labs" rel="noopener">GitHub</a>
   </nav>
