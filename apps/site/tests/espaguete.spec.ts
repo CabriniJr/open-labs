@@ -355,7 +355,23 @@ const PUBLICADOS: readonly string[] = [
  * de fato não tenha `.dui-stage`. No dia em que um deles ganhar palco, ele cai
  * pedindo um teto — que é o contrário de uma lista que silencia.
  */
-const SEM_PALCO: ReadonlySet<string> = new Set(["labs/cardinality-and-the-bill/"]);
+const SEM_PALCO: ReadonlySet<string> = new Set([
+  "labs/cardinality-and-the-bill/",
+  /*
+    O lab do ciclo de vida do Pod, que chegou pelo main em 19/10/2026 — e ele
+    entrou nesta varredura porque a lista de publicados passou a sair do
+    catálogo em vez do roadmap, no mesmo dia. Foi a primeira coisa que a troca
+    pegou, e pegou um lab de outro handbook submetido, que é exatamente o que
+    ela existe para fazer.
+
+    Ele é declaradamente fora do motor de fluxos: um modelo de estado dirigido
+    por manifesto, sem árvore de composição e sem palco. Medir cruzamento de
+    fio num lab sem fio não é uma medida mais fraca, é uma medida sem objeto —
+    e o teste abaixo CONFIRMA a ausência de palco em vez de acreditar nesta
+    linha.
+  */
+  "labs/pod-lifecycle/",
+]);
 
 test("todo lab publicado COM palco tem teto de cruzamentos medido", () => {
   const medidos = new Set(TETOS.map((t) => t.lab).filter((l) => l !== ""));
