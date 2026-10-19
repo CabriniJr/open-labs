@@ -140,10 +140,11 @@ diverge.
 
 ## 5. What the manifest does **not** describe
 
-**Behaviour.** A lab that runs is a model — objects, wires, parameters, and the
-behaviour that animates them — and behaviour is TypeScript. No data format in
-this repository describes it, and inventing one that half-describes it would be
-worse than saying this plainly.
+**Behaviour.** A lab that runs has a domain model and behavior in TypeScript.
+Compositional flows use objects, wires and parameters; state/reconciliation and
+direct manipulation use their own structures. No handbook manifest describes
+executable behavior. A lab descriptor identifies the model, interaction kind,
+version and runtime requirements; it does not replace the model's contract.
 
 So a submitted handbook can:
 
@@ -218,6 +219,12 @@ contract inside it. Anything that can read JSON can render your handbook without
 this monorepo, this Astro, or this directory layout. Lab implementations are
 not included: a consumer must resolve the available lab routes against its
 installed catalog before offering those labs as runnable.
+
+For a complete executable distribution, the Studio's **Delivery** panel or
+`pnpm delivery:build` joins that bundle to a compatible compiled host. The
+chapter **Runnable handbook deliveries** describes its separate release
+contract, including canonical Mermaid files for flow labs. The bundle v1
+wire format remains unchanged.
 
 The command refuses to export a handbook that does not pass `check`. Exporting
 something broken would hand a broken artefact to an environment with no way to

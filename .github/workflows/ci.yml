@@ -34,6 +34,7 @@ jobs:
       # The installable SDK must work without workspace links, sources or tsc.
       - run: pnpm sdk:pack
       - run: pnpm sdk:smoke
+      - run: pnpm delivery:smoke
       - uses: actions/upload-artifact@v4
         with:
           name: openlabs-sdk-${{ github.sha }}

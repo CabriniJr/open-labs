@@ -37,6 +37,9 @@ handbook is where we find out whether the first one leaked domain into it.
 | Path | What lives there |
 |---|---|
 | `apps/site` | The Astro site: content, pages, one scenario per lab |
+| `apps/runner` | Portable compiled host for runnable handbook deliveries |
+| `packages/handbook-format` | Versioned content, lab and delivery contracts; standalone authoring SDK |
+| `packages/handbook-catalog` | Reviewed adapters and runtime capabilities installed in the static host |
 | `packages/depth-core` | The deterministic engine. Knows no domain at all — two guard lists prove it |
 | `packages/depth-ui` | Visual primitives. Also domain-neutral |
 | `packages/interactive-core` | Domain-neutral event/snapshot runtime for experiments outside the flow engine |
@@ -70,6 +73,19 @@ The alpha **Handbook Studio** at `/studio/` provides local curriculum and articl
 editing, learner preview, contract diagnostics, source ZIPs and bundle export.
 It also prepares an authoring brief for use with your assistant. See the
 [Studio guide](docs/studio.md).
+
+The Studio's **Delivery** panel downloads a runnable release with validated
+content, pinned labs and integrity checks. You can also build one locally:
+
+```sh
+pnpm delivery:build --handbook kubernetes --version 0.1.0
+cd dist/deliveries/kubernetes-0.1.0
+node serve.mjs
+```
+
+Recipients only need Node.js 24; an existing HTTPS static host also works.
+See [Runnable handbook deliveries](docs/delivery.md) for private hosting and
+the current three-adapter host.
 
 ## Deploy
 

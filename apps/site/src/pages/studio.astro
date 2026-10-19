@@ -16,7 +16,7 @@ const hostLabs = HANDBOOKS.flatMap((h) => h.labs).filter((l) => l.status === "av
   <SiteNav current="studio" />
   <main id="content" class="studio-page">
     <div class="studio-intro"><div><p class="studio-eyebrow">OPENLABS / AUTHORING STUDIO · ALPHA</p><h1>Make the next idea tangible.</h1><p>Shape the curriculum. Explain the mechanism. Check the contract.<br />An independent workspace for the handbook you want to teach.</p></div><a class="studio-guide" href={url("docs/studio")}>Authoring guide ↗</a></div>
-    <HandbookStudio client:only="react" example={example} hostLabs={hostLabs}><p slot="fallback" class="prose">The Studio needs JavaScript to edit local files. The authoring guide also describes the standalone CLI.</p></HandbookStudio>
+    <HandbookStudio client:only="react" example={example} hostLabs={hostLabs} deliveryTemplateUrl={url("delivery-host")}><p slot="fallback" class="prose">The Studio needs JavaScript to edit local files. The authoring guide also describes the standalone CLI.</p></HandbookStudio>
   </main>
   <SiteFooter />
 </Base>

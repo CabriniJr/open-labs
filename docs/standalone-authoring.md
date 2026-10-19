@@ -36,7 +36,7 @@ scenarios; this release does not change or distribute that engine.
 mkdir company-training
 cd company-training
 npm init -y
-npm install /path/to/ovh-handbook-format-0.1.0-alpha.2.tgz
+npm install /path/to/ovh-handbook-format-0.1.0-alpha.3.tgz
 npx --no-install openlabs-handbook new networking --github your-handle --name "Your Name"
 cd networking
 ../node_modules/.bin/openlabs-handbook check
