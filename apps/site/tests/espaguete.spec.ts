@@ -166,6 +166,11 @@ const TETOS = [
    * O dia em que este número subir, o desenho deixou de ser uma esteira.
    */
   { lab: "labs/splunk-ingest/", nome: "a ingestão do Splunk", cruzamentos: 0 },
+  // Zero, e aqui é mais fácil que no outro: a escada dos baldes é uma corrente
+  // de quatro estados em que cada caixa tem um sucessor só. Um cruzamento aqui
+  // significaria que alguém desenhou um atalho — e atalho entre estados de
+  // balde é justamente o que não existe.
+  { lab: "labs/splunk-buckets/", nome: "a escada dos baldes", cruzamentos: 0 },
   // A landing: o herói roda o mesmo motor e entra na mesma medida. Três caixas
   // em fila não têm por que cruzar — e é justamente por ser óbvio que o teto
   // fica escrito: o dia em que ele subir, subiu por alguma coisa.

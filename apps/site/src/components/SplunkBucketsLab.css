@@ -1,0 +1,130 @@
+/*
+  O lab dos baldes do Splunk.
+
+  Mesma gramática dos outros labs de fluxo — palco largo, placar entre o palco e
+  os controles, mesmas classes com outro prefixo. Quem veio da página da
+  ingestão não reaprende a usar esta.
+
+  Duas coisas são próprias daqui:
+
+  - o placar tem **quatro** respostas e as duas primeiras ficam lado a lado de
+    propósito. A janela medida e a retenção configurada são a mesma pergunta
+    respondida por duas autoridades diferentes, e a distância entre elas é o
+    lab. Separá-las em lugares distintos da tela desfaria o argumento;
+  - o **aviso** aparece quando a configuração entra na região em que este
+    modelo não vale. Ele não é um erro de uso: é o modelo dizendo onde ele
+    para, que é mais honesto que desenhar um número errado.
+*/
+.splunk-baldes {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.splunk-baldes__palco {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.splunk-baldes__placar {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--space-2);
+  background: var(--surface);
+}
+
+.splunk-baldes__pergunta {
+  margin: 0 0 var(--space-2);
+  font-size: var(--size-step-0);
+}
+
+/*
+  O aviso da configuração incoerente. Cor de perda, porque o que ele avisa é
+  que o número ao lado deixaria de valer.
+
+  `overflow-wrap: anywhere` porque ele tem `<code>` dentro e é item de grid: é
+  o mesmo `min-width: auto` já medido três vezes neste repositório.
+*/
+.splunk-baldes__aviso {
+  margin: 0 0 var(--space-2);
+  border-inline-start: 3px solid var(--descarte, var(--accent));
+  padding: var(--space-1) var(--space-2);
+  background: var(--paper);
+  overflow-wrap: anywhere;
+  font-size: var(--size-step--1);
+  line-height: 1.55;
+}
+
+.splunk-baldes__respostas {
+  display: grid;
+  gap: var(--space-2);
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+}
+
+.splunk-baldes__resposta {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+  border-inline-start: 3px solid var(--border);
+  padding-inline-start: var(--space-2);
+  overflow-wrap: anywhere;
+}
+
+.splunk-baldes__resposta[data-destaque="true"] {
+  border-inline-start-color: var(--accent);
+}
+
+.splunk-baldes__resposta[data-destaque="quebrado"] {
+  border-inline-start-color: var(--descarte, var(--accent));
+}
+
+.splunk-baldes__rotulo {
+  color: var(--muted);
+  font-size: var(--size-step--1);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.splunk-baldes__resposta b {
+  font-size: var(--size-step-2);
+  line-height: 1.1;
+}
+
+.splunk-baldes__nota {
+  color: var(--muted);
+  font-size: var(--size-step--1);
+}
+
+.splunk-baldes__controles {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.splunk-baldes__tick {
+  color: var(--muted);
+}
+
+/*
+  Os controles são os quatro limites do `indexes.conf` mais o volume, e os
+  rótulos carregam o nome real da configuração em `<code>`. É o que faz a
+  transferência: quem mexeu na barra aqui reconhece a linha no arquivo.
+*/
+.splunk-baldes__campo {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 14rem;
+  font-size: var(--size-step--1);
+}
+
+.splunk-baldes__campo input[type="range"],
+.splunk-baldes__campo select {
+  width: 100%;
+}
+
+.splunk-baldes__switch {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: var(--size-step--1);
+}

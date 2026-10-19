@@ -1,0 +1,40 @@
+# A contraparte real do lab dos baldes.
+#
+# Um indexador só, porque a tese não é de topologia: é sobre o que quatro
+# limites fazem com o disco de UMA máquina. Compare com
+# `packages/splunk-domain/src/baldes/baldes.mmd` — os quatro estados do desenho
+# são os diretórios que você vai ver aparecendo em `$SPLUNK_DB/openlabs/`.
+#
+# Os limites deste `indexes.conf` são pequenos de propósito, e isso é a mesma
+# compressão de tempo que o lab na tela faz com o parâmetro `horas-por-tick`:
+# com os defaults de verdade (750 MB por balde, 500 000 MB de índice) nada
+# rolaria em menos de uma semana de relógio.
+services:
+  # O produtor de volume. Ele escreve rápido porque o que se quer ver aqui é
+  # disco enchendo, e não parsing.
+  app:
+    image: busybox:1.37.0
+    command: ["sh", "/app/write-volume.sh"]
+    volumes:
+      - ./app:/app:ro
+      - logs:/var/log/bulk
+
+  idx:
+    image: splunk/splunk:10.6.0-rhel9
+    environment:
+      SPLUNK_START_ARGS: --accept-license
+      SPLUNK_PASSWORD: openlabs-nao-use-em-producao
+    ports:
+      # A interface, para as duas buscas que o README manda rodar:
+      #   | dbinspect index=openlabs
+      #   index=openlabs | stats min(_time) as oldest
+      - "8000:8000"
+    volumes:
+      - logs:/var/log/bulk:ro
+      - ./idx:/opt/splunk/etc/apps/openlabs_buckets/local:ro
+      # O arquivo dos baldes congelados, quando `coldToFrozenDir` existir.
+      - frozen:/opt/splunk/frozen
+
+volumes:
+  logs:
+  frozen:

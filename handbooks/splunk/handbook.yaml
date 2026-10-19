@@ -78,7 +78,8 @@ phases:
 articles:
   - id: a-universal-forwarder-does-not-parse
     title: A universal forwarder does not parse
-    status: coming
+    status: available
+    href: handbooks/splunk/articles/a-universal-forwarder-does-not-parse
     phase: 1
   - id: an-input-is-a-promise-about-metadata
     title: An input is a promise about metadata
@@ -86,11 +87,13 @@ articles:
     phase: 1
   - id: parsing-happens-once
     title: Parsing happens once, and you choose where
-    status: coming
+    status: available
+    href: handbooks/splunk/articles/parsing-happens-once
     phase: 2
   - id: a-bucket-is-a-directory-that-ages
     title: A bucket is a directory that ages
-    status: coming
+    status: available
+    href: handbooks/splunk/articles/a-bucket-is-a-directory-that-ages
     phase: 3
   - id: index-time-is-a-decision-you-keep
     title: Index time is the decision you cannot take back
@@ -117,8 +120,9 @@ labs:
     href: labs/splunk-ingest
   - id: splunk-buckets
     title: An index ageing, bucket by bucket
-    status: coming
+    status: available
     phase: 3
+    href: labs/splunk-buckets
   - id: splunk-search-split
     title: What runs on the indexer, and what comes up to the search head
     status: coming

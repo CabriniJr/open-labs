@@ -3,14 +3,16 @@ import { IdSchema } from "./schema.js";
 
 /**
  * O formato de um exercício de código, e ele mora aqui pela mesma razão
- * mecânica que trouxe o frontmatter do artigo: era um tipo dentro do
- * `otel-domain`, e o segundo domínio que quisesse exercícios teria de importar
- * o primeiro — ou manter uma cópia. As duas saídas são ruins, e a segunda é a
- * que este repositório já pagou entre o mapa e o catálogo de labs.
+ * mecânica que trouxe o frontmatter do artigo: era um tipo dentro do primeiro
+ * pacote de domínio que teve exercícios, e o segundo que quisesse teria de
+ * importar o primeiro — ou manter uma cópia. As duas saídas são ruins, e a
+ * segunda é a que este repositório já pagou entre o mapa e o catálogo de labs.
  *
  * Um exercício é domínio-neutro por construção: ele é um caminho de arquivo,
- * um marcador dentro dele, uma pergunta e três explicações. Nada aqui sabe o
- * que é um span ou um sourcetype.
+ * um marcador dentro dele, uma pergunta e três explicações. Nada aqui sabe
+ * sobre o assunto do handbook, e a guarda de fronteira cobra isso — foi ela
+ * que acusou duas palavras de assunto neste docblock no dia em que este pacote
+ * entrou na lista dos agnósticos.
  *
  * Note o que **não** está no formato: o código da resposta certa. Ele é
  * extraído do arquivo que roda, no build, e por isso não existe como escrevê-lo
@@ -25,7 +27,7 @@ export const DistratorSchema = z
     codigo: z.string().min(1),
     /** Por que isto PARECE certo, e o que a documentação diz. Escrito para quem já acredita nele. */
     porque: z.string().min(1),
-    /** A âncora na documentação. Obrigatória, como em `MAL_ENTENDIDOS`. */
+    /** A âncora na documentação do assunto. Obrigatória, como nos mal-entendidos. */
     fonte: z.string().url(),
   })
   .strict();
@@ -57,8 +59,8 @@ export type DefinicaoDeExercicio = z.infer<typeof ExercicioSchema>;
 /**
  * As regras que valem para **todo** exercício, em um lugar só.
  *
- * Elas nasceram como testes dentro do `otel-domain` e ficaram lá enquanto havia
- * um domínio com exercícios. Com o segundo, a escolha era copiar o arquivo de
+ * Elas nasceram como testes dentro do primeiro pacote de domínio e ficaram lá
+ * enquanto havia um domínio com exercícios. Com o segundo, a escolha era copiar o arquivo de
  * teste — e aí as regras passariam a valer para um domínio e a não valer para o
  * outro na primeira vez que uma delas mudasse. Isto é a mesma guarda, escrita
  * uma vez, e o que é específico de domínio entra por parâmetro.

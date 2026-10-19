@@ -1,0 +1,326 @@
+---
+import { EXERCICIOS_DOS_BALDES, MAL_ENTENDIDOS_DOS_BALDES } from "@ovh/splunk-domain";
+import { Exercicio } from "../../components/Exercicio.tsx";
+import { Predicao } from "../../components/Predicao.tsx";
+import SiteFooter from "../../components/SiteFooter.astro";
+import SiteNav from "../../components/SiteNav.astro";
+import { SplunkBucketsLab } from "../../components/SplunkBucketsLab.tsx";
+import Base from "../../layouts/Base.astro";
+import { url } from "../../lib/urls";
+import "../../styles/docs.css";
+import "../../components/SplunkBucketsLab.css";
+import "../../components/Predicao.css";
+import "../../components/PainelDaCarga.css";
+import "@ovh/depth-ui/src/stage.css";
+import "../../components/Explorer.css";
+import "../../components/Exercicio.css";
+import { montarExercicio } from "../../lib/exercicios";
+
+const exercicios = EXERCICIOS_DOS_BALDES.map(montarExercicio);
+---
+
+<Base
+  domain="splunk"
+  title="An index ageing, bucket by bucket — OpenLabs"
+  description="How far back you can search in Splunk is not a setting. It is what is left over from your daily volume and four limits — and the number appears in no configuration file, which is why teams discover it on the day somebody asks for last quarter."
+>
+  <SiteNav current="labs" />
+
+  <main id="content">
+    <section class="lab-head editorial">
+      <div class="prose">
+        <p class="lab-head__eyebrow mono">
+          <a href={url("handbooks/splunk")}>Splunk Visual Handbook</a> · lab
+        </p>
+        <h1>Your retention is 26 days, and nothing says 26</h1>
+        <p>
+          Ask a team how long they keep their data and you get the number in
+          <code>frozenTimePeriodInSecs</code>. Ask the index and you get a
+          different one, because data rolls to frozen when <b>either</b> limit is
+          reached — and Splunk's own documentation says it plainly: data will be
+          rolled to frozen before the configured time period has elapsed if the
+          size limit is reached first.
+        </p>
+        <p>
+          Below is one index with the four real defaults and 20 GB a day. The
+          retention says six years. Watch the <em>searchable window</em> settle
+          at twenty-six days — and then watch what happens to it when you move
+          the volume slider, which is the one control on this page that is not in
+          any configuration file.
+        </p>
+      </div>
+      <aside class="lab-head__note mono">
+        <p>One tick is 12 hours by default.</p>
+        <p>The settings carry their real names and real defaults.</p>
+        <p>Nothing here is scripted: every number is the run.</p>
+      </aside>
+    </section>
+
+    <section class="lab-palco">
+      <SplunkBucketsLab client:only="react" />
+    </section>
+
+    <section class="lab-prosa editorial">
+      <div class="prose">
+        <h2>Break it</h2>
+        <ol>
+          <li>
+            <b>Double the volume.</b> Nothing in the configuration changes, and
+            the window halves. This is the whole argument: retention is an
+            output, not an input. A new source type, a debug level left on after
+            an incident, one chatty deployment — none of them look like a
+            retention change, and all of them are one.
+          </li>
+          <li>
+            <b>Set the retention to 7 days.</b> Now <em>which limit froze the
+            data</em> flips to <em>age</em>, and the window follows the number
+            you asked for — slightly above it, never below, because age is
+            measured per bucket and one recent event keeps the whole bucket. This
+            is the configuration doing what it says, and it is the only regime in
+            which the number people quote is the number they have.
+          </li>
+          <li>
+            <b>Turn <code>coldToFrozenDir</code> off.</b> Every number on the
+            screen stays the same. The buckets keep leaving at exactly the same
+            rate, the disk usage is identical, the window does not move — and the
+            data is gone instead of archived. There is no counter anywhere that
+            distinguishes the two, because deleting is the normal behaviour and
+            archiving is a line somebody has to write.
+          </li>
+        </ol>
+
+        <h2>The four limits, and what each one actually governs</h2>
+      </div>
+      <div class="lab-tabela">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">setting</th>
+              <th scope="col">real default</th>
+              <th scope="col">what it governs</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row"><code>maxDataSize</code></th>
+              <td><code>auto</code>, which is 750 MB</td>
+              <td>when one hot bucket closes. Granularity, not capacity</td>
+            </tr>
+            <tr>
+              <th scope="row"><code>maxWarmDBCount</code></th>
+              <td>300</td>
+              <td>
+                how many warm buckets before the oldest rolls to cold. A
+                <b>count</b>, and buckets do not change size when they move
+              </td>
+            </tr>
+            <tr>
+              <th scope="row"><code>maxTotalDataSizeMB</code></th>
+              <td>500000</td>
+              <td>
+                the size of the whole index. <b>This is the one that decides
+                your retention</b>, in almost every installation
+              </td>
+            </tr>
+            <tr>
+              <th scope="row"><code>frozenTimePeriodInSecs</code></th>
+              <td>188697600 — about six years</td>
+              <td>the maximum age of a bucket. A ceiling, not a promise</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="prose">
+        <p>
+          Three of the four are about size, and only one of those three is about
+          how much the index holds. That is the shape of the mistake: the words
+          <em>warm</em>, <em>cold</em> and <em>frozen</em> suggest a hierarchy of
+          storage where data gradually stops costing, and there is no such
+          hierarchy. Warm and cold are both <b>the index</b> — searchable,
+          counted, and next in line.
+        </p>
+
+        <h2>Predict before you look</h2>
+      </div>
+      <div class="lab-predicao">
+        <Predicao
+          client:visible
+          pergunta="An index has frozenTimePeriodInSecs set to 90 days and maxTotalDataSizeMB left at its default of 500000. It receives 20 GB on disk per day. An auditor asks for events from 60 days ago. Are they there?"
+          opcoes={[
+            "Yes — 60 days is inside both limits",
+            "No — the size limit froze them at around day 25, and the 90 days were never reached",
+            "No — but they are in the frozen archive, so they can be restored",
+          ]}
+          correta={1}
+          revelacao="500000 MB is about 488 GB, and at 20 GB a day that is roughly 25 days. Whichever limit is reached first wins, so the 90 days in the configuration were never the operative number — the index has been freezing data since week four. The third option is the second mistake stacked on the first: freezing means the data is removed from the index, and it is only written anywhere if coldToFrozenDir or coldToFrozenScript was configured. Neither was mentioned, and neither is on by default."
+        />
+      </div>
+    </section>
+
+    <section class="lab-prosa editorial">
+      <div class="prose">
+        <h2>Configure it</h2>
+        <p>
+          Three gaps from <code>labs/splunk-buckets/idx/indexes.conf</code>,
+          which is this model as something that boots. The correct block of each
+          one is lifted out of the file that runs, so it cannot drift from the
+          config.
+        </p>
+        <p>
+          All three are in the <b>same stanza</b>, and that is the point rather
+          than convenience: in the lab of the previous phase the lesson was that
+          the same file means different things on different machines. Here there
+          is no wrong machine. There is a wrong limit, and the four of them are
+          five lines apart.
+        </p>
+      </div>
+      <div class="lab-exercicios">
+        {exercicios.map((exercicio) => (
+          <Exercicio client:visible exercicio={exercicio} />
+        ))}
+      </div>
+    </section>
+
+    <section class="lab-prosa editorial">
+      <div class="prose">
+        <h2>What people get wrong</h2>
+      </div>
+      <div class="lab-mal-entendidos">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">What people believe</th>
+              <th scope="col">What the docs say</th>
+            </tr>
+          </thead>
+          <tbody>
+            {
+              MAL_ENTENDIDOS_DOS_BALDES.map((m) => (
+                <tr>
+                  <td>{m.crenca}</td>
+                  <td>
+                    {m.spec}{" "}
+                    <a href={m.fonte} rel="noreferrer noopener" target="_blank">
+                      source
+                    </a>
+                  </td>
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="lab-prosa editorial">
+      <div class="prose">
+        <h2>What this model does not claim</h2>
+        <p>
+          <b>It evicts from cold only, and it tells you when that stops being
+          accurate.</b> Splunk freezes the oldest bucket of the index wherever it
+          is, which with an empty cold tier means a warm one. A node in this
+          engine knows only its own state, so the size limit here is evaluated
+          where cold is — and when you configure
+          <code>maxWarmDBCount × maxDataSize</code> larger than the index limit,
+          the lab says so on the screen instead of drawing a window it cannot
+          compute. The real defaults are not in that region: 300 × 750 MB is
+          225 GB against 488 GB of index.
+        </p>
+        <p>
+          <b>Hot is not in the size accounting.</b> It is bounded by
+          <code>maxHotBuckets × maxDataSize</code>, which at the real defaults is
+          about 2.2 GB against 488 GB — and <code>maxHotBuckets</code> is not a
+          control here, because with a single stream one hot bucket is open at a
+          time. It matters when one index receives data from several epochs at
+          once, which is a different defect and deserves its own lab rather than
+          one more slider on this one.
+        </p>
+        <p>
+          <b>It starts from bytes on disk, not from licensed volume.</b> A bucket
+          holds the compressed raw journal plus the index files that point into
+          it, and the ratio between what you ingest and what you store depends on
+          the data. This lab asserts no compression ratio — it begins at the
+          number the size limits actually measure, which is the disk.
+        </p>
+        <p>
+          <b>Time is compressed, and the control is visible.</b> One tick is
+          twelve hours by default. Lower it and the simulation runs more slowly
+          in simulated days per second, but the window in days does not change —
+          there is a test for exactly that, because the day it stops being true,
+          the parameter stopped being a clock and became part of the model.
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <SiteFooter />
+</Base>
+
+<style>
+  .lab-head {
+    padding-block: var(--space-4) var(--space-2);
+  }
+
+  .lab-head__eyebrow {
+    margin: 0 0 var(--space-1);
+    color: var(--accent);
+    font-size: var(--size-step--1);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  h1 {
+    margin: 0 0 var(--space-2);
+    font-size: var(--size-step-2);
+    max-width: 24ch;
+  }
+
+  .lab-head__note {
+    align-self: end;
+    color: var(--ink-muted);
+    font-size: var(--size-step--1);
+  }
+
+  .lab-head__note p {
+    margin: 0 0 0.35rem;
+  }
+
+  .lab-palco {
+    margin-block: var(--space-2) var(--space-4);
+  }
+
+  .lab-prosa {
+    padding-block-end: var(--space-4);
+  }
+
+  .lab-predicao {
+    grid-column: 1 / -1;
+    margin-block-start: var(--space-2);
+    max-width: var(--measure);
+  }
+
+  .lab-tabela,
+  .lab-mal-entendidos {
+    grid-column: 1 / -1;
+    margin-block: var(--space-2);
+    overflow-x: auto;
+  }
+
+  .lab-tabela table,
+  .lab-mal-entendidos table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: var(--size-step--1);
+  }
+
+  .lab-tabela th,
+  .lab-tabela td,
+  .lab-mal-entendidos th,
+  .lab-mal-entendidos td {
+    border-block-end: 1px solid var(--border);
+    padding: var(--space-1) var(--space-2);
+    text-align: start;
+    vertical-align: top;
+  }
+</style>

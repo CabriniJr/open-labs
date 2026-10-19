@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { glob } from "node:fs/promises";
 
 /**
@@ -34,10 +34,35 @@ const AGNOSTIC = [
   "packages/depth-ui/",
   "packages/model-format/",
   "packages/mermaid-skeleton/",
+  /*
+    `handbook-format` entra em 19/10/2026, com o quarto handbook. Ele é o
+    contrato em que um handbook de qualquer assunto é escrito — e o terceiro
+    domínio foi o que mostrou por que ele tem de estar aqui: o formato do
+    exercício mudou de casa para ele, e um formato que soubesse o que é um
+    sourcetype deixaria de servir para o próximo assunto.
+  */
+  "packages/handbook-format/",
 ];
 
-/** Pacotes de domínio que eles não podem importar. */
-const DOMAIN_PACKAGES = ["@ovh/otel-domain", "@ovh/cpu-domain"];
+/**
+ * Pacotes de domínio que eles não podem importar, **derivados do disco**.
+ *
+ * Era uma lista escrita à mão com dois nomes, e ela já estava velha antes de
+ * alguém notar: `algo-domain` nunca entrou, e `splunk-domain` nasceu depois. Um
+ * pacote agnóstico importando qualquer um dos dois passava.
+ *
+ * A convenção que isto usa já valia: todo pacote de domínio deste repositório
+ * termina em `-domain`.
+ */
+const DOMAIN_PACKAGES = readdirSync("packages", { withFileTypes: true })
+  .filter((e) => e.isDirectory() && e.name.endsWith("-domain"))
+  .map((e) => `@ovh/${e.name}`)
+  .sort();
+
+if (DOMAIN_PACKAGES.length === 0) {
+  console.error("Nenhum pacote de domínio encontrado — a leitura da guarda quebrou.");
+  process.exit(1);
+}
 
 /**
  * Termos inequívocos de domínio. `span` e `trace` sozinhos ficam de fora de
@@ -87,7 +112,27 @@ const CPU = [
   "instruction set",
 ];
 
-const DOMAIN_WORDS = [...OTEL, ...CPU];
+/**
+ * O terceiro domínio, e a lista é curta de propósito.
+ *
+ * "bucket", "index" e "event" ficam de fora: são palavras do motor e da web em
+ * qualquer assunto, e proibi-las aqui pararia o repositório sem proteger nada.
+ * O que entra são termos que só significam uma coisa.
+ */
+const SPLUNK = [
+  "splunk",
+  "sourcetype",
+  "props.conf",
+  "indexes.conf",
+  "outputs.conf",
+  "inputs.conf",
+  "universal forwarder",
+  "heavy forwarder",
+  "tsidx",
+  "splunkd",
+];
+
+const DOMAIN_WORDS = [...OTEL, ...CPU, ...SPLUNK];
 
 export function findViolations(filePath, source) {
   if (!AGNOSTIC.some((prefix) => filePath.startsWith(prefix))) return [];

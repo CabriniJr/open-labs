@@ -1,4 +1,5 @@
 import type { DefinicaoDeExercicio } from "@ovh/handbook-format";
+import { EXERCICIOS_DOS_BALDES } from "./baldes.js";
 import { EXERCICIOS_DA_INGESTAO } from "./ingestao.js";
 
 /**
@@ -16,6 +17,7 @@ export const CONJUNTOS_DE_EXERCICIOS: Readonly<
   Record<string, readonly DefinicaoDeExercicio[]>
 > = {
   EXERCICIOS_DA_INGESTAO,
+  EXERCICIOS_DOS_BALDES,
 };
 
 /**

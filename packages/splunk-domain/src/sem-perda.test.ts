@@ -9,11 +9,12 @@
 // outro caminho, e o que faltasse faltaria em silêncio.
 import { describe, expect, it } from "vitest";
 import { World, emissoesPerdidas, relatoDePerdas } from "@ovh/depth-core";
+import { baldesWorld } from "./baldes/world.js";
 import { ingestaoWorld } from "./ingestao/world.js";
 import * as pacote from "./index.js";
 
 /** Os construtores que a varredura exercita, por nome. Ver a guarda no fim. */
-const CONSTRUTORES_VARRIDOS = ["ingestaoWorld"];
+const CONSTRUTORES_VARRIDOS = ["baldesWorld", "ingestaoWorld"];
 
 /**
  * Cenários escolhidos por quais caminhos eles acordam, e não por realismo: as
@@ -35,6 +36,29 @@ describe("nenhuma emissão cai no vácuo", () => {
     it(`${nome}: toda porta que emite tem fio ou descarte declarado`, () => {
       const world = new World(ingestaoWorld(params));
       world.advance(120);
+      const perdas = emissoesPerdidas(world.state);
+      expect(perdas, `\n${relatoDePerdas(perdas)}`).toEqual([]);
+    });
+  }
+});
+
+/**
+ * Cenários dos baldes: o que congela por tamanho, o que congela por idade, e o
+ * índice que nunca enche (em que nada desce para congelado, de propósito).
+ */
+const CENARIOS_DOS_BALDES: Readonly<Record<string, Readonly<Record<string, number>>>> = {
+  "congelando por tamanho": { "max-warm": 4, "max-total-gb": 6 },
+  "congelando por idade": { "max-warm": 2, "retencao-dias": 2, "horas-por-tick": 24 },
+  "índice que não enche": { "max-total-gb": 500000, "retencao-dias": 999999 },
+  "com arquivo configurado": { "max-warm": 4, "max-total-gb": 6, arquivar: 1 },
+  "sem volume": { "gb-por-dia": 0 },
+};
+
+describe("nenhuma emissão cai no vácuo — os baldes", () => {
+  for (const [nome, params] of Object.entries(CENARIOS_DOS_BALDES)) {
+    it(`${nome}: toda porta que emite tem fio ou descarte declarado`, () => {
+      const world = new World(baldesWorld(params));
+      world.advance(200);
       const perdas = emissoesPerdidas(world.state);
       expect(perdas, `\n${relatoDePerdas(perdas)}`).toEqual([]);
     });
