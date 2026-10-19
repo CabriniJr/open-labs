@@ -36,7 +36,7 @@ scenarios; this release does not change or distribute that engine.
 mkdir company-training
 cd company-training
 npm init -y
-npm install /path/to/ovh-handbook-format-0.1.0-alpha.3.tgz
+npm install /path/to/ovh-handbook-format-0.1.0-alpha.4.tgz
 npx --no-install openlabs-handbook new networking --github your-handle --name "Your Name"
 cd networking
 ../node_modules/.bin/openlabs-handbook check
@@ -72,6 +72,12 @@ An export refuses invalid content before writing its output. The artifact
 retains the original `openlabs/bundle/v1` shape: `bundleVersion`, `exportedAt`,
 normalized `handbook` and Markdown `articles`. A frozen export made before the
 SDK is a conformance test of that compatibility.
+
+Add optional `assessments.json` beside the manifest for lab checkpoints and a
+final handbook assessment. The CLI validates references, coverage and educator
+review digests. Exports containing a bank use `openlabs/bundle/v2`; the SDK reads
+both versions. Source drafts and scoring are documented in **Interactive assessments**.
+The external SDK smoke also exports a bank and corrects all five question types.
 
 ## Consume the artifact in a private application
 

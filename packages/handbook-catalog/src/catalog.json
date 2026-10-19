@@ -1,5 +1,5 @@
 {
-  "host": { "id": "openlabs-static-host", "version": "0.1.0-alpha.1", "interactions": ["flow", "state", "direct"], "runtimes": [{ "id": "interactive-core", "version": "0.1.0-alpha.1" }, { "id": "depth-core", "version": "0.0.0" }] },
+  "host": { "id": "openlabs-static-host", "version": "0.1.0-alpha.2", "interactions": ["flow", "state", "direct"], "runtimes": [{ "id": "interactive-core", "version": "0.1.0-alpha.1" }, { "id": "depth-core", "version": "0.0.0" }] },
   "labs": [
     { "apiVersion": "openlabs/lab/v1", "id": "pod-lifecycle", "version": "0.1.0-alpha.1", "title": "Pod lifecycle", "href": "labs/pod-lifecycle", "interaction": { "kind": "state", "model": "kubernetes/pod-lifecycle", "runtime": { "id": "interactive-core", "version": "0.1.0-alpha.1" } } },
     { "apiVersion": "openlabs/lab/v1", "id": "collector-pipeline", "version": "0.1.0-alpha.1", "title": "The Collector pipeline", "href": "labs/collector-pipeline", "interaction": { "kind": "flow", "model": "otel/collector", "runtime": { "id": "depth-core", "version": "0.0.0" }, "structure": { "format": "openlabs/mermaid-skeleton/v1", "source": "contracts/collector.mmd" } } },

@@ -74,6 +74,12 @@ editing, learner preview, contract diagnostics, source ZIPs and bundle export.
 It also prepares an authoring brief for use with your assistant. See the
 [Studio guide](docs/studio.md).
 
+Interactive assessments add end-of-lab checkpoints and a final handbook exam,
+with five question types, points, objective breakdowns and explained resolutions
+after submission. The Studio supports question-bank sources, educator review
+and local attempt reports. Kubernetes is the first authored example; other
+handbooks show their assessment status. See [Interactive assessments](docs/assessments.md).
+
 The Studio's **Delivery** panel downloads a runnable release with validated
 content, pinned labs and integrity checks. You can also build one locally:
 

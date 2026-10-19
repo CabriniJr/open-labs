@@ -102,6 +102,21 @@
 .studio-brief textarea { display: block; width: 100%; margin: .6rem 0 1rem; padding: .8rem; color: var(--ink); background: var(--paper); border: 1px solid var(--rule); border-radius: var(--radius-1); resize: vertical; font: .76rem/1.6 var(--font-body); }
 .studio-brief-output textarea { height: 370px; font: .7rem/1.6 var(--font-mono); }
 .studio-delivery { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; padding: 1.5rem; border-bottom: 1px solid var(--rule); }
+.studio-assessment-editor { padding: 1.5rem; border-bottom: 1px solid var(--rule); }
+.studio-assessment-editor h2 { font-size: 1.6rem; letter-spacing: -.035em; }
+.studio-assessment-editor p { font-size: .82rem; line-height: 1.8; color: var(--ink-muted); }
+.studio-review-layout { display: grid; grid-template-columns: 1.2fr 1fr; gap: 2rem; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--rule); }
+.studio-review-layout > div { min-width: 0; }
+.studio-review-layout label { display: block; margin: .7rem 0; font-size: .8rem; }
+.studio-review-layout input:not([type="checkbox"]), .studio-review-layout select, .studio-review-layout textarea { display: block; width: 100%; margin-top: .5rem; padding: .7rem; border: 1px solid var(--rule); color: var(--ink); background: var(--paper); border-radius: var(--radius-1); font: inherit; }
+.studio-review-layout pre { overflow: auto; max-height: 400px; padding: .8rem; font: .72rem/1.7 var(--font-mono); background: var(--paper); border: 1px solid var(--rule); }
+.studio-review-layout fieldset { border: 1px solid var(--rule); border-radius: var(--radius-1); font-size: .8rem; padding: .8rem; margin: 1rem 0; }
+.studio-review-layout .studio-review-check { display: flex; align-items: start; gap: .7rem; line-height: 1.7; }
+.studio-review-check input { margin-top: .25rem; flex-shrink: 0; accent-color: var(--accent); }
+.studio-assessment-message { color: var(--accent) !important; }
+.studio-attempt-review { padding: 1rem; border: 1px solid var(--rule); border-radius: var(--radius-1); margin-top: 1rem; font-size: .8rem; }
+.studio-assessment-select { display: block; padding: .7rem; margin: 1rem 0; max-width: 100%; }
+@media (max-width: 800px) { .studio-review-layout { grid-template-columns: 1fr; } .studio-assessment-editor { padding: 1rem; } }
 .studio-delivery h2 { font-size: 1.6rem; letter-spacing: -.035em; }
 .studio-delivery p { font-size: .82rem; line-height: 1.8; color: var(--ink-muted); }
 .studio-delivery ul { padding-left: 1rem; font-size: .8rem; }

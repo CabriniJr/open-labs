@@ -1,4 +1,5 @@
 ---
+import LabAssessment from "../../components/LabAssessment.astro";
 import { PodLifecycleLab } from "../../components/PodLifecycleLab.tsx";
 import { Predicao } from "../../components/Predicao.tsx";
 import SiteFooter from "../../components/SiteFooter.astro";
@@ -49,6 +50,7 @@ import "../../components/Predicao.css";
       </div>
       <div class="lab-predicao"><Predicao client:visible pergunta="A container is OOM-killed and restarted. Does the Pod get a new UID?" opcoes={["Yes, every restart creates a Pod", "No, the container restarts inside the same Pod"]} correta={1} revelacao="A container restart keeps the Pod UID and its node. A controller replacing a deleted Pod creates a new UID. Watch both operations in the experiment." /></div>
     </section>
+    <LabAssessment href="labs/pod-lifecycle" />
   </main>
   <SiteFooter />
 </Base>

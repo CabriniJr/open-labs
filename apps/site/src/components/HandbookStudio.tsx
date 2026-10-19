@@ -3,6 +3,8 @@ import type { CSSProperties, FormEvent } from "react";
 import { checkDelivery, criarManifesto, lerArtigo } from "@ovh/handbook-format/contract";
 import { STATIC_HOST, STATIC_LABS } from "@ovh/handbook-catalog";
 import { downloadDelivery } from "../lib/delivery.js";
+import { AssessmentEditor } from "./AssessmentEditor.js";
+import { AssessmentPlayer } from "./AssessmentPlayer.js";
 import { previewHtml } from "../lib/article-html.js";
 import {
   aiBrief, draftArticle, exportProject, MAX_PROJECT_BYTES, projectFromBundle, projectFromZip,
@@ -32,8 +34,10 @@ export function HandbookStudio({ example, hostLabs, deliveryTemplateUrl }: Props
   const [message, setMessage] = useState("A working Kubernetes handbook is open. Edit it, or start your own.");
   const [busy, setBusy] = useState(false);
   const [newForm, setNewForm] = useState(false);
-  const [view, setView] = useState<"roadmap" | "article">("roadmap");
+  const [view, setView] = useState<"roadmap" | "article" | "assessments">("roadmap");
   const [previewArticle, setPreviewArticle] = useState(example.articles[0]?.id ?? "");
+  const [assessmentsOpen, setAssessmentsOpen] = useState(false);
+  const [assessmentId, setAssessmentId] = useState("");
   const [briefOpen, setBriefOpen] = useState(false);
   const [deliveryOpen, setDeliveryOpen] = useState(false);
   const [deliveryBusy, setDeliveryBusy] = useState(false);
@@ -57,11 +61,12 @@ export function HandbookStudio({ example, hostLabs, deliveryTemplateUrl }: Props
 
   const deferred = useDeferredValue(project);
   const validation = useMemo(() => validateProject(deferred), [deferred]);
-  const { handbook, diagnostics } = validation;
+  const { handbook, diagnostics, assessments } = validation;
+  const previewAssessment = assessments?.assessments.find((a) => a.id === assessmentId) ?? assessments?.assessments.find((a) => a.scope.kind === "handbook");
   const deliveryPlan = handbook ? checkDelivery({ handbook }, STATIC_LABS, STATIC_HOST) : { errors: ["Resolve the manifest diagnostics first."], labs: [] };
   const validating = deferred !== project;
   const article = project.articles.find((a) => `articles/${a.id}.md` === selected);
-  const text = selected === "handbook.yaml" ? project.manifest : article?.markdown ?? "";
+  const text = selected === "handbook.yaml" ? project.manifest : selected === "assessments.json" ? project.assessments ?? "" : article?.markdown ?? "";
   const availableDrafts = handbook?.articles.filter((a) => !project.articles.some((f) => f.id === a.id)) ?? [];
   const [draftId, setDraftId] = useState("");
   const chosenDraft = availableDrafts.some((a) => a.id === draftId) ? draftId : availableDrafts[0]?.id ?? "";
@@ -76,7 +81,7 @@ export function HandbookStudio({ example, hostLabs, deliveryTemplateUrl }: Props
   };
   const edit = (value: string) => {
     setSaved(false); setError("");
-    setProject((p) => selected === "handbook.yaml" ? { ...p, manifest: value } : { ...p, articles: p.articles.map((a) => a.id === article?.id ? { ...a, markdown: value } : a) });
+    setProject((p) => selected === "assessments.json" ? { ...p, assessments: value } : selected === "handbook.yaml" ? { ...p, manifest: value } : { ...p, articles: p.articles.map((a) => a.id === article?.id ? { ...a, markdown: value } : a) });
   };
   const run = (action: () => void) => { try { action(); setError(""); } catch (e) { setError(e instanceof Error ? e.message : String(e)); } };
   const openFile = async (file: File | undefined) => {
@@ -120,16 +125,19 @@ export function HandbookStudio({ example, hostLabs, deliveryTemplateUrl }: Props
     </div>
 
     {newForm && <form className="studio-new" onSubmit={create}><label>Handbook id<input name="id" placeholder="networking" pattern="[a-z0-9]+(-[a-z0-9]+)*" required autoFocus /></label><label>Maintainer name<input name="name" autoComplete="name" required /></label><label>GitHub handle<input name="github" placeholder="your-handle" required /></label><button className="studio-primary" type="submit">Create handbook</button><button type="button" onClick={() => setNewForm(false)}>Cancel</button></form>}
-    <div className="studio-subbar"><span><b className={diagnostics.length ? "studio-issues" : "studio-valid"}>{validating ? "Checking…" : diagnostics.length ? `${diagnostics.length} issue${diagnostics.length === 1 ? "" : "s"}` : "✓ Ready to export"}</b><span className="studio-contract">handbook/v1</span></span><div>{previous && <button onClick={() => { const old = previous; replace(old, "Restored the previous project."); }}>Restore previous</button>}<button onClick={() => replace(example, "Opened the Kubernetes example. Your previous project can be restored.")}>Kubernetes example</button><button aria-expanded={deliveryOpen} onClick={() => setDeliveryOpen(!deliveryOpen)}>Delivery</button><button className={briefOpen ? "studio-active" : ""} aria-expanded={briefOpen} onClick={() => setBriefOpen(!briefOpen)}>AI brief</button></div></div>
+    <div className="studio-subbar"><span><b className={diagnostics.length ? "studio-issues" : "studio-valid"}>{validating ? "Checking…" : diagnostics.length ? `${diagnostics.length} issue${diagnostics.length === 1 ? "" : "s"}` : "✓ Ready to export"}</b><span className="studio-contract">handbook/v1</span></span><div>{previous && <button onClick={() => { const old = previous; replace(old, "Restored the previous project."); }}>Restore previous</button>}<button onClick={() => replace(example, "Opened the Kubernetes example. Your previous project can be restored.")}>Kubernetes example</button><button aria-expanded={assessmentsOpen} onClick={() => setAssessmentsOpen(!assessmentsOpen)}>Assessments</button><button aria-expanded={deliveryOpen} onClick={() => setDeliveryOpen(!deliveryOpen)}>Delivery</button><button className={briefOpen ? "studio-active" : ""} aria-expanded={briefOpen} onClick={() => setBriefOpen(!briefOpen)}>AI brief</button></div></div>
     {error && <p className="studio-error" role="alert">{error}</p>}
 
     {deliveryOpen && <section className="studio-delivery" aria-label="Runnable delivery"><div><p className="studio-eyebrow">DELIVER THE EXPERIENCE</p><h2>A handbook people can run.</h2><p>Package the content with the supported lab implementations and a static host. The recipient extracts one ZIP and runs <code>node serve.mjs</code>; no repository or npm installation is needed.</p><p>Sources and content bundles remain independent. A runnable release pins the host, lab versions and file checksums.</p></div><div><label htmlFor="release-version">Release version</label><input id="release-version" value={releaseVersion} onChange={(e) => setReleaseVersion(e.target.value)} /><ul>{deliveryPlan.labs.map((lab) => <li key={lab.id}><strong>{lab.title}</strong><small>{lab.interaction.kind} · lab {lab.version}{lab.interaction.kind === "flow" ? " · canonical Mermaid contract included" : ""}</small></li>)}</ul>{deliveryPlan.errors.length > 0 && <ul className="studio-issues">{deliveryPlan.errors.map((e) => <li key={e}>{e}</li>)}</ul>}{diagnostics.length > 0 && <p className="studio-issues">Resolve the content diagnostics before packaging.</p>}<button className="studio-primary" disabled={deliveryBusy || validating || diagnostics.length > 0 || deliveryPlan.errors.length > 0} onClick={() => void release()}>{deliveryBusy ? "Packaging…" : "Download runnable release"}</button><p className="studio-muted">Node.js 24+ for the included local server. Existing static hosting can serve the same files.</p></div></section>}
 
+    {assessmentsOpen && <AssessmentEditor source={project.assessments} handbookId={handbook?.id ?? "my-handbook"} labs={handbook?.labs ?? []} onChange={(source) => { setPrevious(project); setProject((p) => ({ ...p, assessments: source })); setSaved(false); }} onEditSource={() => setSelected("assessments.json")} onPreview={() => setView("assessments")} onRemove={() => { const { assessments: _assessments, ...rest } = project; replace(rest, "Assessment source removed. Restore previous brings it back."); }} />}
+
     {briefOpen && <section className="studio-brief" aria-label="AI authoring brief"><div><p className="studio-eyebrow">AUTHOR WITH YOUR ASSISTANT</p><h2>Give the next change a clear brief.</h2><p>Prepare the objective, source files and current diagnostics for Claude or another assistant. Review the returned changes and open their source archive here.</p><p>Your files stay in this browser. This action prepares a brief; it does not call a model.</p><label htmlFor="studio-goal">What should the assistant help with?</label><textarea id="studio-goal" value={goal} onChange={(e) => setGoal(e.target.value)} rows={4} /><div className="studio-actions"><button onClick={() => run(() => download("openlabs-authoring-brief.md", brief, "text/markdown"))}>Download AI brief</button><button onClick={() => { if (!navigator.clipboard) { setError("Clipboard unavailable. Download the brief instead."); return; } void navigator.clipboard.writeText(brief).then(() => setMessage("Brief copied. Share it with your assistant when ready.")).catch(() => setError("Clipboard unavailable. Download the brief instead.")); }}>Copy brief</button></div></div><label className="studio-brief-output">Prepared brief<textarea aria-label="Prepared AI brief" readOnly value={brief} /></label></section>}
 
     <div className="studio-workspace">
-      <aside className="studio-files" aria-label="Project files"><div className="studio-panel-head">SOURCES <span>{project.articles.length + 1} files</span></div>
+      <aside className="studio-files" aria-label="Project files"><div className="studio-panel-head">SOURCES <span>{project.articles.length + 1 + (project.assessments === undefined ? 0 : 1)} files</span></div>
         <button className="studio-file" aria-current={selected === "handbook.yaml" ? "true" : undefined} onClick={() => setSelected("handbook.yaml")}><span aria-hidden="true">◇</span> handbook.yaml</button>
+        {project.assessments !== undefined && <button className="studio-file" aria-current={selected === "assessments.json" ? "true" : undefined} onClick={() => { setSelected("assessments.json"); setView("assessments"); }}><span aria-hidden="true">◎</span> assessments.json</button>}
         <p className="studio-folder">articles/</p>
         {project.articles.map((a) => <button className="studio-file" key={a.id} aria-current={selected === `articles/${a.id}.md` ? "true" : undefined} onClick={() => { setSelected(`articles/${a.id}.md`); setPreviewArticle(a.id); setView("article"); }}><span aria-hidden="true">¶</span><span>{a.id}.md</span>{diagnostics.some((d) => d.file === `articles/${a.id}.md`) && <span className="studio-issues" aria-label="Has diagnostics">●</span>}</button>)}
         {!project.articles.length && <p className="studio-muted">Your articles will appear here.</p>}
@@ -142,9 +150,9 @@ export function HandbookStudio({ example, hostLabs, deliveryTemplateUrl }: Props
         <section className="studio-diagnostics" aria-label="Validation diagnostics"><div className="studio-panel-head">VALIDATION <span>{diagnostics.length ? `${diagnostics.length} to resolve` : "contract checked"}</span></div>{diagnostics.length ? <ul>{diagnostics.map((d, i) => <li key={i}><button onClick={() => setSelected(d.file)}>{d.file}</button><p>{d.message}</p></li>)}</ul> : <p className="studio-muted">Curriculum and article checks pass. Review scientific claims against the cited sources before releasing.</p>}</section>
       </section>
 
-      <section className="studio-preview" aria-label="Handbook preview" style={theme}><div className="studio-panel-head">LEARNER PREVIEW <div className="studio-preview-tabs"><button aria-pressed={view === "roadmap"} onClick={() => setView("roadmap")}>Roadmap</button><button aria-pressed={view === "article"} onClick={() => setView("article")}>Article</button></div></div>
+      <section className="studio-preview" aria-label="Handbook preview" style={theme}><div className="studio-panel-head">LEARNER PREVIEW <div className="studio-preview-tabs"><button aria-pressed={view === "roadmap"} onClick={() => setView("roadmap")}>Roadmap</button><button aria-pressed={view === "article"} onClick={() => setView("article")}>Article</button><button aria-pressed={view === "assessments"} onClick={() => setView("assessments")}>Assessment</button></div></div>
         {!handbook ? <p className="studio-muted">Fix the manifest diagnostics to preview the curriculum. Your source text is preserved.</p> : <div className="studio-preview-body"><div className="studio-book-head"><p className="studio-eyebrow">{handbook.subject} / {handbook.stage}</p><h2>{handbook.name}</h2><p>{handbook.tagline}</p></div>
-          {view === "roadmap" ? <div className="studio-roadmap">{handbook.phases.map((phase) => <section key={phase.number}><div className="studio-phase-number">{String(phase.number).padStart(2, "0")}</div><div><h3>{phase.title}</h3><p>{phase.line}</p>{handbook.articles.filter((a) => a.phase === phase.number).map((a) => <button className="studio-curriculum-item" key={a.id} disabled={!deferred.articles.some((f) => f.id === a.id)} onClick={() => { setPreviewArticle(a.id); setView("article"); }}><span>{a.title}</span><small>{a.status === "available" ? "article" : a.status}</small></button>)}{handbook.labs.filter((l) => l.phase === phase.number).map((lab) => {
+          {view === "assessments" ? assessments && previewAssessment ? <><label>Assessment to preview<select className="studio-assessment-select" value={previewAssessment.id} onChange={(e) => setAssessmentId(e.target.value)}>{assessments.assessments.map((a) => <option key={a.id} value={a.id}>{a.title}</option>)}</select></label><AssessmentPlayer bank={assessments} assessmentId={previewAssessment.id} /></> : <p className="studio-muted">Open Assessments to create or import a bank. Resolve its diagnostics to preview the learner experience.</p> : view === "roadmap" ? <div className="studio-roadmap">{handbook.phases.map((phase) => <section key={phase.number}><div className="studio-phase-number">{String(phase.number).padStart(2, "0")}</div><div><h3>{phase.title}</h3><p>{phase.line}</p>{handbook.articles.filter((a) => a.phase === phase.number).map((a) => <button className="studio-curriculum-item" key={a.id} disabled={!deferred.articles.some((f) => f.id === a.id)} onClick={() => { setPreviewArticle(a.id); setView("article"); }}><span>{a.title}</span><small>{a.status === "available" ? "article" : a.status}</small></button>)}{handbook.labs.filter((l) => l.phase === phase.number).map((lab) => {
             const installed = hostLabs.find((l) => l.href === lab.href);
             return <div className="studio-lab-requirement" key={lab.id}><span>◈ {lab.title}</span>{lab.status !== "available" ? <small>{lab.status}</small> : installed ? <a href={installed.url} target="_blank" rel="noopener noreferrer">Open installed lab ↗</a> : <small>Host implementation required</small>}</div>;
           })}</div></section>)}</div> : !previewFile ? <p className="studio-muted">Draft an article from the curriculum to preview it here.</p> : parsedArticle?.ok ? <article className="studio-article"><h3>{parsedArticle.data.title}</h3><p className="studio-dek">{parsedArticle.data.dek}</p><div className="studio-markdown" dangerouslySetInnerHTML={{ __html: html }} /><section className="studio-sources"><h4>Primary sources</h4>{parsedArticle.data.sources.map((s, i) => <p key={`${s.id}-${i}`} id={`studio-src-${s.id}`}><strong>{s.title}</strong> — {s.author}, {s.year}. {s.url?.startsWith("https://") ? <a href={s.url} target="_blank" rel="noopener noreferrer">Read source ↗</a> : s.where}<small>{s.note}</small></p>)}</section></article> : <p className="studio-muted">Complete the article frontmatter to see its reading preview. The diagnostics name the missing fields.</p>}
@@ -152,6 +160,6 @@ export function HandbookStudio({ example, hostLabs, deliveryTemplateUrl }: Props
       </section>
     </div>
     <p className="studio-message" role="status">{message}</p>
-    <footer className="studio-footnote"><span>Local workspace · source ZIPs and validated content bundles</span><span>Sources stay editable. The host supplies runnable labs.</span></footer>
+    <footer className="studio-footnote"><span>Local workspace · curriculum, articles and assessment banks</span><span>Sources stay editable. The host supplies runnable labs.</span></footer>
   </div>;
 }

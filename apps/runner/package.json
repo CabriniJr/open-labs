@@ -1,5 +1,5 @@
 {
-  "name": "@ovh/runner", "version": "0.1.0-alpha.1", "private": true, "type": "module", "license": "Apache-2.0",
+  "name": "@ovh/runner", "version": "0.1.0-alpha.2", "private": true, "type": "module", "license": "Apache-2.0",
   "dependencies": {
     "@ovh/handbook-format": "workspace:*", "@ovh/handbook-catalog": "workspace:*", "@ovh/depth-ui": "workspace:*",
     "react": "^19.0.0", "react-dom": "^19.0.0"

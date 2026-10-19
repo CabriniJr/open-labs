@@ -32,6 +32,7 @@ test("o Studio entrega um ZIP que roda conteúdo e Pod lifecycle fora do reposit
   const files = unzipSync(Buffer.concat(chunks));
   const release = JSON.parse(strFromU8(files["release.json"]!));
   expect(release.version).toBe("0.1.0"); expect(release.labs[0].interaction.kind).toBe("state");
+  expect(JSON.parse(strFromU8(files["handbook.json"]!)).bundleVersion).toBe("openlabs/bundle/v2");
   const origin = await start(files), runner = await context.newPage();
   await runner.route("**/*", (route) => new URL(route.request().url()).origin === origin ? route.continue() : route.abort());
   await runner.goto(origin);
@@ -42,6 +43,14 @@ test("o Studio entrega um ZIP que roda conteúdo e Pod lifecycle fora do reposit
   await runner.getByRole("button", { name: "Apply manifest", exact: true }).click();
   for (let i = 0; i < 3; i++) await runner.getByRole("button", { name: "Next step", exact: true }).click();
   await expect(runner.getByTestId("ready-count")).toHaveText("6 / 6");
+  await expect(runner.getByTestId("assessment-player")).toHaveCount(1);
+  await runner.getByRole("navigation", { name: "Handbook curriculum" }).getByRole("button", { name: /Kubernetes handbook assessment/ }).click();
+  const assessment = runner.getByTestId("assessment-player");
+  await assessment.getByLabel("The Pod keeps its UID.", { exact: true }).check();
+  await assessment.getByRole("button", { name: "Submit assessment", exact: true }).click();
+  await assessment.getByRole("button", { name: "Submit with 6 incomplete", exact: true }).click();
+  await expect(assessment.getByRole("region", { name: "Assessment result", exact: true })).toContainText("Grade 0.71 / 10");
+  await expect(assessment.locator(".assessment-resolution")).toHaveCount(7);
   expect(await runner.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
 });
 

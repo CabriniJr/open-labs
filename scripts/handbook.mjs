@@ -246,7 +246,7 @@ function cmdExport() {
   const extras = conferirNoRepo(lido.handbook);
   if (extras.length) falhar("não exporto um handbook que não passa no check", extras.join("\n"));
   let pacote;
-  try { pacote = formato.criarPacote(lido.handbook, artigos, new Date().toISOString().slice(0, 10)); }
+  try { pacote = formato.criarPacote(lido.handbook, artigos, new Date().toISOString().slice(0, 10), lido.assessments); }
   catch (erro) { falhar("não exporto um handbook que não passa no check", erro.message); }
 
   const json = `${JSON.stringify(pacote, null, 2)}\n`;

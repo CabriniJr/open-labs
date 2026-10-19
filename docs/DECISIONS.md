@@ -1,5 +1,13 @@
 # Decisões e ideias consolidadas
 
+**Avaliações, 19/10/2026:** a jornada de estudo inclui checkpoint por lab e
+avaliação final por handbook. São conteúdo portável com objetivos, gabaritos,
+resoluções, fontes, pontos e revisão editorial, independentes dos motores.
+As predições/exercícios imediatos permanecem durante o lab; a avaliação revela
+as resoluções após a entrega. Bundles v2 transportam os bancos; o leitor mantém
+v1. O capítulo **Interactive assessments** descreve os cinco tipos iniciais e
+a fronteira entre prática local e gestão autenticada de turmas.
+
 **Contratos e entregas, 19/10/2026:** conteúdo (`handbook/v1`, `bundle/v1`),
 implementação (`lab/v1`) e execução/distribuição (`host-template/v1`,
 `delivery/v1`) têm contratos separados. `flow` exige o Mermaid canônico;

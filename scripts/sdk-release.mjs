@@ -51,7 +51,7 @@ try {
   const contracts = await import(pathToFileURL(join(root, "packages", "handbook-format", "dist", "contract.js")));
   writeFileSync(join(out, "artifacts.json"), JSON.stringify({
     artifactVersion: "openlabs/sdk-artifacts/v1", packages: artifacts,
-    contracts: { handbook: contracts.VERSOES_EM_ARQUIVO.map((v) => v.apiVersion), bundle: contracts.VERSAO_DO_PACOTE, lab: contracts.LAB_API_VERSION, hostTemplate: contracts.HOST_TEMPLATE_API_VERSION, delivery: contracts.DELIVERY_API_VERSION },
+    contracts: { handbook: contracts.VERSOES_EM_ARQUIVO.map((v) => v.apiVersion), bundle: contracts.VERSAO_DO_PACOTE, bundles: contracts.VERSOES_DO_PACOTE, assessments: contracts.ASSESSMENT_API_VERSION, attempt: contracts.ATTEMPT_API_VERSION, lab: contracts.LAB_API_VERSION, hostTemplate: contracts.HOST_TEMPLATE_API_VERSION, delivery: contracts.DELIVERY_API_VERSION },
   }, null, 2) + "\n");
   console.log(`✓ ${out}/artifacts.json`);
 } finally {
