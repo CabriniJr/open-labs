@@ -1,3 +1,4 @@
+import { localeReady } from "../lib/i18n.js";
 import { useState } from "react";
 
 /**
@@ -37,7 +38,7 @@ export function Predicao({ pergunta, opcoes, correta, revelacao, onResponder }: 
   };
 
   return (
-    <div className="predicao" data-respondeu={respondeu ? "true" : undefined}>
+    <div ref={localeReady} className="predicao" data-respondeu={respondeu ? "true" : undefined}>
       <p className="predicao__pergunta">{pergunta}</p>
       <ul className="predicao__opcoes">
         {opcoes.map((opcao, i) => {

@@ -1,4 +1,6 @@
 import { expect, test } from "@playwright/test";
+import { noTema } from "./tema";
+test.beforeEach(async ({ page }) => { await page.addInitScript(() => localStorage.setItem("openlabs-language-v1", "pt-BR")); });
 
 test("a documentação abre com os quatro temas", async ({ page }) => {
   await page.goto("docs/");
@@ -46,7 +48,7 @@ test("a busca acha o conteúdo e ignora a navegação", async ({ page }) => {
   await expect(page.locator(".doc-search__hit").first()).toBeVisible();
 
   // Frase que só existe no menu lateral. Entre aspas, porque sem elas o
-  // Pagefind casa as palavras separadas — e "documentação" está no corpo de
+  // a busca casa as palavras separadas — e "documentação" está no corpo de
   // quase todo documento. Aqui o que se testa é `data-pagefind-ignore`.
   await campo.fill('"Toda a documentação"');
   await expect(page.locator(".doc-search__hit")).toHaveCount(0);
@@ -65,7 +67,7 @@ test("o tema escolhido sobrevive ao reload", async ({ page }) => {
   await page.goto("docs/");
 
   const raiz = page.locator("html");
-  await page.getByRole("button", { name: "Alternar tema claro e escuro" }).click();
+  await noTema(page, "dark");
   const escolhido = await raiz.getAttribute("data-theme");
   expect(escolhido === "dark" || escolhido === "light").toBe(true);
 
@@ -86,10 +88,10 @@ test("a landing leva à documentação e mostra o que o motor faz", async ({ pag
     motor que o herói existe para mostrar.
   */
   await expect(page.locator(".levels__item")).not.toHaveCount(0);
-  await expect(page.locator(".levels__list")).toContainText("Follow one item");
-  await expect(page.locator(".docs-state")).toContainText("The written record");
+  await expect(page.locator(".levels__list")).toContainText(/Follow one item|Siga um item/);
+  await expect(page.locator(".docs-state")).toContainText(/The written record|O registro escrito/);
 
-  await page.getByRole("link", { name: "Read the documentation" }).click();
+  await page.getByRole("link", { name: /Read the documentation|Leia a documentação/ }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Documentação");
 });
 

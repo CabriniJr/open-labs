@@ -8,6 +8,7 @@ export interface Theme {
 }
 
 export interface Chapter {
+  readonly language?: "en" | "pt-BR";
   /** O id do documento na coleção — o caminho relativo sem extensão. */
   readonly id: string;
   readonly title: string;
@@ -53,11 +54,12 @@ export const THEMES: readonly Theme[] = [
     chapters: [
       // Primeiro da lista de propósito: é a porta de quem chega de fora
       // querendo publicar, e os outros três são o que ele precisa depois.
-      { id: "handbooks", title: "Submeter um handbook", status: "stable" },
-      { id: "standalone-authoring", title: "Independent handbook authoring", status: "draft" },
-      { id: "studio", title: "Handbook Studio", status: "draft" },
-      { id: "delivery", title: "Runnable handbook deliveries", status: "draft" },
-      { id: "assessments", title: "Interactive assessments", status: "draft" },
+      { id: "handbooks", language: "en", title: "Submeter um handbook", status: "stable" },
+      { id: "standalone-authoring", language: "en", title: "Independent handbook authoring", status: "draft" },
+      { id: "studio", language: "en", title: "Handbook Studio", status: "draft" },
+      { id: "delivery", language: "en", title: "Runnable handbook deliveries", status: "draft" },
+      { id: "assessments", language: "en", title: "Interactive assessments", status: "draft" },
+      { id: "localization", language: "en", title: "Language and appearance", status: "draft" },
       { id: "authoring", title: "Guia de autoria", status: "draft" },
       { id: "model-format", title: "Formato do modelo", status: "proposal" },
       { id: "stack", title: "O que reaproveitar", status: "draft" },

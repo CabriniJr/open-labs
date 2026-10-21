@@ -1,3 +1,4 @@
+import { localeReady } from "../lib/i18n.js";
 import { useMemo, useState } from "react";
 import {
   ATRIBUTOS_DA_CARDINALIDADE,
@@ -95,7 +96,7 @@ export function CardinalidadeLab() {
   const porMes = conta.pontosPorMinuto * 60 * 24 * 30;
 
   return (
-    <div className="cardinalidade">
+    <div ref={localeReady} className="cardinalidade">
       <div className="cardinalidade__conta">
         <p className="cardinalidade__pergunta">
           I want latency broken down by customer. <b>What does that cost?</b>

@@ -1,3 +1,4 @@
+import { localeReady } from "../lib/i18n.js";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { World, indexTree, seguir } from "@ovh/depth-core";
 import type { Parada } from "@ovh/depth-core";
@@ -127,7 +128,7 @@ export function HeroSim() {
   };
 
   return (
-    <div className="hero-sim">
+    <div ref={localeReady} className="hero-sim">
       <Explorer
         tree={arvore}
         wires={spec.wires}

@@ -1,16 +1,8 @@
----
-import { url } from "../lib/urls";
-
-// ATENÇÃO: a busca NÃO funciona em `astro dev`. O índice do Pagefind é gerado
-// depois do build, sobre o HTML de saída — para testar, rode `pnpm build` e
-// `pnpm --filter @ovh/site preview`. Sem este aviso a próxima pessoa passa uma
-// hora achando que quebrou alguma coisa.
-const indice = url("pagefind") + "pagefind.js";
----
-
+<!-- Os índices de busca nos dois idiomas são gerados depois do build.
+     Para testar a busca, use `pnpm build` e o preview. -->
 <!-- `hidden` sai no script: sem JavaScript o campo não funciona, e um campo
      morto na tela é pior que campo nenhum. -->
-<div class="doc-search" data-search data-index={indice} data-pagefind-ignore hidden>
+<div class="doc-search" data-search data-pagefind-ignore hidden>
   <label class="doc-search__label" for="doc-search-input">Buscar na documentação</label>
   <input
     id="doc-search-input"
@@ -27,88 +19,50 @@ const indice = url("pagefind") + "pagefind.js";
 </div>
 
 <script>
+  import { getLanguage } from "../lib/i18n";
+  import { searchLocalized, type SearchIndex } from "../lib/localized-search";
   const caixa = document.querySelector<HTMLElement>("[data-search]");
   const campo = document.querySelector<HTMLInputElement>("#doc-search-input");
   const saida = document.querySelector<HTMLElement>("[data-results]");
-
-  if (caixa !== null && campo !== null && saida !== null) {
+  if (caixa && campo && saida) {
     caixa.hidden = false;
-
-    // Carregado sob demanda, na primeira digitação: o índice é grande e a
-    // maioria de quem abre uma página de documentação não busca nada.
-    let pagefind: { search: (t: string) => Promise<{ results: PagefindResult[] }> } | null = null;
-    interface PagefindResult {
-      data: () => Promise<{
-        url: string;
-        excerpt: string;
-        meta: Record<string, string | undefined>;
-      }>;
+    const indexes = new Map<string, SearchIndex>();
+    let latest = 0;
+    async function search() {
+      const request = ++latest, query = campo!.value;
+      if (query.trim().length < 2) { saida!.replaceChildren(); return; }
+      const language = getLanguage();
+      try {
+        let index = indexes.get(language);
+        if (!index) {
+          const response = await fetch(`${import.meta.env.BASE_URL}search/${language}.json`);
+          if (!response.ok) throw new Error("Search index unavailable");
+          index = await response.json() as SearchIndex; indexes.set(language, index);
+        }
+        if (request !== latest) return;
+        const results = searchLocalized(index, query);
+        saida!.replaceChildren();
+        if (!results.length) {
+          const empty = document.createElement("p"); empty.className = "doc-search__empty";
+          empty.textContent = "No matching content. Try a broader term or choose a topic from the documentation index.";
+          saida!.append(empty); return;
+        }
+        for (const result of results) {
+          const link = document.createElement("a"); link.className = "doc-search__hit";
+          link.href = `${import.meta.env.BASE_URL}${result.path}`; link.setAttribute("data-no-translate", "");
+          const title = document.createElement("strong"), excerpt = document.createElement("span");
+          title.textContent = result.title; excerpt.textContent = result.excerpt; link.append(title, excerpt); saida!.append(link);
+        }
+      } catch {
+        saida!.textContent = "Search is available after building the site. Your current page remains open.";
+      }
     }
-
-    async function motor() {
-      if (pagefind === null) {
-        pagefind = await import(/* @vite-ignore */ caixa!.dataset.index!);
-      }
-      return pagefind!;
-    }
-
-    let ultima = 0;
-    async function buscar(termo: string) {
-      const meu = ++ultima;
-      if (termo.trim().length < 2) {
-        saida!.innerHTML = "";
-        return;
-      }
-
-      const { results } = await (await motor()).search(termo);
-      // Digitação rápida devolve respostas fora de ordem; só a última vale.
-      if (meu !== ultima) return;
-
-      if (results.length === 0) {
-        saida!.innerHTML =
-          '<p class="doc-search__empty">Nada com esse termo. A documentação está incompleta — ' +
-          "tente uma palavra mais geral, ou abra a lista de temas ao lado.</p>";
-        return;
-      }
-
-      const dados = await Promise.all(results.slice(0, 8).map((r) => r.data()));
-      if (meu !== ultima) return;
-
-      saida!.innerHTML = dados
-        .map((d) => {
-          const estado = d.meta.status;
-          const etiqueta =
-            estado !== undefined && estado !== "estável"
-              ? `<span class="status status--proposal">${estado}</span>`
-              : "";
-          return `<a class="doc-search__hit" href="${d.url}">
-            <strong>${d.meta.title ?? d.url}${etiqueta}</strong>
-            <span>${d.excerpt}</span>
-          </a>`;
-        })
-        .join("");
-    }
-
-    campo.addEventListener("input", () => void buscar(campo.value));
-
-    campo.addEventListener("keydown", (evento) => {
-      if (evento.key === "Escape") {
-        campo.value = "";
-        saida.innerHTML = "";
-        campo.blur();
-      }
-    });
-
-    document.addEventListener("keydown", (evento) => {
-      const alvo = evento.target;
-      const digitando =
-        alvo instanceof HTMLInputElement ||
-        alvo instanceof HTMLTextAreaElement ||
-        (alvo instanceof HTMLElement && alvo.isContentEditable);
-      if (evento.key === "/" && !digitando) {
-        evento.preventDefault();
-        campo.focus();
-      }
+    campo.addEventListener("input", () => void search());
+    campo.addEventListener("keydown", (event) => { if (event.key === "Escape") { campo.value = ""; saida.replaceChildren(); campo.blur(); latest += 1; } });
+    document.addEventListener("openlabs:language", () => void search());
+    document.addEventListener("keydown", (event) => {
+      const target = event.target;
+      if (event.key === "/" && !(target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || (target instanceof HTMLElement && target.isContentEditable))) { event.preventDefault(); campo.focus(); }
     });
   }
 </script>
