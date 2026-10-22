@@ -28,6 +28,32 @@ can check the model against a real Collector. `cpu.model` goes from the block di
 down to the transistor, and takes assembly as its input. Same engine — and the second
 handbook is where we find out whether the first one leaked domain into it.
 
+## Writing a scenario — the skeleton in Mermaid
+
+The topology of a lab lives in a `.mmd` file: nodes, channels, ports, the family
+of each piece. Mermaid renders in GitHub without a build, so the skeleton reads
+on the diff before anyone opens the site. The engine then puts drawing and
+behaviour on top — `step` functions in TypeScript, injected into the compiler as
+`overrides` by id. One source of truth for structure, one source of truth for
+behaviour, and nothing in between inventing coordinates.
+
+```mermaid
+flowchart LR
+  requests([requests]):::source
+  service[service]:::router
+  trace-store[(trace-store)]:::store
+  metric-store[(metric-store)]:::store
+  log-store[(log-store)]:::store
+
+  requests -- "request" --> service
+  service -- "trace:span"         --> trace-store
+  service -- "metric:measurement" --> metric-store
+  service -- "log:record"         --> log-store
+```
+
+Spec: [`docs/superpowers/specs/2026-09-16-mermaid-como-esqueleto-design.md`](docs/superpowers/specs/2026-09-16-mermaid-como-esqueleto-design.md).
+The parser and the compiler live in [`packages/mermaid-skeleton`](packages/mermaid-skeleton).
+
 ## Layout
 
 | Path | What lives there |
@@ -35,6 +61,8 @@ handbook is where we find out whether the first one leaked domain into it.
 | `apps/site` | The Astro site: content, pages, one scenario per lab |
 | `packages/depth-core` | The deterministic engine. Knows no domain at all — two guard lists prove it |
 | `packages/depth-ui` | Visual primitives. Also domain-neutral |
+| `packages/mermaid-skeleton` | Reads a `.mmd` and compiles it into a `WorldSpec` the engine runs. Also domain-neutral |
+| `packages/model-format` | The YAML `.modelet` format for component composition. Also domain-neutral |
 | `packages/otel-domain` | The only place OpenTelemetry exists: OTLP types, `traceparent` |
 | `packages/cpu-domain` | The only place a register exists: the RV32I subset, the assembler, the datapath |
 | `labs/<slug>` | The compose that runs for real |
