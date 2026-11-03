@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@ovh/motion": "workspace:*",
-    "three": "0.170.0"
+    "three": "0.180.0"
   },
   "peerDependencies": {
     "react": "^19.0.0",
@@ -21,7 +21,7 @@
   "devDependencies": {
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.5",
-    "@types/three": "0.170.0",
+    "@types/three": "0.180.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   }

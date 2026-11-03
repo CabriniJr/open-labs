@@ -25,15 +25,14 @@ import {
   Sprite,
   SpriteMaterial,
   Vector3,
-  WebGLRenderer,
   BufferGeometry,
   type Material,
   type Object3D,
 } from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
-import { Line2 } from "three/examples/jsm/lines/Line2.js";
 import { LineGeometry } from "three/examples/jsm/lines/LineGeometry.js";
-import { LineMaterial } from "three/examples/jsm/lines/LineMaterial.js";
+import { Line2 } from "three/examples/jsm/lines/webgpu/Line2.js";
+import { Line2NodeMaterial, WebGPURenderer } from "three/webgpu";
 import { CSS2DObject, CSS2DRenderer } from "three/examples/jsm/renderers/CSS2DRenderer.js";
 import { ISO_AZIMUTE, ISO_ELEVACAO, meiaAlturaParaCaber, pontoNoAr, pontosDoCaminho, posicaoDaCamera } from "./iso.js";
 import { lerPaleta, type Paleta } from "./tons.js";
@@ -45,6 +44,10 @@ import { lerPaleta, type Paleta } from "./tons.js";
  * novo); esta classe decide COMO, mexendo nos objetos que já existem em vez de
  * recriá-los. Nenhuma geometria nasce por quadro: um filme monta a cena uma
  * vez, e cada quadro só move, acende e apaga.
+ *
+ * O renderizador é o `WebGPURenderer`: WebGPU onde o navegador tem, e WebGL2
+ * onde não tem, com o mesmo código — a escolha é dele, e o palco anota qual
+ * foi em `data-backend`. Não há caminho "só WebGL" para envelhecer ao lado.
  *
  * Custo sob controle, porque 3D na web trava fácil:
  * - desenha sob demanda — só quando o quadro muda ou a câmera é mexida;
@@ -130,11 +133,14 @@ function halo(): CanvasTexture {
 export interface IsoOptions {
   /** Altura dos blocos em relação ao menor lado da caixa. */
   readonly alturaRelativa?: number;
+  /** Força o backend WebGL2 mesmo com WebGPU disponível (QA, comparação). */
+  readonly forcarWebGL?: boolean;
 }
 
 export class IsoScene {
   readonly #host: HTMLElement;
-  readonly #renderer: WebGLRenderer;
+  #renderer: WebGPURenderer;
+  #pronto = false;
   readonly #labels: CSS2DRenderer;
   readonly #scene = new Scene();
   readonly #camera = new OrthographicCamera(-1, 1, 1, -1, 1, 8000);
@@ -154,19 +160,15 @@ export class IsoScene {
   #pedido = 0;
   #azimute = ISO_AZIMUTE;
   #elevacao = ISO_ELEVACAO;
-  #linhas: LineMaterial[] = [];
+  #linhas: Line2NodeMaterial[] = [];
   #retemar: (() => void) | null = null;
 
   constructor(host: HTMLElement, options: IsoOptions = {}) {
     this.#host = host;
     this.#options = options;
     this.#paleta = lerPaleta(host);
-    this.#renderer = new WebGLRenderer({ antialias: true, alpha: false, powerPreference: "high-performance" });
-    this.#renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
-    this.#renderer.shadowMap.enabled = true;
-    this.#renderer.shadowMap.type = PCFSoftShadowMap;
-    this.#renderer.domElement.className = "iso-stage__canvas";
-    host.appendChild(this.#renderer.domElement);
+    const semGpu = typeof navigator === "undefined" || !("gpu" in navigator);
+    this.#renderer = this.#criarRenderer(options.forcarWebGL === true || semGpu);
 
     this.#labels = new CSS2DRenderer();
     this.#labels.domElement.className = "iso-stage__labels";
@@ -175,7 +177,10 @@ export class IsoScene {
     this.#scene.add(this.#ceu, this.#sol, this.#sol.target, this.#mundo);
     this.#sol.castShadow = true;
     this.#sol.shadow.mapSize.set(1024, 1024);
-    this.#sol.shadow.bias = -0.0005;
+    // Sem `normalBias`, faces inclinadas para o sol se sombreavam a si mesmas
+    // em listras (shadow acne) — visto na revisão das fotos com a r180.
+    this.#sol.shadow.bias = -0.0008;
+    this.#sol.shadow.normalBias = 1.2;
 
     this.#observador =
       typeof IntersectionObserver === "undefined"
@@ -198,6 +203,56 @@ export class IsoScene {
     this.#midia = window.matchMedia?.("(prefers-color-scheme: dark)") ?? null;
     this.#midia?.addEventListener("change", retemar);
     this.#medir();
+  }
+
+  /**
+   * Um renderizador novo, no hospedeiro.
+   *
+   * Se o dispositivo WebGPU cair — driver reiniciado, GPU trocada, um ambiente
+   * que não o sustenta —, a cena se recria em WebGL2 e continua do mesmo quadro.
+   * O leitor nunca vê um palco vazio por causa da tecnologia que escolhemos.
+   */
+  #criarRenderer(forcarWebGL: boolean, tentativa = 0): WebGPURenderer {
+    const r = new WebGPURenderer({ antialias: true, alpha: false, powerPreference: "high-performance", forceWebGL: forcarWebGL });
+    r.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+    r.shadowMap.enabled = true;
+    r.shadowMap.type = PCFSoftShadowMap;
+    r.domElement.className = "iso-stage__canvas";
+    this.#host.prepend(r.domElement);
+    this.#pronto = false;
+    r.onDeviceLost = () => {
+      if (this.#renderer !== r || forcarWebGL) return;
+      this.#host.dataset.backendPerdido = "webgpu";
+      r.domElement.remove();
+      this.#renderer = this.#criarRenderer(true);
+      this.#medir();
+    };
+    r.init().then(
+      () => {
+        if (this.#renderer !== r) return;
+        this.#pronto = true;
+        const webgpu = (r.backend as { isWebGPUBackend?: boolean }).isWebGPUBackend === true;
+        this.#host.dataset.backend = webgpu ? "webgpu" : "webgl2";
+        this.pedir();
+      },
+      (erro: unknown) => {
+        if (this.#renderer !== r) return;
+        this.#host.dataset.erro = erro instanceof Error ? erro.message : String(erro);
+        // Logo depois de o processo de GPU cair, o navegador recusa contexto
+        // novo por um instante. Tenta-se de novo, com espera crescente.
+        if (tentativa >= 3) {
+          this.#host.dataset.backend = "falhou";
+          return;
+        }
+        setTimeout(() => {
+          if (this.#renderer !== r) return;
+          r.domElement.remove();
+          this.#renderer = this.#criarRenderer(true, tentativa + 1);
+          this.#medir();
+        }, 500 * 2 ** tentativa);
+      },
+    );
+    return r;
   }
 
   /** Gira a vista. A elevação fica entre o quase-chão e o quase-topo. */
@@ -290,7 +345,6 @@ export class IsoScene {
     this.#host.style.setProperty("--iso-k", String(Math.max(0.62, Math.min(1, w / 1100))));
     if (w < 640) this.#host.dataset.compacto = "";
     else delete this.#host.dataset.compacto;
-    for (const m of this.#linhas) m.resolution.set(w, h);
     this.pedir();
   }
 
@@ -315,10 +369,12 @@ export class IsoScene {
 
   #desenhar(): void {
     const film = this.#film;
-    if (film === null) return;
+    if (film === null || !this.#pronto) return;
     this.#enquadrar(this.#frame?.camera ?? film.camera);
     this.#renderer.render(this.#scene, this.#camera);
     this.#labels.render(this.#scene, this.#camera);
+    // Para o QA: quantas chamadas de desenho o último quadro fez.
+    this.#host.dataset.chamadas = String(this.#renderer.info.render.drawCalls ?? this.#renderer.info.render.calls ?? 0);
   }
 
   #malha(film: Film<unknown>, p: Paleta): Object3D {
@@ -330,9 +386,8 @@ export class IsoScene {
     return new LineSegments(new BufferGeometry().setFromPoints(pts), mat);
   }
 
-  #linha(cor: Color, largura: number, tracejada: boolean): LineMaterial {
-    const m = new LineMaterial({ color: cor.getHex(), linewidth: largura, transparent: true, dashed: tracejada, dashSize: 8, gapSize: 7 });
-    m.resolution.set(Math.max(1, this.#host.clientWidth), Math.max(1, this.#host.clientHeight));
+  #linha(cor: Color, largura: number, tracejada: boolean): Line2NodeMaterial {
+    const m = new Line2NodeMaterial({ color: cor.getHex(), linewidth: largura, transparent: true, dashed: tracejada, dashSize: 8, gapSize: 7 });
     this.#linhas.push(m);
     return m;
   }
