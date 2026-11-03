@@ -16,11 +16,13 @@
     para, que é mais honesto que desenhar um número errado.
 */
 .splunk-baldes {
+  min-width: 0;
   display: grid;
   gap: var(--space-2);
 }
 
 .splunk-baldes__palco {
+  min-width: 0;
   display: grid;
   gap: var(--space-2);
 }

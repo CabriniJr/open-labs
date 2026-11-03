@@ -55,7 +55,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @ovh/site exec playwright install --with-deps chromium
-      - run: pnpm --filter @ovh/site exec playwright test spatial-explorer.spec.ts
+      - run: pnpm --filter @ovh/site exec playwright test spatial-explorer.spec.ts palco-legivel.spec.ts docs.spec.ts travessia.spec.ts --grep 'spatial-explorer|o palco cabe|a landing|splunk-buckets/'
       - uses: actions/upload-artifact@v4
         if: always()
         with:

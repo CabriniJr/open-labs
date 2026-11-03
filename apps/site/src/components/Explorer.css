@@ -78,8 +78,11 @@
   block-size: 100%;
 }
 
-.explorer__palco > .scene-viewport { height: 100%; display: flex; flex-direction: column; }
-.explorer__palco > .scene-viewport > .scene-spatial, .explorer__palco .scene-planar > .dui-stage { flex: 1; min-height: 0; height: 0; max-height: none; }
+.explorer, .explorer__corpo { min-width: 0; max-width: 100%; }
+.explorer__palco { display: flex; flex-direction: column; }
+.explorer__palco > .scene-spatial, .explorer__palco .scene-planar > .dui-stage { flex: 1; min-height: 0; height: 100%; max-height: none; }
+.explorer[data-cheia="true"] .scene-viewport { height: 100%; display: flex; flex-direction: column; }
+.explorer[data-cheia="true"] .scene-canvas { flex: 1; min-height: 0; }
 
 /*
  * Em tela cheia o palco deixa de ter altura fixa e passa a tomar o que sobra:

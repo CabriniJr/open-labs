@@ -6,11 +6,13 @@ export interface SceneViewportProps {
   readonly selected?: string | null | undefined; readonly onSelect?: ((id: string) => void) | undefined;
   readonly onOpen?: ((id: string) => void) | undefined;
   readonly onSelectMarker?: ((id: string) => void) | undefined;
+  readonly canvasClassName?: string | undefined;
+  readonly allowFullscreen?: boolean | undefined;
 }
 
 /** SVG remains the accessible default. Spatial views project the very same state,
  * with orthographic or perspective cameras and solid, depth-sorted geometry. */
-export function SceneViewport({ scene: source, label, children, selected, onSelect, onOpen, onSelectMarker }: SceneViewportProps) {
+export function SceneViewport({ scene: source, label, children, selected, onSelect, onOpen, onSelectMarker, canvasClassName, allowFullscreen = true }: SceneViewportProps) {
   const [mode, setMode] = useState<SpatialMode>("2d");
   const [camera, setCamera] = useState<SpatialCamera>(DEFAULT_CAMERA);
   const [help, setHelp] = useState(false);
@@ -65,13 +67,14 @@ export function SceneViewport({ scene: source, label, children, selected, onSele
         <div className="scene-tools">
           {spatial && <><button type="button" aria-label="Zoom out" onClick={() => update({ zoom: clamp(camera.zoom / 1.2, .5, 4) })}>−</button><button type="button" aria-label="Zoom in" onClick={() => update({ zoom: clamp(camera.zoom * 1.2, .5, 4) })}>+</button><button type="button" onClick={reset}>Reset view</button></>}
           <button type="button" aria-label="View instructions" aria-expanded={help} onClick={() => setHelp(!help)}>?</button>
-          <button type="button" aria-label={full ? "Exit viewport full screen" : "Viewport full screen"} onClick={async () => {
+          {allowFullscreen && <button type="button" aria-label={full ? "Exit viewport full screen" : "Viewport full screen"} onClick={async () => {
             try { if (document.fullscreenElement === root.current) await document.exitFullscreen(); else if (root.current?.requestFullscreen) await root.current.requestFullscreen(); else setNotice("Full screen is unavailable in this browser."); } catch { setNotice("Full screen is unavailable in this browser."); }
-          }}>⛶</button>
+          }}>⛶</button>}
         </div>
       </div>
       {help && <div className="scene-help">{spatial ? "Drag to orbit in 3D or pan in Isometric. Shift + drag pans. Use + / − to zoom, arrow keys to move the camera, and 0 to reset. Select a part to inspect it; double-click or press Enter to open it." : "Select a part to inspect it. Double-click to open it. Scroll over the diagram to zoom and drag to pan. Switch to Isometric or 3D to explore the same state in space."}</div>}
       {notice && <p className="scene-help" role="status">{notice}</p>}
+      <div className={["scene-canvas", canvasClassName].filter(Boolean).join(" ")}>
       <div className="scene-planar" hidden={spatial}>{children}</div>
       {spatial && <svg className="scene-spatial" viewBox="0 0 1000 600" role="img" aria-label={label} tabIndex={0}
         onKeyDown={e => {
@@ -126,6 +129,7 @@ export function SceneViewport({ scene: source, label, children, selected, onSele
         })}
         {scene.markers?.map(m => { const p = project(m); return <g key={m.id} ref={element => { if (element) markerElements.current.set(m.id, element); else markerElements.current.delete(m.id); }} className="scene-marker" data-tone={m.tone} opacity={m.opacity ?? 1} role={onSelectMarker ? "button" : undefined} tabIndex={onSelectMarker ? 0 : undefined} aria-label={onSelectMarker ? `Follow ${m.label || "item"}` : undefined} onClick={() => onSelectMarker?.(m.id)} onKeyDown={e => { if (onSelectMarker && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); e.stopPropagation(); onSelectMarker(m.id); } }}><circle className="scene-marker__hit" cx={p.x} cy={p.y} r={20} /><circle className="scene-marker__halo" cx={p.x} cy={p.y} r={12} /><circle cx={p.x} cy={p.y} r={5} />{m.label && <text x={p.x} y={p.y - 17}>{m.label}</text>}</g>; })}
       </svg>}
+      </div>
       {spatial && <><div className="scene-status mono"><span>{mode === "3d" ? "Perspective · drag to orbit" : "Orthographic · drag to pan"}</span><span>{Math.round(camera.zoom * 100)}% · same model, same state</span><button type="button" aria-expanded={contents} onClick={() => setContents(!contents)}>Scene contents {contents ? "−" : "+"}</button></div>{contents && <div className="scene-contents" aria-label="Scene contents">{scene.nodes.map(n => <div key={n.id}><button type="button" aria-pressed={selected === n.id} onClick={() => onSelect?.(n.id)} disabled={!onSelect}>{n.label || "Part"}{n.sublabel && <span>{n.sublabel}</span>}</button>{onOpen && <button type="button" aria-label={`Open ${n.label}`} onClick={() => onOpen(n.id)}>↗</button>}</div>)}</div>}</>}
     </div>
   );

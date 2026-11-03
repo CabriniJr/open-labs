@@ -56,6 +56,8 @@ import { spatialFromStage } from "./spatial-stage.js";
  */
 
 export interface StageProps {
+  readonly canvasClassName?: string | undefined;
+  readonly allowFullscreen?: boolean | undefined;
   readonly tree: TreeIndex;
   readonly wires: readonly Wire[];
   readonly view: View;
@@ -2965,7 +2967,7 @@ export function Stage(props: StageProps) {
 
 
   return (
-    <SceneViewport scene={() => spatialFromStage(props, spatialTickStarted)} label={view.title} selected={props.selected} onSelect={props.onSelect} onOpen={props.onOpen}
+    <SceneViewport scene={() => spatialFromStage(props, spatialTickStarted)} label={view.title} selected={props.selected} onSelect={props.onSelect} onOpen={props.onOpen} canvasClassName={props.canvasClassName} allowFullscreen={props.allowFullscreen}
       onSelectMarker={props.onSeguirCarga ? id => { const item = state.flight.find(f => f.id === id); if (!item) return; const key = props.chaveDaCarga?.(item.message); if (key !== undefined) props.onSeguirCarga?.(key === props.cargaSeguida ? undefined : key); } : undefined}>
     <svg
       ref={svgRef}

@@ -249,8 +249,9 @@ export function Explorer({
           quase sempre o lado que aperta, o texto do desenho — que é medido em
           unidades da vista — chegava na tela menor do que dá para ler.
         */}
-        <div className="explorer__palco">
         <Stage
+          canvasClassName="explorer__palco"
+          allowFullscreen={false}
           tree={tree}
           wires={wires}
           view={view}
@@ -277,7 +278,6 @@ export function Explorer({
           cargaSeguida={cargaSeguida}
           onSeguirCarga={onSeguirCarga}
         />
-        </div>
         {/*
           Seguindo uma carga, o painel dela toma o lugar da ficha do objeto.
 
