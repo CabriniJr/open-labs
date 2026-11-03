@@ -1,5 +1,12 @@
 import { expect, test, type Page } from "@playwright/test";
 
+test.setTimeout(60_000);
+
+async function capture(page: Page, path: string) {
+  await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
+  await page.screenshot({ path, fullPage: true });
+}
+
 async function ready(page: Page, selector: string) {
   const island = page.locator(`astro-island:has(${selector})`).first();
   await island.scrollIntoViewIfNeeded();
@@ -9,6 +16,7 @@ async function ready(page: Page, selector: string) {
 test("the live flow keeps its state, selection and navigation across projections", async ({ page }, info) => {
   await page.goto("");
   await ready(page, ".hero-sim");
+  await expect(page.locator('.hero-sim .dui-trilha__estacao[data-mudou*="collector.name"]')).toHaveCount(1, { timeout: 20_000 });
   await page.getByRole("button", { name: "Pause simulation" }).click();
   const viewport = page.locator(".hero-sim .scene-viewport");
   const pausedFrame = await viewport.locator(".dui-stage").innerHTML();
@@ -19,7 +27,7 @@ test("the live flow keeps its state, selection and navigation across projections
   await expect(viewport.locator(".scene-spatial")).toBeVisible();
   await expect(viewport.locator(".dui-stage")).toBeHidden();
   await expect(viewport.locator('.scene-node[data-id="collector"]')).toBeVisible();
-  await page.screenshot({ path: info.outputPath("home-isometric.png"), fullPage: true });
+  await capture(page, info.outputPath("home-isometric.png"));
   await viewport.getByRole("button", { name: "3D", exact: true }).click();
   const top = viewport.locator('.scene-node[data-id="collector"] .scene-node__top');
   const initial = await top.getAttribute("points");
@@ -61,7 +69,7 @@ test("the motion timeline and experiment switches survive a view change", async 
   const part = viewport.locator(".scene-contents button").first();
   await part.click();
   await expect(lab.locator(".mo-selection")).toBeVisible();
-  await page.screenshot({ path: info.outputPath("context-3d.png"), fullPage: true });
+  await capture(page, info.outputPath("context-3d.png"));
   await viewport.getByRole("button", { name: "2D", exact: true }).click();
   await expect(timeline).toHaveValue(position);
   expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1);
@@ -76,7 +84,7 @@ test("catalog filters are shareable, reloadable and recover from empty results",
   await expect(page).toHaveURL(/handbook=otel.*status=ready/);
   await page.reload();
   await expect(page.getByRole("combobox", { name: "Filter by handbook" })).toHaveValue("otel");
-  await page.screenshot({ path: info.outputPath("lab-discovery.png"), fullPage: true });
+  await capture(page, info.outputPath("lab-discovery.png"));
   await page.getByRole("searchbox", { name: "Search labs" }).fill("no-such-lab-xyz");
   await expect(page.getByRole("heading", { name: "No labs match these filters." })).toBeVisible();
   await page.getByRole("button", { name: "Clear filters" }).click();

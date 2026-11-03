@@ -37,8 +37,8 @@
 .scene-node[data-frame] .scene-node__top { fill: color-mix(in oklab, var(--scene-color) 4%, transparent); stroke-dasharray: 5 4; }
 .scene-node:hover .scene-node__top, .scene-node[data-selected] .scene-node__top, .scene-node[data-active] .scene-node__top { fill: color-mix(in oklab, var(--scene-color) 22%, var(--paper-raised)); stroke-width: 2.5; }
 .scene-spatial text { font: 11px var(--font-mono); text-anchor: middle; fill: var(--ink); paint-order: stroke; stroke: var(--paper-raised); stroke-width: 3; stroke-linejoin: round; pointer-events: none; }
-.scene-spatial .scene-node__label { font-size: 12px; font-weight: 600; }
-.scene-spatial .scene-node__sub { fill: var(--ink-muted); font-size: 10px; }
+.scene-spatial .scene-node__label { font-size: 16px; font-weight: 600; }
+.scene-spatial .scene-node__sub { fill: var(--ink-muted); font-size: 13px; }
 .scene-marker { fill: var(--scene-color); pointer-events: none; }
 .scene-marker[role="button"] { pointer-events: auto; cursor: pointer; }
 .scene-marker__hit { fill: transparent; }
@@ -55,3 +55,4 @@
 .scene-viewport:fullscreen { overflow: auto; padding: 1rem; background: var(--paper); }
 .scene-viewport:fullscreen .scene-spatial { max-height: none; height: calc(100dvh - 130px); }
 @media (max-width: 600px) { .scene-toolbar__label { display: none; } .scene-toolbar button { min-height: 38px; padding-inline: .5rem; } .scene-spatial { min-height: 320px; } }
+@media (max-width: 600px) { .scene-spatial .scene-node__label { font-size: 24px; } .scene-spatial .scene-node__sub { display: none; } }
