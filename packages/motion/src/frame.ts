@@ -1,4 +1,4 @@
-import type { Chapter, Film, Step } from "./choreography.js";
+import type { Chapter, Film, Packet, Step } from "./choreography.js";
 import { CAMERA, initialState, type Animatable, type CameraState, type EntitySpec } from "./scene.js";
 
 /**
@@ -22,6 +22,10 @@ export interface Frame<D> {
   readonly detail: D | undefined;
   /** Avanço dentro do capítulo, 0–1. */
   readonly local: number;
+  /** Quantos pacotes do registro já saíram neste instante. */
+  readonly sent: number;
+  /** O último pacote a sair, se algum já saiu. */
+  readonly packet: Packet | undefined;
 }
 
 const PROPS = ["opacity", "dx", "dy", "scale", "glow", "ping", "progress", "dim", "label", "sublabel", "tone"] as const;
@@ -60,7 +64,9 @@ export function frameAt<D>(film: Film<D>, t: number): Frame<D> {
     }
   }
   const local = chapter === undefined ? 0 : Math.min(1, Math.max(0, (t - chapter.start) / Math.max(1, chapter.end - chapter.start)));
-  return { t, entities, camera, chapterIndex, chapter, step, detail, local };
+  let sent = 0;
+  while (sent < film.packets.length && film.packets[sent]!.t <= t) sent += 1;
+  return { t, entities, camera, chapterIndex, chapter, step, detail, local, sent, packet: film.packets[sent - 1] };
 }
 
 /** O retângulo visível para uma câmera, na proporção do palco. */

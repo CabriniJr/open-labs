@@ -9,6 +9,7 @@ import {
   type EntitySpec,
   type Prop,
   type PropValue,
+  type Tone,
 } from "./scene.js";
 import { Timeline } from "./timeline.js";
 
@@ -32,6 +33,23 @@ export interface Step<D> {
   readonly detail?: D;
 }
 
+/**
+ * Um pacote no registro do filme: o que atravessou o fio, de onde, para onde.
+ * É o que vira a tabela de pacotes e o cartão do pacote no player — o palco
+ * mostra a ficha andando, o registro diz o que ela era.
+ */
+export interface Packet {
+  readonly t: number;
+  readonly tag: string;
+  readonly tone: Tone;
+  readonly from: string;
+  readonly to: string;
+  readonly protocol: string;
+  readonly payload: string;
+  /** Tamanho em bytes, quando o domínio sabe dizer. */
+  readonly bytes?: number;
+}
+
 export interface Chapter<D> {
   readonly id: string;
   readonly title: string;
@@ -49,6 +67,8 @@ export interface Film<D = unknown> {
   readonly chapters: readonly Chapter<D>[];
   readonly duration: number;
   readonly camera: CameraState;
+  /** Os pacotes que o filme registrou, em ordem de tempo. */
+  readonly packets: readonly Packet[];
 }
 
 export interface Timing {
@@ -107,6 +127,12 @@ export class Director<D> {
   /** Avança o cursor sem fazer nada. */
   wait(ms: number): this {
     this.#cursor += ms;
+    return this;
+  }
+
+  /** Registra um pacote neste instante (ver `Packet`). Não move nada no palco. */
+  packet(p: Omit<Packet, "t">): this {
+    this.#film.registrar({ ...p, t: this.#cursor });
     return this;
   }
 
@@ -257,6 +283,7 @@ export class FilmBuilder<D = unknown> {
   readonly #entities = new Map<string, EntitySpec>();
   readonly #timeline = new Timeline();
   readonly #chapters: Chapter<D>[] = [];
+  readonly #packets: Packet[] = [];
   #cursor = 0;
 
   constructor(options: FilmOptions) {
@@ -299,6 +326,10 @@ export class FilmBuilder<D = unknown> {
     this.#chapters.push({ id: input.id, title: input.title, body: input.body, start: this.#cursor, end, steps });
     this.#cursor = end + (this.#options.gap ?? 350);
     return this;
+  }
+
+  registrar(p: Packet): void {
+    this.#packets.push(p);
   }
 
   /** Valor de uma propriedade num instante, levando em conta o que já foi escrito. */
@@ -347,6 +378,7 @@ export class FilmBuilder<D = unknown> {
       chapters: [...this.#chapters],
       duration: Math.max(last?.end ?? 0, this.#timeline.end),
       camera: { cx: width / 2, cy: height / 2, zoom: 1 },
+      packets: [...this.#packets].sort((a, b) => a.t - b.t),
     };
   }
 

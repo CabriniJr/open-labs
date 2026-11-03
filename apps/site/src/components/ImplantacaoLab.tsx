@@ -60,6 +60,7 @@ export function ImplantacaoLab() {
         film={filme}
         views={VISTAS}
         flatLabel="Topology"
+        packetLegend={[{ label: "T1 spans", tone: "kind-1" }, { label: "T2 spans", tone: "kind-3" }]}
         label="Two Kubernetes nodes with six application Pods; spans travel through the chosen Collector deployment to the backend."
         controls={
           <>

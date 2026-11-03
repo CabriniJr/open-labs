@@ -165,18 +165,27 @@ function Token({ spec, state }: { spec: TokenSpec; state: Readonly<Animatable> }
     ghosts.push(<circle key={k} className="mo-token__ghost" cx={f(g.x)} cy={f(g.y)} r={f(r * (1 - k / (trail + 2)))} style={{ opacity: f(0.5 * (1 - k / (trail + 1))) }} />);
   }
   const label = state.label;
-  const width = Math.max(28, label.length * 6.6 + 14);
+  const sub = state.sublabel;
+  // Etiqueta de pacote: cabeçalho cheio na cor do tipo, conteúdo embaixo.
+  const width = Math.max(28, Math.max(label.length * 6.4, sub.length * 5.6) + 16);
+  const alto = sub === "" ? 20 : 34;
   return (
     <g className="mo-token" data-tone={state.tone} style={{ opacity: o }} transform={`translate(${f(state.dx)} ${f(state.dy)})`}>
       {ghosts}
       <circle className="mo-token__halo" cx={f(pose.x)} cy={f(pose.y)} r={r * 2.4} />
       <circle className="mo-token__core" cx={f(pose.x)} cy={f(pose.y)} r={r * state.scale} />
       {label !== "" ? (
-        <g transform={`translate(${f(pose.x)} ${f(pose.y - r - 14)})`}>
-          <rect className="mo-token__tag" x={-width / 2} y={-10} width={width} height={20} rx={10} />
-          <text className="mo-token__text" textAnchor="middle" dominantBaseline="central">
+        <g transform={`translate(${f(pose.x)} ${f(pose.y - r - 8 - alto / 2)})`}>
+          <rect className="mo-token__tag" x={-width / 2} y={-alto / 2} width={width} height={alto} rx={4} />
+          {sub !== "" ? <rect className="mo-token__head" x={-width / 2} y={-alto / 2} width={width} height={16} rx={4} /> : null}
+          <text className={sub === "" ? "mo-token__text" : "mo-token__text mo-token__text--head"} y={sub === "" ? 0 : -alto / 2 + 8} textAnchor="middle" dominantBaseline="central">
             {label}
           </text>
+          {sub !== "" ? (
+            <text className="mo-token__sub" y={alto / 2 - 8} textAnchor="middle" dominantBaseline="central">
+              {sub}
+            </text>
+          ) : null}
         </g>
       ) : null}
     </g>

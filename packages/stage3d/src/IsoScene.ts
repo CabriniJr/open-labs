@@ -673,7 +673,23 @@ export class IsoScene {
           m.position.set(q.x + s.dx, q.y, q.z + s.dy);
         });
         obj.position.set(esfera.position.x, esfera.position.y + r + 10, esfera.position.z);
-        escrever(el, s.label);
+        // Etiqueta de pacote: cabeçalho na cor do tipo e o conteúdo embaixo.
+        const chave = `${s.label}\u0000${s.sublabel}`;
+        if (el.dataset.k !== chave) {
+          el.dataset.k = chave;
+          el.replaceChildren();
+          const head = document.createElement("span");
+          head.className = "iso-token__head";
+          head.textContent = s.label;
+          el.appendChild(head);
+          if (s.sublabel !== "") {
+            const sub = document.createElement("span");
+            sub.className = "iso-token__sub";
+            sub.textContent = s.sublabel;
+            el.appendChild(sub);
+          }
+          el.hidden = s.label === "";
+        }
         marcar(el, "tone", s.tone);
       },
     };

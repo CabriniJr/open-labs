@@ -403,3 +403,63 @@
   .mo-views { top: 6px; right: 6px; padding: 2px; }
   .mo-views__opt { padding: 2px 8px; font-size: 0.7rem; }
 }
+
+/* ---------- pacotes: etiqueta de duas linhas, cartão e tabela ---------- */
+
+.mo-token__head { fill: var(--mo-c); stroke: none; }
+.mo-token__text--head { fill: var(--paper); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; font-size: 9.5px; }
+.mo-token__sub { fill: var(--ink); font-size: 9.5px; }
+
+.mo-steps { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; }
+.mo-steps__bars { display: inline-flex; gap: 4px; }
+.mo-steps__bars span { width: 22px; height: 5px; border-radius: 3px; background: var(--rule); transition: background 200ms ease; }
+.mo-steps__bars span[data-state="done"] { background: var(--dui-conduit); }
+.mo-steps__bars span[data-state="current"] { background: var(--accent); }
+.mo-steps__label { color: var(--ink-muted); font-size: var(--size-step--1); letter-spacing: 0.06em; text-transform: uppercase; }
+
+.mo-packet {
+  margin-top: var(--space-2);
+  padding: 10px 12px;
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--mo-c);
+  border-radius: var(--radius-2);
+  background: color-mix(in oklab, var(--mo-c) 5%, var(--paper));
+  animation: mo-entra 260ms ease-out both;
+}
+.mo-packet p { margin: 0; }
+.mo-packet__route { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; color: var(--ink-muted); font-size: 0.78rem; letter-spacing: 0.06em; text-transform: uppercase; }
+.mo-packet__tag { padding: 1px 8px; border-radius: 3px; background: var(--mo-c); color: var(--paper); font-weight: 600; }
+.mo-packet__payload { margin-top: 6px !important; color: var(--ink); font-size: 0.85rem; overflow-wrap: anywhere; }
+.mo-packet__meta { margin-top: 4px !important; color: var(--ink-faint); font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; }
+
+.mo-packets { border: 1px solid var(--rule); border-radius: var(--radius-3); background: var(--paper-raised); min-width: 0; }
+.mo-packets__head { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: baseline; padding: 12px 16px 8px; }
+.mo-packets__title { margin: 0; font-size: var(--size-step-0); letter-spacing: 0.08em; text-transform: uppercase; font-family: var(--font-mono); font-weight: 500; }
+.mo-packets__legend { display: flex; flex-wrap: wrap; gap: 12px; margin: 0; padding: 0; list-style: none; font-size: 0.75rem; color: var(--ink-muted); }
+.mo-packets__legend li::before { content: ""; display: inline-block; width: 9px; height: 9px; margin-right: 6px; border-radius: 50%; background: var(--mo-c); vertical-align: middle; }
+.mo-packets__scroll { overflow-x: auto; }
+.mo-packets table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+.mo-packets th { padding: 6px 12px; border-bottom: 1px solid var(--rule); color: var(--ink-muted); font-weight: 500; text-align: left; letter-spacing: 0.06em; text-transform: uppercase; font-size: 0.7rem; white-space: nowrap; }
+.mo-packets td { padding: 6px 12px; border-bottom: 1px solid color-mix(in oklab, var(--rule) 60%, transparent); white-space: nowrap; transition: opacity 200ms ease, background 200ms ease; }
+.mo-packets tr[data-state="next"] td { opacity: 0.28; }
+.mo-packets tr[data-state="current"] td { background: color-mix(in oklab, var(--mo-c) 10%, transparent); }
+.mo-packets tr[data-state="current"] td:first-child { box-shadow: inset 3px 0 0 var(--mo-c); }
+.mo-packets__n { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--mo-c); color: var(--paper); font-weight: 600; font-size: 0.7rem; }
+.mo-packets tr[data-state="next"] .mo-packets__n { background: var(--rule); color: var(--ink-muted); }
+.mo-packets__info { max-width: 28rem; overflow: hidden; text-overflow: ellipsis; }
+
+@keyframes mo-entra { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+/* No celular o transporte fica preso ao rodapé, como num player. */
+@media (max-width: 40rem) {
+  .mo-transport {
+    position: sticky;
+    bottom: 0;
+    z-index: 5;
+    padding: 8px;
+    margin-inline: -8px;
+    border-top: 1px solid var(--rule);
+    background: color-mix(in oklab, var(--paper) 92%, transparent);
+    backdrop-filter: blur(8px);
+  }
+}
