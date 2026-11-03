@@ -149,3 +149,11 @@ export { spanDoHeroi } from "./heroi/carga.js";
 export type { SpanDoHeroi } from "./heroi/carga.js";
 export { ATRIBUTO_DO_COLLECTOR, ROTULOS_HEROI, VALOR_DO_COLLECTOR } from "./heroi/labels.js";
 export { VIEW_HEROI, VIEWS_DO_HEROI } from "./heroi/views.js";
+
+// O lab da propagação de contexto, sobre o palco animado.
+export { formatBaggage, parseBaggage } from "./contexto/baggage.js";
+export type { Baggage } from "./contexto/baggage.js";
+export { CAMINHO, INSTRUMENTADOS, OPCOES_PADRAO, propagar } from "./contexto/propagacao.js";
+export type { Chamada as ChamadaDePropagacao, OpcoesDePropagacao, Propagacao, Servico, SpanGerado } from "./contexto/propagacao.js";
+export { ALTURA, LARGURA, filmeDoContexto, rotuloDoContexto } from "./contexto/filme.js";
+export type { DetalheDoContexto, Foco } from "./contexto/filme.js";

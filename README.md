@@ -42,6 +42,7 @@ handbook is where we find out whether the first one leaked domain into it.
 | `packages/handbook-catalog` | Reviewed adapters and runtime capabilities installed in the static host |
 | `packages/depth-core` | The deterministic engine. Knows no domain at all — two guard lists prove it |
 | `packages/depth-ui` | Visual primitives. Also domain-neutral |
+| `packages/motion` | Domain-neutral animated stage: timeline, choreography tools, camera, chapter player |
 | `packages/interactive-core` | Domain-neutral event/snapshot runtime for experiments outside the flow engine |
 | `packages/kubernetes-domain` | Manifest-driven Pod lifecycle, reconciliation and resource reservations |
 | `packages/otel-domain` | The only place OpenTelemetry exists: OTLP types, `traceparent` |

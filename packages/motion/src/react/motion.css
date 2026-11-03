@@ -1,0 +1,372 @@
+/*
+ * O palco animado. Mesma regra do palco de fluxos: cor só por sentido, lida do
+ * catálogo (`depth-ui/src/stage.css`). Este arquivo diz `var(--mo-c)`, e o tom
+ * da peça diz qual sentido do catálogo `--mo-c` é.
+ */
+
+/* ---------- tons → catálogo ---------- */
+
+.mo-stage [data-tone],
+.mo-player [data-tone] {
+  --mo-c: var(--dui-tinta);
+}
+:is(.mo-stage, .mo-player) [data-tone="muted"] { --mo-c: var(--ink-faint); }
+:is(.mo-stage, .mo-player) [data-tone="live"] { --mo-c: var(--dui-viva); }
+:is(.mo-stage, .mo-player) [data-tone="high"] { --mo-c: var(--dui-alto); }
+:is(.mo-stage, .mo-player) [data-tone="processor"] { --mo-c: var(--dui-processor); }
+:is(.mo-stage, .mo-player) [data-tone="container"] { --mo-c: var(--dui-container); }
+:is(.mo-stage, .mo-player) [data-tone="controller"] { --mo-c: var(--dui-controller); }
+:is(.mo-stage, .mo-player) [data-tone="conduit"] { --mo-c: var(--dui-conduit); }
+:is(.mo-stage, .mo-player) [data-tone="kind-1"] { --mo-c: var(--dui-especie-1); }
+:is(.mo-stage, .mo-player) [data-tone="kind-2"] { --mo-c: var(--dui-especie-2); }
+:is(.mo-stage, .mo-player) [data-tone="kind-3"] { --mo-c: var(--dui-especie-3); }
+:is(.mo-stage, .mo-player) [data-tone="kind-4"] { --mo-c: var(--dui-especie-4); }
+:is(.mo-stage, .mo-player) [data-tone="kind-5"] { --mo-c: var(--dui-especie-5); }
+
+/* ---------- o palco ---------- */
+
+.mo-stage {
+  --mo-surface: color-mix(in oklab, var(--paper-raised) 90%, var(--paper));
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: var(--mo-aspect, 16 / 9);
+  background: var(--paper);
+  font-family: var(--font-mono);
+  user-select: none;
+}
+
+.mo-stage__floor { pointer-events: none; }
+.mo-stage__dot { fill: color-mix(in oklab, var(--rule) 80%, transparent); }
+
+.mo-label {
+  fill: var(--ink);
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+.mo-sublabel {
+  fill: var(--ink-muted);
+  font-size: 10px;
+}
+.mo-badge {
+  fill: var(--mo-c);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* peça */
+.mo-node__shape {
+  fill: color-mix(in oklab, var(--mo-c) 9%, var(--mo-surface));
+  stroke: color-mix(in oklab, var(--mo-c) 70%, var(--rule));
+  stroke-width: 1.5;
+  transition: filter 160ms ease;
+}
+.mo-node[data-lit] .mo-node__shape {
+  fill: color-mix(in oklab, var(--mo-c) calc(9% + var(--mo-glow) * 16%), var(--mo-surface));
+  stroke: var(--mo-c);
+  stroke-width: 2;
+  filter: drop-shadow(0 0 calc(var(--mo-glow) * 12px) color-mix(in oklab, var(--mo-c) 65%, transparent));
+}
+.mo-node__ping {
+  fill: none;
+  stroke: var(--mo-c);
+  stroke-width: 2;
+}
+
+/* linha de vida */
+.mo-lane__life {
+  stroke: color-mix(in oklab, var(--mo-c) 35%, var(--rule));
+  stroke-width: 1.5;
+  stroke-dasharray: 3 5;
+}
+
+/* ligação */
+.mo-link__path {
+  fill: none;
+  stroke: color-mix(in oklab, var(--mo-c) 75%, var(--rule));
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.mo-link[data-dashed] .mo-link__path { stroke-dasharray: 5 5; }
+.mo-link[data-lit] .mo-link__path {
+  stroke: var(--mo-c);
+  stroke-width: 2.25;
+  filter: drop-shadow(0 0 calc(var(--mo-glow) * 6px) color-mix(in oklab, var(--mo-c) 70%, transparent));
+}
+/* Máscara: branco é luminância (o que aparece), não tinta. */
+.mo-link__reveal {
+  fill: none;
+  stroke: white;
+  stroke-width: 24;
+}
+.mo-link__arrow { fill: color-mix(in oklab, var(--mo-c) 85%, var(--rule)); }
+.mo-link__label {
+  fill: var(--ink);
+  font-size: 11px;
+  font-weight: 500;
+  paint-order: stroke;
+  stroke: var(--paper);
+  stroke-width: 4px;
+  stroke-linejoin: round;
+}
+.mo-link__sublabel {
+  fill: var(--mo-c);
+  font-size: 9.5px;
+  paint-order: stroke;
+  stroke: var(--paper);
+  stroke-width: 4px;
+}
+
+/* ficha */
+.mo-token__core {
+  fill: var(--mo-c);
+  stroke: var(--paper);
+  stroke-width: 1.5;
+}
+.mo-token__halo {
+  fill: color-mix(in oklab, var(--mo-c) 22%, transparent);
+  filter: blur(3px);
+}
+.mo-token__ghost { fill: var(--mo-c); }
+.mo-token__tag {
+  fill: color-mix(in oklab, var(--mo-c) 16%, var(--paper-raised));
+  stroke: color-mix(in oklab, var(--mo-c) 60%, transparent);
+}
+.mo-token__text {
+  fill: var(--ink);
+  font-size: 10px;
+  font-weight: 500;
+}
+
+/* barra */
+.mo-bar rect {
+  fill: color-mix(in oklab, var(--mo-c) 55%, var(--mo-surface));
+  stroke: var(--mo-c);
+  stroke-width: 1;
+}
+.mo-bar[data-lit] rect { filter: drop-shadow(0 0 calc(var(--mo-glow) * 8px) color-mix(in oklab, var(--mo-c) 70%, transparent)); }
+.mo-bar__label { fill: var(--mo-c); font-size: 9.5px; }
+
+/* nota */
+.mo-note text {
+  fill: var(--mo-c);
+  font-size: 11px;
+}
+.mo-note[data-tone="ink"] text { fill: var(--ink-muted); }
+.mo-note__sub { font-size: 9.5px; opacity: 0.8; }
+
+/* região */
+.mo-region rect {
+  fill: color-mix(in oklab, var(--mo-c) 5%, transparent);
+  stroke: color-mix(in oklab, var(--mo-c) 40%, var(--rule));
+  stroke-dasharray: 6 6;
+}
+.mo-region[data-lit] rect {
+  fill: color-mix(in oklab, var(--mo-c) calc(5% + var(--mo-glow) * 8%), transparent);
+  stroke: var(--mo-c);
+}
+.mo-region__label {
+  fill: var(--mo-c);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* ---------- o player ---------- */
+
+.mo-player {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-2);
+  min-width: 0;
+  outline: none;
+}
+.mo-player:focus-visible .mo-player__screen { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+.mo-player__controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-2);
+  align-items: center;
+}
+
+.mo-player__screen {
+  position: relative;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-3);
+  overflow: hidden;
+  background: var(--paper);
+  box-shadow: 0 1px 0 var(--rule), 0 24px 48px -32px color-mix(in oklab, var(--ink) 40%, transparent);
+}
+
+.mo-player__hud {
+  position: absolute;
+  bottom: 12px;
+  left: 14px;
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+  margin: 0;
+  padding: 4px 10px;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--paper-raised) 85%, transparent);
+  backdrop-filter: blur(6px);
+  color: var(--ink-muted);
+  font-size: var(--size-step--1);
+  pointer-events: none;
+}
+.mo-player__hud span:first-child { color: var(--accent); font-weight: 500; }
+.mo-player__hud-title { margin-left: 6px; color: var(--ink); }
+
+.mo-transport {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mo-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex: none;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: var(--paper-raised);
+  color: var(--ink);
+  cursor: pointer;
+}
+.mo-btn svg { width: 14px; height: 14px; fill: currentColor; stroke: currentColor; stroke-width: 1.6; stroke-linejoin: round; }
+.mo-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.mo-btn:disabled { opacity: 0.4; cursor: default; }
+.mo-btn--primary { width: 42px; height: 42px; background: var(--accent); border-color: var(--accent); color: var(--paper); }
+.mo-btn--primary:hover:not(:disabled) { color: var(--paper); filter: brightness(1.08); }
+
+.mo-scrub {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  height: 36px;
+}
+.mo-scrub__track {
+  position: absolute;
+  inset: 15px 0;
+  display: flex;
+  gap: 3px;
+}
+.mo-scrub__seg {
+  position: relative;
+  flex-basis: 0;
+  overflow: hidden;
+  border-radius: 3px;
+  background: var(--rule);
+}
+.mo-scrub__fill {
+  position: absolute;
+  inset: 0;
+  transform-origin: left center;
+  background: color-mix(in oklab, var(--accent) 70%, var(--rule));
+}
+.mo-scrub__seg[data-current] .mo-scrub__fill { background: var(--accent); }
+.mo-scrub__input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.mo-scrub__input:focus-visible + * { outline: none; }
+.mo-scrub:has(.mo-scrub__input:focus-visible) .mo-scrub__track { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 3px; }
+
+.mo-time { flex: none; color: var(--ink-muted); font-size: var(--size-step--1); }
+.mo-speed select {
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-2);
+  background: var(--paper-raised);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--size-step--1);
+  padding: 4px 6px;
+}
+
+.mo-chapters {
+  display: flex;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+.mo-chapter {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  padding: 6px 12px;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink-muted);
+  font: inherit;
+  font-size: var(--size-step--1);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.mo-chapter[data-state="done"] { color: var(--ink); }
+.mo-chapter[data-state="current"] { border-color: var(--accent); color: var(--ink); background: color-mix(in oklab, var(--accent) 10%, transparent); }
+.mo-chapter__n { color: var(--accent); }
+.mo-chapter:hover { border-color: var(--accent); }
+
+.mo-player__below {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-2);
+}
+@media (min-width: 60rem) {
+  .mo-player__below { grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); }
+}
+
+.mo-narration,
+.mo-detail {
+  min-width: 0;
+  padding: var(--space-2);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-3);
+  background: var(--paper-raised);
+}
+.mo-narration__eyebrow {
+  margin: 0 0 6px;
+  color: var(--accent);
+  font-size: var(--size-step--1);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.mo-narration__title { margin: 0 0 6px; font-size: var(--size-step-1); }
+.mo-narration__body { margin: 0; line-height: 1.55; }
+.mo-narration__keys { margin: var(--space-2) 0 0; color: var(--ink-faint); font-size: 0.75rem; }
+
+.mo-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+@media (max-width: 40rem) {
+  .mo-time { display: none; }
+  .mo-player__hud-title { display: none; }
+}
+
+/* Cabeça de raia descolada do topo: ganha um fundo opaco para não misturar com o que passa por baixo. */
+.mo-lane[data-stuck] .mo-node__shape {
+  fill: color-mix(in oklab, var(--mo-c) 9%, var(--paper-raised));
+  filter: drop-shadow(0 6px 10px color-mix(in oklab, var(--ink) 14%, transparent));
+}

@@ -1,0 +1,47 @@
+---
+import { ContextoLab } from "../../components/ContextoLab.tsx";
+import { Predicao } from "../../components/Predicao.tsx";
+import SiteFooter from "../../components/SiteFooter.astro";
+import SiteNav from "../../components/SiteNav.astro";
+import Base from "../../layouts/Base.astro";
+import { url } from "../../lib/urls";
+import "../../styles/docs.css";
+import "@ovh/motion/src/react/motion.css";
+import "../../components/ContextoLab.css";
+import "../../components/Predicao.css";
+---
+
+<Base title="Hard context and baggage — OpenTelemetry Visual Handbook" description="Follow traceparent and baggage hop by hop across six services, then drop them at an uninstrumented proxy and watch one request become two traces.">
+  <SiteNav current="labs" />
+  <main id="content" class="ctxlab-page">
+    <section class="lab-head editorial">
+      <div class="prose">
+        <p class="lab-head__eyebrow mono"><a href={url("handbooks/otel")}>OpenTelemetry Visual Handbook</a> · phase 02 · lab</p>
+        <h1>One request.<br />How many traces?</h1>
+        <p>A click becomes six services. What makes their spans one trace is a 55-character header. Each service has to read it, continue it and write it again. Watch it travel. Then switch off one proxy's manners and see what the backend receives.</p>
+        <p>Every id, colour and arrow on the stage is computed from a propagation model. The switches change the model, and the film is rebuilt from it at the same moment.</p>
+      </div>
+      <aside class="lab-head__note mono"><p>EXTRACT → START SPAN → INJECT</p><p>W3C Trace Context and W3C Baggage, as the default OpenTelemetry propagators write them.</p></aside>
+    </section>
+
+    <section class="lab-palco" aria-label="Context propagation experiment"><ContextoLab client:visible /></section>
+
+    <section class="lab-prosa editorial">
+      <div class="prose">
+        <h2>Break it, one switch at a time</h2>
+        <ol>
+          <li><b>Play it through once.</b> The trace-id stays the same on every hop. The parent-id changes on every hop. That pair is the entire mechanism.</li>
+          <li><b>Turn off “Proxy forwards headers”.</b> Payments receives no <code>traceparent</code> and starts a new root. The backend now holds two traces for one click, and the payments span has lost <code>user.tier</code>.</li>
+          <li><b>Turn it back on, and look for the proxy in the trace view.</b> It is not there. A hop without an SDK is invisible, but it can still pass the context on. It does not break the trace unless it drops the headers.</li>
+          <li><b>Turn off “Root sampled”.</b> Every span inherits <code>-00</code>. Context still propagates, but no span is exported. Sampling decides what gets recorded, not what gets propagated.</li>
+        </ol>
+        <h2>Why “hard” context</h2>
+        <p>Trace context is the minimum needed to join spans: ids and a flag. Baggage is application data that rides on the same hops, such as a tenant or a tier. It is not recorded on spans unless code copies it there. Both survive only where every hop carries them. <a href="https://www.w3.org/TR/trace-context/">W3C Trace Context →</a> · <a href="https://www.w3.org/TR/baggage/">W3C Baggage →</a></p>
+        <h2>The boundary of this experiment</h2>
+        <p>The topology is fixed, and every hop is a synchronous HTTP request. Ids come from a seeded generator, so they repeat between visits. It models <code>traceparent</code> and <code>baggage</code> only. It leaves out <code>tracestate</code>, baggage properties, B3 and Jaeger propagators, messaging links, and span timing. The proxy is a two-state switch. A real proxy can also rewrite, truncate or duplicate headers.</p>
+      </div>
+      <div class="lab-predicao"><Predicao client:visible pergunta="An uninstrumented proxy forwards every header untouched. Does it appear as a span in the trace?" opcoes={["Yes, every hop is a span", "No, but the trace stays connected"]} correta={1} revelacao="Only code with an SDK creates spans. The proxy forwards traceparent without reading it, so payments becomes a child of checkout. The trace is whole, and the proxy is not in it." /></div>
+    </section>
+  </main>
+  <SiteFooter />
+</Base>

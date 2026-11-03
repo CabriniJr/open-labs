@@ -60,6 +60,7 @@ export const THEMES: readonly Theme[] = [
       { id: "assessments", title: "Interactive assessments", status: "draft" },
       { id: "authoring", title: "Guia de autoria", status: "draft" },
       { id: "model-format", title: "Formato do modelo", status: "proposal" },
+      { id: "motion", title: "O palco animado", status: "draft" },
       { id: "stack", title: "O que reaproveitar", status: "draft" },
       {
         id: "superpowers/specs/2026-10-16-interactive-framework-pod-lifecycle-design",

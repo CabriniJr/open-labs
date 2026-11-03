@@ -33,6 +33,8 @@ const AGNOSTIC = [
   "packages/interactive-core/",
   "packages/depth-core/",
   "packages/depth-ui/",
+  /* O palco animado: atores, fichas, câmera e tempo. Serve a qualquer assunto. */
+  "packages/motion/",
   "packages/model-format/",
   "packages/mermaid-skeleton/",
   /*

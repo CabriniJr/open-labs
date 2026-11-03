@@ -96,6 +96,9 @@ importers:
       '@ovh/kubernetes-domain':
         specifier: workspace:*
         version: link:../../packages/kubernetes-domain
+      '@ovh/motion':
+        specifier: workspace:*
+        version: link:../../packages/motion
       '@ovh/otel-domain':
         specifier: workspace:*
         version: link:../../packages/otel-domain
@@ -246,6 +249,28 @@ importers:
         specifier: ^3.23.0
         version: 3.25.76
 
+  packages/motion:
+    dependencies:
+      react:
+        specifier: ^19.0.0
+        version: 19.2.8
+      react-dom:
+        specifier: ^19.0.0
+        version: 19.2.8(react@19.2.8)
+    devDependencies:
+      '@testing-library/react':
+        specifier: ^16.1.0
+        version: 16.3.2(@testing-library/dom@10.4.1)(@types/react-dom@19.2.5(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      '@types/react':
+        specifier: ^19.0.0
+        version: 19.2.18
+      '@types/react-dom':
+        specifier: ^19.0.0
+        version: 19.2.5(@types/react@19.2.18)
+      jsdom:
+        specifier: ^25.0.1
+        version: 25.0.1
+
   packages/otel-domain:
     dependencies:
       '@ovh/depth-core':
@@ -260,6 +285,9 @@ importers:
       '@ovh/mermaid-skeleton':
         specifier: workspace:*
         version: link:../mermaid-skeleton
+      '@ovh/motion':
+        specifier: workspace:*
+        version: link:../motion
 
   packages/splunk-domain:
     dependencies:
