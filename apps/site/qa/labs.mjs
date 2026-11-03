@@ -145,6 +145,8 @@ async function fotografarFilmes(page, pasta, prefixo) {
   const n = await players.count();
   for (let i = 0; i < n; i += 1) {
     const player = players.nth(i);
+    // Um modo fechado (showcase escondido atrás da aba) não se fotografa.
+    if (!(await player.isVisible())) continue;
     await player.scrollIntoViewIfNeeded();
     const vistas = player.locator(".mo-views__opt");
     const nomes = (await vistas.count()) > 0 ? await vistas.allTextContents() : ["flat"];
@@ -205,7 +207,8 @@ async function auditar(browser, lab, perfil) {
   const a11y = await acessibilidade(page);
 
   await cdp.send("Emulation.setCPUThrottlingRate", { rate: 4 });
-  const tocar = page.locator('.mo-player button[aria-label="Play"], button:has-text("Run")').first();
+  // Nome exato: por texto parcial, "Run" casava com a aba "watch it run" do showcase.
+  const tocar = page.locator('.mo-player button[aria-label="Play"], button:text-is("Run")').first();
   if ((await tocar.count()) > 0) await tocar.click().catch(() => undefined);
   await sondar(page);
   await page.waitForTimeout(3000);
@@ -223,6 +226,15 @@ async function auditar(browser, lab, perfil) {
   const prefixo = `${lab.replace(/^labs\//, "").replace(/\/$/, "")}-${perfil.nome}`;
   await page.screenshot({ path: join(pasta, `${prefixo}-pagina.png`), fullPage: false });
   const fotos = perfil.toque && FAST ? [] : await fotografarFilmes(page, pasta, prefixo);
+  // Lab com dois modos: a vitrine também passa pelo QA — erros, rolagem e fotos.
+  const abaShowcase = page.getByRole("tab", { name: /Showcase/ });
+  if ((await abaShowcase.count()) > 0) {
+    await abaShowcase.first().click();
+    await page.waitForTimeout(800);
+    const transbordoDaVitrine = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    if (transbordoDaVitrine > 1) erros.push(`showcase: rolagem horizontal de ${transbordoDaVitrine}px`);
+    if (!(perfil.toque && FAST)) fotos.push(...(await fotografarFilmes(page, pasta, `${prefixo}-showcase`)));
+  }
 
   const falhas = [];
   const alertas = [];

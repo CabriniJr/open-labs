@@ -19,6 +19,10 @@ motor que já existe. O que não é negociável é a régua de qualidade abaixo.
 | topologia/dimensão espacial que ganha com profundidade | vista isométrica | `@ovh/stage3d` (`IsoStage`) como `view` do filme |
 | manipulação direta, gráfico, editor, qualquer outra coisa | componente React livre | `apps/site/src/components/<Nome>Lab.tsx` |
 
+**Showcase + Simulation.** Todo lab deve considerar os dois modos
+(`ModosDoLab`): um filme que conta o mecanismo, com descida de nível animada, e o
+modelo que o leitor desmonta. Exemplos: `CpuModos`, `CollectorModos`.
+
 Combine à vontade: um filme pode ter vistas *Sequence / Topology / Iso* no
 mesmo relógio (veja `ContextoLab.tsx`). Se nada serve, **escreva o componente**
 — nenhum contrato existe para impedir uma mídia que ensina melhor.
@@ -77,6 +81,14 @@ lane link token bar note region custom`. Detalhes em `docs/motion.md`.
 - Notas nunca em cima do caminho de uma ficha: `align: "end"` à esquerda da
   raia, `"start"` à direita.
 - Câmera: `maxZoom` ≤ 2 em filmes com texto, senão o rótulo fica gigante.
+
+### Modelos que se parecem com a coisa
+
+Caixa é o último recurso. Use a forma que diz o que a peça é (`chip`, `mux`,
+`alu`, `register`, `memory`, `and/or/xor/not`, `stack` para equipamento,
+`cylinder` para armazenamento) — ou acrescente uma em `shapes.ts`. Para descer de
+nível: interior aninhado dentro da caixa, `lod` e `textScale` por nível, e
+`d.camera({ box })` (ver `docs/motion.md`, "Profundidade").
 
 ## 5. 3D / isométrico com `@ovh/stage3d`
 
