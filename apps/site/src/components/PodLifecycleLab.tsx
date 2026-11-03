@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { ClusterScene } from "./ClusterScene";
+import { clusterResourceDetails } from "../lib/cluster-inspector.js";
 import { InteractiveSession } from "@ovh/interactive-core";
 import {
   AVAILABLE_IMAGES, clusterSummary, DEPLOYMENT_MANIFEST, EXPERIMENTS,
@@ -67,7 +68,17 @@ export function PodLifecycleLab() {
   const [playing, setPlaying] = useState(false);
   const [experiment, setExperiment] = useState("healthy");
   const [selected, setSelected] = useState<string | null>(null);
-  const [vista, setVista] = useState<"tree" | "flat" | "iso">("tree");
+  const [vista, setVista] = useState<"tree" | "flat" | "iso" | "3d">("tree");
+  useEffect(() => {
+    const requested = new URLSearchParams(window.location.search).get("view");
+    if (requested === "tree" || requested === "flat" || requested === "iso" || requested === "3d") setVista(requested);
+  }, []);
+  const chooseView = (view: "tree" | "flat" | "iso" | "3d") => {
+    setVista(view);
+    const address = new URL(window.location.href);
+    if (view === "tree") address.searchParams.delete("view"); else address.searchParams.set("view", view);
+    window.history.replaceState(null, "", address);
+  };
   const [errors, setErrors] = useState<readonly string[]>([]);
   const [message, setMessage] = useState("Two replicas are ready. Change the manifest, then apply it.");
   const downloadRef = useRef<HTMLAnchorElement>(null);
@@ -122,6 +133,7 @@ export function PodLifecycleLab() {
   const summary = clusterSummary(state);
   const nodes = nodeResources(state);
   const pod = state.pods.find((p) => p.uid === selected) ?? state.pods[0];
+  const resource = clusterResourceDetails(state, selected);
   const dirty = source !== state.source;
   const degraded = state.pods.some((p) => p.reason === "CrashLoopBackOff" || p.reason === "ImagePullBackOff" || p.phase === "Failed");
   const settled = state.workload !== null && summary.ready === summary.desired && state.pods.every((p) => p.deletionAt === null);
@@ -155,16 +167,16 @@ export function PodLifecycleLab() {
           <div className="podlab-panel-title">
             <span>{vista === "tree" ? "Resource tree" : "Cluster"}</span>
             <span className="podlab-vistas" role="radiogroup" aria-label="View">
-              {([["tree", "Tree"], ["flat", "Cluster"], ["iso", "Iso"]] as const).map(([id, nome]) => (
-                <button key={id} type="button" role="radio" aria-checked={vista === id} onClick={() => setVista(id)}>{nome}</button>
+              {([["tree", "Tree"], ["flat", "Cluster"], ["iso", "Iso"], ["3d", "3D"]] as const).map(([id, nome]) => (
+                <button key={id} type="button" role="radio" aria-checked={vista === id} onClick={() => chooseView(id)}>{nome}</button>
               ))}
             </span>
           </div>
           {vista === "tree" ? <>
-            <ResourceTree state={state} selected={pod?.uid ?? null} onSelect={setSelected} />
+            <ResourceTree state={state} selected={resource ? null : pod?.uid ?? null} onSelect={setSelected} />
             <p className="podlab-graph-key"><span>─ ownership</span><span>Node badge = scheduling assignment</span><span>Click a Pod to inspect it</span></p>
           </> : <>
-            <ClusterScene state={state} modo={vista} />
+            <ClusterScene state={state} modo={vista} selected={selected} onSelect={setSelected} />
             <p className="podlab-graph-key"><span>Pods sit on the node they are bound to</span><span>Bars = reserved requests</span><span>Colour = status</span></p>
           </>}
         </section>
@@ -180,9 +192,9 @@ export function PodLifecycleLab() {
     {errors.length > 0 && <div className="podlab-errors" role="alert"><strong>Cannot apply this change</strong><ul>{errors.map((e, i) => <li key={i}>{e}</li>)}</ul></div>}
     <p className="podlab-message" role="status">{message}</p>
     <div className="podlab-details">
-      <section className="podlab-inspector" aria-label="Pod inspector">
-        <div className="podlab-panel-title"><span>Pod details</span><span>{pod?.uid ?? "NO POD"}</span></div>
-        {pod ? <>
+      <section className="podlab-inspector" aria-label={resource ? "Resource inspector" : "Pod inspector"}>
+        <div className="podlab-panel-title"><span>{resource ? `${resource.kind} details` : "Pod details"}</span><span>{resource ? selected : pod?.uid ?? "NO POD"}</span></div>
+        {resource ? <><h3>{resource.title}</h3><dl>{resource.fields.map(([name, value]) => <div key={name}><dt>{name}</dt><dd>{value}</dd></div>)}</dl><p className="podlab-inspector-note">{resource.note}</p></> : pod ? <>
           <h3>{pod.name}</h3>
           <dl><div><dt>API phase</dt><dd>{pod.phase}</dd></div><div><dt>Display status</dt><dd>{pod.reason}</dd></div><div><dt>Node</dt><dd>{pod.node ?? "Not scheduled"}</dd></div><div><dt>Container restarts</dt><dd data-testid="restart-count">{pod.restarts}</dd></div><div><dt>Last termination</dt><dd>{pod.lastTermination ?? "None"}</dd></div><div><dt>Requests</dt><dd>{pod.spec.cpuRequest}m / {pod.spec.memoryRequest}Mi</dd></div><div><dt>Limits</dt><dd>{pod.spec.cpuLimit === null ? "none" : `${pod.spec.cpuLimit}m`} / {pod.spec.memoryLimit === null ? "none" : `${pod.spec.memoryLimit}Mi`}</dd></div></dl>
           <p className="podlab-inspector-note">{pod.reason === "Unschedulable" ? "Requests must fit on one node. Free capacity on different nodes cannot be combined." : pod.reason === "CrashLoopBackOff" ? "The container failed. The Pod keeps its UID, its node and its reservation during restart backoff." : pod.reason === "ImagePullBackOff" ? "Scheduled does not mean Running. The container image is unavailable in this simulated catalog." : state.workload?.kind === "Pod" ? "No owner: deleting this Pod will not create a replacement." : "Its ReplicaSet replaces a deleted Pod with a new UID. A container restart keeps the existing UID."}</p>

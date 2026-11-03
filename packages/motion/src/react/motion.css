@@ -410,3 +410,4 @@
   .mo-views { top: 6px; right: 6px; padding: 2px; }
   .mo-views__opt { padding: 2px 8px; font-size: 0.7rem; }
 }
+.mo-player .mo-views { position: static; display: flex; flex-wrap: wrap; justify-content: flex-start; border: 0; border-bottom: 1px solid var(--rule); border-radius: 0; background: var(--paper-raised); padding: .6rem .75rem; }

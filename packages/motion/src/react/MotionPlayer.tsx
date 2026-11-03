@@ -20,7 +20,8 @@ import { useClock, type Clock } from "./useClock.js";
 export interface MotionView<D> {
   readonly id: string;
   readonly label: string;
-  readonly render: (args: { readonly film: Film<D>; readonly t: number; readonly frame: Frame<D>; readonly label: string }) => ReactNode;
+  readonly film?: Film<D>;
+  readonly render: (args: { readonly film: Film<D>; readonly t: number; readonly frame: Frame<D>; readonly label: string; readonly selected: string | null; readonly onSelect: (id: string) => void }) => ReactNode;
 }
 
 export interface MotionPlayerProps<D> {
@@ -56,6 +57,8 @@ export function MotionPlayer<D>({ film, label, renderDetail, controls, autoplay 
   useEffect(() => {
     if (views.length === 0) return;
     try {
+      const requested = new URLSearchParams(window.location.search).get("view");
+      if (requested && (requested === "flat" || views.some(v => v.id === requested))) { setVista(requested); return; }
       const salva = localStorage.getItem(CHAVE_DA_VISTA);
       if (salva !== null && (salva === "flat" || views.some((v) => v.id === salva))) setVista(salva);
     } catch {
@@ -65,6 +68,9 @@ export function MotionPlayer<D>({ film, label, renderDetail, controls, autoplay 
   const escolher = (id: string) => {
     setVista(id);
     try {
+      const address = new URL(window.location.href);
+      if (id === "flat") address.searchParams.delete("view"); else address.searchParams.set("view", id);
+      window.history.replaceState(null, "", address);
       localStorage.setItem(CHAVE_DA_VISTA, id);
     } catch {
       // Sem armazenamento, a escolha vale só nesta visita.
@@ -79,7 +85,10 @@ export function MotionPlayer<D>({ film, label, renderDetail, controls, autoplay 
   const current = frame.chapterIndex;
   const chapter = frame.chapter;
   const [selected, setSelected] = useState<string | null>(null);
-  const part = frame.entities.find(e => e.spec.id === selected && e.state.opacity > .005);
+  const displayFilm = alternativa?.film ?? film;
+  const displayFrame = useMemo(() => displayFilm === film ? frame : frameAt(displayFilm, t), [displayFilm, film, frame, t]);
+  const select = (id: string) => setSelected(id === selected ? null : id);
+  const part = displayFrame.entities.find(e => e.spec.id === selected && e.state.opacity > .005);
 
   const goChapter = (i: number) => {
     const target = chapters[Math.min(Math.max(i, 0), chapters.length - 1)];
@@ -115,7 +124,6 @@ export function MotionPlayer<D>({ film, label, renderDetail, controls, autoplay 
     <div className={["mo-player", className].filter(Boolean).join(" ")} tabIndex={0} onKeyDown={onKey} data-testid={testId} data-playing={clock.playing ? "" : undefined}>
       {controls !== undefined ? <div className="mo-player__controls">{controls}</div> : null}
       <div className="mo-player__screen">
-        {alternativa === undefined ? <MotionStage film={film} t={t} frame={frame} label={label} selected={selected} onSelect={id => setSelected(id === selected ? null : id)} /> : alternativa.render({ film, t, frame, label })}
         {views.length > 0 ? (
           <div className="mo-views" role="radiogroup" aria-label="View">
             {[{ id: "flat", label: flatLabel }, ...views].map((v) => (
@@ -125,6 +133,7 @@ export function MotionPlayer<D>({ film, label, renderDetail, controls, autoplay 
             ))}
           </div>
         ) : null}
+        {alternativa === undefined ? <MotionStage film={film} t={t} frame={frame} label={label} selected={selected} onSelect={select} spatialControls={views.length === 0} /> : alternativa.render({ film: displayFilm, t, frame: displayFrame, label, selected, onSelect: select })}
         <p className="mo-player__hud mono" aria-hidden="true">
           <span>{String(current + 1).padStart(2, "0")}</span>
           <span className="mo-player__hud-sep">/</span>

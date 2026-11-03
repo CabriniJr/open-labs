@@ -16,6 +16,9 @@ import {
   Mesh,
   MeshStandardMaterial,
   OrthographicCamera,
+  PerspectiveCamera,
+  Raycaster,
+  Vector2,
   PCFSoftShadowMap,
   PlaneGeometry,
   RingGeometry,
@@ -35,7 +38,7 @@ import { Line2 } from "three/examples/jsm/lines/Line2.js";
 import { LineGeometry } from "three/examples/jsm/lines/LineGeometry.js";
 import { LineMaterial } from "three/examples/jsm/lines/LineMaterial.js";
 import { CSS2DObject, CSS2DRenderer } from "three/examples/jsm/renderers/CSS2DRenderer.js";
-import { ISO_AZIMUTE, ISO_ELEVACAO, meiaAlturaParaCaber, pontoNoAr, pontosDoCaminho, posicaoDaCamera } from "./iso.js";
+import { deslocamentoNoChao, distanciaParaCaber, ISO_AZIMUTE, ISO_ELEVACAO, meiaAlturaParaCaber, pontoNoAr, pontosDoCaminho, posicaoDaCamera } from "./iso.js";
 import { lerPaleta, type Paleta } from "./tons.js";
 
 /**
@@ -138,6 +141,13 @@ export class IsoScene {
   readonly #labels: CSS2DRenderer;
   readonly #scene = new Scene();
   readonly #camera = new OrthographicCamera(-1, 1, 1, -1, 1, 8000);
+  readonly #perspectiva = new PerspectiveCamera(40, 1, 1, 8000);
+  readonly #ray = new Raycaster();
+  #projecao: "orthographic" | "perspective" = "orthographic";
+  #zoom = 1;
+  #pan = { x: 0, z: 0 };
+  #escala = 1;
+  #selected: string | null = null;
   readonly #sol = new DirectionalLight(0xffffff, 1.6);
   readonly #ceu = new HemisphereLight(0xffffff, 0x888888, 1.4);
   readonly #pecas = new Map<string, Peca>();
@@ -210,7 +220,55 @@ export class IsoScene {
   reenquadrar(): void {
     this.#azimute = ISO_AZIMUTE;
     this.#elevacao = ISO_ELEVACAO;
+    this.#zoom = 1;
+    this.#pan = { x: 0, z: 0 };
     this.pedir();
+  }
+
+  projetar(projecao: "orthographic" | "perspective"): void {
+    this.#projecao = projecao;
+    this.pedir();
+  }
+
+  aproximar(fator: number): number {
+    this.#zoom = Math.max(.5, Math.min(4, this.#zoom * fator));
+    this.pedir();
+    return this.#zoom;
+  }
+
+  deslocar(dx: number, dy: number): void {
+    const delta = deslocamentoNoChao(dx, dy, this.#azimute, this.#elevacao, this.#escala);
+    this.#pan.x += delta.x;
+    this.#pan.z += delta.z;
+    this.pedir();
+  }
+
+  selecionar(id: string | null): void {
+    if (this.#selected !== null) this.#pecas.get(this.#selected)?.rotulo?.removeAttribute("data-selected");
+    this.#selected = id;
+    if (id !== null) this.#pecas.get(id)?.rotulo?.setAttribute("data-selected", "");
+  }
+
+  /** Picking is performed only on a click, against visible model entities. */
+  escolher(clientX: number, clientY: number, ids?: ReadonlySet<string>): string | null {
+    if (this.#film === null) return null;
+    this.#enquadrar(this.#frame?.camera ?? this.#film.camera);
+    const box = this.#host.getBoundingClientRect();
+    if (!box.width || !box.height) return null;
+    this.#ray.setFromCamera(new Vector2((clientX - box.left) / box.width * 2 - 1, -(clientY - box.top) / box.height * 2 + 1), this.#cameraAtual());
+    this.#mundo.updateMatrixWorld(true);
+    const pieces = [...this.#pecas.values()].filter(p => p.root.visible && (!ids || ids.has(p.spec.id)) && ["node", "lane", "token", "bar", "region"].includes(p.spec.type));
+    for (const hit of this.#ray.intersectObjects(pieces.map(p => p.root), true)) {
+      for (let cursor: Object3D | null = hit.object; cursor; cursor = cursor.parent) {
+        const id = cursor.userData.entityId as string | undefined;
+        if (id) return id;
+      }
+    }
+    return null;
+  }
+
+  #cameraAtual(): OrthographicCamera | PerspectiveCamera {
+    return this.#projecao === "perspective" ? this.#perspectiva : this.#camera;
   }
 
   setFilm(film: Film<unknown>): void {
@@ -233,6 +291,8 @@ export class IsoScene {
       const peca = this.#montar(spec, p);
       if (peca === null) continue;
       this.#pecas.set(spec.id, peca);
+      peca.root.userData.entityId = spec.id;
+      if (peca.rotulo) peca.rotulo.dataset.entity = spec.id;
       this.#mundo.add(peca.root);
     }
 
@@ -250,6 +310,7 @@ export class IsoScene {
     s.near = 10;
     s.far = 3000;
     s.updateProjectionMatrix();
+    this.selecionar(this.#selected);
     this.pedir();
   }
 
@@ -300,25 +361,36 @@ export class IsoScene {
     const w = Math.max(1, this.#host.clientWidth);
     const h = Math.max(1, this.#host.clientHeight);
     const aspecto = w / h;
-    const meia = meiaAlturaParaCaber(film.width / camera.zoom, film.height / camera.zoom, aspecto, this.#elevacao) * 1.02;
+    const meia = meiaAlturaParaCaber(film.width / camera.zoom, film.height / camera.zoom, aspecto, this.#elevacao) * 1.02 / this.#zoom;
+    marcar(this.#host, "camera", `${this.#projecao}:${this.#zoom}:${this.#azimute.toFixed(4)}:${this.#elevacao.toFixed(4)}:${this.#pan.x.toFixed(2)}:${this.#pan.z.toFixed(2)}`);
+    this.#escala = 2 * meia / h;
     const cam = this.#camera;
     cam.top = meia;
     cam.bottom = -meia;
     cam.left = -meia * aspecto;
     cam.right = meia * aspecto;
     cam.updateProjectionMatrix();
-    const alvo = { x: camera.cx, y: 0, z: camera.cy };
+    const alvo = { x: camera.cx + this.#pan.x, y: 0, z: camera.cy + this.#pan.z };
     const pos = posicaoDaCamera(alvo, this.#azimute, this.#elevacao, 3000);
     cam.position.set(pos.x, pos.y, pos.z);
     cam.lookAt(new Vector3(alvo.x, alvo.y, alvo.z));
+    cam.updateMatrixWorld(true);
+    const perspective = this.#perspectiva;
+    perspective.aspect = aspecto;
+    perspective.far = Math.max(8000, distanciaParaCaber(meia) * 4);
+    const vantage = posicaoDaCamera(alvo, this.#azimute, this.#elevacao, distanciaParaCaber(meia) * 1.1);
+    perspective.position.set(vantage.x, vantage.y, vantage.z);
+    perspective.lookAt(alvo.x, alvo.y, alvo.z);
+    perspective.updateProjectionMatrix();
+    perspective.updateMatrixWorld(true);
   }
 
   #desenhar(): void {
     const film = this.#film;
     if (film === null) return;
     this.#enquadrar(this.#frame?.camera ?? film.camera);
-    this.#renderer.render(this.#scene, this.#camera);
-    this.#labels.render(this.#scene, this.#camera);
+    this.#renderer.render(this.#scene, this.#cameraAtual());
+    this.#labels.render(this.#scene, this.#cameraAtual());
   }
 
   #malha(film: Film<unknown>, p: Paleta): Object3D {

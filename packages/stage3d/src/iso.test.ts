@@ -1,8 +1,21 @@
 import { line, pt } from "@ovh/motion";
 import { describe, expect, it } from "vitest";
-import { ISO_AZIMUTE, ISO_ELEVACAO, meiaAlturaParaCaber, pontoNoAr, pontosDoCaminho, posicaoDaCamera } from "./iso.js";
+import { deslocamentoNoChao, distanciaParaCaber, ISO_AZIMUTE, ISO_ELEVACAO, meiaAlturaParaCaber, pontoNoAr, pontosDoCaminho, posicaoDaCamera } from "./iso.js";
 
 describe("isometric camera", () => {
+  it("frames a perspective lens with the same visible height", () => {
+    const halfHeight = 400, fov = 40;
+    const distance = distanciaParaCaber(halfHeight, fov);
+    expect(distance * Math.tan(fov * Math.PI / 360)).toBeCloseTo(halfHeight);
+    expect(distanciaParaCaber(800, fov)).toBeCloseTo(distance * 2);
+  });
+
+  it("maps a horizontal drag onto the camera's right axis without changing height", () => {
+    const a = deslocamentoNoChao(30, 0, 0, ISO_ELEVACAO, 2);
+    expect(a.x).toBe(-60); expect(a.z).toBe(0);
+    const b = deslocamentoNoChao(30, 0, Math.PI / 2, ISO_ELEVACAO, 2);
+    expect(b.x).toBeCloseTo(0); expect(b.z).toBeCloseTo(60);
+  });
   it("sits on the 45° diagonal, at the true isometric elevation", () => {
     const c = posicaoDaCamera({ x: 0, y: 0, z: 0 }, ISO_AZIMUTE, ISO_ELEVACAO, 100);
     expect(c.x).toBeCloseTo(c.z);

@@ -55,11 +55,35 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @ovh/site exec playwright install --with-deps chromium
-      - run: pnpm --filter @ovh/site exec playwright test spatial-explorer.spec.ts palco-legivel.spec.ts docs.spec.ts travessia.spec.ts --grep 'spatial-explorer|o palco cabe|a landing|splunk-buckets/'
+      - run: pnpm --filter @ovh/site exec playwright test domain-3d.spec.ts spatial-explorer.spec.ts pod-lifecycle.spec.ts hard-context.spec.ts agent-or-gateway.spec.ts palco-legivel.spec.ts docs.spec.ts travessia.spec.ts --grep 'domain-3d|spatial-explorer|pod-lifecycle|hard-context|agent-or-gateway|o palco cabe|a landing|splunk-buckets/'
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: browser-review-${{ github.sha }}
           path: apps/site/test-results/
           if-no-files-found: ignore
+          retention-days: 7
+
+  domain-3d-qa:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        lab: [pod-lifecycle, hard-context-and-baggage, agent-or-gateway]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @ovh/site exec playwright install --with-deps chromium
+      - run: pnpm build
+      - run: pnpm qa:labs --only=labs/${{ matrix.lab }}/
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: domain-3d-${{ matrix.lab }}-${{ github.sha }}
+          path: apps/site/qa-report/
           retention-days: 7

@@ -27,6 +27,8 @@ interface Props {
 const { handbook } = Astro.props;
 const assessmentBank = bankForHandbook(handbook);
 const finalAssessment = assessmentBank?.assessments.find((a) => a.scope.kind === "handbook");
+const spatialIds = new Set(handbook.id === "kubernetes" ? ["pod-lifecycle"] : handbook.id === "otel" ? ["hard-context-and-baggage", "agent-or-gateway"] : []);
+const spatialLabs = handbook.labs.filter(lab => spatialIds.has(lab.id) && lab.href);
 
 /**
  * Todo handbook tem a mesma anatomia — roadmap, artigos, labs — e a página é
@@ -102,6 +104,10 @@ if (orfaos.length > 0) {
       )
     }
 
+    {spatialLabs.length > 0 && <section class="hb-section spatial-entry" aria-label="3D experiments">
+      <div><p class="mono">INTERACTIVE / 3D</p><h2>Explore the system in space.</h2><p>Rotate the scene, select a resource and inspect the same model that runs the lab.</p></div>
+      <div class="spatial-entry__links">{spatialLabs.map(lab => <a href={`${url(lab.href!)}?view=3d#experiment`}><span>{lab.title}</span><b class="mono">3D ↗</b></a>)}</div>
+    </section>}
     <section class="hb-section" id="roadmap">
       <h2>Roadmap</h2>
       <p class="hb-section__lede">

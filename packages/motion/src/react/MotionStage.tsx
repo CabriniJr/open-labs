@@ -20,6 +20,8 @@ export interface MotionStageProps<D> {
   readonly className?: string;
   readonly onSelect?: (id: string) => void;
   readonly selected?: string | null;
+  /** A domain player can supply its own topology / 3D view selector. */
+  readonly spatialControls?: boolean;
 }
 
 const f = (n: number) => Math.round(n * 100) / 100;
@@ -255,12 +257,11 @@ function Entity({ entity, maskId, t, top }: { entity: ResolvedEntity; maskId: st
   }
 }
 
-export function MotionStage<D>({ film, t, frame, label, className, onSelect, selected }: MotionStageProps<D>) {
+export function MotionStage<D>({ film, t, frame, label, className, onSelect, selected, spatialControls = true }: MotionStageProps<D>) {
   const uid = useId().replace(/:/g, "");
   const q = frame ?? frameAt(film, t);
   const vb = viewBox(film, q.camera);
-  return (
-    <SceneViewport scene={() => spatialFromFrame(film, q)} label={label} selected={selected} onSelect={onSelect}>
+  const diagram = (
     <svg
       className={["mo-stage", className].filter(Boolean).join(" ")}
       viewBox={`${f(vb.x)} ${f(vb.y)} ${f(vb.w)} ${f(vb.h)}`}
@@ -297,6 +298,6 @@ export function MotionStage<D>({ film, t, frame, label, className, onSelect, sel
         ) : null,
       )}
     </svg>
-    </SceneViewport>
   );
+  return spatialControls ? <SceneViewport scene={() => spatialFromFrame(film, q)} label={label} selected={selected} onSelect={onSelect}>{diagram}</SceneViewport> : diagram;
 }

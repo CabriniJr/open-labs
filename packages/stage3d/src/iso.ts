@@ -18,6 +18,17 @@ export interface Vec3 {
 export const ISO_AZIMUTE = Math.PI / 4;
 export const ISO_ELEVACAO = Math.atan(1 / Math.SQRT2);
 
+/** A perspective lens that frames the same height as the orthographic lens. */
+export function distanciaParaCaber(meiaAltura: number, fov = 40): number {
+  return Math.max(1, meiaAltura) / Math.tan(fov * Math.PI / 360);
+}
+
+/** Screen-space drag translated onto the ground plane, independent of lens. */
+export function deslocamentoNoChao(dx: number, dy: number, azimute: number, elevacao: number, escala: number): { x: number; z: number } {
+  const fundo = -dy / Math.max(.2, Math.sin(elevacao));
+  return { x: (-dx * Math.cos(azimute) + fundo * Math.sin(azimute)) * escala, z: (dx * Math.sin(azimute) + fundo * Math.cos(azimute)) * escala };
+}
+
 /** Onde a câmera fica, olhando para `alvo`, a uma distância `d`, girada `azimute`. */
 export function posicaoDaCamera(alvo: Vec3, azimute: number, elevacao: number, d: number): Vec3 {
   const horizontal = Math.cos(elevacao) * d;

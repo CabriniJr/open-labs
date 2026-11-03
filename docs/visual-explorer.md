@@ -1,5 +1,7 @@
 # Exploração visual: 2D, isométrico e 3D
 
+Para as cenas de domínio em WebGL, veja [Kubernetes e OpenTelemetry no espaço](3d-kubernetes-otel.md).
+
 O `SceneViewport`, de `@ovh/depth-ui`, é o invólucro compartilhado dos palcos
 composicionais e de `MotionStage`. O modo inicial continua sendo o diagrama 2D.
 As vistas espaciais são outra apresentação do estado atual: mudar de câmera não
