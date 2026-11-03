@@ -82,6 +82,11 @@ test("a predição não entrega a resposta antes de o leitor se comprometer", as
 
   const opcao = page.getByRole("button", { name: /the processor is called, the exporter is not/u });
   await opcao.scrollIntoViewIfNeeded();
+  // A predição é `client:visible`: o botão já vem do servidor, mas só responde
+  // depois que a ilha hidrata, e a hidratação só começa quando ela aparece. No
+  // CI, mais lento, o clique chegava antes e se perdia (um dos dois runs do
+  // mesmo commit passou, o outro não). Mesma espera de `exercicio.spec.ts`.
+  await expect(page.locator("astro-island:has(.predicao)").first()).not.toHaveAttribute("ssr", /.*/u);
   await opcao.click();
   await expect(revelacao).toBeVisible();
 });
