@@ -21,6 +21,7 @@ export default defineWorkspace([
         "apps/site/src/**/*.test.ts",
         "packages/depth-ui/src/**/*.test.ts",
         "packages/motion/src/**/*.test.ts",
+        "packages/stage3d/src/**/*.test.ts",
         "scripts/**/*.test.mjs",
       ],
     },

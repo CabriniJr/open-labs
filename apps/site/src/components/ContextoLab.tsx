@@ -1,6 +1,37 @@
-import { MotionPlayer } from "@ovh/motion/react";
+import type { Film } from "@ovh/motion";
+import { MotionPlayer, MotionStage, type MotionView } from "@ovh/motion/react";
 import { filmeDoContexto, OPCOES_PADRAO, type DetalheDoContexto, type Foco, type SpanGerado } from "@ovh/otel-domain";
-import { useMemo, useState } from "react";
+import { lazy, Suspense, useMemo, useState } from "react";
+
+/*
+ * O three.js só desce quando o leitor escolhe a vista isométrica: quem fica no
+ * palco plano não paga meio megabyte de WebGL.
+ */
+const IsoStage = lazy(() => import("@ovh/stage3d").then((m) => ({ default: m.IsoStage })));
+
+/**
+ * As vistas além do diagrama de sequência. As duas desenham a TOPOLOGIA — o
+ * mesmo modelo, a mesma história, outro layout — no relógio do player: o
+ * filme principal manda no tempo e no painel, e estas só desenham.
+ */
+function vistas(topologia: Film<DetalheDoContexto>): readonly MotionView<DetalheDoContexto>[] {
+  return [
+    {
+      id: "topology",
+      label: "Topology",
+      render: ({ t, label }) => <MotionStage film={topologia} t={t} label={`${label} — service topology`} />,
+    },
+    {
+      id: "iso",
+      label: "Iso",
+      render: ({ t, label }) => (
+        <Suspense fallback={<div className="iso-stage" aria-busy="true" />}>
+          <IsoStage film={topologia} t={t} label={`${label} — service topology`} />
+        </Suspense>
+      ),
+    },
+  ];
+}
 
 /**
  * O lab "Hard context and baggage": o palco animado sobre o modelo de
@@ -156,12 +187,15 @@ export function ContextoLab() {
   const [proxyRepassa, setProxyRepassa] = useState(true);
   const [amostrado, setAmostrado] = useState(true);
   const { filme, propagacao } = useMemo(() => filmeDoContexto({ ...OPCOES_PADRAO, proxyRepassa, amostrado }), [proxyRepassa, amostrado]);
+  const views = useMemo(() => vistas(filmeDoContexto({ ...OPCOES_PADRAO, proxyRepassa, amostrado }, "topology").filme), [proxyRepassa, amostrado]);
   const inteiro = propagacao.traces.length === 1;
 
   return (
     <div className="ctxlab" data-testid="context-lab">
       <MotionPlayer
         film={filme}
+        views={views}
+        flatLabel="Sequence"
         label="Sequence diagram: a checkout request crossing six services, carrying traceparent and baggage headers on each hop."
         controls={
           <>

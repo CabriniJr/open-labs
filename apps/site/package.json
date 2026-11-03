@@ -23,6 +23,7 @@
     "@ovh/motion": "workspace:*",
     "@ovh/otel-domain": "workspace:*",
     "@ovh/splunk-domain": "workspace:*",
+    "@ovh/stage3d": "workspace:*",
     "astro": "^5.2.0",
     "dompurify": "^3.4.17",
     "fflate": "^0.8.3",

@@ -11,6 +11,7 @@
     { "path": "packages/depth-core" },
     { "path": "packages/depth-ui" },
     { "path": "packages/motion" },
+    { "path": "packages/stage3d" },
     { "path": "packages/model-format" },
     { "path": "packages/mermaid-skeleton" },
     { "path": "packages/handbook-format" },

@@ -370,3 +370,29 @@
   fill: color-mix(in oklab, var(--mo-c) 9%, var(--paper-raised));
   filter: drop-shadow(0 6px 10px color-mix(in oklab, var(--ink) 14%, transparent));
 }
+
+/* O seletor de vista: plano, isométrico, o que o lab declarar. */
+.mo-views {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  padding: 3px;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--paper-raised) 85%, transparent);
+  backdrop-filter: blur(6px);
+}
+.mo-views__opt {
+  padding: 4px 12px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink-muted);
+  font: inherit;
+  font-family: var(--font-mono);
+  font-size: var(--size-step--1);
+  cursor: pointer;
+}
+.mo-views__opt[aria-checked="true"] { background: var(--accent); color: var(--paper); }
+.mo-views__opt:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
