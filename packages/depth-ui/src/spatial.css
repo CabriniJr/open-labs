@@ -34,6 +34,7 @@
 .scene-node polygon { stroke: color-mix(in oklab, var(--scene-color) 65%, var(--rule)); stroke-width: 1.2; stroke-linejoin: round; }
 .scene-node__side { fill: color-mix(in oklab, var(--scene-color) 22%, var(--paper)); }
 .scene-node__top { fill: color-mix(in oklab, var(--scene-color) 8%, var(--paper-raised)); }
+.scene-node[data-frame] .scene-node__top { fill: color-mix(in oklab, var(--scene-color) 4%, transparent); stroke-dasharray: 5 4; }
 .scene-node:hover .scene-node__top, .scene-node[data-selected] .scene-node__top, .scene-node[data-active] .scene-node__top { fill: color-mix(in oklab, var(--scene-color) 22%, var(--paper-raised)); stroke-width: 2.5; }
 .scene-spatial text { font: 11px var(--font-mono); text-anchor: middle; fill: var(--ink); paint-order: stroke; stroke: var(--paper-raised); stroke-width: 3; stroke-linejoin: round; pointer-events: none; }
 .scene-spatial .scene-node__label { font-size: 12px; font-weight: 600; }

@@ -19,6 +19,7 @@ export function SceneViewport({ scene: source, label, children, selected, onSele
   const [notice, setNotice] = useState("");
   const [contents, setContents] = useState(false);
   const root = useRef<HTMLDivElement>(null);
+  const dragged = useRef(false);
   const gesture = useRef<{ x: number; y: number; camera: SpatialCamera; pan: boolean; moved: boolean } | null>(null);
   useEffect(() => {
     const changed = () => setFull(document.fullscreenElement === root.current);
@@ -62,7 +63,7 @@ export function SceneViewport({ scene: source, label, children, selected, onSele
           if (e.key === "ArrowUp") update(mode === "3d" ? { tilt: clamp(camera.tilt + .08, .15, 1.35) } : { panY: camera.panY - 25 });
           if (e.key === "ArrowDown") update(mode === "3d" ? { tilt: clamp(camera.tilt - .08, .15, 1.35) } : { panY: camera.panY + 25 });
         }}
-        onPointerDown={e => { if (e.button !== 0) return; gesture.current = { x: e.clientX, y: e.clientY, camera, pan: e.shiftKey || mode === "isometric", moved: false }; }}
+        onPointerDown={e => { if (e.button !== 0) return; dragged.current = false; gesture.current = { x: e.clientX, y: e.clientY, camera, pan: e.shiftKey || mode === "isometric", moved: false }; }}
         onPointerMove={e => {
           const g = gesture.current; if (!g) return;
           const dx = e.clientX - g.x, dy = e.clientY - g.y;
@@ -71,9 +72,9 @@ export function SceneViewport({ scene: source, label, children, selected, onSele
           const ratio = 1000 / Math.max(1, e.currentTarget.getBoundingClientRect().width);
           setCamera({ ...g.camera, ...(g.pan ? { panX: g.camera.panX + dx * ratio, panY: g.camera.panY + dy * ratio } : { yaw: g.camera.yaw + dx * .008, tilt: clamp(g.camera.tilt + dy * .006, .15, 1.35) }) });
         }}
-        onPointerUp={e => { if (gesture.current?.moved) e.currentTarget.releasePointerCapture(e.pointerId); /* keep moved until click has been dispatched */ }}
-        onPointerCancel={() => { gesture.current = null; }}
-        onClickCapture={e => { if (gesture.current?.moved) { e.stopPropagation(); e.preventDefault(); } gesture.current = null; }}>
+        onPointerUp={e => { dragged.current = gesture.current?.moved ?? false; gesture.current = null; if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId); }}
+        onPointerCancel={() => { gesture.current = null; dragged.current = false; }}
+        onClickCapture={e => { if (dragged.current && e.detail > 0) { e.stopPropagation(); e.preventDefault(); } dragged.current = false; }}>
         <polygon className="scene-floor" points={points([{ x: 0, y: 0 }, { x: scene.width, y: 0 }, { x: scene.width, y: scene.height }, { x: 0, y: scene.height }])} />
         <g className="scene-grid">{grid.map(v => <g key={v}><polyline points={points([{ x: scene.width * v, y: 0 }, { x: scene.width * v, y: scene.height }])} /><polyline points={points([{ x: 0, y: scene.height * v }, { x: scene.width, y: scene.height * v }])} /></g>)}</g>
         {scene.paths.map(path => {
@@ -86,16 +87,16 @@ export function SceneViewport({ scene: source, label, children, selected, onSele
             {path.label && path.points.length > 0 && (() => { const p = project(path.points[Math.floor(path.points.length / 2)]!); return <text x={p.x} y={p.y - 7}>{path.label}</text>; })()}
           </g>;
         })}
-        {[...scene.nodes].sort((a, b) => project(b).depth - project(a).depth).map(node => {
+        {[...scene.nodes].sort((a, b) => Number(!!b.frame) - Number(!!a.frame) || project(b).depth - project(a).depth).map(node => {
           const z = node.elevation ?? Math.max(12, Math.min(36, node.h * .35));
           const base = [{ x: node.x, y: node.y }, { x: node.x + node.w, y: node.y }, { x: node.x + node.w, y: node.y + node.h }, { x: node.x, y: node.y + node.h }];
           const top = base.map(p => ({ ...p, z }));
-          const center = project({ x: node.x + node.w / 2, y: node.y + node.h / 2, z });
-          return <g key={node.id} className="scene-node" data-id={node.id} data-tone={node.tone} data-active={node.active || undefined} data-selected={selected === node.id || undefined} opacity={node.opacity ?? 1}
+          const center = project({ x: node.x + node.w / 2, y: node.y + (node.frame ? 10 : node.h / 2), z });
+          return <g key={node.id} className="scene-node" data-id={node.id} data-tone={node.tone} data-frame={node.frame || undefined} data-active={node.active || undefined} data-selected={selected === node.id || undefined} opacity={node.opacity ?? 1}
             role={onSelect || onOpen ? "button" : undefined} tabIndex={onSelect || onOpen ? 0 : undefined} aria-label={node.sublabel ? `${node.label}: ${node.sublabel}` : node.label}
             onClick={() => onSelect?.(node.id)} onDoubleClick={() => onOpen?.(node.id)} onKeyDown={e => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); e.stopPropagation(); if (e.key === "Enter" && onOpen) onOpen(node.id); else onSelect?.(node.id); } }}>
             <title>{node.label}{node.sublabel ? ` · ${node.sublabel}` : ""}</title>
-            {base.map((p, i) => [Math.cos(camera.yaw), -Math.sin(camera.yaw), -Math.cos(camera.yaw), Math.sin(camera.yaw)][i]! > 0 ? <polygon key={i} className="scene-node__side" points={points([p, base[(i + 1) % 4]!, top[(i + 1) % 4]!, top[i]!])} /> : null)}
+            {!node.frame && base.map((p, i) => [Math.cos(camera.yaw), -Math.sin(camera.yaw), -Math.cos(camera.yaw), Math.sin(camera.yaw)][i]! > 0 ? <polygon key={i} className="scene-node__side" points={points([p, base[(i + 1) % 4]!, top[(i + 1) % 4]!, top[i]!])} /> : null)}
             <polygon className="scene-node__top" points={points(top)} />
             <text className="scene-node__label" x={center.x} y={center.y - (node.sublabel ? 5 : 0)}>{node.label}</text>
             {node.sublabel && <text className="scene-node__sub" x={center.x} y={center.y + 12}>{node.sublabel}</text>}

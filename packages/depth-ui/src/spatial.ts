@@ -6,6 +6,7 @@ export interface SpatialNode {
   readonly id: string; readonly x: number; readonly y: number; readonly w: number; readonly h: number;
   readonly label: string; readonly sublabel?: string | undefined; readonly tone?: string | undefined;
   readonly elevation?: number | undefined; readonly opacity?: number | undefined; readonly active?: boolean | undefined;
+  readonly frame?: boolean | undefined;
 }
 export interface SpatialPath {
   readonly id: string; readonly points: readonly Point3[]; readonly tone?: string | undefined;

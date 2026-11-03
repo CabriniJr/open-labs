@@ -52,7 +52,7 @@ a, button { transition: color 150ms ease, background-color 150ms ease, border-co
 .lab-palco { scroll-margin-top: 7rem; }
 .lab-palco > :is(astro-island, div) { min-width: 0; }
 .site-footer { border-top: 1px solid var(--rule); background: var(--paper-raised); }
-.mo-player__screen .mo-player__hud { top: auto; bottom: .75rem; pointer-events: none; }
+.mo-player__screen .mo-player__hud { position: static; padding: .65rem 1rem; background: var(--paper-raised); border-top: 1px solid var(--rule); font-size: .7rem; }
 .mo-player__below { border: 1px solid var(--rule); border-radius: var(--radius-3); background: var(--paper-raised); padding: 1.25rem; }
 .mo-chapter { min-height: 48px; }
 @media (max-width: 1100px) { .hero-stage .hero-sim { grid-template-columns: minmax(0, 1fr); } .hero-stage .dui-trilha { max-height: 22rem; } }

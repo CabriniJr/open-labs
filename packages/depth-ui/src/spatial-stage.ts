@@ -34,6 +34,6 @@ export function spatialFromStage({ tree, view, wires, state, readouts, fills, ed
   return { width: view.width, height: view.height, paths, markers, nodes: view.places.map(p => {
     const node = tree.byId.get(p.id);
     const family = node ? familyOf(node.kind) : "container";
-    return { ...p, label: p.label ?? node?.label ?? p.id, sublabel: readouts?.[p.id], tone: family, elevation: family === "container" && !p.collapsed ? 4 : 24, active: (fills?.[p.id] ?? 0) > 0 };
+    return { ...p, label: p.label ?? node?.label ?? p.id, sublabel: readouts?.[p.id], tone: family, frame: family === "container" && !p.collapsed, elevation: family === "container" && !p.collapsed ? 4 : 24, active: (fills?.[p.id] ?? 0) > 0 };
   }) };
 }

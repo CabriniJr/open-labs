@@ -9,7 +9,11 @@ async function ready(page: Page, selector: string) {
 test("the live flow keeps its state, selection and navigation across projections", async ({ page }, info) => {
   await page.goto("");
   await ready(page, ".hero-sim");
+  await page.getByRole("button", { name: "Pause simulation" }).click();
   const viewport = page.locator(".hero-sim .scene-viewport");
+  const pausedFrame = await viewport.locator(".dui-stage").innerHTML();
+  await page.waitForTimeout(850); // One complete model tick must pass without advancing.
+  expect(await viewport.locator(".dui-stage").innerHTML()).toBe(pausedFrame);
   const outerTitle = await viewport.locator(".dui-stage").getAttribute("aria-label");
   await viewport.getByRole("button", { name: "Isometric", exact: true }).click();
   await expect(viewport.locator(".scene-spatial")).toBeVisible();
