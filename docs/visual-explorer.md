@@ -34,6 +34,11 @@ de `WorldState.flight`. `spatialFromFrame` lê visibilidade, deslocamento,
 escala, avanço e tom de cada entidade do quadro do filme. Nenhum dos adaptadores
 importa um domínio ou altera o estado que recebeu.
 
+As mensagens em voo do palco composicional interpolam entre as posições do
+tick atual e do próximo, com o mesmo compasso do diagrama 2D. Essa interpolação
+muda apenas o transform do marcador em SVG; não recria a árvore por quadro e
+não avança o relógio do modelo. Trocar de câmera mantém a origem temporal do tick.
+
 O renderizador usa SVG com projeção matemática de coordenadas tridimensionais,
 volumes extrudados, descarte de faces traseiras e ordenação de peças por
 profundidade. Não depende de WebGL, GPU dedicada ou recursos de rede. Rótulos

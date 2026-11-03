@@ -13,8 +13,8 @@ export interface SpatialPath {
   readonly opacity?: number | undefined; readonly dashed?: boolean | undefined; readonly label?: string | undefined;
   readonly arrow?: boolean | undefined;
 }
-export interface SpatialMarker extends Point3 { readonly id: string; readonly label?: string | undefined; readonly tone?: string | undefined; readonly opacity?: number | undefined }
-export interface SpatialScene { readonly width: number; readonly height: number; readonly nodes: readonly SpatialNode[]; readonly paths: readonly SpatialPath[]; readonly markers?: readonly SpatialMarker[] | undefined }
+export interface SpatialMarker extends Point3 { readonly id: string; readonly label?: string | undefined; readonly tone?: string | undefined; readonly opacity?: number | undefined; readonly next?: Point3 | undefined; readonly duration?: number | undefined }
+export interface SpatialScene { readonly width: number; readonly height: number; readonly nodes: readonly SpatialNode[]; readonly paths: readonly SpatialPath[]; readonly markers?: readonly SpatialMarker[] | undefined; readonly startedAt?: number | undefined }
 
 export const DEFAULT_CAMERA: SpatialCamera = { yaw: -Math.PI / 4, tilt: Math.atan(Math.sqrt(2)), zoom: 1, panX: 0, panY: 0 };
 export const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));

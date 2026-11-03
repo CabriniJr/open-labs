@@ -19,6 +19,7 @@ export function SceneViewport({ scene: source, label, children, selected, onSele
   const [contents, setContents] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   const dragged = useRef(false);
+  const markerElements = useRef(new Map<string, SVGGElement>());
   const gesture = useRef<{ x: number; y: number; camera: SpatialCamera; pan: boolean; moved: boolean } | null>(null);
   useEffect(() => {
     const changed = () => setFull(document.fullscreenElement === root.current);
@@ -26,12 +27,34 @@ export function SceneViewport({ scene: source, label, children, selected, onSele
     return () => document.removeEventListener("fullscreenchange", changed);
   }, []);
   const update = (patch: Partial<SpatialCamera>) => setCamera(c => ({ ...c, ...patch }));
-  const scene = useMemo(() => mode === "2d" ? { width: 1, height: 1, nodes: [], paths: [], markers: [] } : typeof source === "function" ? source() : source, [source, mode]);
+  const scene = useMemo<SpatialScene>(() => mode === "2d" ? { width: 1, height: 1, nodes: [], paths: [], markers: [] } : typeof source === "function" ? source() : source, [source, mode]);
   const project = projector(scene.width, scene.height, camera, mode === "3d");
   const points = (ps: readonly Point3[]) => ps.map(p => { const q = project(p); return `${q.x},${q.y}`; }).join(" ");
   const reset = () => setCamera(DEFAULT_CAMERA);
   const spatial = mode !== "2d";
   const grid = Array.from({ length: 13 }, (_, i) => i / 12);
+  useEffect(() => {
+    if (!spatial) return;
+    try { if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return; } catch { /* Embedded hosts can omit matchMedia. */ }
+    const moving = scene.markers?.filter(m => m.next && (m.duration ?? 0) > 0) ?? [];
+    if (!moving.length) return;
+    const started = scene.startedAt ?? performance.now();
+    let request = 0;
+    const draw = (now: number) => {
+      let unfinished = false;
+      for (const marker of moving) {
+        const p = clamp((now - started) / marker.duration!, 0, 1);
+        unfinished ||= p < 1;
+        const to = marker.next!;
+        const origin = project(marker);
+        const current = project({ x: marker.x + (to.x - marker.x) * p, y: marker.y + (to.y - marker.y) * p, z: (marker.z ?? 0) + ((to.z ?? 0) - (marker.z ?? 0)) * p });
+        markerElements.current.get(marker.id)?.setAttribute("transform", `translate(${current.x - origin.x} ${current.y - origin.y})`);
+      }
+      if (unfinished) request = requestAnimationFrame(draw);
+    };
+    draw(performance.now());
+    return () => cancelAnimationFrame(request);
+  }, [scene, camera, mode]);
   return (
     <div className="scene-viewport" ref={root} data-mode={mode}>
       <div className="scene-toolbar">
@@ -101,7 +124,7 @@ export function SceneViewport({ scene: source, label, children, selected, onSele
             {node.sublabel && <text className="scene-node__sub" x={center.x} y={center.y + 12}>{node.sublabel}</text>}
           </g>;
         })}
-        {scene.markers?.map(m => { const p = project(m); return <g key={m.id} className="scene-marker" data-tone={m.tone} opacity={m.opacity ?? 1} role={onSelectMarker ? "button" : undefined} tabIndex={onSelectMarker ? 0 : undefined} aria-label={onSelectMarker ? `Follow ${m.label || "item"}` : undefined} onClick={() => onSelectMarker?.(m.id)} onKeyDown={e => { if (onSelectMarker && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); e.stopPropagation(); onSelectMarker(m.id); } }}><circle className="scene-marker__hit" cx={p.x} cy={p.y} r={20} /><circle className="scene-marker__halo" cx={p.x} cy={p.y} r={12} /><circle cx={p.x} cy={p.y} r={5} />{m.label && <text x={p.x} y={p.y - 17}>{m.label}</text>}</g>; })}
+        {scene.markers?.map(m => { const p = project(m); return <g key={m.id} ref={element => { if (element) markerElements.current.set(m.id, element); else markerElements.current.delete(m.id); }} className="scene-marker" data-tone={m.tone} opacity={m.opacity ?? 1} role={onSelectMarker ? "button" : undefined} tabIndex={onSelectMarker ? 0 : undefined} aria-label={onSelectMarker ? `Follow ${m.label || "item"}` : undefined} onClick={() => onSelectMarker?.(m.id)} onKeyDown={e => { if (onSelectMarker && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); e.stopPropagation(); onSelectMarker(m.id); } }}><circle className="scene-marker__hit" cx={p.x} cy={p.y} r={20} /><circle className="scene-marker__halo" cx={p.x} cy={p.y} r={12} /><circle cx={p.x} cy={p.y} r={5} />{m.label && <text x={p.x} y={p.y - 17}>{m.label}</text>}</g>; })}
       </svg>}
       {spatial && <><div className="scene-status mono"><span>{mode === "3d" ? "Perspective · drag to orbit" : "Orthographic · drag to pan"}</span><span>{Math.round(camera.zoom * 100)}% · same model, same state</span><button type="button" aria-expanded={contents} onClick={() => setContents(!contents)}>Scene contents {contents ? "−" : "+"}</button></div>{contents && <div className="scene-contents" aria-label="Scene contents">{scene.nodes.map(n => <div key={n.id}><button type="button" aria-pressed={selected === n.id} onClick={() => onSelect?.(n.id)} disabled={!onSelect}>{n.label || "Part"}{n.sublabel && <span>{n.sublabel}</span>}</button>{onOpen && <button type="button" aria-label={`Open ${n.label}`} onClick={() => onOpen(n.id)}>↗</button>}</div>)}</div>}</>}
     </div>

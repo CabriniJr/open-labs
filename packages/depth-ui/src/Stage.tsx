@@ -2772,6 +2772,7 @@ export function escalaEmDegrau(escala: number): number {
 
 export function Stage(props: StageProps) {
   const { view, tickMs = 700, state, tree, alvoDeCamera, partirDe, onEnquadrado } = props;
+  const spatialTickStarted = useMemo(() => performance.now(), [state]);
 
   // Uma vez por tick, e não uma vez por camada aberta: a resolução percorre a
   // árvore até o ponto fixo, e um modelo aberto até o fundo tem milhares de
@@ -2964,7 +2965,7 @@ export function Stage(props: StageProps) {
 
 
   return (
-    <SceneViewport scene={() => spatialFromStage(props)} label={view.title} selected={props.selected} onSelect={props.onSelect} onOpen={props.onOpen}
+    <SceneViewport scene={() => spatialFromStage(props, spatialTickStarted)} label={view.title} selected={props.selected} onSelect={props.onSelect} onOpen={props.onOpen}
       onSelectMarker={props.onSeguirCarga ? id => { const item = state.flight.find(f => f.id === id); if (!item) return; const key = props.chaveDaCarga?.(item.message); if (key !== undefined) props.onSeguirCarga?.(key === props.cargaSeguida ? undefined : key); } : undefined}>
     <svg
       ref={svgRef}

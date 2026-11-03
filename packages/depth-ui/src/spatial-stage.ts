@@ -4,7 +4,7 @@ import type { SpatialScene, SpatialPath, SpatialMarker } from "./spatial.js";
 
 /** Aggregate endpoints by the visible containing part, exactly as the 2D view
  * does. No new edges or activity are introduced by the camera. */
-export function spatialFromStage({ tree, view, wires, state, readouts, fills, edgeTicks = 1, leituraDaCarga }: StageProps): SpatialScene {
+export function spatialFromStage({ tree, view, wires, state, readouts, fills, edgeTicks = 1, tickMs = 700, leituraDaCarga }: StageProps, startedAt?: number): SpatialScene {
   const byId = new Map(view.places.map(p => [p.id, p]));
   const locate = (id: string) => {
     let cursor: string | undefined = id;
@@ -29,9 +29,10 @@ export function spatialFromStage({ tree, view, wires, state, readouts, fills, ed
     const a = locate(item.from), b = locate(String(item.to));
     if (!a || !b || a.id === b.id) continue;
     const start = center(a), end = center(b), p = Math.min(1, Math.max(0, (state.tick - item.sent) / Math.max(1, edgeTicks)));
-    markers.push({ id: item.id, x: start.x + (end.x - start.x) * p, y: start.y + (end.y - start.y) * p, z: 14, label: leituraDaCarga?.(item.message), tone: "live" });
+    const next = Math.min(1, p + 1 / Math.max(1, edgeTicks));
+    markers.push({ id: item.id, x: start.x + (end.x - start.x) * p, y: start.y + (end.y - start.y) * p, z: 14, next: { x: start.x + (end.x - start.x) * next, y: start.y + (end.y - start.y) * next, z: 14 }, duration: tickMs, label: leituraDaCarga?.(item.message), tone: "live" });
   }
-  return { width: view.width, height: view.height, paths, markers, nodes: view.places.map(p => {
+  return { width: view.width, height: view.height, paths, markers, startedAt, nodes: view.places.map(p => {
     const node = tree.byId.get(p.id);
     const family = node ? familyOf(node.kind) : "container";
     return { ...p, label: p.label ?? node?.label ?? p.id, sublabel: readouts?.[p.id], tone: family, frame: family === "container" && !p.collapsed, elevation: family === "container" && !p.collapsed ? 4 : 24, active: (fills?.[p.id] ?? 0) > 0 };

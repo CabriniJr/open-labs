@@ -1,9 +1,9 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
 import { SceneViewport } from "./SceneViewport.js";
 import type { SpatialScene } from "./spatial.js";
 
-afterEach(cleanup);
+afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 const scene: SpatialScene = { width: 400, height: 200, paths: [], nodes: [{ id: "a", x: 20, y: 20, w: 80, h: 40, label: "Alpha", sublabel: "42" }] };
 
 it("keeps the original diagram mounted and lazily builds spatial geometry", () => {
@@ -39,4 +39,20 @@ it("camera keys do not reach a parent timeline and reset restores framing", () =
   fireEvent.keyDown(view, { key: "ArrowRight" });
   expect(top()).not.toBe(initial); expect(parent).not.toHaveBeenCalled();
   fireEvent.keyDown(view, { key: "0" }); expect(top()).toBe(initial);
+});
+
+it("interpolates an in-flight item without rebuilding the model or advancing its clock", () => {
+  vi.spyOn(performance, "now").mockReturnValue(1000);
+  let nextFrame: FrameRequestCallback | undefined;
+  vi.stubGlobal("requestAnimationFrame", vi.fn((callback: FrameRequestCallback) => { nextFrame = callback; return 1; }));
+  vi.stubGlobal("cancelAnimationFrame", vi.fn());
+  const moving: SpatialScene = { ...scene, startedAt: 1000, markers: [{ id: "item", x: 20, y: 100, z: 10, next: { x: 350, y: 100, z: 10 }, duration: 1000 }] };
+  const before = JSON.stringify(moving);
+  const { container } = render(<SceneViewport scene={moving} label="Moving"><svg /></SceneViewport>);
+  fireEvent.click(screen.getByRole("button", { name: "Isometric" }));
+  const marker = container.querySelector(".scene-marker")!;
+  expect(marker.getAttribute("transform")).toBe("translate(0 0)");
+  act(() => { nextFrame?.(1500); });
+  expect(marker.getAttribute("transform")).not.toBe("translate(0 0)");
+  expect(JSON.stringify(moving)).toBe(before);
 });
