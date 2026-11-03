@@ -61,9 +61,9 @@ export function posicaoDaCamera(alvo: Vec3, azimute: number, elevacao: number, d
  * caixa de largura `(w + h)·cos45` e altura `(w + h)·sin45·sin(elev)`. O quadro
  * precisa caber nas duas direções.
  */
-export function meiaAlturaParaCaber(largura: number, altura: number, aspecto: number, elevacao = ISO_ELEVACAO, azimute = ISO_AZIMUTE): number {
+export function meiaAlturaParaCaber(largura: number, altura: number, aspecto: number, elevacao = ISO_ELEVACAO, azimute = ISO_AZIMUTE, alturaDasPecas = 64): number {
   const telaW = largura * Math.abs(Math.cos(azimute)) + altura * Math.abs(Math.sin(azimute));
-  const telaH = (largura * Math.abs(Math.sin(azimute)) + altura * Math.abs(Math.cos(azimute))) * Math.sin(elevacao) + 64 * Math.cos(elevacao);
+  const telaH = (largura * Math.abs(Math.sin(azimute)) + altura * Math.abs(Math.cos(azimute))) * Math.sin(elevacao) + alturaDasPecas * Math.cos(elevacao);
   return Math.max(telaH / 2, telaW / 2 / aspecto);
 }
 

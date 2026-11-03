@@ -409,7 +409,7 @@ export class IsoScene {
     const w = Math.max(1, this.#host.clientWidth);
     const h = Math.max(1, this.#host.clientHeight);
     const aspecto = w / h;
-    const meia = meiaAlturaParaCaber(film.width / camera.zoom, film.height / camera.zoom, aspecto, this.#elevacao, this.#azimute) * 1.04 / this.#zoom;
+    const meia = meiaAlturaParaCaber(film.width / camera.zoom, film.height / camera.zoom, aspecto, this.#elevacao, this.#azimute, 64 / camera.zoom) * 1.04 / this.#zoom;
     marcar(this.#host, "camera", `${this.#projecao}:${this.#zoom}:${this.#azimute.toFixed(4)}:${this.#elevacao.toFixed(4)}:${this.#pan.x.toFixed(2)}:${this.#pan.z.toFixed(2)}`);
     this.#escala = 2 * meia / h;
     const cam = this.#camera;
@@ -425,7 +425,7 @@ export class IsoScene {
     cam.updateMatrixWorld(true);
     const perspective = this.#perspectiva;
     perspective.aspect = aspecto;
-    const distance = distanciaPerspectivaParaCaber(film.width / camera.zoom, film.height / camera.zoom, aspecto, this.#azimute, this.#elevacao) * 1.06 / this.#zoom;
+    const distance = distanciaPerspectivaParaCaber(film.width / camera.zoom, film.height / camera.zoom, aspecto, this.#azimute, this.#elevacao, 64 / camera.zoom) * 1.06 / this.#zoom;
     perspective.far = Math.max(8000, distance * 4);
     const vantage = posicaoDaCamera(alvo, this.#azimute, this.#elevacao, distance);
     perspective.position.set(vantage.x, vantage.y, vantage.z);

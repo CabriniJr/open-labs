@@ -160,3 +160,33 @@ A ficha que anda no palco pode ter etiqueta de duas linhas: `label` é o cabeça
 
 `bytes` só quando o domínio sabe o tamanho. Um número inventado na coluna é pior
 que um travessão.
+
+## Profundidade: um mundo, vários níveis
+
+Um filme pode aninhar níveis no mesmo mundo — o interior de uma peça desenhado
+DENTRO da caixa dela, em escala menor — e descer por zoom contínuo:
+
+- `lod: { appear, vanish }` em qualquer peça: ela surge entre `appear·0,7` e
+  `appear`, e some entre `vanish` e `vanish·1,4` (rampa em logaritmo). Regra:
+  `vanish·1,4` de um nível < zoom em que a câmera para no de baixo, para nunca haver
+  dois níveis ao mesmo tempo na tela;
+- `textScale` (≈ `1/zoom` do nível): texto, traços, setas, fichas e placas escalam
+  com a peça, no plano e no 3D, e leem no mesmo tamanho quando a câmera chega;
+- `d.camera({ box })` voa como um mapa: zoom em logaritmo e centro ancorado no
+  ponto que fica parado na tela — o alvo não foge do quadro num mergulho de 70×.
+
+## Formas que dizem o que a peça é
+
+`shape`: `box pill circle diamond cylinder stack chip mux alu register memory and
+or xor not`. Cada uma é um contorno + detalhes em `shapes.ts`; o palco plano
+desenha, o isométrico **extruda o mesmo contorno** e pinta os detalhes na face de
+cima (pinos de chip rentes à base). Forma nova entra lá, uma vez, e serve às duas
+vistas.
+
+## Showcase e Simulation
+
+Um lab pode ter os dois modos (`ModosDoLab` no site): o **showcase** é um filme que
+conta o mecanismo, com câmera e narração; a **simulation** é o modelo que o leitor
+desmonta. O filme do showcase continua sendo derivado do domínio — a vitrine da
+CPU executa o programa no RV32I de referência; a do Collector monta o envelope com
+`toOtlpJson` e conta os bytes do JSON.

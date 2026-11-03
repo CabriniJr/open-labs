@@ -163,3 +163,7 @@ export { entregar, MODOS, NOS_DO_CLUSTER, PODS, REPLICAS, SPANS } from "./implan
 export type { Entrega, Modo, OpcoesDeImplantacao } from "./implantacao/modelo.js";
 export { ALTURA_DA_IMPLANTACAO, LARGURA_DA_IMPLANTACAO, filmeDaImplantacao } from "./implantacao/filme.js";
 export type { DetalheDaImplantacao, LinhaDaTabela } from "./implantacao/filme.js";
+
+// A vitrine do Collector: o modo showcase do lab do pipeline.
+export { envelopeDaVitrine, filmeDaVitrineOtel } from "./vitrine/filme.js";
+export type { DetalheDaVitrineOtel } from "./vitrine/filme.js";

@@ -69,7 +69,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        lab: [pod-lifecycle, hard-context-and-baggage, agent-or-gateway]
+        lab: [pod-lifecycle, hard-context-and-baggage, agent-or-gateway, collector-pipeline, cpu]
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4

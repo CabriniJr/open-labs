@@ -32,15 +32,17 @@ function quad(a: Point, c: Point, b: Point, n = 10): Point[] {
 function retangulo(w: number, h: number, raio = 0): Point[] {
   if (raio <= 0) return [P(-w / 2, -h / 2), P(w / 2, -h / 2), P(w / 2, h / 2), P(-w / 2, h / 2)];
   const r = Math.min(raio, w / 2, h / 2);
+  // Cantos grandes pedem mais pontos: com 4, uma pílula saía octogonal.
+  const n = r > Math.min(w, h) * 0.2 ? 12 : 4;
   const x0 = -w / 2;
   const x1 = w / 2;
   const y0 = -h / 2;
   const y1 = h / 2;
   return [
-    P(x0 + r, y0), P(x1 - r, y0), ...quad(P(x1 - r, y0), P(x1, y0), P(x1, y0 + r), 4),
-    P(x1, y1 - r), ...quad(P(x1, y1 - r), P(x1, y1), P(x1 - r, y1), 4),
-    P(x0 + r, y1), ...quad(P(x0 + r, y1), P(x0, y1), P(x0, y1 - r), 4),
-    P(x0, y0 + r), ...quad(P(x0, y0 + r), P(x0, y0), P(x0 + r, y0), 4),
+    P(x0 + r, y0), P(x1 - r, y0), ...quad(P(x1 - r, y0), P(x1, y0), P(x1, y0 + r), n),
+    P(x1, y1 - r), ...quad(P(x1, y1 - r), P(x1, y1), P(x1 - r, y1), n),
+    P(x0 + r, y1), ...quad(P(x0 + r, y1), P(x0, y1), P(x0, y1 - r), n),
+    P(x0, y0 + r), ...quad(P(x0, y0 + r), P(x0, y0), P(x0 + r, y0), n),
   ];
 }
 

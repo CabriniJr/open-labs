@@ -465,8 +465,9 @@
     position: sticky;
     bottom: 0;
     z-index: 5;
-    padding: 8px;
-    margin-inline: -8px;
+    /* Sem margem negativa: ela fazia o transporte passar 8 px da largura da
+       página, e o celular rolava na horizontal (pego pelo qa:labs). */
+    padding: 8px 0;
     border-top: 1px solid var(--rule);
     background: color-mix(in oklab, var(--paper) 92%, transparent);
     backdrop-filter: blur(8px);

@@ -4,6 +4,11 @@ import { PerspectiveCamera, Vector3 } from "three";
 import { deslocamentoNoChao, distanciaParaCaber, distanciaPerspectivaParaCaber, ISO_AZIMUTE, ISO_ELEVACAO, meiaAlturaParaCaber, pontoNoAr, pontosDoCaminho, posicaoDaCamera } from "./iso.js";
 
 describe("isometric camera", () => {
+  it("keeps the same framing when descending into a scaled interior", () => {
+    for (const scale of [1, .1, .001]) {
+      expect(meiaAlturaParaCaber(1280 * scale, 720 * scale, 16 / 9, ISO_ELEVACAO, ISO_AZIMUTE, 64 * scale)).toBeCloseTo(meiaAlturaParaCaber(1280, 720, 16 / 9) * scale);
+    }
+  });
   it("keeps all eight scene corners inside perspective bounds across orbit angles and aspect ratios", () => {
     for (const aspect of [1, 16 / 9, 9 / 16]) for (const azimuth of [0, Math.PI / 4, Math.PI / 2, Math.PI]) {
       const d = distanciaPerspectivaParaCaber(1280, 720, aspect, azimuth);
