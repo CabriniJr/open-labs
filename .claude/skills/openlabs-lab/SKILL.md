@@ -131,7 +131,8 @@ lab? Atualize o roteiro no mesmo PR.
   ter espaço (prioridade: aceso, depois peça maior). Não aperte layout para
   "caber" rótulos no isométrico — espace as peças e deixe a regra decidir.
 - Layout do player: janela à esquerda, andamento (capítulos, narração, painel)
-  à direita, por container query no `MotionPlayer`. Não refaça no lab.
+  à direita, por container query no `MotionPlayer`, sem `sticky` (quebra a
+  rolagem). Não refaça no lab.
 
 ## 6. Regras de desempenho (aprendidas medindo)
 

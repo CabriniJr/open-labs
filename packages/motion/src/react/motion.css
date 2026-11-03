@@ -213,17 +213,12 @@
 }
 @container (min-width: 54rem) {
   .mo-player__layout { grid-template-columns: minmax(0, 1.75fr) minmax(18rem, 1fr); align-items: start; }
-  .mo-player__main,
-  .mo-player__side {
-    position: sticky;
-    /* Abaixo da barra do site, que também é fixa. */
-    top: var(--mo-sticky-top, 5rem);
-  }
-  .mo-player__side {
-    max-height: calc(100vh - var(--mo-sticky-top, 5rem) - var(--space-2));
-    overflow-y: auto;
-    scrollbar-width: thin;
-  }
+  /*
+   * Sem sticky. As duas colunas grudando no topo com alturas diferentes faziam
+   * a cena entrar sob a barra do site e a lista de capítulos rolar por dentro
+   * dela mesma, desencontradas — "a janela quebra quando rola". Lado a lado, a
+   * cena e o andamento já estão juntos na tela; a página rola inteira.
+   */
   .mo-player__side .mo-chapters { flex-direction: column; overflow: visible; }
   .mo-player__side .mo-chapters { gap: 2px; }
   .mo-player__side .mo-chapter { width: 100%; padding: 4px 10px; border-color: transparent; border-radius: var(--radius-2, 8px); white-space: normal; text-align: left; }

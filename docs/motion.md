@@ -209,6 +209,7 @@ peça devolve o rótulo dela.
 ## Layout do player
 
 Com o player largo (container ≥ 54rem), a cena fica à esquerda e o andamento
-(capítulos, narração, pacote atual, painel do nível) à direita, os dois
-fixos abaixo da barra do site (`--mo-sticky-top`). Estreito, empilha. A tabela
+(capítulos, narração, pacote atual, painel do nível) à direita. Sem `sticky`:
+colunas de alturas diferentes grudando no topo quebravam a rolagem. Estreito,
+empilha. A tabela
 de pacotes fica sempre embaixo, na largura toda.
