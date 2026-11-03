@@ -33,6 +33,11 @@ excluir um Pod controlado permite que o modelo crie outro UID. A disposição
 espacial cresce com a quantidade real de Pods, sem empilhar recursos numa última
 posição compartilhada.
 
+Na vista espacial, os números completos ficam no inspetor de cada nó e nos
+medidores de recursos abaixo do palco. O Pod selecionado expande seu status;
+os demais mostram o nome, evitando sobrepor texto à topologia. **Inspect scene**
+também lista os estados por escrito. A vista Cluster mantém as anotações completas.
+
 Nos labs de OpenTelemetry, as vistas Sequence / Topology / Iso / 3D compartilham
 o relógio do player. A inspeção lê o quadro da vista ativa; a narração e os
 detalhes continuam no mesmo instante. Alterar o encaminhamento de headers ou o
@@ -49,7 +54,9 @@ uma instalação real. Cada página descreve os limites do seu experimento.
 O renderizador não conhece estes domínios: recebe `Film` e `Frame`, mantém o
 desenho sob demanda, pausa fora da tela, limita DPR a 2 e libera geometrias,
 materiais e renderer no descarte. Three.js só é carregado quando o leitor escolhe
-uma vista espacial. O SVG permanece disponível para a leitura plana.
+uma vista espacial. Peças com a mesma geometria são reaproveitadas entre ticks;
+a profundidade usa sólidos iluminados e contornos, sem uma segunda passagem de
+sombras. O SVG permanece disponível para a leitura plana.
 
 ## Verificação
 

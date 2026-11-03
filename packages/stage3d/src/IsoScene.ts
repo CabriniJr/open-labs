@@ -436,7 +436,8 @@ export class IsoScene {
         const edges = new LineSegments(new EdgesGeometry(placa.geometry), border);
         edges.position.copy(placa.position); root.add(edges);
         const { obj, el } = etiqueta("iso-region", spec.label ?? "");
-        obj.position.set(box.x + 12, ALTURA_DO_ROTULO, box.y + 12);
+        // Put the caption on the boundary, away from the first row of pieces.
+        obj.position.set(box.x + box.w - 12, 6, box.y + 12);
         root.add(obj);
         return {
           spec,

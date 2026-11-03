@@ -106,7 +106,7 @@
 .iso-note--end { transform: translateX(-50%); }
 
 .iso-bar { color: var(--iso-c); font-size: calc(9.5px * var(--iso-k, 1)); }
-.iso-region { color: var(--iso-c); font-size: calc(10px * var(--iso-k, 1)); letter-spacing: 0.08em; text-transform: uppercase; }
+.iso-region { color: var(--iso-c); font-size: calc(10px * var(--iso-k, 1)); letter-spacing: 0.08em; text-transform: uppercase; max-width: 150px; overflow: hidden; text-overflow: ellipsis; padding: 2px 5px; background: color-mix(in oklab, var(--paper) 88%, transparent); }
 
 /* Tela estreita: o bloco e a ficha dizem o essencial; o resto está no painel. */
 .iso-stage[data-compacto] .iso-sub,
