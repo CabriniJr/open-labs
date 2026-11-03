@@ -364,7 +364,7 @@ export class IsoScene {
     cam.left = -meia * aspecto;
     cam.right = meia * aspecto;
     cam.updateProjectionMatrix();
-    const alvo = { x: camera.cx, y: 0, z: camera.cy };
+    const alvo = { x: camera.cx, y: camera.elev ?? 0, z: camera.cy };
     const pos = posicaoDaCamera(alvo, this.#azimute, this.#elevacao, 3000);
     cam.position.set(pos.x, pos.y, pos.z);
     cam.lookAt(new Vector3(alvo.x, alvo.y, alvo.z));
@@ -422,7 +422,7 @@ export class IsoScene {
             marcar(el, "tone", s.tone);
             opacidade(el, s.opacity * (1 - 0.7 * s.dim));
             root.visible = s.opacity > 0.01;
-            root.position.set(s.dx, 0, s.dy);
+            root.position.set(s.dx, spec.elevation ?? 0, s.dy);
           },
         };
       }
@@ -449,6 +449,7 @@ export class IsoScene {
           atualizar: (s, pal) => {
             mat.color = corDe(pal.tom(s.tone), pal.tinta);
             mat.opacity = (0.06 + 0.1 * s.glow) * s.opacity;
+            root.position.y = spec.elevation ?? 0;
             escrever(el, s.label);
             marcar(el, "tone", s.tone);
             root.visible = s.opacity > 0.01;
@@ -468,7 +469,9 @@ export class IsoScene {
     const alturaRel = this.#options.alturaRelativa ?? 0.5;
     // Proporcional à peça, sem piso absoluto: uma porta lógica de 1 unidade
     // num nível fundo não pode virar uma torre de 12.
-    const H = Math.min(44, Math.min(box.w, box.h) * alturaRel);
+    const H = spec.height ?? Math.min(44, Math.min(box.w, box.h) * alturaRel);
+    const elevacao = spec.elevation ?? 0;
+    const material = spec.material ?? "matte";
     const pequena = Math.min(box.w, box.h) < 24;
     const root = new Group();
     const corpo = new Group();
@@ -493,7 +496,18 @@ export class IsoScene {
           : shape === "pill" || shape === "box" || shape === "stack"
             ? new RoundedBoxGeometry(box.w, H, box.h, 3, Math.min(8, H / 3, box.h / 2.5))
             : new BoxGeometry(box.w * 0.72, H, box.h * 0.72);
-    const mat = new MeshStandardMaterial({ roughness: 0.62, metalness: 0.05, transparent: true });
+    // Do que a peça é feita muda como a luz bate nela: é o que faz a tampa de um
+    // chip ler como metal e o die como silício, sem textura nenhuma.
+    const ACABAMENTO = {
+      matte: { roughness: 0.62, metalness: 0.05, mistura: 0.2 },
+      metal: { roughness: 0.28, metalness: 0.85, mistura: 0.08 },
+      // Silício é escuro com brilho: pouca tinta, muito reflexo.
+      silicon: { roughness: 0.16, metalness: 0.7, mistura: 0.22 },
+      pcb: { roughness: 0.85, metalness: 0.0, mistura: 0.7 },
+      glass: { roughness: 0.05, metalness: 0.1, mistura: 0.15 },
+    } as const;
+    const acabamento = ACABAMENTO[material];
+    const mat = new MeshStandardMaterial({ roughness: acabamento.roughness, metalness: acabamento.metalness, transparent: true });
     const mesh = new Mesh(geo, mat);
     let detalhe: LineSegments | null = null;
     // Equipamento: o bloco vira três lâminas com fresta entre elas.
@@ -590,7 +604,7 @@ export class IsoScene {
           tomAtual = s.tone;
           const t = corDe(pal.tom(s.tone), pal.tinta);
           const base = corDe(pal.papelElevado, pal.tinta);
-          mat.color = base.clone().lerp(t, 0.2);
+          mat.color = base.clone().lerp(t, acabamento.mistura);
           mat.emissive = t;
           bordaMat.color = t;
           if (detalhe !== null) (detalhe.material as LineBasicMaterial).color = t;
@@ -602,7 +616,7 @@ export class IsoScene {
         mat.opacity = visivel;
         bordaMat.opacity = Math.min(1, visivel * (0.55 + 0.45 * s.glow));
         if (detalhe !== null) (detalhe.material as LineBasicMaterial).opacity = visivel * 0.8;
-        corpo.position.set(box.x + box.w / 2 + s.dx, 0, box.y + box.h / 2 + s.dy);
+        corpo.position.set(box.x + box.w / 2 + s.dx, elevacao + s.lift, box.y + box.h / 2 + s.dy);
         corpo.scale.setScalar(s.scale);
         // Acender levanta a peça um pouco: a energia vira altura.
         // Proporcional à peça: 3 unidades fixas jogavam uma porta de 0,45 de
@@ -681,7 +695,7 @@ export class IsoScene {
         mat.opacity = visivel;
         mat.linewidth = 2 + s.glow * 1.5;
         geo.instanceCount = Math.max(1, Math.round(segmentos * s.progress));
-        root.position.set(s.dx, 0, s.dy);
+        root.position.set(s.dx, spec.elevation ?? 0, s.dy);
         if (ponta.visible) {
           const tip = poseAt(spec.path, s.progress);
           ponta.position.set(tip.x, 1.5 * k, tip.y);
@@ -743,6 +757,7 @@ export class IsoScene {
         }
         mat.opacity = visivel;
         haloMat.opacity = 0.5 * visivel;
+        root.position.y = spec.elevation ?? 0;
         const aqui = pontoNoAr(spec.path, s.progress, base, salto);
         esfera.position.set(aqui.x + s.dx, aqui.y, aqui.z + s.dy);
         esfera.scale.setScalar(s.scale);
@@ -808,6 +823,7 @@ export class IsoScene {
         }
         mat.opacity = visivel;
         mat.emissiveIntensity = 0.15 + s.glow * 0.5;
+        root.position.y = spec.elevation ?? 0;
         const w = baixo ? box.w : box.w * s.progress;
         const h = baixo ? box.h * s.progress : box.h;
         mesh.scale.set(Math.max(0.01, w), 1, Math.max(0.01, h));

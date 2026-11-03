@@ -9,7 +9,7 @@ export function CpuVitrine() {
     <VitrineLab
       film={filme}
       testId="cpu-showcase"
-      niveis={["board", "datapath", "ALU", "adder", "gates"]}
+      niveis={["board", "die", "datapath", "ALU", "adder", "gates"]}
       label="One add instruction, followed from the board down to the logic gates of one adder bit."
       tituloDosPacotes="What crossed each level"
       legenda={[

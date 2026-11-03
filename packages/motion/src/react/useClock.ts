@@ -36,7 +36,14 @@ function prefersReduced(): boolean {
   }
 }
 
-export function useClock({ duration, marks = [], autoplay = false, loop = false }: ClockOptions): Clock {
+/**
+ * Constante, e não `[]` no parâmetro: um array novo a cada render mudava a
+ * dependência do efeito do relógio, que reiniciava a cada quadro com dt = 0 — e
+ * o tempo nunca andava para quem não passava `marks` (a hero, por exemplo).
+ */
+const SEM_MARCOS: readonly number[] = [];
+
+export function useClock({ duration, marks = SEM_MARCOS, autoplay = false, loop = false }: ClockOptions): Clock {
   const [t, setT] = useState(0);
   const [playing, setPlaying] = useState(autoplay);
   const [speed, setSpeed] = useState(1);
@@ -59,7 +66,10 @@ export function useClock({ duration, marks = [], autoplay = false, loop = false 
     let frame = 0;
     let last: number | null = null;
     const tick = (now: number) => {
-      const dt = last === null ? 0 : Math.min(64, now - last);
+      // Limite de 250 ms, não de 64: num aparelho que desenha a 4 quadros por
+      // segundo, 64 fazia o filme andar 4× mais devagar que o relógio. O limite
+      // ainda existe para a volta de uma aba em segundo plano não pular capítulos.
+      const dt = last === null ? 0 : Math.min(250, now - last);
       last = now;
       let next = tRef.current + dt * speed;
       if (next >= duration) {

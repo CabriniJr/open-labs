@@ -62,6 +62,8 @@ export interface Animatable {
   progress: number;
   /** Rebaixa a peça para o fundo, 0–1. */
   dim: number;
+  /** Quanto a peça sobe acima do lugar dela, no 3D (a tampa que sai do chip). */
+  lift: number;
   label: string;
   sublabel: string;
   tone: Tone;
@@ -93,6 +95,15 @@ interface Common {
    * caixa fechada sai quando o interior chega.
    */
   readonly lod?: { readonly appear?: number; readonly vanish?: number };
+  /** No 3D: a altura em que a base da peça fica (sobre o que ela está montada). */
+  readonly elevation?: number;
+  /** No 3D: a altura da peça, quando a proporção da caixa não é a certa. */
+  readonly height?: number;
+  /**
+   * No 3D: do que a peça é feita. `metal` brilha (a tampa de um chip),
+   * `silicon` é escuro e espelhado (o die), `pcb` é fosco (a placa).
+   */
+  readonly material?: "matte" | "metal" | "silicon" | "pcb" | "glass";
 }
 
 export interface NodeSpec extends Common {
@@ -170,6 +181,8 @@ export type EntityType = EntitySpec["type"];
 export interface CameraState {
   cx: number;
   cy: number;
+  /** A altura para onde o 3D mira: a superfície do nível em que a câmera está. */
+  elev?: number;
   /** 1 = o palco inteiro. 2 = metade da largura, o dobro do tamanho. */
   zoom: number;
 }
@@ -187,6 +200,7 @@ export function initialState(spec: EntitySpec): Animatable {
     // Linha, ficha e barra nascem por fazer se nascem escondidas; visíveis, já feitas.
     progress: spec.hidden === true && (spec.type === "link" || spec.type === "token" || spec.type === "bar") ? 0 : 1,
     dim: 0,
+    lift: 0,
     label: spec.label ?? "",
     sublabel: spec.sublabel ?? "",
     tone: spec.tone ?? "ink",
