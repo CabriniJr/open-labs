@@ -363,6 +363,7 @@
 @media (max-width: 40rem) {
   .mo-time { display: none; }
   .mo-player__hud-title { display: none; }
+  .mo-player__hud { bottom: 6px; left: 6px; padding: 2px 8px; font-size: 0.7rem; }
 }
 
 /* Cabeça de raia descolada do topo: ganha um fundo opaco para não misturar com o que passa por baixo. */
@@ -396,3 +397,9 @@
 }
 .mo-views__opt[aria-checked="true"] { background: var(--accent); color: var(--paper); }
 .mo-views__opt:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+/* Depois da regra base, de propósito: no celular o seletor não pode cobrir o palco. */
+@media (max-width: 40rem) {
+  .mo-views { top: 6px; right: 6px; padding: 2px; }
+  .mo-views__opt { padding: 2px 8px; font-size: 0.7rem; }
+}

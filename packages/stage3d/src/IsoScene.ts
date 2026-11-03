@@ -285,6 +285,11 @@ export class IsoScene {
     const h = Math.max(1, this.#host.clientHeight);
     this.#renderer.setSize(w, h, false);
     this.#labels.setSize(w, h);
+    // Rótulo é HTML em pixels, e a cena encolhe com o palco: sem escala, num
+    // celular o texto cobre os blocos. Em tela estreita, só o essencial fica.
+    this.#host.style.setProperty("--iso-k", String(Math.max(0.62, Math.min(1, w / 1100))));
+    if (w < 640) this.#host.dataset.compacto = "";
+    else delete this.#host.dataset.compacto;
     for (const m of this.#linhas) m.resolution.set(w, h);
     this.pedir();
   }
