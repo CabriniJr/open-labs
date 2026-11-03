@@ -49,30 +49,26 @@ const GESTOS = [
   <main id="content">
     <section class="hero editorial">
       <div>
+        <p class="hero__eyebrow mono"><span></span> OPEN SOURCE · INTERACTIVE HANDBOOKS</p>
         <h1>See how the thing actually works.</h1>
         <p class="hero__lede prose">
-          OpenLabs builds handbooks that run. Most material shows you a diagram
-          and a config file; here the diagram is the running mechanism — change
-          something, watch it react, then open it up and read the exact data
-          that produced what you just saw.
-        </p>
-        <p class="prose">
-          Different subjects, shared tools. Below is a piece of the OpenTelemetry
-          handbook, running: a span leaving a service, picking up what the
-          collector adds to it, and landing in a backend. Click a different one
-          and you follow that one instead.
+          Learn by getting inside the system. Change an input, follow a message,
+          and explore the mechanism that makes it work.
         </p>
         <p class="hero__cta">
-          <a class="cta cta--primary" href={url("handbooks")}>Browse the handbooks</a>
-          <a class="cta" href={url("docs")}>Read the documentation</a>
+          <a class="cta cta--primary" href={url("labs")}>Explore the labs <span aria-hidden="true">↗</span></a>
+          <a class="cta" href={url("handbooks")}>Browse the handbooks <span aria-hidden="true">→</span></a>
         </p>
       </div>
       <aside class="hero__note mono">
-        <p>Live simulation. Not a video.</p>
+        <span class="hero__index">01 / EXPLORE</span>
+        <p>One model.<br />Every perspective.</p>
+        <div class="hero__views"><span>2D</span><span>ISOMETRIC</span><span>3D</span></div>
       </aside>
     </section>
 
     <section class="hero-stage">
+      <div class="section-bar"><span class="mono"><i></i> LIVE LAB / OPENTELEMETRY</span><span>Follow a span from service to backend</span></div>
       <HeroSim client:visible />
     </section>
 

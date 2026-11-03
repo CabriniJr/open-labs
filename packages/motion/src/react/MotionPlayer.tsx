@@ -1,4 +1,4 @@
-import { useMemo, type KeyboardEvent, type ReactNode } from "react";
+import { useMemo, useState, type KeyboardEvent, type ReactNode } from "react";
 import type { Film } from "../choreography.js";
 import { frameAt, type Frame } from "../frame.js";
 import { MotionStage } from "./MotionStage.js";
@@ -39,6 +39,8 @@ export function MotionPlayer<D>({ film, label, renderDetail, controls, autoplay 
   const { chapters } = film;
   const current = frame.chapterIndex;
   const chapter = frame.chapter;
+  const [selected, setSelected] = useState<string | null>(null);
+  const part = frame.entities.find(e => e.spec.id === selected && e.state.opacity > .005);
 
   const goChapter = (i: number) => {
     const target = chapters[Math.min(Math.max(i, 0), chapters.length - 1)];
@@ -49,7 +51,7 @@ export function MotionPlayer<D>({ film, label, renderDetail, controls, autoplay 
   };
 
   const onKey = (e: KeyboardEvent<HTMLDivElement>) => {
-    if (e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement || e.target instanceof HTMLTextAreaElement) return;
+    if (e.defaultPrevented || (e.target instanceof Element && e.target.closest("input, select, textarea, button, a, [role='button']"))) return;
     if (e.key === " " || e.key === "k") {
       e.preventDefault();
       clock.toggle();
@@ -74,7 +76,7 @@ export function MotionPlayer<D>({ film, label, renderDetail, controls, autoplay 
     <div className={["mo-player", className].filter(Boolean).join(" ")} tabIndex={0} onKeyDown={onKey} data-testid={testId} data-playing={clock.playing ? "" : undefined}>
       {controls !== undefined ? <div className="mo-player__controls">{controls}</div> : null}
       <div className="mo-player__screen">
-        <MotionStage film={film} t={t} frame={frame} label={label} />
+        <MotionStage film={film} t={t} frame={frame} label={label} selected={selected} onSelect={id => setSelected(id === selected ? null : id)} />
         <p className="mo-player__hud mono" aria-hidden="true">
           <span>{String(current + 1).padStart(2, "0")}</span>
           <span className="mo-player__hud-sep">/</span>
@@ -82,6 +84,8 @@ export function MotionPlayer<D>({ film, label, renderDetail, controls, autoplay 
           <span className="mo-player__hud-title">{chapter?.title}</span>
         </p>
       </div>
+
+      {part && <aside className="mo-selection" aria-live="polite"><div><span className="mono">SELECTED PART</span><strong>{part.state.label || part.spec.title || "Part"}</strong>{part.state.sublabel && <p>{part.state.sublabel}</p>}{part.spec.title && part.spec.title !== part.state.label && <p>{part.spec.title}</p>}</div><button type="button" aria-label="Clear selection" onClick={() => setSelected(null)}>×</button></aside>}
 
       <div className="mo-transport" role="group" aria-label="Playback">
         <button type="button" className="mo-btn" onClick={() => goChapter(current - 1)} aria-label="Previous chapter" disabled={current === 0 && t < 600}>

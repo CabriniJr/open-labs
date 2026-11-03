@@ -49,9 +49,19 @@ const prontos = trilhas.flatMap((t) => t.labs).filter((lab) => lab.href);
       </aside>
     </section>
 
+    <section class="lab-discovery" aria-label="Find a lab">
+      <form class="lab-filters" role="search">
+        <label class="lab-search"><span class="mono">SEARCH LABS</span><input type="search" name="q" placeholder="Try sampling, CPU, Kubernetes…" aria-label="Search labs" /></label>
+        <label><span class="mono">HANDBOOK</span><select name="handbook" aria-label="Filter by handbook"><option value="all">All handbooks</option>{HANDBOOKS.map(h => <option value={h.id}>{h.subject}</option>)}</select></label>
+        <label><span class="mono">AVAILABILITY</span><select name="status" aria-label="Filter by availability"><option value="all">All labs</option><option value="ready">Running now</option><option value="planned">In development</option></select></label>
+        <button type="reset">Clear filters</button>
+      </form>
+      <p class="lab-results mono" aria-live="polite" aria-atomic="true" data-lab-results></p>
+      <div class="lab-empty" hidden data-lab-empty><h2>No labs match these filters.</h2><p>Try another subject or clear the filters to explore all labs.</p></div>
+    </section>
     {
       trilhas.map(({ handbook, labs }) => (
-        <section class="labs-trilha">
+        <section class="labs-trilha" data-lab-group={handbook.id}>
           <header class="labs-trilha__head">
             <h2>
               <a href={url(`handbooks/${handbook.id}`)}>{handbook.name}</a>
@@ -60,7 +70,7 @@ const prontos = trilhas.flatMap((t) => t.labs).filter((lab) => lab.href);
           </header>
           <ul class="labs-grid">
             {labs.map((lab) => (
-              <li class="labs-card" data-status={lab.status}>
+              <li class="labs-card" data-status={lab.status} data-lab-title={lab.title} data-handbook={handbook.id} data-running={lab.href ? "true" : "false"}>
                 <p class="labs-card__phase mono">
                   phase {String(lab.phase).padStart(2, "0")}
                 </p>
@@ -85,7 +95,58 @@ const prontos = trilhas.flatMap((t) => t.labs).filter((lab) => lab.href);
   <SiteFooter />
 </Base>
 
+<script>
+  const form = document.querySelector<HTMLFormElement>(".lab-filters");
+  if (form) {
+    const query = form.elements.namedItem("q") as HTMLInputElement;
+    const handbook = form.elements.namedItem("handbook") as HTMLSelectElement;
+    const status = form.elements.namedItem("status") as HTMLSelectElement;
+    const cards = [...document.querySelectorAll<HTMLElement>("[data-lab-title]")];
+    const groups = [...document.querySelectorAll<HTMLElement>("[data-lab-group]")];
+    const params = new URLSearchParams(location.search);
+    query.value = params.get("q") ?? "";
+    for (const select of [handbook, status]) { const value = params.get(select.name); if (value && [...select.options].some(o => o.value === value)) select.value = value; }
+    const normalize = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    const apply = () => {
+      const term = normalize(query.value.trim()); let count = 0;
+      for (const card of cards) {
+        const match = normalize(`${card.dataset.labTitle} ${card.dataset.handbook}`).includes(term) && (handbook.value === "all" || card.dataset.handbook === handbook.value) && (status.value === "all" || (card.dataset.running === "true") === (status.value === "ready"));
+        card.hidden = !match; if (match) count++;
+      }
+      for (const group of groups) group.hidden = !group.querySelector("[data-lab-title]:not([hidden])");
+      const result = document.querySelector("[data-lab-results]"); if (result) result.textContent = `${count} ${count === 1 ? "lab" : "labs"} · ${cards.filter(c => !c.hidden && c.dataset.running === "true").length} running now`;
+      const empty = document.querySelector<HTMLElement>("[data-lab-empty]"); if (empty) empty.hidden = count !== 0;
+      const url = new URL(location.href);
+      for (const [key, value] of [["q", query.value.trim()], ["handbook", handbook.value], ["status", status.value]]) { if (value && value !== "all") url.searchParams.set(key!, value!); else url.searchParams.delete(key!); }
+      history.replaceState(null, "", url);
+    };
+    form.addEventListener("submit", e => e.preventDefault());
+    form.addEventListener("input", apply);
+    form.addEventListener("change", apply);
+    form.addEventListener("reset", () => { requestAnimationFrame(apply); });
+    apply();
+  }
+</script>
+
 <style>
+  .lab-discovery { max-width: 92rem; margin: 0 auto; padding: 0 var(--space-3) 2rem; }
+  .lab-filters { display: flex; flex-wrap: wrap; align-items: end; gap: 1rem; padding: 1.25rem; border: 1px solid var(--rule); border-radius: var(--radius-3); background: var(--paper-raised); }
+  .lab-filters label { display: grid; gap: .45rem; min-width: 0; }
+  .lab-search { flex: 1 1 17rem; }
+  .lab-filters label > span { font-size: .6rem; letter-spacing: .1em; color: var(--ink-muted); }
+  .lab-filters :is(input, select) { min-height: 44px; width: 100%; background: var(--paper); color: var(--ink); border: 1px solid var(--rule); border-radius: var(--radius-2); padding: .65rem .8rem; font-size: .85rem; }
+  .lab-filters button { min-height: 44px; padding: .65rem .8rem; border: 1px solid var(--rule); border-radius: var(--radius-2); color: var(--ink-muted); background: var(--paper-raised); font-size: .8rem; cursor: pointer; }
+  .lab-filters button:hover { border-color: var(--accent); color: var(--accent); }
+  .lab-results { color: var(--ink-muted); font-size: .7rem; margin-bottom: 0; }
+  .lab-empty { padding: 3rem 1rem; text-align: center; }
+  .lab-empty h2 { font-size: 1.5rem; }
+  .labs-card { position: relative; transition: border-color 150ms ease, box-shadow 150ms ease; }
+  .labs-card[data-running="true"] { background: var(--paper-raised); }
+  .labs-card[data-running="true"]:hover { border-color: var(--accent); box-shadow: 0 6px 18px -12px var(--ink-muted); }
+  .labs-card h3 a { border: 0; }
+  .labs-card h3 a::after { content: ""; position: absolute; inset: 0; }
+  .labs-card h3 a:focus-visible::after { outline: 2px solid var(--accent); border-radius: var(--radius-3); }
+  @media (max-width: 600px) { .lab-discovery { padding-inline: 1rem; } .lab-filters label { flex: 1 1 100%; } }
   .labs-head {
     padding-block: var(--space-5) var(--space-3);
   }

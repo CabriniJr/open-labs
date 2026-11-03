@@ -17,9 +17,9 @@ import { Explorer } from "./Explorer.js";
  * do palco desde o primeiro quadro. Uma vitrine que exige um clique para mostrar
  * o que tem de diferente mostra, para a maioria das visitas, nada.
  *
- * **Sem nenhum controle**, de propósito: controle é assunto de lab. Os gestos
- * são três — a carga anda sozinha, clicar em outro item troca quem está sendo
- * seguido, e duplo clique numa caixa desce para dentro dela.
+ * A carga anda sozinha, mas o leitor pode pausar para inspecionar. Clicar em
+ * outro item troca quem está sendo seguido; duplo clique numa caixa abre o
+ * interior. Os controles de câmera vêm do palco compartilhado.
  */
 
 const TICK_MS = 700;
@@ -49,6 +49,10 @@ function primeiroEmVoo(mundo: World): string | undefined {
 
 export function HeroSim() {
   const [, setTick] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const [reduced, setReduced] = useState(false);
+  const pausedRef = useRef(false);
+  pausedRef.current = paused;
   const [seguindo, setSeguindo] = useState<string | undefined>(undefined);
   const [trajeto, setTrajeto] = useState<readonly Parada[]>([]);
   const seguindoRef = useRef<string | undefined>(undefined);
@@ -77,6 +81,7 @@ export function HeroSim() {
       move na tela, e ainda assim há um trajeto de verdade para ler.
     */
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setReduced(true);
       let chave: string | undefined;
       let trilho: readonly Parada[] = [];
       for (let i = 0; i < TICKS_DO_QUADRO_PARADO; i += 1) {
@@ -95,6 +100,7 @@ export function HeroSim() {
     }
 
     const id = window.setInterval(() => {
+      if (pausedRef.current) return;
       const m = mundoRef.current;
       if (m === null) return;
       m.advance(1);
@@ -128,6 +134,7 @@ export function HeroSim() {
 
   return (
     <div className="hero-sim">
+      <div className="hero-sim__transport"><span className="mono">{reduced ? "Still frame · reduced motion" : paused ? "Paused · take a closer look" : "Running · select a part to inspect"}</span>{!reduced && <button type="button" aria-pressed={paused} onClick={() => setPaused(!paused)}>{paused ? "Resume simulation" : "Pause simulation"}</button>}</div>
       <Explorer
         tree={arvore}
         wires={spec.wires}

@@ -139,7 +139,7 @@ the forwarder's own business and nobody else's, and it is the setting that
 decides whether a planned restart of an indexer is invisible or is a gap in
 your data.
 
-> [!deeper]
+> [!deeper] How an intermediate forwarder moves the parsing boundary
 >
 > The usual next step is an intermediate tier — a forwarder between the hosts
 > and the indexers, for network reasons: one hole in a firewall instead of

@@ -37,6 +37,8 @@ import { tuneis } from "./tunel.js";
 import type { Lacuna } from "./tunel.js";
 import { lequeDaCaixa, PORTA_ANONIMA, portasDaCaixa, posicaoDaPorta } from "./portas.js";
 import { dilatarPara, relogioDaCamada } from "./tempo.js";
+import { SceneViewport } from "./SceneViewport.js";
+import { spatialFromStage } from "./spatial-stage.js";
 
 /**
  * O palco: uma view desenhada, com o estado do mundo por cima.
@@ -2848,6 +2850,8 @@ export function Stage(props: StageProps) {
 
 
   return (
+    <SceneViewport scene={() => spatialFromStage(props)} label={view.title} selected={props.selected} onSelect={props.onSelect} onOpen={props.onOpen}
+      onSelectMarker={props.onSeguirCarga ? id => { const item = state.flight.find(f => f.id === id); if (!item) return; const key = props.chaveDaCarga?.(item.message); if (key !== undefined) props.onSeguirCarga?.(key === props.cargaSeguida ? undefined : key); } : undefined}>
     <svg
       ref={svgRef}
       className="dui-stage"
@@ -2914,5 +2918,6 @@ export function Stage(props: StageProps) {
         dilatacao={1}
       />
     </svg>
+    </SceneViewport>
   );
 }

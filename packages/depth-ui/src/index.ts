@@ -25,3 +25,6 @@ export type { NodePlacement, View } from "./view.js";
 export { autoView, pathTo } from "./auto-view.js";
 export { estacoesDe, Trilha } from "./Trilha.js";
 export type { Estacao, TrilhaProps } from "./Trilha.js";
+export { SceneViewport } from "./SceneViewport.js";
+export type { SceneViewportProps } from "./SceneViewport.js";
+export type { SpatialScene, SpatialNode, SpatialPath, SpatialMarker, Point3 } from "./spatial.js";

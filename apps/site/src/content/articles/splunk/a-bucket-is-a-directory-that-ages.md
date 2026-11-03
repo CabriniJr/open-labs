@@ -115,7 +115,7 @@ anything: a new source type onboarded, a debug level left on after an incident,
 one chatty release. None of those look like a retention change. All of them are
 one.
 
-> [!deeper]
+> [!deeper] When retention keeps data longer, and when freezing deletes it
 >
 > Two refinements that matter in practice, and both are about *when* rather than
 > *how much*.

@@ -16,6 +16,9 @@
   background: var(--paper-raised);
 }
 
+.hero-sim__transport { display: flex; align-items: center; justify-content: space-between; gap: .75rem; grid-column: 1 / -1; color: var(--ink-muted); font-size: .7rem; padding-bottom: .65rem; border-bottom: 1px solid var(--rule); }
+.hero-sim__transport button { font: inherit; color: var(--accent); background: var(--paper); border: 1px solid var(--rule); border-radius: var(--radius-1); min-height: 36px; padding: .4rem .65rem; cursor: pointer; }
+
 @media (max-width: 70rem) {
   .hero-sim {
     grid-template-columns: minmax(0, 1fr);

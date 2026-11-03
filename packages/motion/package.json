@@ -23,5 +23,8 @@
     ".": "./src/index.ts",
     "./react": "./src/react/index.ts",
     "./src/*": "./src/*"
+  },
+  "dependencies": {
+    "@ovh/depth-ui": "workspace:*"
   }
 }

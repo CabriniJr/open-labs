@@ -43,3 +43,10 @@ jobs:
       - run: pnpm build
       - run: pnpm --filter @ovh/site exec playwright install --with-deps chromium
       - run: pnpm --filter @ovh/site test:e2e
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: browser-review-${{ github.sha }}
+          path: apps/site/test-results/
+          if-no-files-found: ignore
+          retention-days: 7

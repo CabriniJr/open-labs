@@ -37,6 +37,13 @@
 }
 
 .mo-stage__floor { pointer-events: none; }
+.mo-selection { display: flex; justify-content: space-between; align-items: start; gap: 1rem; padding: 1rem; border: 1px solid var(--rule); border-left: 3px solid var(--accent); background: var(--paper-raised); border-radius: var(--radius-2); }
+.mo-selection > div { display: grid; gap: .3rem; }
+.mo-selection span { color: var(--ink-muted); font-size: .6rem; letter-spacing: .1em; }
+.mo-selection p { margin: 0; color: var(--ink-muted); font-size: .85rem; }
+.mo-selection button { border: 1px solid var(--rule); color: var(--ink); background: var(--paper); cursor: pointer; border-radius: var(--radius-1); min-width: 36px; min-height: 36px; }
+.mo-stage [role="button"] { cursor: pointer; }
+.mo-stage [data-selected] .mo-node__shape { stroke: var(--accent); stroke-width: 3; }
 .mo-stage__dot { fill: color-mix(in oklab, var(--rule) 80%, transparent); }
 
 .mo-label {

@@ -39,6 +39,7 @@ export const THEMES: readonly Theme[] = [
       { id: "kinds", title: "Catálogo de arquétipos", status: "proposal" },
       { id: "depth", title: "Profundidade e níveis", status: "proposal" },
       { id: "zoom", title: "O zoom contínuo", status: "stable" },
+      { id: "visual-explorer", title: "Exploração visual: 2D, isométrico e 3D", status: "draft" },
       {
         id: "superpowers/specs/2026-08-28-motor-composicional-design",
         title: "Spec do motor composicional",
