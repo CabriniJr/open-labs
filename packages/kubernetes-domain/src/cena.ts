@@ -109,7 +109,7 @@ export function filmeDaTransicao(antes: Readonly<ClusterState> | null, depois: R
   f.add({ type: "region", id: "plano", box: drawing.plane, label: "control plane", tone: "controller" });
   f.add({ type: "node", id: "controlador", box: CONTROLADOR, label: depois.workload?.kind === "Pod" ? "no controller" : "ReplicaSet", sublabel: depois.workload === null ? "nothing applied" : `${depois.workload.name} · want ${depois.workload.replicas}`, tone: "controller" });
   f.add({ type: "node", id: "escalonador", box: ESCALONADOR, label: "scheduler", sublabel: "fits requests", tone: "processor" });
-  f.add({ type: "region", id: "fila", box: drawing.queue, label: "pending", tone: "high" });
+  f.add({ type: "region", id: "fila", box: drawing.queue, label: "pending", tone: "high", layer: 1 });
   for (const no of NODES) {
     const caixa = drawing.nodes[no.id]!;
     f.add({ type: "region", id: `no:${no.id}`, box: caixa, label: `${no.id} · ${no.cpu}m · ${no.memory}Mi`, tone: "container" });

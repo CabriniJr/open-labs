@@ -55,7 +55,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @ovh/site exec playwright install --with-deps chromium
-      - run: pnpm --filter @ovh/site exec playwright test domain-3d.spec.ts spatial-explorer.spec.ts pod-lifecycle.spec.ts hard-context.spec.ts agent-or-gateway.spec.ts palco-legivel.spec.ts docs.spec.ts travessia.spec.ts --grep 'domain-3d|spatial-explorer|pod-lifecycle|hard-context|agent-or-gateway|o palco cabe|a landing|splunk-buckets/'
+      - run: pnpm --filter @ovh/site exec playwright test domain-3d.spec.ts spatial-explorer.spec.ts pod-lifecycle.spec.ts hard-context.spec.ts agent-or-gateway.spec.ts palco-legivel.spec.ts docs.spec.ts travessia.spec.ts micro-lab.spec.ts gates-lab.spec.ts links.spec.ts --grep 'domain-3d|spatial-explorer|pod-lifecycle|hard-context|agent-or-gateway|o palco cabe|a landing|splunk-buckets/|dá para descer|o transistor é desenhado|a chave que conduz|nenhum link interno'
       - uses: actions/upload-artifact@v4
         if: always()
         with:

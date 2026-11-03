@@ -228,9 +228,24 @@ async function medir3d(page, cdp) {
     await cdp.send("Emulation.setCPUThrottlingRate", { rate: 4 });
     await sondar(page); await page.waitForTimeout(3000);
     const perf = await colher(page, 3000);
+    // Exercise the real pointer and zoom handlers while the GPU is visible.
+    const b = await stage.boundingBox();
+    await sondar(page);
+    const started = Date.now();
+    await page.mouse.move(b.x + b.width * .5, b.y + b.height * .5);
+    await page.mouse.down();
+    for (let i = 1; i <= 24; i++) {
+      await page.mouse.move(b.x + b.width * (.5 + .15 * i / 24), b.y + b.height * (.5 + .05 * i / 24));
+      await page.waitForTimeout(24);
+    }
+    await page.mouse.up();
+    await page.getByRole("button", { name: "Zoom in 3D", exact: true }).click();
+    await page.getByRole("button", { name: "Zoom out in 3D", exact: true }).click();
+    const gesture = await colher(page, Date.now() - started);
+    await page.getByRole("button", { name: "Reset camera", exact: true }).click();
     const layout = await acessibilidade(page);
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
-    results.push({ view: name, perf, a11y: layout, overflow });
+    results.push({ view: name, perf, gesture, a11y: layout, overflow });
     await cdp.send("Emulation.setCPUThrottlingRate", { rate: 1 });
   }
   return results;
@@ -286,6 +301,8 @@ async function auditar(browser, lab, perfil) {
   for (const s of spatial) {
     if (s.perf.p95 > ORCAMENTO.paradoP95) alertas.push(`${s.view}: p95 ${s.perf.p95} ms > ${ORCAMENTO.paradoP95}`);
     if (s.perf.longasPorSegundo > ORCAMENTO.longasPorSegundo) alertas.push(`${s.view}: ${s.perf.longasPorSegundo} ms/s de long task`);
+    if (s.gesture.p95 > ORCAMENTO.zoomP95) alertas.push(`${s.view} gesture: p95 ${s.gesture.p95} ms > ${ORCAMENTO.zoomP95}`);
+    if (s.gesture.longasPorSegundo > ORCAMENTO.longasPorSegundo) alertas.push(`${s.view} gesture: ${s.gesture.longasPorSegundo} ms/s de long task`);
     if (s.overflow > 1) falhas.push(`${s.view}: rolagem horizontal de ${s.overflow}px`);
     if (s.a11y.semNome || s.a11y.palcosSemRotulo) falhas.push(`${s.view}: controles ou palco sem nome`);
   }
@@ -308,8 +325,8 @@ function relatorio(resultados) {
     linhas.push(`| ${r.lab} | ${r.perfil} | ${r.parado.fps} · ${r.parado.p95} ms | ${z} | ${v} |`);
   }
   const comErro = resultados.filter((r) => r.erros.length > 0);
-  linhas.push("", "## Vistas espaciais · CPU a 4×", "", "| lab | perfil | vista | fps | p95 | long tasks ms/s |", "|---|---|---|---|---|---|");
-  for (const r of resultados) for (const s of r.spatial ?? []) linhas.push(`| ${r.lab} | ${r.perfil} | ${s.view} | ${s.perf.fps} | ${s.perf.p95} | ${s.perf.longasPorSegundo} |`);
+  linhas.push("", "## Vistas espaciais · CPU a 4×", "", "| lab | perfil | vista | playback fps · p95 | orbit + zoom fps · p95 | long tasks playback / gesture ms/s |", "|---|---|---|---|---|---|");
+  for (const r of resultados) for (const s of r.spatial ?? []) linhas.push(`| ${r.lab} | ${r.perfil} | ${s.view} | ${s.perf.fps} · ${s.perf.p95} ms | ${s.gesture.fps} · ${s.gesture.p95} ms | ${s.perf.longasPorSegundo} / ${s.gesture.longasPorSegundo} |`);
   if (comErro.length > 0) {
     linhas.push("", "## Erros", "");
     for (const r of comErro) for (const e of r.erros) linhas.push(`- \`${r.lab}\` (${r.perfil}): ${e}`);

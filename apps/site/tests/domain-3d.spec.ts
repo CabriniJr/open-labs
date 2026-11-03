@@ -37,12 +37,23 @@ test("Kubernetes 3D uses the actual nodes and Pods, keeps selection and does not
   await lab.getByRole("radio", { name: "Iso", exact: true }).click();
   await expect(stage).toHaveAttribute("data-projection", "orthographic");
   await expect(lab.getByLabel("Resource inspector")).toContainText("worker-01");
+  // Labels ignore pointer events: this click must hit the WebGL piece through
+  // ray casting, rather than the textual alternative used above.
+  await stage.scrollIntoViewIfNeeded();
+  const label = stage.locator('[data-entity^="pod:"]').first();
+  await expect(label).toBeVisible();
+  const piece = await label.boundingBox();
+  await page.mouse.click(piece!.x + piece!.width / 2, piece!.y + piece!.height / 2);
+  await expect(lab.getByLabel("Pod inspector")).toBeVisible();
   await lab.getByRole("radio", { name: "Tree", exact: true }).click();
   const pod = lab.locator("[data-pod]").first(), uid = await pod.getAttribute("data-pod");
   await pod.click();
   await lab.getByRole("radio", { name: "3D", exact: true }).click();
   await expect(stage.locator(`[data-entity="pod:${uid}"]`)).toHaveAttribute("data-selected", "");
   await capture(page, info.outputPath("kubernetes-selected-pod.png"));
+  // Full-page capture may leave the mobile scene offscreen. The renderer
+  // intentionally pauses there; bring it back before inspecting its labels.
+  await stage.scrollIntoViewIfNeeded();
   await page.evaluate(() => { document.documentElement.dataset.theme = "dark"; });
   await expect(stage.locator(`[data-entity="pod:${uid}"]`)).toHaveAttribute("data-selected", "");
   await capture(page, info.outputPath("kubernetes-dark.png"));

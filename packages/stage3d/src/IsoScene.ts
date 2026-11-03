@@ -19,11 +19,8 @@ import {
   PerspectiveCamera,
   Raycaster,
   Vector2,
-  PCFSoftShadowMap,
-  PlaneGeometry,
   RingGeometry,
   Scene,
-  ShadowMaterial,
   SphereGeometry,
   Sprite,
   SpriteMaterial,
@@ -38,7 +35,7 @@ import { Line2 } from "three/examples/jsm/lines/Line2.js";
 import { LineGeometry } from "three/examples/jsm/lines/LineGeometry.js";
 import { LineMaterial } from "three/examples/jsm/lines/LineMaterial.js";
 import { CSS2DObject, CSS2DRenderer } from "three/examples/jsm/renderers/CSS2DRenderer.js";
-import { deslocamentoNoChao, distanciaParaCaber, ISO_AZIMUTE, ISO_ELEVACAO, meiaAlturaParaCaber, pontoNoAr, pontosDoCaminho, posicaoDaCamera } from "./iso.js";
+import { deslocamentoNoChao, distanciaPerspectivaParaCaber, ISO_AZIMUTE, ISO_ELEVACAO, meiaAlturaParaCaber, pontoNoAr, pontosDoCaminho, posicaoDaCamera } from "./iso.js";
 import { lerPaleta, type Paleta } from "./tons.js";
 
 /**
@@ -159,6 +156,7 @@ export class IsoScene {
   readonly #options: IsoOptions;
   #paleta: Paleta;
   #film: Film<unknown> | null = null;
+  #estrutura = "";
   #frame: Frame<unknown> | null = null;
   #visivel = true;
   #pedido = 0;
@@ -173,8 +171,7 @@ export class IsoScene {
     this.#paleta = lerPaleta(host);
     this.#renderer = new WebGLRenderer({ antialias: true, alpha: false, powerPreference: "high-performance" });
     this.#renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
-    this.#renderer.shadowMap.enabled = true;
-    this.#renderer.shadowMap.type = PCFSoftShadowMap;
+    // Lit solids and semantic outlines provide depth without a second shadow pass.
     this.#renderer.domElement.className = "iso-stage__canvas";
     host.appendChild(this.#renderer.domElement);
 
@@ -183,9 +180,6 @@ export class IsoScene {
     host.appendChild(this.#labels.domElement);
 
     this.#scene.add(this.#ceu, this.#sol, this.#sol.target, this.#mundo);
-    this.#sol.castShadow = true;
-    this.#sol.shadow.mapSize.set(1024, 1024);
-    this.#sol.shadow.bias = -0.0005;
 
     this.#observador =
       typeof IntersectionObserver === "undefined"
@@ -200,7 +194,7 @@ export class IsoScene {
     // O tema troca por atributo na raiz ou pela preferência do sistema.
     const retemar = (this.#retemar = () => {
       this.#paleta = lerPaleta(this.#host);
-      if (this.#film !== null) this.setFilm(this.#film);
+      if (this.#film !== null) this.setFilm(this.#film, true);
       if (this.#frame !== null) this.update(this.#frame);
     });
     this.#temaObs = typeof MutationObserver === "undefined" ? null : new MutationObserver(retemar);
@@ -271,20 +265,19 @@ export class IsoScene {
     return this.#projecao === "perspective" ? this.#perspectiva : this.#camera;
   }
 
-  setFilm(film: Film<unknown>): void {
-    this.#limparMundo();
+  setFilm(film: Film<unknown>, force = false): void {
+    // A new clock tick commonly changes labels and state, not geometry. Keep
+    // meshes, GPU buffers and HTML labels until the actual layout changes.
+    const structure = JSON.stringify([film.width, film.height, film.entities.map(({ label, sublabel, tone, hidden, title, ...shape }) => shape)]);
     this.#film = film;
+    if (!force && structure === this.#estrutura) { this.pedir(); return; }
+    this.#estrutura = structure;
+    this.#limparMundo();
     const p = this.#paleta;
     this.#scene.background = corDe(p.papel, p.tinta);
     this.#ceu.color = corDe(p.papelElevado, p.tinta);
     this.#ceu.groundColor = corDe(p.regua, p.tinta);
 
-    // O chão: recebe sombra e desenha a malha do papel quadriculado.
-    const chao = new Mesh(new PlaneGeometry(film.width * 3, film.height * 3), new ShadowMaterial({ opacity: 0.13 }));
-    chao.rotation.x = -Math.PI / 2;
-    chao.position.set(film.width / 2, 0, film.height / 2);
-    chao.receiveShadow = true;
-    this.#mundo.add(chao);
     this.#mundo.add(this.#malha(film, p));
 
     for (const spec of film.entities) {
@@ -301,15 +294,6 @@ export class IsoScene {
     const cz = film.height / 2;
     this.#sol.position.set(cx - film.width * 0.3, 900, cz - film.height * 0.6);
     this.#sol.target.position.set(cx, 0, cz);
-    const s = this.#sol.shadow.camera;
-    const r = Math.max(film.width, film.height) * 0.8;
-    s.left = -r;
-    s.right = r;
-    s.top = r;
-    s.bottom = -r;
-    s.near = 10;
-    s.far = 3000;
-    s.updateProjectionMatrix();
     this.selecionar(this.#selected);
     this.pedir();
   }
@@ -361,7 +345,7 @@ export class IsoScene {
     const w = Math.max(1, this.#host.clientWidth);
     const h = Math.max(1, this.#host.clientHeight);
     const aspecto = w / h;
-    const meia = meiaAlturaParaCaber(film.width / camera.zoom, film.height / camera.zoom, aspecto, this.#elevacao) * 1.02 / this.#zoom;
+    const meia = meiaAlturaParaCaber(film.width / camera.zoom, film.height / camera.zoom, aspecto, this.#elevacao, this.#azimute) * 1.04 / this.#zoom;
     marcar(this.#host, "camera", `${this.#projecao}:${this.#zoom}:${this.#azimute.toFixed(4)}:${this.#elevacao.toFixed(4)}:${this.#pan.x.toFixed(2)}:${this.#pan.z.toFixed(2)}`);
     this.#escala = 2 * meia / h;
     const cam = this.#camera;
@@ -377,8 +361,9 @@ export class IsoScene {
     cam.updateMatrixWorld(true);
     const perspective = this.#perspectiva;
     perspective.aspect = aspecto;
-    perspective.far = Math.max(8000, distanciaParaCaber(meia) * 4);
-    const vantage = posicaoDaCamera(alvo, this.#azimute, this.#elevacao, distanciaParaCaber(meia) * 1.1);
+    const distance = distanciaPerspectivaParaCaber(film.width / camera.zoom, film.height / camera.zoom, aspecto, this.#azimute, this.#elevacao) * 1.06 / this.#zoom;
+    perspective.far = Math.max(8000, distance * 4);
+    const vantage = posicaoDaCamera(alvo, this.#azimute, this.#elevacao, distance);
     perspective.position.set(vantage.x, vantage.y, vantage.z);
     perspective.lookAt(alvo.x, alvo.y, alvo.z);
     perspective.updateProjectionMatrix();
@@ -445,18 +430,22 @@ export class IsoScene {
         const { box } = spec;
         const mat = new MeshStandardMaterial({ color: corDe(p.tom(tomInicial), p.tinta), transparent: true, opacity: 0.08 });
         const placa = new Mesh(new BoxGeometry(box.w, 1, box.h), mat);
-        placa.position.set(box.x + box.w / 2, 0.5, box.y + box.h / 2);
+        placa.position.set(box.x + box.w / 2, 0.5 + (spec.layer ?? 0) * .75, box.y + box.h / 2);
         root.add(placa);
+        const border = new LineBasicMaterial({ color: mat.color, transparent: true, opacity: .35 });
+        const edges = new LineSegments(new EdgesGeometry(placa.geometry), border);
+        edges.position.copy(placa.position); root.add(edges);
         const { obj, el } = etiqueta("iso-region", spec.label ?? "");
         obj.position.set(box.x + 12, ALTURA_DO_ROTULO, box.y + 12);
         root.add(obj);
         return {
           spec,
           root,
-          materiais: [mat],
+          materiais: [mat, border],
           rotulo: el,
           atualizar: (s, pal) => {
             mat.color = corDe(pal.tom(s.tone), pal.tinta);
+            border.color.copy(mat.color); border.opacity = .35 * s.opacity;
             mat.opacity = (0.06 + 0.1 * s.glow) * s.opacity;
             escrever(el, s.label);
             marcar(el, "tone", s.tone);
@@ -699,7 +688,8 @@ export class IsoScene {
   #barra(spec: Extract<EntitySpec, { type: "bar" }>, p: Paleta, tom: Tone): Peca {
     const root = new Group();
     const { box } = spec;
-    const alto = 9;
+    const alto = 4;
+    const base = 1 + (spec.layer ?? 0) * .75;
     const mat = new MeshStandardMaterial({ roughness: 0.5, transparent: true, emissiveIntensity: 0.15 });
     const geo = new BoxGeometry(1, alto, 1);
     const mesh = new Mesh(geo, mat);
@@ -730,8 +720,8 @@ export class IsoScene {
         const w = baixo ? box.w : box.w * s.progress;
         const h = baixo ? box.h * s.progress : box.h;
         mesh.scale.set(Math.max(0.01, w), 1, Math.max(0.01, h));
-        mesh.position.set(box.x + w / 2 + s.dx, alto / 2, box.y + h / 2 + s.dy);
-        obj.position.set(box.x + box.w + 10 + s.dx, alto + 2, box.y + 8 + s.dy);
+        mesh.position.set(box.x + w / 2 + s.dx, base + alto / 2, box.y + h / 2 + s.dy);
+        obj.position.set(box.x + box.w + 10 + s.dx, base + alto + 2, box.y + 8 + s.dy);
         escrever(el, s.label);
         marcar(el, "tone", s.tone);
       },

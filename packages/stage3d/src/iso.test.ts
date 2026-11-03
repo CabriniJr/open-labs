@@ -1,8 +1,24 @@
 import { line, pt } from "@ovh/motion";
 import { describe, expect, it } from "vitest";
-import { deslocamentoNoChao, distanciaParaCaber, ISO_AZIMUTE, ISO_ELEVACAO, meiaAlturaParaCaber, pontoNoAr, pontosDoCaminho, posicaoDaCamera } from "./iso.js";
+import { PerspectiveCamera, Vector3 } from "three";
+import { deslocamentoNoChao, distanciaParaCaber, distanciaPerspectivaParaCaber, ISO_AZIMUTE, ISO_ELEVACAO, meiaAlturaParaCaber, pontoNoAr, pontosDoCaminho, posicaoDaCamera } from "./iso.js";
 
 describe("isometric camera", () => {
+  it("keeps all eight scene corners inside perspective bounds across orbit angles and aspect ratios", () => {
+    for (const aspect of [1, 16 / 9, 9 / 16]) for (const azimuth of [0, Math.PI / 4, Math.PI / 2, Math.PI]) {
+      const d = distanciaPerspectivaParaCaber(1280, 720, aspect, azimuth);
+      const camera = new PerspectiveCamera(40, aspect, 1, 8000);
+      const pos = posicaoDaCamera({ x: 0, y: 0, z: 0 }, azimuth, ISO_ELEVACAO, d);
+      camera.position.set(pos.x, pos.y, pos.z); camera.lookAt(0, 0, 0); camera.updateMatrixWorld(true);
+      for (const x of [-640, 640]) for (const z of [-360, 360]) for (const y of [0, 64]) {
+        const ndc = new Vector3(x, y, z).project(camera);
+        expect(Math.abs(ndc.x)).toBeLessThanOrEqual(1.000001);
+        expect(Math.abs(ndc.y)).toBeLessThanOrEqual(1.000001);
+        expect(ndc.z).toBeGreaterThan(-1); expect(ndc.z).toBeLessThan(1);
+      }
+    }
+  });
+
   it("frames a perspective lens with the same visible height", () => {
     const halfHeight = 400, fov = 40;
     const distance = distanciaParaCaber(halfHeight, fov);
