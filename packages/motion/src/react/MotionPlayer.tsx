@@ -30,6 +30,10 @@ export interface MotionPlayerProps<D> {
   readonly label: string;
   /** Desenha o painel de detalhe para o quadro em vigor. */
   readonly renderDetail?: (frame: Frame<D>, clock: Clock) => ReactNode;
+  /** Cabeçalho do domínio, no mesmo relógio do palco. */
+  readonly renderHeader?: (frame: Frame<D>, clock: Clock) => ReactNode;
+  /** Uma bancada de inspeção pode substituir o palco sem criar outro relógio. */
+  readonly renderScreen?: ((frame: Frame<D>, clock: Clock) => ReactNode) | undefined;
   /** Controles do experimento, entre o transporte e o palco. */
   readonly controls?: ReactNode;
   readonly autoplay?: boolean;
@@ -125,7 +129,7 @@ function fmt(ms: number): string {
   return `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
 }
 
-export function MotionPlayer<D>({ film, label, renderDetail, controls, autoplay = false, className, testId, views = [], initialView, flatLabel = "Flat", packetsTitle = "Packet flow", packetLegend }: MotionPlayerProps<D>) {
+export function MotionPlayer<D>({ film, label, renderDetail, renderHeader, renderScreen, controls, autoplay = false, className, testId, views = [], initialView, flatLabel = "Flat", packetsTitle = "Packet flow", packetLegend }: MotionPlayerProps<D>) {
   const [vista, setVista] = useState(initialView ?? "flat");
   useEffect(() => {
     if (views.length === 0) return;
@@ -163,6 +167,7 @@ export function MotionPlayer<D>({ film, label, renderDetail, controls, autoplay 
 
   const onKey = (e: KeyboardEvent<HTMLDivElement>) => {
     if (e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement || e.target instanceof HTMLTextAreaElement) return;
+    if ((e.target as HTMLElement).closest("button") !== null) return;
     if (e.key === " " || e.key === "k") {
       e.preventDefault();
       clock.toggle();
@@ -196,18 +201,20 @@ export function MotionPlayer<D>({ film, label, renderDetail, controls, autoplay 
         </span>
       </div>
       {controls !== undefined ? <div className="mo-player__controls">{controls}</div> : null}
-      <div className="mo-player__screen">
-        {alternativa === undefined ? <MotionStage film={film} t={t} frame={frame} label={label} /> : alternativa.render({ film, t, frame, label })}
-        {views.length > 0 ? (
-          <div className="mo-views" role="radiogroup" aria-label="View">
+      {renderHeader?.(frame, clock)}
+      {renderScreen === undefined && views.length > 0 ? (
+        <div className="mo-viewbar"><span className="mono">Scene view</span><div className="mo-views" role="radiogroup" aria-label="View">
             {[{ id: "flat", label: flatLabel }, ...views].map((v) => (
               <button key={v.id} type="button" role="radio" aria-checked={(alternativa?.id ?? "flat") === v.id} className="mo-views__opt" onClick={() => escolher(v.id)}>
                 {v.label}
               </button>
             ))}
-          </div>
-        ) : null}
-        <p className="mo-player__hud mono" aria-hidden="true">
+        </div></div>
+      ) : null}
+
+      <div className="mo-player__screen">
+        {renderScreen !== undefined ? renderScreen(frame, clock) : alternativa === undefined ? <MotionStage film={film} t={t} frame={frame} label={label} /> : alternativa.render({ film, t, frame, label })}
+        <p className="mo-player__hud mono" aria-hidden="true" hidden={renderScreen !== undefined}>
           <span>{String(current + 1).padStart(2, "0")}</span>
           <span className="mo-player__hud-sep">/</span>
           <span>{String(chapters.length).padStart(2, "0")}</span>

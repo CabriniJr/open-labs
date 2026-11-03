@@ -475,3 +475,12 @@
 .mo-node__detail { fill: none; stroke: color-mix(in oklab, var(--mo-c) 55%, var(--rule)); stroke-width: calc(1px * var(--mo-k, 1)); }
 .mo-node__dot { fill: var(--mo-surface); }
 .mo-node[data-lit] .mo-node__detail { stroke: var(--mo-c); }
+
+.mo-player__hud[hidden] { display: none; }
+
+/* Os controles têm sua própria linha, sem cobrir o diagrama. */
+.mo-viewbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 12px; border: 1px solid var(--rule); border-radius: var(--radius-2); background: var(--paper); }
+.mo-viewbar > span { color: var(--ink-muted); text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.65rem; }
+.mo-viewbar .mo-views { position: static; background: var(--paper-raised); backdrop-filter: none; }
+
+.mo-player__hud { position: static; padding: 8px 14px; border: 0; border-top: 1px solid var(--rule); border-radius: 0; background: var(--paper-raised); backdrop-filter: none; }

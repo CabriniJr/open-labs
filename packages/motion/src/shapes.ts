@@ -116,6 +116,12 @@ export function formaDe(shape: Shape, w: number, h: number): Forma {
     }
     case "stack":
       return { contorno: retangulo(w, h, 6), detalhes: [], circulos: [] };
+    case "window":
+      return { contorno: retangulo(w, h, 6), detalhes: [[P(x0, y0 + h * 0.23), P(x1, y0 + h * 0.23)]], circulos: [0.1, 0.18, 0.26].map((u) => ({ x: x0 + w * u, y: y0 + h * 0.115, r: h * 0.028 })) };
+    case "server":
+      return { contorno: retangulo(w, h, 5), detalhes: [0.33, 0.66].map((u) => [P(x0 + w * 0.04, y0 + h * u), P(x0 + w * 0.12, y0 + h * u)]), circulos: [0.17, 0.5, 0.83].map((u) => ({ x: x1 - w * 0.08, y: y0 + h * u, r: h * 0.025 })) };
+    case "router":
+      return { contorno: retangulo(w, h, h * 0.15), detalhes: [0.2, 0.4, 0.6, 0.8].flatMap((u) => [[P(x0 + w * u, y0 + h * 0.08), P(x0 + w * u, y0 + h * 0.2)], [P(x0 + w * u, y1 - h * 0.2), P(x0 + w * u, y1 - h * 0.08)]]), circulos: [] };
     default:
       return { contorno: retangulo(w, h, Math.min(8, w / 4, h / 4)), detalhes: [], circulos: [] };
   }

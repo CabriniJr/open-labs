@@ -1,4 +1,5 @@
 ---
+import HandbookArtwork from "./HandbookArtwork.astro";
 import { url } from "../lib/urls";
 import { readyCount, type Handbook } from "../data/handbooks";
 
@@ -11,6 +12,7 @@ const labsProntos = readyCount(handbook.labs);
 ---
 
 <a class="hb-card" href={url(`handbooks/${handbook.id}`)}>
+  <div class="hb-card__art"><HandbookArtwork id={handbook.id} subject={handbook.subject} tema={handbook.tema} /></div>
   <span class="hb-card__subject mono">{handbook.subject}</span>
   <h3 class="hb-card__name">{handbook.name}</h3>
   <p class="hb-card__tagline">{handbook.tagline}</p>
@@ -35,6 +37,8 @@ const labsProntos = readyCount(handbook.labs);
     color: var(--ink);
     text-decoration: none;
   }
+
+  .hb-card__art { margin: calc(-1 * var(--space-3)) calc(-1 * var(--space-3)) var(--space-1); border-radius: var(--radius-3) var(--radius-3) 0 0; overflow: hidden; }
 
   .hb-card:hover {
     border-color: var(--accent);

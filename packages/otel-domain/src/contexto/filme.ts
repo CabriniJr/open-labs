@@ -114,7 +114,7 @@ const BLOCO = { w: 164, h: 74 };
 function geometriaDeTopologia(): Geometria {
   const caixaDe = (lane: Lane): Box => ({ x: NO_GRAFO[lane].x - BLOCO.w / 2, y: NO_GRAFO[lane].y - BLOCO.h / 2, w: BLOCO.w, h: BLOCO.h });
   return {
-    servico: (lane, label, sub, tone, hidden) => ({ type: "node", id: `lane:${lane}`, box: caixaDe(lane), label, sublabel: sub, tone, hidden, shape: lane === "collector" ? "stack" : "box" }),
+    servico: (lane, label, sub, tone, hidden) => ({ type: "node", id: `lane:${lane}`, box: caixaDe(lane), label, sublabel: sub, tone, hidden, shape: lane === "browser" ? "window" : lane === "collector" ? "stack" : lane === "proxy" || lane === "gateway" ? "router" : "server", height: lane === "browser" ? 68 : lane === "proxy" || lane === "gateway" ? 24 : 38 }),
     span: (servico) => {
       const b = caixaDe(servico);
       return { box: { x: b.x, y: b.y + b.h + 9, w: b.w, h: 9 }, grow: "right" };
@@ -275,7 +275,7 @@ export function filmeDoContexto(
     {
       id: "extract",
       title: "Extract, then continue",
-      body: "The gateway extracts the header, creates a child span with the browser's span as its parent, and injects its own span id into the next request. The trace-id never changes; the parent-id changes on every hop.",
+      body: "The gateway extracts the header, creates a child span with the browser's span as its parent, and injects its own span id into the next request. The trace-id stays the same; each instrumented caller writes its own span-id as the outgoing parent-id.",
     },
     (d) => {
       d.camera({ box: caixa("gateway", "inventory", 0, 2) });
@@ -295,7 +295,11 @@ export function filmeDoContexto(
       d.together(salto(2, "baggage"), (x) =>
         x.wait(260).together(
           (y) => y.draw("call:3", { dur: 1000 }),
-          (y) => y.send("ctx:3", { dur: 1000 }),
+          (y) => {
+            const c = p.chamadas[3]!;
+            y.packet({ tag: "HTTP", tone: tomDaFicha(3), from: c.de, to: c.para, protocol: "HTTP", payload: `${c.rota} · traceparent ${c.headers.traceparent}` });
+            y.send("ctx:3", { dur: 1000 });
+          },
         ),
       );
       d.glow("lane:proxy", 1).ping("lane:proxy");

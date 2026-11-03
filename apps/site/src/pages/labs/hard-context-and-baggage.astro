@@ -20,7 +20,7 @@ import "../../components/Predicao.css";
         <p class="lab-head__eyebrow mono"><a href={url("handbooks/otel")}>OpenTelemetry Visual Handbook</a> · phase 02 · lab</p>
         <h1>One request.<br />How many traces?</h1>
         <p>A click becomes six services. What makes their spans one trace is a 55-character header. Each service has to read it, continue it and write it again. Watch it travel. Then switch off one proxy's manners and see what the backend receives.</p>
-        <p>Every id, colour and arrow on the stage is computed from a propagation model. The switches change the model, and the film is rebuilt from it at the same moment.</p>
+        <p>Follow the request in Showcase, change what survives each hop in Simulation, then open the Trace inspector to connect every span to its parent. The header above follows the same request in all three modes.</p>
       </div>
       <aside class="lab-head__note mono"><p>EXTRACT → START SPAN → INJECT</p><p>W3C Trace Context and W3C Baggage, as the default OpenTelemetry propagators write them.</p></aside>
     </section>
@@ -31,7 +31,8 @@ import "../../components/Predicao.css";
       <div class="prose">
         <h2>Break it, one switch at a time</h2>
         <ol>
-          <li><b>Play it through once.</b> The trace-id stays the same on every hop. The parent-id changes on every hop. That pair is the entire mechanism.</li>
+          <li><b>Play it through once.</b> The trace-id stays the same. Each instrumented caller writes its own span-id as the outgoing parent-id. The proxy forwards that header unchanged.</li>
+          <li><b>Open “Trace inspector”.</b> Choose a hop, then select a span. Compare its span-id with the parent-id it writes into the outgoing header. The experiment pauses at the hop you choose.</li>
           <li><b>Turn off “Proxy forwards headers”.</b> Payments receives no <code>traceparent</code> and starts a new root. The backend now holds two traces for one click, and the payments span has lost <code>user.tier</code>.</li>
           <li><b>Turn it back on, and look for the proxy in the trace view.</b> It is not there. A hop without an SDK is invisible, but it can still pass the context on. It does not break the trace unless it drops the headers.</li>
           <li><b>Turn off “Root sampled”.</b> Every span inherits <code>-00</code>. Context still propagates, but no span is exported. Sampling decides what gets recorded, not what gets propagated.</li>

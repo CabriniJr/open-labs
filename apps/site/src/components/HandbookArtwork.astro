@@ -1,0 +1,66 @@
+---
+import { url } from "../lib/urls";
+import type { TemaCompleto } from "../lib/tema";
+interface Props { id: string; subject: string; tema: TemaCompleto; }
+const { id, subject, tema } = Astro.props;
+const brand = id === 'otel' ? 'opentelemetry.png' : id === 'kubernetes' ? 'kubernetes.svg' : null;
+const label = id === 'otel' ? 'One request, connected across services' : id === 'cpu' ? 'From the processor package to the circuit' : id === 'kubernetes' ? 'A cluster, its nodes and the pods inside' : id === 'splunk' ? 'Events moving from ingestion to storage' : 'Values moving through a stack';
+---
+<div class="handbook-art" data-subject={id} style={{ "--art-light": tema.claro.acento, "--art-dark": tema.escuro.acento ?? tema.claro.acento }}>
+  <div class="handbook-art__head mono"><span>{brand && <img src={url(`brands/${brand}`)} alt="" width="22" height="22" loading="lazy" />}OPENLABS / {subject}</span><span>FIELD NOTES ↗</span></div>
+  <svg viewBox="0 0 480 250" role="img" aria-label={label}>
+    <g class="art-grid">{Array.from({length: 11}, (_, i) => <path d={`M${i * 48} 0V250 M0 ${i * 25}H480`} />)}</g>
+    {id === 'otel' ? <>
+      <g class="art-wire"><path d="M80 124H203M262 124H330V68H383M330 124V182H383" /><path class="art-wire--secondary" d="M80 151V221H239V153M414 95V221H239M414 209V221" /></g>
+      <g class="art-node"><rect x="35" y="95" width="90" height="58" rx="5"/><path d="M35 109H125"/><circle cx="45" cy="102" r="2"/><circle cx="53" cy="102" r="2"/>
+      <rect x="197" y="95" width="66" height="58" rx="5"/><path d="M209 107H251M209 114H251M209 137H230"/>
+      <rect x="377" y="39" width="68" height="56" rx="5"/><path d="M386 50H436M386 60H436M386 78H410"/>
+      <rect x="377" y="154" width="68" height="55" rx="5"/><path d="M386 165H436M386 175H436M386 193H410"/></g>
+      <g class="art-packet"><circle cx="161" cy="124" r="5"/><circle cx="316" cy="124" r="5"/><circle cx="330" cy="182" r="5"/></g>
+      <g class="art-caption"><text x="80" y="84">BROWSER</text><text x="230" y="84">CHECKOUT</text><text x="411" y="28">INVENTORY</text><text x="411" y="144">PAYMENTS</text><text x="239" y="243">ONE TRACE · SHARED CONTEXT</text></g>
+    </> : id === 'cpu' ? <>
+      <g class="art-wire">{[0,1,2,3,4,5,6].map((i) => <path d={`M${143+i*28} 62v-16M${143+i*28} 190v16M127 ${78+i*16}h-24M353 ${78+i*16}h24`}/>)}</g>
+      <path class="art-layer" d="m128 96 112-48 112 48v79l-112 48-112-48z"/>
+      <path class="art-node" d="m128 96 112-48 112 48-112 48z"/>
+      <path class="art-node" d="m181 98 59-25 59 25-59 25z"/>
+      <path class="art-wire" d="M240 144v79M128 135l112 48 112-48"/>
+      <g class="art-packet"><circle cx="195" cy="100" r="4"/></g>
+      <g class="art-caption"><text x="240" y="30">PACKAGE → DIE → GATES</text><text x="240" y="246">A MACHINE YOU CAN OPEN</text></g>
+    </> : id === 'kubernetes' ? <>
+      <path class="art-wire" d="M240 73v34M240 107H106v35M240 107h134v35M240 107v35"/>
+      <path class="art-node" d="m240 18 36 21v42l-36 21-36-21V39z"/>
+      <g class="art-node">{[60,194,328].map((x) => <><rect x={x} y="140" width="92" height="70" rx="5"/><rect x={x+12} y="153" width="28" height="27" rx="3"/><rect x={x+50} y="153" width="28" height="27" rx="3"/></>)}</g>
+      <g class="art-packet"><circle cx="240" cy="60" r="9"/></g>
+      <g class="art-caption"><text x="106" y="232">NODE 01</text><text x="240" y="232">NODE 02</text><text x="374" y="232">NODE 03</text></g>
+    </> : id === 'splunk' ? <>
+      <g class="art-wire"><path d="M60 65H169L230 125H319M60 125H230M60 185H169L230 125"/></g>
+      <g class="art-node">{[45,105,165].map((y) => <rect x="32" y={y} width="70" height="40" rx="4"/>)}</g>
+      <path class="art-node" d="M318 89c0-21 109-21 109 0v86c0 21-109 21-109 0z"/>
+      <path class="art-wire" d="M318 89c0 21 109 21 109 0M318 132c0 21 109 21 109 0"/>
+      <g class="art-packet"><circle cx="180" cy="125" r="5"/><circle cx="285" cy="125" r="5"/></g>
+      <g class="art-caption"><text x="68" y="30">EVENTS</text><text x="236" y="225">INGEST → PARSE → INDEX</text></g>
+    </> : <>
+      <g class="art-wire"><path d="M93 57H176v53h60M307 165h67v-58h42"/></g>
+      <path class="art-layer" d="M184 76v136h122V76"/>
+      <g class="art-node">{[88,127,166].map((y) => <rect x="197" y={y} width="96" height="33" rx="4"/>)}</g>
+      <g class="art-caption"><text x="245" y="110">3</text><text x="245" y="149">5</text><text x="245" y="188">8</text><text x="93" y="43">PUSH</text><text x="389" y="91">POP</text><text x="245" y="242">STATE, ONE OPERATION AT A TIME</text></g>
+      <g class="art-packet"><circle cx="147" cy="57" r="5"/></g>
+    </>}
+  </svg>
+</div>
+<style>
+  .handbook-art { --art-ink: var(--art-light); overflow: hidden; background: color-mix(in oklab, var(--art-ink) 4%, var(--paper)); color: var(--art-ink); border-bottom: 1px solid var(--rule); }
+  :global(:root[data-theme="dark"]) .handbook-art { --art-ink: var(--art-dark); }
+  @media (prefers-color-scheme: dark) { :global(:root:not([data-theme="light"])) .handbook-art { --art-ink: var(--art-dark); } }
+  .handbook-art__head { display: flex; justify-content: space-between; gap: 12px; padding: 16px 18px 0; font-size: 8px; letter-spacing: .1em; color: var(--ink-muted); }
+  .handbook-art__head > span { display: flex; align-items: center; gap: 8px; }
+  .handbook-art__head img { object-fit: contain; }
+  svg { display: block; width: 100%; height: auto; }
+  .art-grid { stroke: var(--rule); stroke-width: .5; opacity: .5; }
+  .art-wire { fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+  .art-wire--secondary { stroke: var(--ink-faint); stroke-dasharray: 3 5; stroke-width: 1; }
+  .art-node { fill: var(--paper-raised); stroke: currentColor; stroke-width: 1.5; }
+  .art-layer { fill: color-mix(in oklab, var(--art-ink) 12%, var(--paper)); stroke: currentColor; stroke-width: 1.5; }
+  .art-packet { fill: var(--art-ink); stroke: var(--paper); stroke-width: 2; }
+  .art-caption { fill: var(--ink-muted); text-anchor: middle; font: 9px var(--font-mono); letter-spacing: .04em; }
+</style>
