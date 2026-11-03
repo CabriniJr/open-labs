@@ -24,14 +24,19 @@ test("o payload OTLP: o showcase toca, e a simulação recalcula os bytes", asyn
   await expect(lab.locator(".pblab__leitura")).toContainText("field 5, wire type 2");
   expect(await lab.locator(".pblab__byte[data-on]").count()).toBeGreaterThan(2);
 
-  // O showcase é em etapas: o buffer cresce, e na etapa 10 o comprimento de
-  // resource_spans passa de 127 e ganha um byte.
+  // O showcase: o papel pula de app em app e a tela soma, em verbos, o que
+  // cada um fez. Trocar para JSON refaz o filme e o papel engorda.
   await page.getByRole("tab", { name: /Showcase/ }).click();
   const vit = page.getByTestId("protobuf-showcase");
   await expect(vit).toBeVisible();
-  await expect(vit.locator(".pbet__buffer .pbet__byte")).toHaveCount(20);
-  for (let k = 0; k < 9; k += 1) await vit.getByRole("button", { name: "Next step" }).click();
-  await expect(vit.locator(".pbet__reacoes li[data-cresceu]")).toContainText("resource_spans: 105 → 128 B");
-  await expect(vit.locator(".pbet__cabecas li[data-cresceu] .pbet__hex")).toHaveText("0a 80 01");
+  await vit.getByRole("button", { name: /the SDK sends the request/ }).click();
+  await vit.getByRole("button", { name: "Pause" }).click();
+  const tela = vit.locator(".pbtela__diario li");
+  await expect(tela).toHaveCount(5);
+  await expect(tela.last()).toContainText("sends");
+  const pb = await tela.nth(2).innerText();
+  await vit.getByRole("radio", { name: "JSON" }).click();
+  await expect(tela.nth(2)).not.toHaveText(pb);
+  await expect(tela.nth(2)).toContainText("of json");
   expect(erros).toEqual([]);
 });

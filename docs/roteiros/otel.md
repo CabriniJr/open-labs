@@ -32,11 +32,12 @@ do roteiro deve mudar o roteiro primeiro, com o motivo.
 6. **Os labs se citam.** Cada lab diz, no texto e no filme quando couber, de
    onde vem o conceito que ele usa e para onde ele leva. A seção "Correlações"
    abaixo é a fonte. A prosa do lab (`Where this connects`) a segue.
-7. **Fluxo só quando algo viaja.** Se nada se move de um lugar a outro e o que
-   ensina é ver a estrutura mudando (um header que cresce, comprimentos que
-   reagem), o showcase é em **etapas**, sem motor de fluxos nem fichas voando.
-   Cada etapa sai do domínio, e a reação ao passo fica destacada. O caso de
-   referência é o `reading-an-otlp-payload`.
+7. **Verbo antes de byte.** O showcase conta, em frases curtas com verbo, o
+   que cada peça faz com a coisa que viaja. O formato é o papelzinho pulando de
+   app em app e uma tela ao lado somando o texto, como no hero antigo,
+   modernizado no filme. A profundidade é descer *dentro* do papel. O detalhe
+   de máquina (hexa, offsets) fica na simulação. O motor de fluxos não é
+   obrigatório: o protobuf não usa.
 8. **Janela à esquerda, andamento à direita.** No showcase e no 3D, a cena fica
    à esquerda e os capítulos, a narração e o painel do nível ficam à direita
    (`MotionPlayer`, por container query). Não reimplemente o layout no lab.
@@ -48,7 +49,7 @@ do roteiro deve mudar o roteiro primeiro, com o motivo.
 | `otel` | o projeto / o Collector no mapa geral | hero |
 | `browser` | origem da requisição no cliente | propagação |
 | `service` | aplicação instrumentada (app + SDK) | vitrine, propagação, hero |
-| `sdk` | o SDK como peça (providers) | *a aplicar* em providers |
+| `sdk` | o SDK como peça | protobuf; *a aplicar* em providers |
 | `collector` | Collector (qualquer implantação) | vitrine, propagação, implantação |
 | `agent` | Collector como DaemonSet no nó | implantação |
 | `gateway`, `proxy` | borda e intermediário | propagação |
@@ -109,9 +110,9 @@ própria (formulário, analisador, editor).
 - **Pergunta.** O que exatamente sai no fio quando o SDK exporta um span?
 - **Mal-entendido.** "O payload carrega os nomes dos campos" / "JSON e protobuf custam o mesmo" / "o comprimento de uma mensagem tem tamanho fixo".
 - **Modelo.** `otel-domain/protobuf/codificar.ts`, um codificador real com os números de campo de `opentelemetry-proto`, que devolve o mapa de cada campo (offset, chave, wire type, profundidade).
-- **Showcase (em etapas, sem fluxo).** O buffer cresce um campo por etapa (13 no exemplo). Em cada etapa aparecem a conta da chave em bits, como o valor foi escrito (texto, ids crus, varint em grupos de 7 bits, fixed64) e a **reação**: as cabeças das mensagens que abrem e o comprimento de cada mensagem em volta subindo. Nas etapas 10 e 12, `resource_spans` e depois `scope_spans` passam de 127 bytes, o comprimento ganha um byte (`80 01`) e tudo depois anda uma casa. Cada etapa é uma codificação inteira de verdade (`etapasDaCodificacao`), e a narração sai dos bytes (`narrarEtapa`). Não há 3D: altura aqui não ensinaria nada que o recuo das cabeças já não mostre.
+- **Showcase (a viagem do papel, sem motor de fluxos).** O span é um papelzinho que pula checkout → SDK → Collector → backend, cada app com seu ícone. A tela ao lado soma, em verbos, o que cada um fez: *cria* o span, *carimba* service.name, *escreve* N campos → X B, *soletra* o nome (`2a · 09 · "GET /cart"`), *envia*, *lê e junta* com o span do payments, *guarda*. A profundidade está no papel: no SDK a câmera desce para dentro dele (cada campo com o seu peso) e de um campo (etiqueta, tamanho, texto). **Interativo:** Protobuf/JSON e "mais um atributo" refazem o filme, e o leitor vê o papel engordar. Clicar numa linha da tela volta àquele passo. **3D:** os apps de pé, com o selo do ícone em cima.
 - **Simulação (livre).** Um analisador no estilo Wireshark: hexa à esquerda e árvore de campos à direita, com o campo aceso nos dois. O leitor muda o nome, o status (127/128 mostra o varint crescer), o pai e os atributos.
-- **Ícones.** Nenhum. O lab não tem palco de peças: os tons por jeito de escrever (texto, bytes, varint, fixed64, cabeça) fazem o papel.
+- **Ícones.** `service` (checkout, payments), `sdk`, `collector`, `backend`.
 - **Correlações.** ← hard-context (traceparent hex ↔ 16 bytes), ← anatomy (o id que monta a árvore), → collector-pipeline (o receiver `otlp` decodifica isto), → agent-or-gateway (gRPC e conexões), → cardinality-and-the-bill (o custo em bytes de cada atributo).
 - **Próximo passo.** Mostrar o quadro gRPC (5 bytes de prefixo) e os headers HTTP/2 em volta. Anexo `grpc-http2`.
 

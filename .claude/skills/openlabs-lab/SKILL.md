@@ -17,21 +17,25 @@ motor que já existe. O que não é negociável é a régua de qualidade abaixo.
 | estado com eventos e regras (reconciliação, ciclo de vida) | modelo de estado | `interactive-core` (`InteractiveModel`) |
 | coreografia: atores, mensagens, ordem no tempo (protocolos, propagação, handshake) | filme | `@ovh/motion` (`film`, `MotionPlayer`) |
 | topologia/dimensão espacial que ganha com profundidade | vista isométrica | `@ovh/stage3d` (`IsoStage`) como `view` do filme |
-| uma coisa que **se constrói em etapas** e reage a cada uma (um buffer que cresce, um cabeçalho que se recalcula, uma estrutura que se rearranja) | etapas em React livre, com transporte próprio | ex.: `ProtobufEtapas.tsx` |
 | manipulação direta, gráfico, editor, qualquer outra coisa | componente React livre | `apps/site/src/components/<Nome>Lab.tsx` |
 
 **Showcase + Simulation.** Todo lab deve considerar os dois modos
 (`ModosDoLab`): um filme que conta o mecanismo, com descida de nível animada, e o
 modelo que o leitor desmonta. Exemplos: `CpuModos`, `CollectorModos`.
 
-**Nem tudo é fluxo.** O motor de fluxos e os fios animados servem quando algo
-*viaja* de um lugar a outro. Quando nada viaja e o que ensina é ver a coisa
-evoluindo — o protobuf é o caso: um header que cresce campo a campo e as
-mensagens em volta reagindo (comprimento que sobe, varint que ganha um byte e
-empurra o resto) —, a mídia é a própria estrutura mudando em etapas, com cada
-etapa calculada pelo domínio (`etapasDaCodificacao`) e a reação destacada. Fio
-voando aí esconde o que importa. Pergunte antes de escolher: *algo se move, ou
-algo muda?*
+**O motor de fluxos não é obrigatório.** Ele serve quando o leitor precisa
+abrir camadas de um sistema que roda (pipeline, CPU). Quando o assunto é o que
+acontece com *uma coisa* no caminho — o protobuf é o caso de referência —, o
+formato que ensina é o do hero antigo, modernizado no filme: **o papelzinho
+pulando de app em app**, com ícone em cada app, e **uma tela ao lado somando o
+texto** do que cada um fez, em verbos curtos ("checkout *cria* o span", "o SDK
+*carimba* service.name", "o SDK *escreve* 8 campos → 173 B", "o Collector *lê e
+junta*", "o backend *guarda*"). A profundidade fica no papel: a câmera desce
+para dentro dele (os campos) e de um campo (do que ele é feito). A
+interatividade são escolhas que refazem o filme (codificação, um atributo a
+mais). **Não mostre a máquina por dentro** — buffer em hexa, offsets — como
+showcase: isso é a simulação, para quem quer cavar. Simples primeiro, fundo
+depois.
 
 Combine à vontade: um filme pode ter vistas *Sequence / Topology / Iso* no
 mesmo relógio (veja `ContextoLab.tsx`). Se nada serve, **escreva o componente**
