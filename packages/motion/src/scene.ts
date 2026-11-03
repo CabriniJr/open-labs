@@ -24,7 +24,8 @@ export type Tone =
   | "kind-4"
   | "kind-5";
 
-export type Shape = "box" | "pill" | "circle" | "diamond" | "cylinder";
+/** `stack` é equipamento: lâminas empilhadas, como um rack de servidor. */
+export type Shape = "box" | "pill" | "circle" | "diamond" | "cylinder" | "stack";
 
 /** Propriedades que o tempo pode mudar. Números interpolam; texto troca. */
 export interface Animatable {

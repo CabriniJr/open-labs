@@ -61,6 +61,27 @@ function shapeOf(shape: NodeSpec["shape"], w: number, h: number, className: stri
         />
       );
     }
+    case "stack": {
+      // Três lâminas, com o LED de cada uma: lê como equipamento de relance.
+      const lamina = (h - 8) / 3;
+      return (
+        <g className={className === "mo-node__shape" ? "mo-node__stack" : undefined}>
+          <rect className={className} x={-w / 2} y={-h / 2} width={w} height={h} rx={6} />
+          {[0, 1, 2].map((i) => (
+            <g key={i}>
+              {/* Ranhuras só nas bordas: atravessando a caixa, a lâmina riscava o rótulo. */}
+              {i > 0 ? (
+                <>
+                  <line className="mo-node__blade" x1={-w / 2 + 4} x2={-w / 2 + 16} y1={-h / 2 + 4 + i * lamina} y2={-h / 2 + 4 + i * lamina} />
+                  <line className="mo-node__blade" x1={w / 2 - 22} x2={w / 2 - 4} y1={-h / 2 + 4 + i * lamina} y2={-h / 2 + 4 + i * lamina} />
+                </>
+              ) : null}
+              <circle className="mo-node__led" cx={w / 2 - 10} cy={-h / 2 + 4 + i * lamina + lamina / 2} r={2} />
+            </g>
+          ))}
+        </g>
+      );
+    }
     default:
       return <rect className={className} x={-w / 2} y={-h / 2} width={w} height={h} rx={8} />;
   }

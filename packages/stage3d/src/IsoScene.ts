@@ -472,14 +472,35 @@ export class IsoScene {
           : new BoxGeometry(box.w * 0.72, H, box.h * 0.72);
     const mat = new MeshStandardMaterial({ roughness: 0.62, metalness: 0.05, transparent: true });
     const mesh = new Mesh(geo, mat);
+    // Equipamento: o bloco vira três lâminas com fresta entre elas.
+    const laminas: Mesh[] = [];
+    if (shape === "stack") {
+      mesh.visible = false;
+      const alturaDaLamina = (H * 1.6) / 3;
+      for (let i = 0; i < 3; i += 1) {
+        const l = new Mesh(new RoundedBoxGeometry(box.w, alturaDaLamina - 3, box.h, 2, 3), mat);
+        l.position.y = alturaDaLamina / 2 + i * alturaDaLamina;
+        l.castShadow = true;
+        l.receiveShadow = true;
+        laminas.push(l);
+      }
+    }
     mesh.position.y = H / 2;
     if (shape === "diamond") mesh.rotation.y = Math.PI / 4;
     mesh.castShadow = true;
     mesh.receiveShadow = true;
     corpo.add(mesh);
+    for (const l of laminas) corpo.add(l);
 
     const bordaMat = new LineBasicMaterial({ transparent: true });
     const borda = new LineSegments(new EdgesGeometry(geo, 30), bordaMat);
+    const bordasDasLaminas = laminas.map((l) => {
+      const b = new LineSegments(new EdgesGeometry(l.geometry, 30), bordaMat);
+      b.position.copy(l.position);
+      corpo.add(b);
+      return b;
+    });
+    if (shape === "stack") borda.visible = false;
     borda.position.copy(mesh.position);
     borda.rotation.copy(mesh.rotation);
     corpo.add(borda);
@@ -493,7 +514,7 @@ export class IsoScene {
     const raioDoAnel = Math.max(box.w, box.h) * 0.62;
 
     const { obj, el } = etiqueta("iso-label", spec.label ?? "");
-    obj.position.set(0, H + 4, 0);
+    obj.position.set(0, (shape === "stack" ? H * 1.6 : H) + 4, 0);
     corpo.add(obj);
 
     // A linha de vida de uma raia: tracejada no chão, da cabeça até o fundo.
@@ -540,6 +561,11 @@ export class IsoScene {
         // Acender levanta a peça um pouco: a energia vira altura.
         mesh.position.y = H / 2 + s.glow * 3;
         borda.position.y = mesh.position.y;
+        laminas.forEach((l, i) => {
+          // Aceso, o rack "respira": as lâminas se afastam um pouco.
+          l.position.y = ((H * 1.6) / 3) * (i + 0.5) + s.glow * (2 + i * 2);
+          bordasDasLaminas[i]!.position.y = l.position.y;
+        });
         if (s.ping > 0 && s.ping < 1) {
           anel.visible = true;
           anel.scale.setScalar(raioDoAnel * (1 + s.ping * 0.8));

@@ -463,3 +463,8 @@
     backdrop-filter: blur(8px);
   }
 }
+
+/* Equipamento: as lâminas e os LEDs do rack. */
+.mo-node__blade { stroke: color-mix(in oklab, var(--mo-c) 45%, var(--rule)); stroke-width: 1; }
+.mo-node__led { fill: var(--mo-c); }
+.mo-node[data-lit] .mo-node__led { fill: var(--dui-alto); }
