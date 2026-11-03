@@ -26,10 +26,22 @@ const FILA: Box = { x: 60, y: 340, w: 260, h: 310 };
 /** Onde um Pod criado e agendado no mesmo passo aparece: saindo do scheduler. */
 const NASCE = { x: ESCALONADOR.x + ESCALONADOR.w + 10, y: ESCALONADOR.y + 4 };
 
-const NOS: Record<string, Box> = {
-  "worker-01": { x: 390, y: 50, w: 850, h: 290 },
-  "worker-02": { x: 390, y: 380, w: 850, h: 290 },
-};
+/** The drawing expands with the actual resource count; no shared last slot. */
+function layout(state: Readonly<ClusterState>) {
+  const nodes: Record<string, Box> = {};
+  let y = 50;
+  for (const node of NODES) {
+    const count = state.pods.filter(p => p.node === node.id).length;
+    const rows = Math.max(2, Math.ceil(count / COLUNAS_NO_NO));
+    const h = 44 + rows * VAGA.h + 70;
+    nodes[node.id] = { x: 390, y, w: 850, h };
+    y += h + 40;
+  }
+  const pending = state.pods.filter(p => p.node === null).length;
+  const queue = { ...FILA, h: Math.max(FILA.h, Math.ceil(pending / 2) * 66 + 70) };
+  const plane = { ...PLANO, h: Math.max(PLANO.h, queue.y + queue.h + 20 - PLANO.y) };
+  return { nodes, queue, plane, height: Math.max(ALTURA_DO_CLUSTER, y + 10, plane.y + plane.h + 50) };
+}
 
 /** O tom de um Pod é o estado dele, nesta ordem de gravidade. */
 export function tomDoPod(p: Pod): Tone {
@@ -52,6 +64,7 @@ function situacao(p: Pod): string {
 /** Onde cada Pod está num estado: vaga no nó, ou lugar na fila. */
 export function lugares(state: Readonly<ClusterState>): Map<string, Box> {
   const out = new Map<string, Box>();
+  const drawing = layout(state);
   const porNo = new Map<string, Pod[]>();
   const fila: Pod[] = [];
   for (const p of state.pods) {
@@ -59,10 +72,10 @@ export function lugares(state: Readonly<ClusterState>): Map<string, Box> {
     else porNo.set(p.node, [...(porNo.get(p.node) ?? []), p]);
   }
   for (const [no, pods] of porNo) {
-    const caixa = NOS[no];
+    const caixa = drawing.nodes[no];
     if (caixa === undefined) continue;
     pods.forEach((p, i) => {
-      const k = Math.min(i, COLUNAS_NO_NO * 2 - 1);
+      const k = i;
       out.set(p.uid, {
         x: caixa.x + 40 + (k % COLUNAS_NO_NO) * VAGA.w,
         y: caixa.y + 44 + Math.floor(k / COLUNAS_NO_NO) * VAGA.h,
@@ -72,7 +85,7 @@ export function lugares(state: Readonly<ClusterState>): Map<string, Box> {
     });
   }
   fila.forEach((p, i) => {
-    const k = Math.min(i, 7);
+    const k = i;
     out.set(p.uid, { x: FILA.x + 20 + (k % 2) * 116, y: FILA.y + 40 + Math.floor(k / 2) * 66, w: 104, h: 52 });
   });
   return out;
@@ -86,18 +99,19 @@ function proporcao(state: Readonly<ClusterState> | null, no: string, recurso: "c
 }
 
 export function filmeDaTransicao(antes: Readonly<ClusterState> | null, depois: Readonly<ClusterState>, dur = 650): Film<null> {
-  const f = film<null>({ width: LARGURA_DO_CLUSTER, height: ALTURA_DO_CLUSTER, gap: 0 });
+  const drawing = layout(depois);
+  const f = film<null>({ width: LARGURA_DO_CLUSTER, height: drawing.height, gap: 0 });
   const aqui = lugares(depois);
   const la = antes === null ? new Map<string, Box>() : lugares(antes);
   const antesPorUid = new Map((antes?.pods ?? []).map((p) => [p.uid, p]));
   const depoisPorUid = new Map(depois.pods.map((p) => [p.uid, p]));
 
-  f.add({ type: "region", id: "plano", box: PLANO, label: "control plane", tone: "controller" });
+  f.add({ type: "region", id: "plano", box: drawing.plane, label: "control plane", tone: "controller" });
   f.add({ type: "node", id: "controlador", box: CONTROLADOR, label: depois.workload?.kind === "Pod" ? "no controller" : "ReplicaSet", sublabel: depois.workload === null ? "nothing applied" : `${depois.workload.name} · want ${depois.workload.replicas}`, tone: "controller" });
   f.add({ type: "node", id: "escalonador", box: ESCALONADOR, label: "scheduler", sublabel: "fits requests", tone: "processor" });
-  f.add({ type: "region", id: "fila", box: FILA, label: "pending", tone: "high" });
+  f.add({ type: "region", id: "fila", box: drawing.queue, label: "pending", tone: "high", layer: 1 });
   for (const no of NODES) {
-    const caixa = NOS[no.id]!;
+    const caixa = drawing.nodes[no.id]!;
     f.add({ type: "region", id: `no:${no.id}`, box: caixa, label: `${no.id} · ${no.cpu}m · ${no.memory}Mi`, tone: "container" });
     const trilho = (y: number): Box => ({ x: caixa.x + 40, y, w: caixa.w - 80, h: 10 });
     // Trilho (o alocável) e barra (o reservado). A legenda vai ACIMA, com os

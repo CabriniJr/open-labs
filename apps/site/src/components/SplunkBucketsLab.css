@@ -16,11 +16,13 @@
     para, que é mais honesto que desenhar um número errado.
 */
 .splunk-baldes {
+  min-width: 0;
   display: grid;
   gap: var(--space-2);
 }
 
 .splunk-baldes__palco {
+  min-width: 0;
   display: grid;
   gap: var(--space-2);
 }
@@ -120,7 +122,11 @@
 .splunk-baldes__campo input[type="range"],
 .splunk-baldes__campo select {
   width: 100%;
+  min-width: 0;
+  max-width: 100%;
 }
+
+.splunk-baldes__campo input[type="range"] { margin-inline: 0; }
 
 .splunk-baldes__switch {
   display: flex;

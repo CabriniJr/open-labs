@@ -1,5 +1,16 @@
 {
   "extends": "../../tsconfig.base.json",
-  "compilerOptions": { "outDir": "dist", "rootDir": "src", "jsxImportSource": "react" },
-  "include": ["src"]
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src",
+    "jsxImportSource": "react"
+  },
+  "include": [
+    "src"
+  ],
+  "references": [
+    {
+      "path": "../depth-ui"
+    }
+  ]
 }

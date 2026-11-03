@@ -9,17 +9,10 @@ const IsoStage = lazy(() => import("@ovh/stage3d").then((m) => ({ default: m.Iso
  * cluster, e o filme recalculado a cada escolha. A tabela ao lado é o custo de
  * cada implantação, lida do modelo — e a linha que o capítulo discute acende.
  */
-const VISTAS: readonly MotionView<DetalheDaImplantacao>[] = [
-  {
-    id: "iso",
-    label: "Iso",
-    render: ({ film, t, frame, label }) => (
-      <Suspense fallback={<div className="iso-stage" aria-busy="true" />}>
-        <IsoStage film={film} t={t} frame={frame} label={label} />
-      </Suspense>
-    ),
-  },
-];
+const VISTAS: readonly MotionView<DetalheDaImplantacao>[] = ([['iso', 'Iso', 'orthographic'], ['3d', '3D', 'perspective']] as const).map(([id, label, projection]) => ({
+  id, label,
+  render: ({ film, t, frame, label, selected, onSelect }) => <Suspense fallback={<div className="iso-stage" aria-busy="true" />}><IsoStage film={film} t={t} frame={frame} label={label} projection={projection} selected={selected} onSelect={onSelect} /></Suspense>,
+}));
 
 function Tabela({ entrega, destaque }: { entrega: Entrega; destaque: LinhaDaTabela | null }) {
   const tail =

@@ -18,15 +18,14 @@ import {
   Mesh,
   MeshStandardMaterial,
   OrthographicCamera,
-  PCFSoftShadowMap,
-  PlaneGeometry,
+  PerspectiveCamera,
+  Raycaster,
+  Vector2,
   RingGeometry,
   Scene,
-  ShadowMaterial,
   SphereGeometry,
   Sprite,
   SpriteMaterial,
-  Vector2,
   Vector3,
   BufferGeometry,
   type Material,
@@ -37,7 +36,7 @@ import { LineGeometry } from "three/examples/jsm/lines/LineGeometry.js";
 import { Line2 } from "three/examples/jsm/lines/webgpu/Line2.js";
 import { Line2NodeMaterial, WebGPURenderer } from "three/webgpu";
 import { CSS2DObject, CSS2DRenderer } from "three/examples/jsm/renderers/CSS2DRenderer.js";
-import { ISO_AZIMUTE, ISO_ELEVACAO, meiaAlturaParaCaber, pontoNoAr, pontosDoCaminho, posicaoDaCamera } from "./iso.js";
+import { deslocamentoNoChao, distanciaPerspectivaParaCaber, ISO_AZIMUTE, ISO_ELEVACAO, meiaAlturaParaCaber, pontoNoAr, pontosDoCaminho, posicaoDaCamera } from "./iso.js";
 import { lerPaleta, type Paleta } from "./tons.js";
 
 /**
@@ -147,6 +146,13 @@ export class IsoScene {
   readonly #labels: CSS2DRenderer;
   readonly #scene = new Scene();
   readonly #camera = new OrthographicCamera(-1, 1, 1, -1, 1, 8000);
+  readonly #perspectiva = new PerspectiveCamera(40, 1, 1, 8000);
+  readonly #ray = new Raycaster();
+  #projecao: "orthographic" | "perspective" = "orthographic";
+  #zoom = 1;
+  #pan = { x: 0, z: 0 };
+  #escala = 1;
+  #selected: string | null = null;
   readonly #sol = new DirectionalLight(0xffffff, 1.6);
   readonly #ceu = new HemisphereLight(0xffffff, 0x888888, 1.4);
   readonly #pecas = new Map<string, Peca>();
@@ -158,6 +164,7 @@ export class IsoScene {
   readonly #options: IsoOptions;
   #paleta: Paleta;
   #film: Film<unknown> | null = null;
+  #estrutura = "";
   #frame: Frame<unknown> | null = null;
   #visivel = true;
   #pedido = 0;
@@ -165,8 +172,12 @@ export class IsoScene {
   #elevacao = ISO_ELEVACAO;
   #linhas: Line2NodeMaterial[] = [];
   #retemar: (() => void) | null = null;
+  #disposed = false;
+  #retry: ReturnType<typeof setTimeout> | undefined;
+  readonly #onReady: ((error?: Error) => void) | undefined;
 
-  constructor(host: HTMLElement, options: IsoOptions = {}) {
+  constructor(host: HTMLElement, options: IsoOptions = {}, onReady?: (error?: Error) => void) {
+    this.#onReady = onReady;
     this.#host = host;
     this.#options = options;
     this.#paleta = lerPaleta(host);
@@ -178,12 +189,6 @@ export class IsoScene {
     host.appendChild(this.#labels.domElement);
 
     this.#scene.add(this.#ceu, this.#sol, this.#sol.target, this.#mundo);
-    this.#sol.castShadow = true;
-    this.#sol.shadow.mapSize.set(1024, 1024);
-    // Sem `normalBias`, faces inclinadas para o sol se sombreavam a si mesmas
-    // em listras (shadow acne) — visto na revisão das fotos com a r180.
-    this.#sol.shadow.bias = -0.0008;
-    this.#sol.shadow.normalBias = 1.2;
 
     this.#observador =
       typeof IntersectionObserver === "undefined"
@@ -198,7 +203,7 @@ export class IsoScene {
     // O tema troca por atributo na raiz ou pela preferência do sistema.
     const retemar = (this.#retemar = () => {
       this.#paleta = lerPaleta(this.#host);
-      if (this.#film !== null) this.setFilm(this.#film);
+      if (this.#film !== null) this.setFilm(this.#film, true);
       if (this.#frame !== null) this.update(this.#frame);
     });
     this.#temaObs = typeof MutationObserver === "undefined" ? null : new MutationObserver(retemar);
@@ -218,37 +223,39 @@ export class IsoScene {
   #criarRenderer(forcarWebGL: boolean, tentativa = 0): WebGPURenderer {
     const r = new WebGPURenderer({ antialias: true, alpha: false, powerPreference: "high-performance", forceWebGL: forcarWebGL });
     r.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
-    r.shadowMap.enabled = true;
-    r.shadowMap.type = PCFSoftShadowMap;
+    // Lit solids and semantic outlines avoid an additional shadow pass.
     r.domElement.className = "iso-stage__canvas";
     this.#host.prepend(r.domElement);
     this.#pronto = false;
     r.onDeviceLost = () => {
-      if (this.#renderer !== r || forcarWebGL) return;
+      if (this.#disposed || this.#renderer !== r || forcarWebGL) return;
       this.#host.dataset.backendPerdido = "webgpu";
       r.domElement.remove();
+      r.dispose();
       this.#renderer = this.#criarRenderer(true);
       this.#medir();
     };
     r.init().then(
       () => {
-        if (this.#renderer !== r) return;
+        if (this.#disposed || this.#renderer !== r) { r.dispose(); return; }
         this.#pronto = true;
+        this.#onReady?.();
         const webgpu = (r.backend as { isWebGPUBackend?: boolean }).isWebGPUBackend === true;
         this.#host.dataset.backend = webgpu ? "webgpu" : "webgl2";
         this.pedir();
       },
       (erro: unknown) => {
-        if (this.#renderer !== r) return;
+        if (this.#disposed || this.#renderer !== r) return;
         this.#host.dataset.erro = erro instanceof Error ? erro.message : String(erro);
         // Logo depois de o processo de GPU cair, o navegador recusa contexto
         // novo por um instante. Tenta-se de novo, com espera crescente.
         if (tentativa >= 3) {
           this.#host.dataset.backend = "falhou";
+          this.#onReady?.(erro instanceof Error ? erro : new Error(String(erro)));
           return;
         }
-        setTimeout(() => {
-          if (this.#renderer !== r) return;
+        this.#retry = setTimeout(() => {
+          if (this.#disposed || this.#renderer !== r) return;
           r.domElement.remove();
           this.#renderer = this.#criarRenderer(true, tentativa + 1);
           this.#medir();
@@ -268,29 +275,78 @@ export class IsoScene {
   reenquadrar(): void {
     this.#azimute = ISO_AZIMUTE;
     this.#elevacao = ISO_ELEVACAO;
+    this.#zoom = 1;
+    this.#pan = { x: 0, z: 0 };
     this.pedir();
   }
 
-  setFilm(film: Film<unknown>): void {
-    this.#limparMundo();
+  projetar(projecao: "orthographic" | "perspective"): void {
+    this.#projecao = projecao;
+    this.pedir();
+  }
+
+  aproximar(fator: number): number {
+    this.#zoom = Math.max(.5, Math.min(4, this.#zoom * fator));
+    this.pedir();
+    return this.#zoom;
+  }
+
+  deslocar(dx: number, dy: number): void {
+    const delta = deslocamentoNoChao(dx, dy, this.#azimute, this.#elevacao, this.#escala);
+    this.#pan.x += delta.x;
+    this.#pan.z += delta.z;
+    this.pedir();
+  }
+
+  selecionar(id: string | null): void {
+    if (this.#selected !== null) this.#pecas.get(this.#selected)?.rotulo?.removeAttribute("data-selected");
+    this.#selected = id;
+    if (id !== null) this.#pecas.get(id)?.rotulo?.setAttribute("data-selected", "");
+  }
+
+  /** Picking is performed only on a click, against visible model entities. */
+  escolher(clientX: number, clientY: number, ids?: ReadonlySet<string>): string | null {
+    if (this.#film === null) return null;
+    this.#enquadrar(this.#frame?.camera ?? this.#film.camera);
+    const box = this.#host.getBoundingClientRect();
+    if (!box.width || !box.height) return null;
+    this.#ray.setFromCamera(new Vector2((clientX - box.left) / box.width * 2 - 1, -(clientY - box.top) / box.height * 2 + 1), this.#cameraAtual());
+    this.#mundo.updateMatrixWorld(true);
+    const pieces = [...this.#pecas.values()].filter(p => p.root.visible && (!ids || ids.has(p.spec.id)) && ["node", "lane", "token", "bar", "region"].includes(p.spec.type));
+    for (const hit of this.#ray.intersectObjects(pieces.map(p => p.root), true)) {
+      for (let cursor: Object3D | null = hit.object; cursor; cursor = cursor.parent) {
+        const id = cursor.userData.entityId as string | undefined;
+        if (id) return id;
+      }
+    }
+    return null;
+  }
+
+  #cameraAtual(): OrthographicCamera | PerspectiveCamera {
+    return this.#projecao === "perspective" ? this.#perspectiva : this.#camera;
+  }
+
+  setFilm(film: Film<unknown>, force = false): void {
+    // A new clock tick commonly changes labels and state, not geometry. Keep
+    // meshes, GPU buffers and HTML labels until the actual layout changes.
+    const structure = JSON.stringify([film.width, film.height, film.entities.map(({ label, sublabel, tone, hidden, title, ...shape }) => shape)]);
     this.#film = film;
+    if (!force && structure === this.#estrutura) { this.pedir(); return; }
+    this.#estrutura = structure;
+    this.#limparMundo();
     const p = this.#paleta;
     this.#scene.background = corDe(p.papel, p.tinta);
     this.#ceu.color = corDe(p.papelElevado, p.tinta);
     this.#ceu.groundColor = corDe(p.regua, p.tinta);
 
-    // O chão: recebe sombra e desenha a malha do papel quadriculado.
-    const chao = new Mesh(new PlaneGeometry(film.width * 3, film.height * 3), new ShadowMaterial({ opacity: 0.13 }));
-    chao.rotation.x = -Math.PI / 2;
-    chao.position.set(film.width / 2, 0, film.height / 2);
-    chao.receiveShadow = true;
-    this.#mundo.add(chao);
     this.#mundo.add(this.#malha(film, p));
 
     for (const spec of film.entities) {
       const peca = this.#montar(spec, p);
       if (peca === null) continue;
       this.#pecas.set(spec.id, peca);
+      peca.root.userData.entityId = spec.id;
+      if (peca.rotulo) peca.rotulo.dataset.entity = spec.id;
       this.#mundo.add(peca.root);
     }
 
@@ -299,15 +355,7 @@ export class IsoScene {
     const cz = film.height / 2;
     this.#sol.position.set(cx - film.width * 0.3, 900, cz - film.height * 0.6);
     this.#sol.target.position.set(cx, 0, cz);
-    const s = this.#sol.shadow.camera;
-    const r = Math.max(film.width, film.height) * 0.8;
-    s.left = -r;
-    s.right = r;
-    s.top = r;
-    s.bottom = -r;
-    s.near = 10;
-    s.far = 3000;
-    s.updateProjectionMatrix();
+    this.selecionar(this.#selected);
     this.pedir();
   }
 
@@ -327,13 +375,17 @@ export class IsoScene {
   }
 
   dispose(): void {
+    this.#disposed = true;
+    clearTimeout(this.#retry);
     cancelAnimationFrame(this.#pedido);
     this.#observador?.disconnect();
     this.#resize?.disconnect();
     this.#temaObs?.disconnect();
     if (this.#retemar !== null) this.#midia?.removeEventListener("change", this.#retemar);
     this.#limparMundo();
-    this.#renderer.dispose();
+    // An unfinished init is released by its completion handler. Disposing it
+    // early would make Three's async animation cleanup await a failed init.
+    if (this.#pronto) this.#renderer.dispose();
     this.#renderer.domElement.remove();
     this.#labels.domElement.remove();
   }
@@ -357,27 +409,38 @@ export class IsoScene {
     const w = Math.max(1, this.#host.clientWidth);
     const h = Math.max(1, this.#host.clientHeight);
     const aspecto = w / h;
-    const meia = meiaAlturaParaCaber(film.width / camera.zoom, film.height / camera.zoom, aspecto, this.#elevacao) * 1.02;
+    const meia = meiaAlturaParaCaber(film.width / camera.zoom, film.height / camera.zoom, aspecto, this.#elevacao, this.#azimute, 64 / camera.zoom) * 1.04 / this.#zoom;
+    marcar(this.#host, "camera", `${this.#projecao}:${this.#zoom}:${this.#azimute.toFixed(4)}:${this.#elevacao.toFixed(4)}:${this.#pan.x.toFixed(2)}:${this.#pan.z.toFixed(2)}`);
+    this.#escala = 2 * meia / h;
     const cam = this.#camera;
     cam.top = meia;
     cam.bottom = -meia;
     cam.left = -meia * aspecto;
     cam.right = meia * aspecto;
     cam.updateProjectionMatrix();
-    const alvo = { x: camera.cx, y: 0, z: camera.cy };
+    const alvo = { x: camera.cx + this.#pan.x, y: 0, z: camera.cy + this.#pan.z };
     const pos = posicaoDaCamera(alvo, this.#azimute, this.#elevacao, 3000);
     cam.position.set(pos.x, pos.y, pos.z);
     cam.lookAt(new Vector3(alvo.x, alvo.y, alvo.z));
+    cam.updateMatrixWorld(true);
+    const perspective = this.#perspectiva;
+    perspective.aspect = aspecto;
+    const distance = distanciaPerspectivaParaCaber(film.width / camera.zoom, film.height / camera.zoom, aspecto, this.#azimute, this.#elevacao, 64 / camera.zoom) * 1.06 / this.#zoom;
+    perspective.far = Math.max(8000, distance * 4);
+    const vantage = posicaoDaCamera(alvo, this.#azimute, this.#elevacao, distance);
+    perspective.position.set(vantage.x, vantage.y, vantage.z);
+    perspective.lookAt(alvo.x, alvo.y, alvo.z);
+    perspective.updateProjectionMatrix();
+    perspective.updateMatrixWorld(true);
   }
 
   #desenhar(): void {
     const film = this.#film;
     if (film === null || !this.#pronto) return;
     this.#enquadrar(this.#frame?.camera ?? film.camera);
-    this.#renderer.render(this.#scene, this.#camera);
-    this.#labels.render(this.#scene, this.#camera);
-    // Para o QA: quantas chamadas de desenho o último quadro fez.
-    this.#host.dataset.chamadas = String(this.#renderer.info.render.drawCalls ?? this.#renderer.info.render.calls ?? 0);
+    this.#renderer.render(this.#scene, this.#cameraAtual());
+    this.#labels.render(this.#scene, this.#cameraAtual());
+    marcar(this.#host, "chamadas", String(this.#renderer.info.render.drawCalls ?? this.#renderer.info.render.calls ?? 0));
   }
 
   #malha(film: Film<unknown>, p: Paleta): Object3D {
@@ -430,24 +493,26 @@ export class IsoScene {
         const root = new Group();
         const { box } = spec;
         const mat = new MeshStandardMaterial({ color: corDe(p.tom(tomInicial), p.tinta), transparent: true, opacity: 0.08 });
-        // Espessura da placa proporcional à peça: com 1 unidade fixa, ela
-        // enterrava as portas de um nível fundo, que medem menos que isso.
-        const esp = 1 * (spec.textScale ?? 1);
+        const k = spec.textScale ?? 1;
+        const esp = k;
         const placa = new Mesh(new BoxGeometry(box.w, esp, box.h), mat);
-        // O topo fica um fio acima do chão: rente a ele, os dois brigavam pelo
-        // mesmo pixel (z-fighting em listras).
-        placa.position.set(box.x + box.w / 2, esp * 0.02 - esp / 2, box.y + box.h / 2);
+        placa.position.set(box.x + box.w / 2, esp * .02 - esp / 2 + (spec.layer ?? 0) * .75 * k, box.y + box.h / 2);
         root.add(placa);
+        const border = new LineBasicMaterial({ color: mat.color, transparent: true, opacity: .35 });
+        const edges = new LineSegments(new EdgesGeometry(placa.geometry), border);
+        edges.position.copy(placa.position); root.add(edges);
         const { obj, el } = etiqueta("iso-region", spec.label ?? "");
-        obj.position.set(box.x + 12 * (spec.textScale ?? 1), ALTURA_DO_ROTULO * (spec.textScale ?? 1), box.y + 12 * (spec.textScale ?? 1));
+        // Put the caption on the boundary, away from the first row of pieces.
+        obj.position.set(box.x + box.w - 12 * k, 6 * k, box.y + 12 * k);
         root.add(obj);
         return {
           spec,
           root,
-          materiais: [mat],
+          materiais: [mat, border],
           rotulo: el,
           atualizar: (s, pal) => {
             mat.color = corDe(pal.tom(s.tone), pal.tinta);
+            border.color.copy(mat.color); border.opacity = .35 * s.opacity;
             mat.opacity = (0.06 + 0.1 * s.glow) * s.opacity;
             escrever(el, s.label);
             marcar(el, "tone", s.tone);
@@ -780,7 +845,9 @@ export class IsoScene {
   #barra(spec: Extract<EntitySpec, { type: "bar" }>, p: Paleta, tom: Tone): Peca {
     const root = new Group();
     const { box } = spec;
-    const alto = 9 * (spec.textScale ?? 1);
+    const k = spec.textScale ?? 1;
+    const alto = 4 * k;
+    const base = (1 + (spec.layer ?? 0) * .75) * k;
     const mat = new MeshStandardMaterial({ roughness: 0.5, transparent: true, emissiveIntensity: 0.15 });
     const geo = new BoxGeometry(1, alto, 1);
     const mesh = new Mesh(geo, mat);
@@ -811,8 +878,8 @@ export class IsoScene {
         const w = baixo ? box.w : box.w * s.progress;
         const h = baixo ? box.h * s.progress : box.h;
         mesh.scale.set(Math.max(0.01, w), 1, Math.max(0.01, h));
-        mesh.position.set(box.x + w / 2 + s.dx, alto / 2, box.y + h / 2 + s.dy);
-        obj.position.set(box.x + box.w + 10 * (spec.textScale ?? 1) + s.dx, alto * 1.2, box.y + 8 * (spec.textScale ?? 1) + s.dy);
+        mesh.position.set(box.x + w / 2 + s.dx, base + alto / 2, box.y + h / 2 + s.dy);
+        obj.position.set(box.x + box.w + 10 * k + s.dx, base + alto + 2 * k, box.y + 8 * k + s.dy);
         escrever(el, s.label);
         marcar(el, "tone", s.tone);
       },

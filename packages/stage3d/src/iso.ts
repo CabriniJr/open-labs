@@ -18,6 +18,31 @@ export interface Vec3 {
 export const ISO_AZIMUTE = Math.PI / 4;
 export const ISO_ELEVACAO = Math.atan(1 / Math.SQRT2);
 
+/** A perspective lens that frames the same height as the orthographic lens. */
+export function distanciaParaCaber(meiaAltura: number, fov = 40): number {
+  return Math.max(1, meiaAltura) / Math.tan(fov * Math.PI / 360);
+}
+
+/** Fit every corner, including the near edge enlarged by perspective. */
+export function distanciaPerspectivaParaCaber(largura: number, profundidade: number, aspecto: number, azimute = ISO_AZIMUTE, elevacao = ISO_ELEVACAO, altura = 64, fov = 40): number {
+  const tan = Math.tan(fov * Math.PI / 360);
+  const sa = Math.sin(azimute), ca = Math.cos(azimute), se = Math.sin(elevacao), ce = Math.cos(elevacao);
+  let distance = 1;
+  for (const x of [-largura / 2, largura / 2]) for (const z of [-profundidade / 2, profundidade / 2]) for (const y of [0, altura]) {
+    const right = ca * x - sa * z;
+    const up = -sa * se * x + ce * y - ca * se * z;
+    const near = sa * ce * x + se * y + ca * ce * z;
+    distance = Math.max(distance, near + Math.max(Math.abs(right) / (tan * aspecto), Math.abs(up) / tan));
+  }
+  return distance;
+}
+
+/** Screen-space drag translated onto the ground plane, independent of lens. */
+export function deslocamentoNoChao(dx: number, dy: number, azimute: number, elevacao: number, escala: number): { x: number; z: number } {
+  const fundo = -dy / Math.max(.2, Math.sin(elevacao));
+  return { x: (-dx * Math.cos(azimute) + fundo * Math.sin(azimute)) * escala, z: (dx * Math.sin(azimute) + fundo * Math.cos(azimute)) * escala };
+}
+
 /** Onde a câmera fica, olhando para `alvo`, a uma distância `d`, girada `azimute`. */
 export function posicaoDaCamera(alvo: Vec3, azimute: number, elevacao: number, d: number): Vec3 {
   const horizontal = Math.cos(elevacao) * d;
@@ -36,10 +61,9 @@ export function posicaoDaCamera(alvo: Vec3, azimute: number, elevacao: number, d
  * caixa de largura `(w + h)·cos45` e altura `(w + h)·sin45·sin(elev)`. O quadro
  * precisa caber nas duas direções.
  */
-export function meiaAlturaParaCaber(largura: number, altura: number, aspecto: number, elevacao = ISO_ELEVACAO): number {
-  const diagonal = (largura + altura) * Math.SQRT1_2;
-  const telaW = diagonal;
-  const telaH = diagonal * Math.sin(elevacao);
+export function meiaAlturaParaCaber(largura: number, altura: number, aspecto: number, elevacao = ISO_ELEVACAO, azimute = ISO_AZIMUTE, alturaDasPecas = 64): number {
+  const telaW = largura * Math.abs(Math.cos(azimute)) + altura * Math.abs(Math.sin(azimute));
+  const telaH = (largura * Math.abs(Math.sin(azimute)) + altura * Math.abs(Math.cos(azimute))) * Math.sin(elevacao) + alturaDasPecas * Math.cos(elevacao);
   return Math.max(telaH / 2, telaW / 2 / aspecto);
 }
 

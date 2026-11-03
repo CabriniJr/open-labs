@@ -39,6 +39,8 @@ import { tuneis } from "./tunel.js";
 import type { Lacuna } from "./tunel.js";
 import { lequeDaCaixa, PORTA_ANONIMA, portasDaCaixa, posicaoDaPorta } from "./portas.js";
 import { dilatarPara, relogioDaCamada } from "./tempo.js";
+import { SceneViewport } from "./SceneViewport.js";
+import { spatialFromStage } from "./spatial-stage.js";
 
 /**
  * O palco: uma view desenhada, com o estado do mundo por cima.
@@ -54,6 +56,8 @@ import { dilatarPara, relogioDaCamada } from "./tempo.js";
  */
 
 export interface StageProps {
+  readonly canvasClassName?: string | undefined;
+  readonly allowFullscreen?: boolean | undefined;
   readonly tree: TreeIndex;
   readonly wires: readonly Wire[];
   readonly view: View;
@@ -2821,6 +2825,7 @@ export function escalaEmDegrau(escala: number): number {
 
 export function Stage(props: StageProps) {
   const { view, tickMs = 700, state, tree, alvoDeCamera, partirDe, onEnquadrado } = props;
+  const spatialTickStarted = useMemo(() => performance.now(), [state]);
 
   // Uma vez por tick, e não uma vez por camada aberta: a resolução percorre a
   // árvore até o ponto fixo, e um modelo aberto até o fundo tem milhares de
@@ -2836,7 +2841,7 @@ export function Stage(props: StageProps) {
   const gestoRef = useRef(false);
   const congeladasRef = useRef(props);
   const [, setFimDoGesto] = useState(0);
-  if (!gestoRef.current) congeladasRef.current = props;
+  if (!gestoRef.current || congeladasRef.current.view.id !== props.view.id) congeladasRef.current = props;
   const desenhadas = congeladasRef.current;
   const emissoes = useMemo(() => emissoesPorPorta(desenhadas.state, tree), [desenhadas.state, tree]);
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -3140,6 +3145,8 @@ export function Stage(props: StageProps) {
 
 
   return (
+    <SceneViewport scene={() => spatialFromStage(props, spatialTickStarted)} label={view.title} selected={props.selected} onSelect={props.onSelect} onOpen={props.onOpen} canvasClassName={props.canvasClassName} allowFullscreen={props.allowFullscreen}
+      onSelectMarker={props.onSeguirCarga ? id => { const item = state.flight.find(f => f.id === id); if (!item) return; const key = props.chaveDaCarga?.(item.message); if (key !== undefined) props.onSeguirCarga?.(key === props.cargaSeguida ? undefined : key); } : undefined}>
     <div ref={molduraRef} className="dui-stage__moldura">
     <svg
       ref={svgRef}
@@ -3156,11 +3163,14 @@ export function Stage(props: StageProps) {
       onPointerDown={(e) => {
         if (e.button !== 0 || daVista.escala <= 1) return;
         const alvo = e.currentTarget;
-        alvo.setPointerCapture(e.pointerId);
         const partiu = { x: e.clientX, y: e.clientY, camera: daVista };
+        let arrastou = false;
         const arrastar = (ev: PointerEvent) => {
+          if (!arrastou && Math.hypot(ev.clientX - partiu.x, ev.clientY - partiu.y) < 4) return;
+          if (!arrastou) alvo.setPointerCapture(e.pointerId);
+          arrastou = true;
           mexeu();
-          const caixa = alvo.getBoundingClientRect();
+          const caixa = (molduraRef.current ?? alvo).getBoundingClientRect();
           // O mesmo encaixe do zoom: arrastar tem de mover o desenho exatamente
           // o que o dedo andou, e a faixa vazia não é desenho.
           const encaixe = encaixeDoQuadro(caixa, {
@@ -3176,13 +3186,18 @@ export function Stage(props: StageProps) {
           });
         };
         const soltar = () => {
-          clearTimeout(pinturaRef.current);
-          if (vivaRef.current !== null) setCamera(vivaRef.current);
+          if (arrastou) {
+            clearTimeout(pinturaRef.current);
+            if (vivaRef.current?.vista === view.id) setCamera(vivaRef.current);
+          }
+          if (alvo.hasPointerCapture(e.pointerId)) alvo.releasePointerCapture(e.pointerId);
           alvo.removeEventListener("pointermove", arrastar);
           alvo.removeEventListener("pointerup", soltar);
+          alvo.removeEventListener("pointercancel", soltar);
         };
         alvo.addEventListener("pointermove", arrastar);
         alvo.addEventListener("pointerup", soltar);
+        alvo.addEventListener("pointercancel", soltar);
       }}
       onDoubleClick={(e) => {
         // O duplo clique continua abrindo — quem quiser trocar de vista ainda
@@ -3216,5 +3231,6 @@ export function Stage(props: StageProps) {
       />
     </svg>
     </div>
+    </SceneViewport>
   );
 }

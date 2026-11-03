@@ -175,6 +175,7 @@ for (const lab of [...LABS_PUBLICADOS]) {
       ).toBeGreaterThan(clientW + 1);
       return;
     }
+    if (scrollW > clientW + 1) console.log("Horizontal overflow:", await page.evaluate(() => [...document.querySelectorAll("main *")].map(el => ({ tag: el.tagName, class: el.getAttribute("class"), right: Math.round(el.getBoundingClientRect().right), width: Math.round(el.getBoundingClientRect().width) })).filter(el => el.right > document.documentElement.clientWidth + 1).slice(0, 12)));
     expect(scrollW, `${lab} rola ${scrollW - clientW}px na horizontal`).toBeLessThanOrEqual(
       clientW + 1,
     );

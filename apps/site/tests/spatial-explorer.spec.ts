@@ -1,0 +1,96 @@
+import { expect, test, type Page } from "@playwright/test";
+
+test.setTimeout(60_000);
+
+async function capture(page: Page, path: string) {
+  await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
+  await page.screenshot({ path, fullPage: true });
+}
+
+async function ready(page: Page, selector: string) {
+  const island = page.locator(`astro-island:has(${selector})`).first();
+  await island.scrollIntoViewIfNeeded();
+  await expect(island).not.toHaveAttribute("ssr", /.*/, { timeout: 20_000 });
+}
+
+test("the live flow keeps its state, selection and navigation across projections", async ({ page }, info) => {
+  await page.goto("");
+  await ready(page, ".hero-sim");
+  await expect(page.locator('.hero-sim .dui-trilha__estacao[data-mudou*="collector.name"]')).toHaveCount(1, { timeout: 20_000 });
+  await page.getByRole("button", { name: "Pause simulation" }).click();
+  const viewport = page.locator(".hero-sim .scene-viewport");
+  const pausedFrame = await viewport.locator(".dui-stage").innerHTML();
+  await page.waitForTimeout(850); // One complete model tick must pass without advancing.
+  expect(await viewport.locator(".dui-stage").innerHTML()).toBe(pausedFrame);
+  const outerTitle = await viewport.locator(".dui-stage").getAttribute("aria-label");
+  await viewport.getByRole("button", { name: "Isometric", exact: true }).click();
+  await expect(viewport.locator(".scene-spatial")).toBeVisible();
+  await expect(viewport.locator(".dui-stage")).toBeHidden();
+  await expect(viewport.locator('.scene-node[data-id="collector"]')).toBeVisible();
+  await capture(page, info.outputPath("home-isometric.png"));
+  await viewport.getByRole("button", { name: "3D", exact: true }).click();
+  const top = viewport.locator('.scene-node[data-id="collector"] .scene-node__top');
+  const initial = await top.getAttribute("points");
+  await viewport.locator(".scene-spatial").focus();
+  await page.keyboard.press("ArrowRight");
+  await expect(top).not.toHaveAttribute("points", initial!);
+  await page.keyboard.press("0");
+  await expect(top).toHaveAttribute("points", initial!);
+  await viewport.getByRole("button", { name: "Zoom in" }).click();
+  await expect(viewport.locator(".scene-status")).toContainText("120%");
+  await viewport.getByRole("button", { name: "Reset view" }).click();
+  await expect(viewport.locator(".scene-status")).toContainText("100%");
+  await viewport.getByRole("button", { name: "2D", exact: true }).click();
+  await expect(viewport.locator(".dui-stage")).toBeVisible();
+  await viewport.locator('.dui-stage__objeto[data-id="collector"]').first().dblclick();
+  await expect(viewport.locator(".dui-stage")).not.toHaveAttribute("aria-label", outerTitle!);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1);
+});
+
+test("the motion timeline and experiment switches survive a view change", async ({ page }, info) => {
+  await page.goto("labs/hard-context-and-baggage/");
+  await ready(page, ".ctxlab");
+  const lab = page.getByTestId("context-lab");
+  const timeline = lab.getByRole("slider", { name: "Timeline" });
+  const max = Number(await timeline.getAttribute("max"));
+  await timeline.fill(String(Math.round(max * .55 / 10) * 10));
+  const position = await timeline.inputValue();
+  await lab.getByRole("radio", { name: "3D", exact: true }).click();
+  const viewport = lab.locator(".iso-viewport");
+  await expect(viewport.locator(".iso-stage")).toHaveAttribute("data-ready", "true");
+  await expect(timeline).toHaveValue(position);
+  await viewport.locator(".iso-stage").focus();
+  await page.keyboard.press("ArrowRight");
+  await expect(timeline).toHaveValue(position);
+  await lab.getByRole("switch", { name: "Proxy forwards headers" }).focus();
+  await page.keyboard.press("Space");
+  await expect(lab.locator(".ctxlab-status")).toHaveText("1 request · 2 traces");
+  await expect(viewport.locator(".iso-stage")).toHaveAttribute("data-projection", "perspective");
+  await viewport.getByRole("button", { name: "Inspect scene" }).click();
+  const part = viewport.locator(".iso-contents button").first();
+  await part.click();
+  await expect(lab.locator(".mo-selection")).toBeVisible();
+  await capture(page, info.outputPath("context-3d.png"));
+  await lab.getByRole("radio", { name: "Sequence", exact: true }).click();
+  await expect(timeline).toHaveValue(position);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1);
+});
+
+test("catalog filters are shareable, reloadable and recover from empty results", async ({ page }, info) => {
+  await page.goto("labs/");
+  await page.getByRole("combobox", { name: "Filter by handbook" }).selectOption("otel");
+  await page.getByRole("combobox", { name: "Filter by availability" }).selectOption("ready");
+  await expect(page.locator('[data-lab-group="cpu"]')).toBeHidden();
+  await expect(page.locator('[data-lab-group="otel"]')).toBeVisible();
+  await expect(page).toHaveURL(/handbook=otel.*status=ready/);
+  await page.reload();
+  await expect(page.getByRole("combobox", { name: "Filter by handbook" })).toHaveValue("otel");
+  await capture(page, info.outputPath("lab-discovery.png"));
+  await page.getByRole("searchbox", { name: "Search labs" }).fill("no-such-lab-xyz");
+  await expect(page.getByRole("heading", { name: "No labs match these filters." })).toBeVisible();
+  await page.getByRole("button", { name: "Clear filters" }).click();
+  await expect(page.locator('[data-lab-group="cpu"]')).toBeVisible();
+  await expect(page.getByRole("searchbox", { name: "Search labs" })).toHaveValue("");
+  await expect(page).not.toHaveURL(/handbook=|status=|q=/);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1);
+});

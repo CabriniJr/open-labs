@@ -21,7 +21,8 @@ import { useClock, type Clock } from "./useClock.js";
 export interface MotionView<D> {
   readonly id: string;
   readonly label: string;
-  readonly render: (args: { readonly film: Film<D>; readonly t: number; readonly frame: Frame<D>; readonly label: string }) => ReactNode;
+  readonly film?: Film<D>;
+  readonly render: (args: { readonly film: Film<D>; readonly t: number; readonly frame: Frame<D>; readonly label: string; readonly selected: string | null; readonly onSelect: (id: string) => void }) => ReactNode;
 }
 
 export interface MotionPlayerProps<D> {
@@ -130,6 +131,8 @@ export function MotionPlayer<D>({ film, label, renderDetail, controls, autoplay 
   useEffect(() => {
     if (views.length === 0) return;
     try {
+      const requested = new URLSearchParams(window.location.search).get("view");
+      if (requested && (requested === "flat" || views.some(v => v.id === requested))) { setVista(requested); return; }
       const salva = localStorage.getItem(CHAVE_DA_VISTA);
       if (salva !== null && (salva === "flat" || views.some((v) => v.id === salva))) setVista(salva);
     } catch {
@@ -139,6 +142,9 @@ export function MotionPlayer<D>({ film, label, renderDetail, controls, autoplay 
   const escolher = (id: string) => {
     setVista(id);
     try {
+      const address = new URL(window.location.href);
+      if (id === "flat") address.searchParams.delete("view"); else address.searchParams.set("view", id);
+      window.history.replaceState(null, "", address);
       localStorage.setItem(CHAVE_DA_VISTA, id);
     } catch {
       // Sem armazenamento, a escolha vale só nesta visita.
@@ -152,6 +158,11 @@ export function MotionPlayer<D>({ film, label, renderDetail, controls, autoplay 
   const { chapters } = film;
   const current = frame.chapterIndex;
   const chapter = frame.chapter;
+  const [selected, setSelected] = useState<string | null>(null);
+  const displayFilm = alternativa?.film ?? film;
+  const displayFrame = useMemo(() => displayFilm === film ? frame : frameAt(displayFilm, t), [displayFilm, film, frame, t]);
+  const select = (id: string) => setSelected(id === selected ? null : id);
+  const part = displayFrame.entities.find(e => e.spec.id === selected && e.state.opacity > .005);
 
   const goChapter = (i: number) => {
     const target = chapters[Math.min(Math.max(i, 0), chapters.length - 1)];
@@ -162,7 +173,7 @@ export function MotionPlayer<D>({ film, label, renderDetail, controls, autoplay 
   };
 
   const onKey = (e: KeyboardEvent<HTMLDivElement>) => {
-    if (e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement || e.target instanceof HTMLTextAreaElement) return;
+    if (e.defaultPrevented || (e.target instanceof Element && e.target.closest("input, select, textarea, button, a, [role='button']"))) return;
     if (e.key === " " || e.key === "k") {
       e.preventDefault();
       clock.toggle();
@@ -197,7 +208,6 @@ export function MotionPlayer<D>({ film, label, renderDetail, controls, autoplay 
       </div>
       {controls !== undefined ? <div className="mo-player__controls">{controls}</div> : null}
       <div className="mo-player__screen">
-        {alternativa === undefined ? <MotionStage film={film} t={t} frame={frame} label={label} /> : alternativa.render({ film, t, frame, label })}
         {views.length > 0 ? (
           <div className="mo-views" role="radiogroup" aria-label="View">
             {[{ id: "flat", label: flatLabel }, ...views].map((v) => (
@@ -207,6 +217,7 @@ export function MotionPlayer<D>({ film, label, renderDetail, controls, autoplay 
             ))}
           </div>
         ) : null}
+        {alternativa === undefined ? <MotionStage film={film} t={t} frame={frame} label={label} selected={selected} onSelect={select} spatialControls={views.length === 0} /> : alternativa.render({ film: displayFilm, t, frame: displayFrame, label, selected, onSelect: select })}
         <p className="mo-player__hud mono" aria-hidden="true">
           <span>{String(current + 1).padStart(2, "0")}</span>
           <span className="mo-player__hud-sep">/</span>
@@ -214,6 +225,8 @@ export function MotionPlayer<D>({ film, label, renderDetail, controls, autoplay 
           <span className="mo-player__hud-title">{chapter?.title}</span>
         </p>
       </div>
+
+      {part && <aside className="mo-selection" aria-live="polite"><div><span className="mono">SELECTED PART</span><strong>{part.state.label || part.spec.title || "Part"}</strong>{part.state.sublabel && <p>{part.state.sublabel}</p>}{part.spec.title && part.spec.title !== part.state.label && <p>{part.spec.title}</p>}</div><button type="button" aria-label="Clear selection" onClick={() => setSelected(null)}>×</button></aside>}
 
       <div className="mo-transport" role="group" aria-label="Playback">
         <button type="button" className="mo-btn" onClick={() => goChapter(current - 1)} aria-label="Previous chapter" disabled={current === 0 && t < 600}>

@@ -107,3 +107,7 @@
 .podlab .podlab-vistas button[aria-checked="true"] { background: var(--accent); color: var(--paper-raised); }
 .podlab-cluster { --mo-aspect: 16 / 9; border-bottom: 1px solid var(--rule); }
 .podlab-cluster .mo-stage { border-radius: 0; }
+/* Numbers remain in the node inspector and gauges. Keep the spatial overview
+   readable; the selected Pod alone expands its status under the name. */
+.podlab-cluster .iso-note,
+.podlab-cluster .iso-label:not([data-selected]) .iso-sub { display: none; }

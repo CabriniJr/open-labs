@@ -79,6 +79,13 @@
   block-size: 100%;
 }
 
+.explorer, .explorer__corpo { min-width: 0; max-width: 100%; }
+.explorer__palco { display: flex; flex-direction: column; }
+.explorer__palco > .scene-spatial, .explorer__palco .scene-planar > .dui-stage__moldura { flex: 1; min-height: 0; height: 100%; max-height: none; }
+.explorer__palco .dui-stage__moldura > .dui-stage { height: 100%; }
+.explorer[data-cheia="true"] .scene-viewport { height: 100%; display: flex; flex-direction: column; }
+.explorer[data-cheia="true"] .scene-canvas { flex: 1; min-height: 0; }
+
 /*
  * Em tela cheia o palco deixa de ter altura fixa e passa a tomar o que sobra:
  * a trilha e a ficha continuam ali, e todo o resto é desenho.

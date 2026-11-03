@@ -19,6 +19,27 @@ const estado = (f: ReturnType<typeof filmeDaTransicao>, id: string, t: number) =
   frameAt(f, t).entities.find((e) => e.spec.id === id)!.state;
 
 describe("a cena do cluster sai do estado", () => {
+  it("keeps every Pod in a distinct slot when requests allow more than eight on one node", () => {
+    const s = sessao(DEPLOYMENT_MANIFEST.replace("replicas: 2", "replicas: 12").replace("cpu: 500m", "cpu: 100m").replace("memory: 256Mi", "memory: 64Mi"));
+    const state = s.dispatch({ type: "tick" });
+    expect(state.pods).toHaveLength(12);
+    const boxes = [...lugares(state).values()];
+    expect(new Set(boxes.map(b => `${b.x}:${b.y}`)).size).toBe(12);
+    const film = filmeDaTransicao(null, state);
+    const node = film.entities.find(e => e.id === "no:worker-01");
+    expect(node?.type).toBe("region");
+    if (node?.type !== "region") throw new Error("Missing node");
+    for (const b of boxes) expect(b.y + b.h).toBeLessThan(node.box.y + node.box.h - 84);
+  });
+
+  it("grows the pending area instead of stacking unassigned Pods in the same slot", () => {
+    const source = EXPERIMENTS.find(e => e.id === "pending")!.manifest.replace("replicas: 2", "replicas: 12");
+    const s = sessao(source), state = s.dispatch({ type: "tick" });
+    const boxes = [...lugares(state).values()];
+    expect(new Set(boxes.map(b => `${b.x}:${b.y}`)).size).toBe(12);
+    const film = filmeDaTransicao(null, state);
+    for (const b of boxes) expect(b.y + b.h).toBeLessThan(film.height);
+  });
   it("um Pod criado e agendado no mesmo passo sai do scheduler e anda até a vaga", () => {
     const s = sessao();
     const antes = s.state; // aplicado, nenhum Pod ainda

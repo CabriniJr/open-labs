@@ -2,6 +2,7 @@ import { filmeDaTransicao, type ClusterState } from "@ovh/kubernetes-domain";
 import type { Film } from "@ovh/motion";
 import { MotionStage } from "@ovh/motion/react";
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { clusterResourceIds } from "../lib/cluster-inspector.js";
 
 const IsoStage = lazy(() => import("@ovh/stage3d").then((m) => ({ default: m.IsoStage })));
 
@@ -16,10 +17,12 @@ function useTransicao(state: Readonly<ClusterState>): { filme: Film<null>; t: nu
   const anterior = useRef<Readonly<ClusterState> | null>(null);
   const filme = useMemo(() => {
     const f = filmeDaTransicao(anterior.current, state);
-    anterior.current = state;
     return f;
   }, [state]);
-  const [t, setT] = useState(filme.duration);
+  useEffect(() => { anterior.current = state; }, [state]);
+  const [clock, setClock] = useState({ film: filme, t: filme.duration });
+  const setT = (t: number) => setClock({ film: filme, t });
+  const t = clock.film === filme ? clock.t : 0;
   useEffect(() => {
     let reduzido = false;
     try {
@@ -43,17 +46,23 @@ function useTransicao(state: Readonly<ClusterState>): { filme: Film<null>; t: nu
   return { filme, t };
 }
 
-export function ClusterScene({ state, modo }: { state: Readonly<ClusterState>; modo: "flat" | "iso" }) {
+export function ClusterScene({ state, modo, selected, onSelect }: { state: Readonly<ClusterState>; modo: "flat" | "iso" | "3d"; selected: string | null; onSelect: (id: string) => void }) {
   const { filme, t } = useTransicao(state);
   const rotulo = "Cluster view: control plane, pending queue and two nodes with their Pods and reserved requests";
+  const selectedId = state.pods.some(p => p.uid === selected) ? `pod:${selected}` : selected;
+  const selectableIds = useMemo(() => clusterResourceIds(state), [state]);
+  const select = (id: string) => {
+    if (id.startsWith("pod:")) { const uid = id.slice(4); if (state.pods.some(p => p.uid === uid)) onSelect(uid); }
+    else if (["plano", "fila", "controlador", "escalonador"].includes(id) || id.startsWith("no:")) onSelect(id);
+  };
   return (
     <div className="podlab-cluster" data-testid="cluster-scene" data-modo={modo}>
-      {modo === "iso" ? (
+      {modo !== "flat" ? (
         <Suspense fallback={<div className="iso-stage" aria-busy="true" />}>
-          <IsoStage film={filme} t={t} label={rotulo} />
+          <IsoStage film={filme} t={t} label={rotulo} projection={modo === "3d" ? "perspective" : "orthographic"} selected={selectedId} onSelect={select} selectableIds={selectableIds} />
         </Suspense>
       ) : (
-        <MotionStage film={filme} t={t} label={rotulo} />
+        <MotionStage film={filme} t={t} label={rotulo} selected={selectedId} onSelect={select} spatialControls={false} />
       )}
     </div>
   );

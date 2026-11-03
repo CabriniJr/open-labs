@@ -1,4 +1,6 @@
 import { useId, type ReactNode } from "react";
+import { SceneViewport } from "@ovh/depth-ui";
+import { spatialFromFrame } from "./spatial-frame.js";
 import type { Film } from "../choreography.js";
 import { frameAt, viewBox, type Frame, type ResolvedEntity } from "../frame.js";
 import { pathD, poseAt } from "../geometry.js";
@@ -19,6 +21,8 @@ export interface MotionStageProps<D> {
   readonly className?: string;
   readonly onSelect?: (id: string) => void;
   readonly selected?: string | null;
+  /** A domain player can supply its own topology / 3D view selector. */
+  readonly spatialControls?: boolean;
 }
 
 const f = (n: number) => Math.round(n * 100) / 100;
@@ -293,11 +297,11 @@ function Entity({ entity, maskId, t, top }: { entity: ResolvedEntity; maskId: st
   }
 }
 
-export function MotionStage<D>({ film, t, frame, label, className, onSelect, selected }: MotionStageProps<D>) {
+export function MotionStage<D>({ film, t, frame, label, className, onSelect, selected, spatialControls = true }: MotionStageProps<D>) {
   const uid = useId().replace(/:/g, "");
   const q = frame ?? frameAt(film, t);
   const vb = viewBox(film, q.camera);
-  return (
+  const diagram = (
     <svg
       className={["mo-stage", className].filter(Boolean).join(" ")}
       viewBox={`${f(vb.x)} ${f(vb.y)} ${f(vb.w)} ${f(vb.h)}`}
@@ -318,8 +322,12 @@ export function MotionStage<D>({ film, t, frame, label, className, onSelect, sel
           key={entity.spec.id}
           data-entity={entity.spec.id}
           data-selected={selected === entity.spec.id ? "" : undefined}
+          role={onSelect && entity.state.opacity >= .005 ? "button" : undefined}
+          tabIndex={onSelect && entity.state.opacity >= .005 ? 0 : undefined}
+          aria-label={onSelect ? entity.state.label || entity.spec.title || entity.spec.type : undefined}
           style={entity.spec.textScale === undefined ? undefined : { ["--mo-k" as string]: entity.spec.textScale }}
           onClick={onSelect === undefined ? undefined : () => onSelect(entity.spec.id)}
+          onKeyDown={onSelect === undefined ? undefined : e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); onSelect(entity.spec.id); } }}
         >
           <Entity entity={entity} maskId={`${uid}-m-${entity.spec.id.replace(/[^a-zA-Z0-9_-]/g, "_")}`} t={t} top={vb.y + 12} />
         </g>
@@ -334,4 +342,5 @@ export function MotionStage<D>({ film, t, frame, label, className, onSelect, sel
       )}
     </svg>
   );
+  return spatialControls ? <SceneViewport scene={() => spatialFromFrame(film, q)} label={label} selected={selected} onSelect={onSelect}>{diagram}</SceneViewport> : diagram;
 }

@@ -155,7 +155,8 @@ async function fotografarFilmes(page, pasta, prefixo) {
     for (const [vi, vista] of nomes.entries()) {
       if ((await vistas.count()) > 0) {
         await vistas.nth(vi).click();
-        await page.waitForTimeout(vista.toLowerCase() === "iso" ? 2500 : 300);
+        if (["iso", "3d"].includes(vista.toLowerCase())) await player.locator('.iso-stage[data-ready="true"]').waitFor({ timeout: 20_000 });
+        else await page.waitForTimeout(300);
       }
       const escolhidos = FAST ? [total - 1] : [...Array(total).keys()];
       for (const c of escolhidos) {
@@ -184,9 +185,73 @@ async function fotografarFilmes(page, pasta, prefixo) {
         await player.locator(".mo-player__screen").screenshot({ path: join(pasta, arquivo) });
         fotos.push(arquivo);
       }
+      const theme = await page.evaluate(() => document.documentElement.getAttribute("data-theme"));
+      await page.evaluate(() => { document.documentElement.dataset.theme = "dark"; });
+      await page.waitForTimeout(250);
+      const dark = `${prefixo}-player${i}-${vista.toLowerCase()}-dark.png`;
+      await player.locator(".mo-player__screen").screenshot({ path: join(pasta, dark) });
+      fotos.push(dark);
+      await page.evaluate(previous => { if (previous) document.documentElement.dataset.theme = previous; else document.documentElement.removeAttribute("data-theme"); }, theme);
     }
   }
   return fotos;
+}
+
+async function fotografarCluster(page, pasta, prefixo) {
+  const views = page.locator(".podlab-vistas [role=radio]");
+  const fotos = [];
+  for (let i = 0; i < await views.count(); i++) {
+    const view = views.nth(i), name = (await view.textContent()).toLowerCase();
+    await view.click();
+    if (["iso", "3d"].includes(name)) await page.locator('.iso-stage[data-ready="true"]').waitFor({ timeout: 20_000 });
+    const theme = await page.evaluate(() => document.documentElement.getAttribute("data-theme"));
+    for (const mode of ["light", "dark"]) {
+      await page.evaluate(value => { document.documentElement.dataset.theme = value; }, mode);
+      await page.waitForTimeout(250);
+      const file = `${prefixo}-cluster-${name}-${mode}.png`;
+      await page.locator(".podlab-graph-panel").screenshot({ path: join(pasta, file) });
+      fotos.push(file);
+    }
+    await page.evaluate(previous => { if (previous) document.documentElement.dataset.theme = previous; else document.documentElement.removeAttribute("data-theme"); }, theme);
+  }
+  return fotos;
+}
+
+/** Measure the actual GPU views too; a fast flat view says nothing about 3D. */
+async function medir3d(page, cdp) {
+  const results = [];
+  for (const name of ["Iso", "3D"]) {
+    const radio = page.getByRole("radio", { name, exact: true });
+    if (!await radio.count()) continue;
+    await radio.click();
+    const stage = page.locator('.iso-stage[data-ready="true"]');
+    await stage.waitFor({ timeout: 20_000 });
+    await stage.scrollIntoViewIfNeeded();
+    await cdp.send("Emulation.setCPUThrottlingRate", { rate: 4 });
+    await sondar(page); await page.waitForTimeout(3000);
+    const perf = await colher(page, 3000);
+    // Exercise the real pointer and zoom handlers while the GPU is visible.
+    const b = await stage.boundingBox();
+    await sondar(page);
+    const started = Date.now();
+    await page.mouse.move(b.x + b.width * .5, b.y + b.height * .5);
+    await page.mouse.down();
+    for (let i = 1; i <= 24; i++) {
+      await page.mouse.move(b.x + b.width * (.5 + .15 * i / 24), b.y + b.height * (.5 + .05 * i / 24));
+      await page.waitForTimeout(24);
+    }
+    await page.mouse.up();
+    await page.getByRole("button", { name: "Zoom in 3D", exact: true }).click();
+    await page.getByRole("button", { name: "Zoom out in 3D", exact: true }).click();
+    const gesture = await colher(page, Date.now() - started);
+    await page.getByRole("button", { name: "Reset camera", exact: true }).click();
+    const layout = await acessibilidade(page);
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    const backend = await stage.getAttribute("data-backend");
+    results.push({ view: name, backend, perf, gesture, a11y: layout, overflow });
+    await cdp.send("Emulation.setCPUThrottlingRate", { rate: 1 });
+  }
+  return results;
 }
 
 async function auditar(browser, lab, perfil) {
@@ -225,7 +290,8 @@ async function auditar(browser, lab, perfil) {
   const pasta = join(SAIDA, "shots");
   const prefixo = `${lab.replace(/^labs\//, "").replace(/\/$/, "")}-${perfil.nome}`;
   await page.screenshot({ path: join(pasta, `${prefixo}-pagina.png`), fullPage: false });
-  const fotos = perfil.toque && FAST ? [] : await fotografarFilmes(page, pasta, prefixo);
+  const spatial = await medir3d(page, cdp);
+  const fotos = perfil.toque && FAST ? [] : [...await fotografarFilmes(page, pasta, prefixo), ...await fotografarCluster(page, pasta, prefixo)];
   // Lab com dois modos: a vitrine também passa pelo QA — erros, rolagem e fotos.
   const abaShowcase = page.getByRole("tab", { name: /Showcase/ });
   if ((await abaShowcase.count()) > 0) {
@@ -245,8 +311,17 @@ async function auditar(browser, lab, perfil) {
   if (parado.p95 > ORCAMENTO.paradoP95) alertas.push(`parado: p95 ${parado.p95} ms > ${ORCAMENTO.paradoP95}`);
   if (parado.longasPorSegundo > ORCAMENTO.longasPorSegundo) alertas.push(`parado: ${parado.longasPorSegundo} ms/s de long task`);
   if (noZoom !== null && noZoom.p95 > ORCAMENTO.zoomP95) alertas.push(`zoom: p95 ${noZoom.p95} ms > ${ORCAMENTO.zoomP95}`);
+  for (const s of spatial) {
+    if (!["webgpu", "webgl2"].includes(s.backend)) falhas.push(`${s.view}: GPU backend unavailable (${s.backend})`);
+    if (s.perf.p95 > ORCAMENTO.paradoP95) alertas.push(`${s.view}: p95 ${s.perf.p95} ms > ${ORCAMENTO.paradoP95}`);
+    if (s.perf.longasPorSegundo > ORCAMENTO.longasPorSegundo) alertas.push(`${s.view}: ${s.perf.longasPorSegundo} ms/s de long task`);
+    if (s.gesture.p95 > ORCAMENTO.zoomP95) alertas.push(`${s.view} gesture: p95 ${s.gesture.p95} ms > ${ORCAMENTO.zoomP95}`);
+    if (s.gesture.longasPorSegundo > ORCAMENTO.longasPorSegundo) alertas.push(`${s.view} gesture: ${s.gesture.longasPorSegundo} ms/s de long task`);
+    if (s.overflow > 1) falhas.push(`${s.view}: rolagem horizontal de ${s.overflow}px`);
+    if (s.a11y.semNome || s.a11y.palcosSemRotulo) falhas.push(`${s.view}: controles ou palco sem nome`);
+  }
   await ctx.close();
-  return { lab, perfil: perfil.nome, transbordo, a11y, parado, zoom: noZoom, erros, fotos, falhas, alertas };
+  return { lab, perfil: perfil.nome, transbordo, a11y, parado, zoom: noZoom, spatial, erros, fotos, falhas, alertas };
 }
 
 function relatorio(resultados) {
@@ -264,6 +339,8 @@ function relatorio(resultados) {
     linhas.push(`| ${r.lab} | ${r.perfil} | ${r.parado.fps} · ${r.parado.p95} ms | ${z} | ${v} |`);
   }
   const comErro = resultados.filter((r) => r.erros.length > 0);
+  linhas.push("", "## Vistas espaciais · CPU a 4×", "", "| lab | perfil | vista · backend | playback fps · p95 | orbit + zoom fps · p95 | long tasks playback / gesture ms/s |", "|---|---|---|---|---|---|");
+  for (const r of resultados) for (const s of r.spatial ?? []) linhas.push(`| ${r.lab} | ${r.perfil} | ${s.view} · ${s.backend} | ${s.perf.fps} · ${s.perf.p95} ms | ${s.gesture.fps} · ${s.gesture.p95} ms | ${s.perf.longasPorSegundo} / ${s.gesture.longasPorSegundo} |`);
   if (comErro.length > 0) {
     linhas.push("", "## Erros", "");
     for (const r of comErro) for (const e of r.erros) linhas.push(`- \`${r.lab}\` (${r.perfil}): ${e}`);

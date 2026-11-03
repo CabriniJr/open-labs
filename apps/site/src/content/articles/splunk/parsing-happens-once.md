@@ -134,7 +134,7 @@ that makes it a different kind of decision from everything else in Splunk — yo
 cannot change fields on data that is already indexed
 ([source](#src-splunk-index-time-fields)).
 
-> [!deeper]
+> [!deeper] Which decisions are permanent, and which can be changed
 >
 > That last sentence is the real line between the two halves of Splunk, and it
 > is worth stating as a property rather than as a caveat.

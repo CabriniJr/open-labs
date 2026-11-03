@@ -17,19 +17,13 @@ const IsoStage = lazy(() => import("@ovh/stage3d").then((m) => ({ default: m.Iso
 function vistas(topologia: Film<DetalheDoContexto>): readonly MotionView<DetalheDoContexto>[] {
   return [
     {
-      id: "topology",
-      label: "Topology",
-      render: ({ t, label }) => <MotionStage film={topologia} t={t} label={`${label} — service topology`} />,
+      id: "topology", label: "Topology", film: topologia,
+      render: ({ film, t, frame, label, selected, onSelect }) => <MotionStage film={film} t={t} frame={frame} label={`${label} — service topology`} selected={selected} onSelect={onSelect} spatialControls={false} />,
     },
-    {
-      id: "iso",
-      label: "Iso",
-      render: ({ t, label }) => (
-        <Suspense fallback={<div className="iso-stage" aria-busy="true" />}>
-          <IsoStage film={topologia} t={t} label={`${label} — service topology`} />
-        </Suspense>
-      ),
-    },
+    ...([['iso', 'Iso', 'orthographic'], ['3d', '3D', 'perspective']] as const).map(([id, label, projection]): MotionView<DetalheDoContexto> => ({
+      id, label, film: topologia,
+      render: ({ film, t, frame, label, selected, onSelect }) => <Suspense fallback={<div className="iso-stage" aria-busy="true" />}><IsoStage film={film} t={t} frame={frame} label={`${label} — service topology`} projection={projection} selected={selected} onSelect={onSelect} /></Suspense>,
+    })),
   ];
 }
 
