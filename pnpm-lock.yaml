@@ -221,6 +221,9 @@ importers:
       '@ovh/interactive-core':
         specifier: workspace:*
         version: link:../interactive-core
+      '@ovh/motion':
+        specifier: workspace:*
+        version: link:../motion
       yaml:
         specifier: ^2.5.0
         version: 2.9.0

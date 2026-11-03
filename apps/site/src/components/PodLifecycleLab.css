@@ -100,3 +100,10 @@
 @media (max-width: 1000px) { .podlab-workspace { grid-template-columns: minmax(240px, .7fr) minmax(0, 1fr); } .podlab-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } .podlab-node-grid { grid-template-columns: 1fr; } }
 @media (max-width: 700px) { .podlab-topbar { align-items: start; flex-direction: column; padding: 1rem; } .podlab-toolbar { flex-direction: column; align-items: stretch; } .podlab-toolbar > div { justify-content: space-between; } .podlab-workspace, .podlab-details, .podlab-bottom { grid-template-columns: minmax(0, 1fr); } .podlab-editor { border-right: 0; border-bottom: 1px solid var(--rule); } .podlab-editor textarea { min-height: 300px; max-height: 420px; } .podlab-inspector { border-right: 0; } .podlab-node-grid { grid-template-columns: minmax(0, 1fr); } .podlab-page .lab-palco { padding-inline: var(--space-1); } .podlab-bottom { gap: 1rem; } }
 @media (prefers-reduced-motion: reduce) { .podlab * { scroll-behavior: auto; } }
+
+/* As vistas do cluster: árvore de posse, cena plana e cena isométrica. */
+.podlab-panel-title > .podlab-vistas { display: inline-flex; gap: 2px; padding: 2px; border: 1px solid var(--rule); border-radius: 999px; font: inherit; letter-spacing: 0; }
+.podlab .podlab-vistas button { padding: .15rem .6rem; border: 0; border-radius: 999px; background: transparent; color: var(--ink-muted); font: .68rem var(--font-mono); }
+.podlab .podlab-vistas button[aria-checked="true"] { background: var(--accent); color: var(--paper-raised); }
+.podlab-cluster { --mo-aspect: 16 / 9; border-bottom: 1px solid var(--rule); }
+.podlab-cluster .mo-stage { border-radius: 0; }
