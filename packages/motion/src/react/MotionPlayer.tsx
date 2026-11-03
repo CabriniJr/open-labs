@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type KeyboardEvent, type ReactNode } from "react";
-import type { Film } from "../choreography.js";
-import { frameAt, type Frame } from "../frame.js";
+import type { Film, Packet } from "../choreography.js";
+import type { Tone } from "../scene.js";
+import { chapterAt, frameAt, type Frame } from "../frame.js";
 import { MotionStage } from "./MotionStage.js";
 import { useClock, type Clock } from "./useClock.js";
 
@@ -41,6 +42,79 @@ export interface MotionPlayerProps<D> {
   readonly initialView?: string;
   /** Como o seletor chama o palco plano. */
   readonly flatLabel?: string;
+  /** Título da tabela de pacotes (só aparece se o filme registrou pacotes). */
+  readonly packetsTitle?: string;
+  /**
+   * O que a cor de um pacote quer dizer. Sem isto a legenda é por protocolo —
+   * errada quando o lab pinta por outra coisa (um trace, um estado).
+   */
+  readonly packetLegend?: readonly { readonly label: string; readonly tone: Tone }[];
+}
+
+function PacketCard({ p, n, total }: { p: Packet; n: number; total: number }) {
+  return (
+    <div className="mo-packet" data-tone={p.tone}>
+      <p className="mo-packet__route mono">
+        <span className="mo-packet__tag">{p.tag}</span>
+        <span>
+          {p.from} → {p.to}
+        </span>
+      </p>
+      <p className="mo-packet__payload mono">{p.payload}</p>
+      <p className="mo-packet__meta mono">
+        Packet {n} of {total} · {p.protocol}
+        {p.bytes !== undefined ? ` · ${p.bytes} B` : ""}
+      </p>
+    </div>
+  );
+}
+
+function PacketTable({ film, sent, chapterOf, title, legend }: { film: Film<unknown>; sent: number; chapterOf: (t: number) => number; title: string; legend: readonly { label: string; tone: Tone }[] | undefined }) {
+  const protocolos = legend?.map((l) => [l.label, l.tone] as const) ?? [...new Map(film.packets.map((p) => [p.protocol, p.tone])).entries()];
+  return (
+    <section className="mo-packets" aria-label={title}>
+      <header className="mo-packets__head">
+        <h3 className="mo-packets__title">{title}</h3>
+        <ul className="mo-packets__legend mono">
+          {protocolos.map(([nome, tom]) => (
+            <li key={nome} data-tone={tom}>
+              {nome}
+            </li>
+          ))}
+        </ul>
+      </header>
+      <div className="mo-packets__scroll">
+        <table className="mono">
+          <thead>
+            <tr>
+              <th>No.</th>
+              <th>Step</th>
+              <th>Source</th>
+              <th>Destination</th>
+              <th>Protocol</th>
+              <th>Size</th>
+              <th>Info</th>
+            </tr>
+          </thead>
+          <tbody>
+            {film.packets.map((p, i) => (
+              <tr key={i} data-tone={p.tone} data-state={i < sent - 1 ? "sent" : i === sent - 1 ? "current" : "next"}>
+                <td>
+                  <span className="mo-packets__n">{i + 1}</span>
+                </td>
+                <td>{String(chapterOf(p.t) + 1).padStart(2, "0")}</td>
+                <td>{p.from}</td>
+                <td>{p.to}</td>
+                <td>{p.protocol}</td>
+                <td>{p.bytes === undefined ? "—" : `${p.bytes} B`}</td>
+                <td className="mo-packets__info">{p.payload}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
 }
 
 const CHAVE_DA_VISTA = "mo-view";
@@ -52,7 +126,7 @@ function fmt(ms: number): string {
   return `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
 }
 
-export function MotionPlayer<D>({ film, label, renderDetail, controls, autoplay = false, className, testId, views = [], initialView, flatLabel = "Flat" }: MotionPlayerProps<D>) {
+export function MotionPlayer<D>({ film, label, renderDetail, controls, autoplay = false, className, testId, views = [], initialView, flatLabel = "Flat", packetsTitle = "Packet flow", packetLegend }: MotionPlayerProps<D>) {
   const [vista, setVista] = useState(initialView ?? "flat");
   useEffect(() => {
     if (views.length === 0) return;
@@ -122,6 +196,16 @@ export function MotionPlayer<D>({ film, label, renderDetail, controls, autoplay 
 
   return (
     <div className={["mo-player", className].filter(Boolean).join(" ")} tabIndex={0} onKeyDown={onKey} data-testid={testId} data-playing={clock.playing ? "" : undefined}>
+      <div className="mo-steps" aria-hidden="true">
+        <span className="mo-steps__bars">
+          {chapters.map((c, i) => (
+            <span key={c.id} data-state={i < current ? "done" : i === current ? "current" : "next"} />
+          ))}
+        </span>
+        <span className="mo-steps__label mono">
+          Step {current + 1}/{chapters.length} · {chapter?.title}
+        </span>
+      </div>
       {controls !== undefined ? <div className="mo-player__controls">{controls}</div> : null}
       <div className="mo-player__screen">
         {views.length > 0 ? (
@@ -217,10 +301,14 @@ export function MotionPlayer<D>({ film, label, renderDetail, controls, autoplay 
           <p className="mo-narration__eyebrow mono">{chapter?.title}</p>
           {stepTitle !== undefined ? <h3 className="mo-narration__title">{stepTitle}</h3> : null}
           <p className="mo-narration__body">{narration}</p>
+          {frame.packet !== undefined ? <PacketCard p={frame.packet} n={frame.sent} total={film.packets.length} /> : null}
           <p className="mo-narration__keys mono" aria-hidden="true">space play · ←/→ chapter</p>
         </section>
         {renderDetail !== undefined ? <section className="mo-detail">{renderDetail(frame, clock)}</section> : null}
       </div>
+      {film.packets.length > 0 ? (
+        <PacketTable film={film as Film<unknown>} sent={frame.sent} title={packetsTitle} legend={packetLegend} chapterOf={(t) => chapterAt(film, t)} />
+      ) : null}
     </div>
   );
 }

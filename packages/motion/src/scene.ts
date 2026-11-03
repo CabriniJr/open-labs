@@ -24,7 +24,27 @@ export type Tone =
   | "kind-4"
   | "kind-5";
 
-export type Shape = "box" | "pill" | "circle" | "diamond" | "cylinder";
+/**
+ * A forma diz o que a peça É. `stack` é equipamento (rack); `chip`, `mux`,
+ * `alu`, `register` e `memory` são o vocabulário do diagrama de blocos; `and`,
+ * `or`, `xor` e `not` são o do esquemático. Ver `shapes.ts`.
+ */
+export type Shape =
+  | "box"
+  | "pill"
+  | "circle"
+  | "diamond"
+  | "cylinder"
+  | "stack"
+  | "chip"
+  | "mux"
+  | "alu"
+  | "register"
+  | "memory"
+  | "and"
+  | "or"
+  | "xor"
+  | "not";
 
 /** Propriedades que o tempo pode mudar. Números interpolam; texto troca. */
 export interface Animatable {
@@ -60,6 +80,19 @@ interface Common {
   readonly tone?: Tone;
   /** Texto para leitor de tela, quando o rótulo não basta. */
   readonly title?: string;
+  /**
+   * Multiplica o tamanho do texto e dos traços da peça. Uma peça de um nível
+   * fundo é pequena no mundo; com `textScale` proporcional, ela lê no mesmo
+   * tamanho que a de cima quando a câmera chega nela.
+   */
+  readonly textScale?: number;
+  /**
+   * Nível de detalhe, pelo zoom da câmera: a peça surge entre `appear·0,7` e
+   * `appear`, e some entre `vanish` e `vanish·1,4`. É o que faz a descida
+   * acontecer sem espaguete: o interior só existe quando dá para lê-lo, e a
+   * caixa fechada sai quando o interior chega.
+   */
+  readonly lod?: { readonly appear?: number; readonly vanish?: number };
 }
 
 export interface NodeSpec extends Common {

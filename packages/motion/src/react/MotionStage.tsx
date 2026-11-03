@@ -4,6 +4,7 @@ import { spatialFromFrame } from "./spatial-frame.js";
 import type { Film } from "../choreography.js";
 import { frameAt, viewBox, type Frame, type ResolvedEntity } from "../frame.js";
 import { pathD, poseAt } from "../geometry.js";
+import { contornoD, formaDe } from "../shapes.js";
 import type { Animatable, EntitySpec, LaneSpec, LinkSpec, NodeSpec, TokenSpec } from "../scene.js";
 
 /**
@@ -30,17 +31,17 @@ function visible(state: Readonly<Animatable>): number {
   return state.opacity * (1 - 0.72 * state.dim);
 }
 
-function Label({ text, sub, y = 0 }: { text: string; sub: string; y?: number }) {
+function Label({ text, sub, y = 0, k = 1 }: { text: string; sub: string; y?: number; k?: number }) {
   if (text === "" && sub === "") return null;
   return (
     <>
       {text !== "" ? (
-        <text className="mo-label" y={sub === "" ? y : y - 7} textAnchor="middle" dominantBaseline="central">
+        <text className="mo-label" y={sub === "" ? y : y - 7 * k} textAnchor="middle" dominantBaseline="central">
           {text}
         </text>
       ) : null}
       {sub !== "" ? (
-        <text className="mo-sublabel" y={text === "" ? y : y + 10} textAnchor="middle" dominantBaseline="central">
+        <text className="mo-sublabel" y={text === "" ? y : y + 10 * k} textAnchor="middle" dominantBaseline="central">
           {sub}
         </text>
       ) : null}
@@ -49,28 +50,56 @@ function Label({ text, sub, y = 0 }: { text: string; sub: string; y?: number }) 
 }
 
 function shapeOf(shape: NodeSpec["shape"], w: number, h: number, className: string): ReactNode {
-  switch (shape ?? "box") {
-    case "circle":
-      return <ellipse className={className} rx={w / 2} ry={h / 2} />;
-    case "pill":
-      return <rect className={className} x={-w / 2} y={-h / 2} width={w} height={h} rx={h / 2} />;
-    case "diamond":
-      return <polygon className={className} points={`0,${-h / 2} ${w / 2},0 0,${h / 2} ${-w / 2},0`} />;
-    case "cylinder": {
-      const e = Math.min(10, h / 5);
-      return (
-        <path
-          className={className}
-          d={`M${-w / 2} ${-h / 2 + e} A${w / 2} ${e} 0 0 1 ${w / 2} ${-h / 2 + e} V${h / 2 - e} A${w / 2} ${e} 0 0 1 ${-w / 2} ${h / 2 - e} Z M${-w / 2} ${-h / 2 + e} A${w / 2} ${e} 0 0 0 ${w / 2} ${-h / 2 + e}`}
-        />
-      );
-    }
-    default:
-      return <rect className={className} x={-w / 2} y={-h / 2} width={w} height={h} rx={8} />;
+  const forma = shape ?? "box";
+  if (forma === "cylinder") {
+    const e = Math.min(10, h / 5);
+    return (
+      <path
+        className={className}
+        d={`M${-w / 2} ${-h / 2 + e} A${w / 2} ${e} 0 0 1 ${w / 2} ${-h / 2 + e} V${h / 2 - e} A${w / 2} ${e} 0 0 1 ${-w / 2} ${h / 2 - e} Z M${-w / 2} ${-h / 2 + e} A${w / 2} ${e} 0 0 0 ${w / 2} ${-h / 2 + e}`}
+      />
+    );
   }
+  if (forma === "stack") {
+    // Três lâminas, com o LED de cada uma: lê como equipamento de relance.
+    const lamina = (h - 8) / 3;
+    return (
+      <g className={className === "mo-node__shape" ? "mo-node__stack" : undefined}>
+        <rect className={className} x={-w / 2} y={-h / 2} width={w} height={h} rx={6} />
+        {[0, 1, 2].map((i) => (
+          <g key={i}>
+            {/* Ranhuras só nas bordas: atravessando a caixa, a lâmina riscava o rótulo. */}
+            {i > 0 ? (
+              <>
+                <line className="mo-node__blade" x1={-w / 2 + 4} x2={-w / 2 + 16} y1={-h / 2 + 4 + i * lamina} y2={-h / 2 + 4 + i * lamina} />
+                <line className="mo-node__blade" x1={w / 2 - 22} x2={w / 2 - 4} y1={-h / 2 + 4 + i * lamina} y2={-h / 2 + 4 + i * lamina} />
+              </>
+            ) : null}
+            <circle className="mo-node__led" cx={w / 2 - 10} cy={-h / 2 + 4 + i * lamina + lamina / 2} r={2} />
+          </g>
+        ))}
+      </g>
+    );
+  }
+  // O resto vem do catálogo de formas: o mesmo contorno que o 3D extruda.
+  const f = formaDe(forma, w, h);
+  const contorno = <path className={className} d={contornoD(f.contorno)} />;
+  if (className !== "mo-node__shape") return contorno;
+  return (
+    <>
+      {contorno}
+      {f.detalhes.map((d, i) => (
+        <path key={i} className="mo-node__detail" d={contornoD(d, false)} />
+      ))}
+      {f.circulos.map((c, i) => (
+        <circle key={`c${i}`} className="mo-node__detail mo-node__dot" cx={c.x} cy={c.y} r={c.r} />
+      ))}
+    </>
+  );
 }
 
 function Body({ spec, state, box, shape, badge }: { spec: EntitySpec; state: Readonly<Animatable>; box: { x: number; y: number; w: number; h: number }; shape?: NodeSpec["shape"]; badge?: string | undefined }) {
+  const k = spec.textScale ?? 1;
   const cx = box.x + box.w / 2 + state.dx;
   const cy = box.y + box.h / 2 + state.dy;
   return (
@@ -89,11 +118,11 @@ function Body({ spec, state, box, shape, badge }: { spec: EntitySpec; state: Rea
       ) : null}
       {shapeOf(shape, box.w, box.h, "mo-node__shape")}
       {badge !== undefined ? (
-        <text className="mo-badge" x={-box.w / 2 + 10} y={-box.h / 2 + 12} dominantBaseline="central">
+        <text className="mo-badge" x={-box.w / 2 + 10 * k} y={-box.h / 2 + 12 * k} dominantBaseline="central">
           {badge}
         </text>
       ) : null}
-      <Label text={state.label} sub={state.sublabel} />
+      <Label text={state.label} sub={state.sublabel} k={k} />
       {spec.title !== undefined ? <title>{spec.title}</title> : null}
     </g>
   );
@@ -118,6 +147,7 @@ function Lane({ spec, state, top, part }: { spec: LaneSpec; state: Readonly<Anim
 }
 
 function Link({ spec, state, maskId }: { spec: LinkSpec; state: Readonly<Animatable>; maskId: string }) {
+  const k = spec.textScale ?? 1;
   const d = pathD(spec.path);
   const p = state.progress;
   const tip = poseAt(spec.path, p);
@@ -139,15 +169,15 @@ function Link({ spec, state, maskId }: { spec: LinkSpec; state: Readonly<Animata
       </mask>
       <path d={d} className="mo-link__path" mask={p < 0.999 ? `url(#${maskId})` : undefined} />
       {spec.arrow === true && p > 0.02 ? (
-        <path className="mo-link__arrow" d="M0 0 L-9 -4.5 L-9 4.5 Z" transform={`translate(${f(tip.x)} ${f(tip.y)}) rotate(${f(tip.angle)})`} />
+        <path className="mo-link__arrow" d="M0 0 L-9 -4.5 L-9 4.5 Z" transform={`translate(${f(tip.x)} ${f(tip.y)}) rotate(${f(tip.angle)}) scale(${f(k)})`} />
       ) : null}
       {state.label !== "" && labelOpacity > 0 ? (
-        <text className="mo-link__label" x={f(labelPose.x)} y={f(labelPose.y - 9)} textAnchor="middle" style={{ opacity: f(labelOpacity) }}>
+        <text className="mo-link__label" x={f(labelPose.x)} y={f(labelPose.y - 9 * k)} textAnchor="middle" style={{ opacity: f(labelOpacity) }}>
           {state.label}
         </text>
       ) : null}
       {state.sublabel !== "" && labelOpacity > 0 ? (
-        <text className="mo-link__sublabel" x={f(labelPose.x)} y={f(labelPose.y + 15)} textAnchor="middle" style={{ opacity: f(labelOpacity) }}>
+        <text className="mo-link__sublabel" x={f(labelPose.x)} y={f(labelPose.y + 15 * k)} textAnchor="middle" style={{ opacity: f(labelOpacity) }}>
           {state.sublabel}
         </text>
       ) : null}
@@ -169,18 +199,28 @@ function Token({ spec, state }: { spec: TokenSpec; state: Readonly<Animatable> }
     ghosts.push(<circle key={k} className="mo-token__ghost" cx={f(g.x)} cy={f(g.y)} r={f(r * (1 - k / (trail + 2)))} style={{ opacity: f(0.5 * (1 - k / (trail + 1))) }} />);
   }
   const label = state.label;
-  const width = Math.max(28, label.length * 6.6 + 14);
+  const sub = state.sublabel;
+  const k = spec.textScale ?? 1;
+  // Etiqueta de pacote: cabeçalho cheio na cor do tipo, conteúdo embaixo.
+  const width = Math.max(28, Math.max(label.length * 6.4, sub.length * 5.6) + 16) * k;
+  const alto = (sub === "" ? 20 : 34) * k;
   return (
     <g className="mo-token" data-tone={state.tone} style={{ opacity: o }} transform={`translate(${f(state.dx)} ${f(state.dy)})`}>
       {ghosts}
       <circle className="mo-token__halo" cx={f(pose.x)} cy={f(pose.y)} r={r * 2.4} />
       <circle className="mo-token__core" cx={f(pose.x)} cy={f(pose.y)} r={r * state.scale} />
       {label !== "" ? (
-        <g transform={`translate(${f(pose.x)} ${f(pose.y - r - 14)})`}>
-          <rect className="mo-token__tag" x={-width / 2} y={-10} width={width} height={20} rx={10} />
-          <text className="mo-token__text" textAnchor="middle" dominantBaseline="central">
+        <g transform={`translate(${f(pose.x)} ${f(pose.y - r - 8 * k - alto / 2)})`}>
+          <rect className="mo-token__tag" x={-width / 2} y={-alto / 2} width={width} height={alto} rx={4 * k} />
+          {sub !== "" ? <rect className="mo-token__head" x={-width / 2} y={-alto / 2} width={width} height={16 * k} rx={4 * k} /> : null}
+          <text className={sub === "" ? "mo-token__text" : "mo-token__text mo-token__text--head"} y={sub === "" ? 0 : -alto / 2 + 8 * k} textAnchor="middle" dominantBaseline="central">
             {label}
           </text>
+          {sub !== "" ? (
+            <text className="mo-token__sub" y={alto / 2 - 8 * k} textAnchor="middle" dominantBaseline="central">
+              {sub}
+            </text>
+          ) : null}
         </g>
       ) : null}
     </g>
@@ -222,13 +262,13 @@ function Entity({ entity, maskId, t, top }: { entity: ResolvedEntity; maskId: st
         <g className="mo-note" data-tone={state.tone} style={{ opacity: visible(state) }} transform={`translate(${f(spec.at.x + state.dx)} ${f(spec.at.y + state.dy)}) scale(${f(state.scale)})`}>
           <text textAnchor={anchor}>
             {lines.map((l, i) => (
-              <tspan key={i} x={0} dy={i === 0 ? 0 : 15}>
+              <tspan key={i} x={0} dy={i === 0 ? 0 : 15 * (spec.textScale ?? 1)}>
                 {l}
               </tspan>
             ))}
           </text>
           {state.sublabel !== "" ? (
-            <text className="mo-note__sub" textAnchor={anchor} y={lines.length * 15 + 2}>
+            <text className="mo-note__sub" textAnchor={anchor} y={(lines.length * 15 + 2) * (spec.textScale ?? 1)}>
               {state.sublabel}
             </text>
           ) : null}
@@ -239,9 +279,9 @@ function Entity({ entity, maskId, t, top }: { entity: ResolvedEntity; maskId: st
       const { box } = spec;
       return (
         <g className="mo-region" data-tone={state.tone} data-lit={state.glow > 0.05 ? "" : undefined} style={{ opacity: visible(state), ["--mo-glow" as string]: f(state.glow) }} transform={`translate(${f(state.dx)} ${f(state.dy)})`}>
-          <rect x={box.x} y={box.y} width={box.w} height={box.h} rx={14} />
+          <rect x={box.x} y={box.y} width={box.w} height={box.h} rx={14 * (spec.textScale ?? 1)} />
           {state.label !== "" ? (
-            <text className="mo-region__label" x={box.x + 14} y={box.y + 18}>
+            <text className="mo-region__label" x={box.x + 14 * (spec.textScale ?? 1)} y={box.y + 18 * (spec.textScale ?? 1)}>
               {state.label}
             </text>
           ) : null}
@@ -270,8 +310,10 @@ export function MotionStage<D>({ film, t, frame, label, className, onSelect, sel
       aria-label={label}
     >
       <defs>
-        <pattern id={`${uid}-grid`} width={24} height={24} patternUnits="userSpaceOnUse">
-          <circle cx={1} cy={1} r={1} className="mo-stage__dot" />
+        {/* O papel quadriculado acompanha o zoom: a 100× ele continua com a
+            mesma malha na tela, em vez de virar bolas do tamanho de uma porta. */}
+        <pattern id={`${uid}-grid`} width={f(24 / q.camera.zoom)} height={f(24 / q.camera.zoom)} patternUnits="userSpaceOnUse">
+          <circle cx={f(1 / q.camera.zoom)} cy={f(1 / q.camera.zoom)} r={f(1 / q.camera.zoom)} className="mo-stage__dot" />
         </pattern>
       </defs>
       <rect className="mo-stage__floor" x={f(vb.x - vb.w)} y={f(vb.y - vb.h)} width={f(vb.w * 3)} height={f(vb.h * 3)} fill={`url(#${uid}-grid)`} />
@@ -283,6 +325,7 @@ export function MotionStage<D>({ film, t, frame, label, className, onSelect, sel
           role={onSelect && entity.state.opacity >= .005 ? "button" : undefined}
           tabIndex={onSelect && entity.state.opacity >= .005 ? 0 : undefined}
           aria-label={onSelect ? entity.state.label || entity.spec.title || entity.spec.type : undefined}
+          style={entity.spec.textScale === undefined ? undefined : { ["--mo-k" as string]: entity.spec.textScale }}
           onClick={onSelect === undefined ? undefined : () => onSelect(entity.spec.id)}
           onKeyDown={onSelect === undefined ? undefined : e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); onSelect(entity.spec.id); } }}
         >

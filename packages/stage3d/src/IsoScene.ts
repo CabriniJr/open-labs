@@ -1,4 +1,4 @@
-import { pathLength, poseAt, type CameraState, type EntitySpec, type Film, type Frame, type Tone } from "@ovh/motion";
+import { formaDe, pathLength, poseAt, type CameraState, type EntitySpec, type Film, type Frame, type Tone } from "@ovh/motion";
 import {
   BoxGeometry,
   CanvasTexture,
@@ -7,6 +7,8 @@ import {
   CylinderGeometry,
   DirectionalLight,
   EdgesGeometry,
+  ExtrudeGeometry,
+  Shape as ContornoDoThree,
   Group,
   HemisphereLight,
   Line,
@@ -25,15 +27,14 @@ import {
   Sprite,
   SpriteMaterial,
   Vector3,
-  WebGLRenderer,
   BufferGeometry,
   type Material,
   type Object3D,
 } from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
-import { Line2 } from "three/examples/jsm/lines/Line2.js";
 import { LineGeometry } from "three/examples/jsm/lines/LineGeometry.js";
-import { LineMaterial } from "three/examples/jsm/lines/LineMaterial.js";
+import { Line2 } from "three/examples/jsm/lines/webgpu/Line2.js";
+import { Line2NodeMaterial, WebGPURenderer } from "three/webgpu";
 import { CSS2DObject, CSS2DRenderer } from "three/examples/jsm/renderers/CSS2DRenderer.js";
 import { deslocamentoNoChao, distanciaPerspectivaParaCaber, ISO_AZIMUTE, ISO_ELEVACAO, meiaAlturaParaCaber, pontoNoAr, pontosDoCaminho, posicaoDaCamera } from "./iso.js";
 import { lerPaleta, type Paleta } from "./tons.js";
@@ -45,6 +46,10 @@ import { lerPaleta, type Paleta } from "./tons.js";
  * novo); esta classe decide COMO, mexendo nos objetos que já existem em vez de
  * recriá-los. Nenhuma geometria nasce por quadro: um filme monta a cena uma
  * vez, e cada quadro só move, acende e apaga.
+ *
+ * O renderizador é o `WebGPURenderer`: WebGPU onde o navegador tem, e WebGL2
+ * onde não tem, com o mesmo código — a escolha é dele, e o palco anota qual
+ * foi em `data-backend`. Não há caminho "só WebGL" para envelhecer ao lado.
  *
  * Custo sob controle, porque 3D na web trava fácil:
  * - desenha sob demanda — só quando o quadro muda ou a câmera é mexida;
@@ -130,11 +135,14 @@ function halo(): CanvasTexture {
 export interface IsoOptions {
   /** Altura dos blocos em relação ao menor lado da caixa. */
   readonly alturaRelativa?: number;
+  /** Força o backend WebGL2 mesmo com WebGPU disponível (QA, comparação). */
+  readonly forcarWebGL?: boolean;
 }
 
 export class IsoScene {
   readonly #host: HTMLElement;
-  readonly #renderer: WebGLRenderer;
+  #renderer: WebGPURenderer;
+  #pronto = false;
   readonly #labels: CSS2DRenderer;
   readonly #scene = new Scene();
   readonly #camera = new OrthographicCamera(-1, 1, 1, -1, 1, 8000);
@@ -162,18 +170,19 @@ export class IsoScene {
   #pedido = 0;
   #azimute = ISO_AZIMUTE;
   #elevacao = ISO_ELEVACAO;
-  #linhas: LineMaterial[] = [];
+  #linhas: Line2NodeMaterial[] = [];
   #retemar: (() => void) | null = null;
+  #disposed = false;
+  #retry: ReturnType<typeof setTimeout> | undefined;
+  readonly #onReady: ((error?: Error) => void) | undefined;
 
-  constructor(host: HTMLElement, options: IsoOptions = {}) {
+  constructor(host: HTMLElement, options: IsoOptions = {}, onReady?: (error?: Error) => void) {
+    this.#onReady = onReady;
     this.#host = host;
     this.#options = options;
     this.#paleta = lerPaleta(host);
-    this.#renderer = new WebGLRenderer({ antialias: true, alpha: false, powerPreference: "high-performance" });
-    this.#renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
-    // Lit solids and semantic outlines provide depth without a second shadow pass.
-    this.#renderer.domElement.className = "iso-stage__canvas";
-    host.appendChild(this.#renderer.domElement);
+    const semGpu = typeof navigator === "undefined" || !("gpu" in navigator);
+    this.#renderer = this.#criarRenderer(options.forcarWebGL === true || semGpu);
 
     this.#labels = new CSS2DRenderer();
     this.#labels.domElement.className = "iso-stage__labels";
@@ -202,6 +211,58 @@ export class IsoScene {
     this.#midia = window.matchMedia?.("(prefers-color-scheme: dark)") ?? null;
     this.#midia?.addEventListener("change", retemar);
     this.#medir();
+  }
+
+  /**
+   * Um renderizador novo, no hospedeiro.
+   *
+   * Se o dispositivo WebGPU cair — driver reiniciado, GPU trocada, um ambiente
+   * que não o sustenta —, a cena se recria em WebGL2 e continua do mesmo quadro.
+   * O leitor nunca vê um palco vazio por causa da tecnologia que escolhemos.
+   */
+  #criarRenderer(forcarWebGL: boolean, tentativa = 0): WebGPURenderer {
+    const r = new WebGPURenderer({ antialias: true, alpha: false, powerPreference: "high-performance", forceWebGL: forcarWebGL });
+    r.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+    // Lit solids and semantic outlines avoid an additional shadow pass.
+    r.domElement.className = "iso-stage__canvas";
+    this.#host.prepend(r.domElement);
+    this.#pronto = false;
+    r.onDeviceLost = () => {
+      if (this.#disposed || this.#renderer !== r || forcarWebGL) return;
+      this.#host.dataset.backendPerdido = "webgpu";
+      r.domElement.remove();
+      r.dispose();
+      this.#renderer = this.#criarRenderer(true);
+      this.#medir();
+    };
+    r.init().then(
+      () => {
+        if (this.#disposed || this.#renderer !== r) { r.dispose(); return; }
+        this.#pronto = true;
+        this.#onReady?.();
+        const webgpu = (r.backend as { isWebGPUBackend?: boolean }).isWebGPUBackend === true;
+        this.#host.dataset.backend = webgpu ? "webgpu" : "webgl2";
+        this.pedir();
+      },
+      (erro: unknown) => {
+        if (this.#disposed || this.#renderer !== r) return;
+        this.#host.dataset.erro = erro instanceof Error ? erro.message : String(erro);
+        // Logo depois de o processo de GPU cair, o navegador recusa contexto
+        // novo por um instante. Tenta-se de novo, com espera crescente.
+        if (tentativa >= 3) {
+          this.#host.dataset.backend = "falhou";
+          this.#onReady?.(erro instanceof Error ? erro : new Error(String(erro)));
+          return;
+        }
+        this.#retry = setTimeout(() => {
+          if (this.#disposed || this.#renderer !== r) return;
+          r.domElement.remove();
+          this.#renderer = this.#criarRenderer(true, tentativa + 1);
+          this.#medir();
+        }, 500 * 2 ** tentativa);
+      },
+    );
+    return r;
   }
 
   /** Gira a vista. A elevação fica entre o quase-chão e o quase-topo. */
@@ -314,13 +375,17 @@ export class IsoScene {
   }
 
   dispose(): void {
+    this.#disposed = true;
+    clearTimeout(this.#retry);
     cancelAnimationFrame(this.#pedido);
     this.#observador?.disconnect();
     this.#resize?.disconnect();
     this.#temaObs?.disconnect();
     if (this.#retemar !== null) this.#midia?.removeEventListener("change", this.#retemar);
     this.#limparMundo();
-    this.#renderer.dispose();
+    // An unfinished init is released by its completion handler. Disposing it
+    // early would make Three's async animation cleanup await a failed init.
+    if (this.#pronto) this.#renderer.dispose();
     this.#renderer.domElement.remove();
     this.#labels.domElement.remove();
   }
@@ -335,7 +400,6 @@ export class IsoScene {
     this.#host.style.setProperty("--iso-k", String(Math.max(0.62, Math.min(1, w / 1100))));
     if (w < 640) this.#host.dataset.compacto = "";
     else delete this.#host.dataset.compacto;
-    for (const m of this.#linhas) m.resolution.set(w, h);
     this.pedir();
   }
 
@@ -372,10 +436,11 @@ export class IsoScene {
 
   #desenhar(): void {
     const film = this.#film;
-    if (film === null) return;
+    if (film === null || !this.#pronto) return;
     this.#enquadrar(this.#frame?.camera ?? film.camera);
     this.#renderer.render(this.#scene, this.#cameraAtual());
     this.#labels.render(this.#scene, this.#cameraAtual());
+    marcar(this.#host, "chamadas", String(this.#renderer.info.render.drawCalls ?? this.#renderer.info.render.calls ?? 0));
   }
 
   #malha(film: Film<unknown>, p: Paleta): Object3D {
@@ -387,9 +452,8 @@ export class IsoScene {
     return new LineSegments(new BufferGeometry().setFromPoints(pts), mat);
   }
 
-  #linha(cor: Color, largura: number, tracejada: boolean): LineMaterial {
-    const m = new LineMaterial({ color: cor.getHex(), linewidth: largura, transparent: true, dashed: tracejada, dashSize: 8, gapSize: 7 });
-    m.resolution.set(Math.max(1, this.#host.clientWidth), Math.max(1, this.#host.clientHeight));
+  #linha(cor: Color, largura: number, tracejada: boolean): Line2NodeMaterial {
+    const m = new Line2NodeMaterial({ color: cor.getHex(), linewidth: largura, transparent: true, dashed: tracejada, dashSize: 8, gapSize: 7 });
     this.#linhas.push(m);
     return m;
   }
@@ -429,15 +493,17 @@ export class IsoScene {
         const root = new Group();
         const { box } = spec;
         const mat = new MeshStandardMaterial({ color: corDe(p.tom(tomInicial), p.tinta), transparent: true, opacity: 0.08 });
-        const placa = new Mesh(new BoxGeometry(box.w, 1, box.h), mat);
-        placa.position.set(box.x + box.w / 2, 0.5 + (spec.layer ?? 0) * .75, box.y + box.h / 2);
+        const k = spec.textScale ?? 1;
+        const esp = k;
+        const placa = new Mesh(new BoxGeometry(box.w, esp, box.h), mat);
+        placa.position.set(box.x + box.w / 2, esp * .02 - esp / 2 + (spec.layer ?? 0) * .75 * k, box.y + box.h / 2);
         root.add(placa);
         const border = new LineBasicMaterial({ color: mat.color, transparent: true, opacity: .35 });
         const edges = new LineSegments(new EdgesGeometry(placa.geometry), border);
         edges.position.copy(placa.position); root.add(edges);
         const { obj, el } = etiqueta("iso-region", spec.label ?? "");
         // Put the caption on the boundary, away from the first row of pieces.
-        obj.position.set(box.x + box.w - 12, 6, box.y + 12);
+        obj.position.set(box.x + box.w - 12 * k, 6 * k, box.y + 12 * k);
         root.add(obj);
         return {
           spec,
@@ -465,28 +531,85 @@ export class IsoScene {
     const box = spec.type === "node" ? spec.box : spec.head;
     const shape = spec.type === "node" ? (spec.shape ?? "box") : "box";
     const alturaRel = this.#options.alturaRelativa ?? 0.5;
-    const H = Math.max(12, Math.min(44, Math.min(box.w, box.h) * alturaRel));
+    // Proporcional à peça, sem piso absoluto: uma porta lógica de 1 unidade
+    // num nível fundo não pode virar uma torre de 12.
+    const H = Math.min(44, Math.min(box.w, box.h) * alturaRel);
+    const pequena = Math.min(box.w, box.h) < 24;
     const root = new Group();
     const corpo = new Group();
     corpo.position.set(box.x + box.w / 2, 0, box.y + box.h / 2);
     root.add(corpo);
 
+    // Formas do catálogo: o MESMO contorno do palco plano, levantado em sólido.
+    const extrudada = !["circle", "cylinder", "pill", "box", "stack", "diamond"].includes(shape);
+    const forma = extrudada ? formaDe(shape, box.w, box.h) : null;
     const geo =
       shape === "circle" || shape === "cylinder"
         ? new CylinderGeometry(Math.min(box.w, box.h) / 2, Math.min(box.w, box.h) / 2, H, 40)
-        : shape === "pill" || shape === "box"
-          ? new RoundedBoxGeometry(box.w, H, box.h, 3, Math.min(8, H / 3, box.h / 2.5))
-          : new BoxGeometry(box.w * 0.72, H, box.h * 0.72);
+        : forma !== null
+          ? (() => {
+              // y do palco é z do mundo; a extrusão sobe em y depois da rotação.
+              const c = new ContornoDoThree(forma.contorno.map((p) => new Vector2(p.x, -p.y)));
+              const g = new ExtrudeGeometry(c, { depth: H, bevelEnabled: true, bevelThickness: H * 0.06, bevelSize: Math.min(box.w, box.h) * 0.02, bevelSegments: 2, curveSegments: 6 });
+              g.rotateX(-Math.PI / 2);
+              g.translate(0, -H / 2, 0);
+              return g;
+            })()
+          : shape === "pill" || shape === "box" || shape === "stack"
+            ? new RoundedBoxGeometry(box.w, H, box.h, 3, Math.min(8, H / 3, box.h / 2.5))
+            : new BoxGeometry(box.w * 0.72, H, box.h * 0.72);
     const mat = new MeshStandardMaterial({ roughness: 0.62, metalness: 0.05, transparent: true });
     const mesh = new Mesh(geo, mat);
+    let detalhe: LineSegments | null = null;
+    // Equipamento: o bloco vira três lâminas com fresta entre elas.
+    const laminas: Mesh[] = [];
+    if (shape === "stack") {
+      mesh.visible = false;
+      const alturaDaLamina = (H * 1.6) / 3;
+      for (let i = 0; i < 3; i += 1) {
+        const l = new Mesh(new RoundedBoxGeometry(box.w, alturaDaLamina - 3, box.h, 2, 3), mat);
+        l.position.y = alturaDaLamina / 2 + i * alturaDaLamina;
+        l.castShadow = true;
+        l.receiveShadow = true;
+        laminas.push(l);
+      }
+    }
     mesh.position.y = H / 2;
     if (shape === "diamond") mesh.rotation.y = Math.PI / 4;
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
+    // Sombra só para peça grande: o mapa de sombra cobre o filme inteiro, e numa
+    // peça de uma unidade ele vira serrilhado.
+    mesh.castShadow = !pequena;
+    mesh.receiveShadow = !pequena;
     corpo.add(mesh);
+    // Os detalhes da forma na face de cima; os pinos de um chip, rentes à base.
+    if (forma !== null && (forma.detalhes.length > 0 || forma.circulos.length > 0)) {
+      const pts: Vector3[] = [];
+      const fora = (p: { x: number; y: number }) => Math.abs(p.x) > box.w / 2 + 1e-6 || Math.abs(p.y) > box.h / 2 + 1e-6;
+      for (const d of forma.detalhes) {
+        const y = d.some(fora) ? H * 0.18 : H * 1.01;
+        for (let i = 1; i < d.length; i += 1) pts.push(new Vector3(d[i - 1]!.x, y, d[i - 1]!.y), new Vector3(d[i]!.x, y, d[i]!.y));
+      }
+      for (const c of forma.circulos) {
+        for (let i = 0; i < 24; i += 1) {
+          const a0 = (i / 24) * Math.PI * 2;
+          const a1 = ((i + 1) / 24) * Math.PI * 2;
+          pts.push(new Vector3(c.x + Math.cos(a0) * c.r, H * 1.01, c.y + Math.sin(a0) * c.r), new Vector3(c.x + Math.cos(a1) * c.r, H * 1.01, c.y + Math.sin(a1) * c.r));
+        }
+      }
+      detalhe = new LineSegments(new BufferGeometry().setFromPoints(pts), new LineBasicMaterial({ transparent: true }));
+      corpo.add(detalhe);
+    }
+    for (const l of laminas) corpo.add(l);
 
     const bordaMat = new LineBasicMaterial({ transparent: true });
     const borda = new LineSegments(new EdgesGeometry(geo, 30), bordaMat);
+    const bordasDasLaminas = laminas.map((l) => {
+      const b = new LineSegments(new EdgesGeometry(l.geometry, 30), bordaMat);
+      b.position.copy(l.position);
+      corpo.add(b);
+      return b;
+    });
+    if (shape === "stack") borda.visible = false;
     borda.position.copy(mesh.position);
     borda.rotation.copy(mesh.rotation);
     corpo.add(borda);
@@ -500,7 +623,7 @@ export class IsoScene {
     const raioDoAnel = Math.max(box.w, box.h) * 0.62;
 
     const { obj, el } = etiqueta("iso-label", spec.label ?? "");
-    obj.position.set(0, H + 4, 0);
+    obj.position.set(0, (shape === "stack" ? H * 1.6 : H) * 1.08 + Math.min(4, H * 0.3), 0);
     corpo.add(obj);
 
     // A linha de vida de uma raia: tracejada no chão, da cabeça até o fundo.
@@ -535,6 +658,7 @@ export class IsoScene {
           mat.color = base.clone().lerp(t, 0.2);
           mat.emissive = t;
           bordaMat.color = t;
+          if (detalhe !== null) (detalhe.material as LineBasicMaterial).color = t;
           anelMat.color = t;
           anelMat.emissive = t;
           vidaMat?.color.copy(t);
@@ -542,11 +666,20 @@ export class IsoScene {
         mat.emissiveIntensity = 0.04 + s.glow * 0.38;
         mat.opacity = visivel;
         bordaMat.opacity = Math.min(1, visivel * (0.55 + 0.45 * s.glow));
+        if (detalhe !== null) (detalhe.material as LineBasicMaterial).opacity = visivel * 0.8;
         corpo.position.set(box.x + box.w / 2 + s.dx, 0, box.y + box.h / 2 + s.dy);
         corpo.scale.setScalar(s.scale);
         // Acender levanta a peça um pouco: a energia vira altura.
-        mesh.position.y = H / 2 + s.glow * 3;
+        // Proporcional à peça: 3 unidades fixas jogavam uma porta de 0,45 de
+        // altura sete alturas para cima, longe do próprio rótulo.
+        mesh.position.y = H / 2 + s.glow * H * 0.12;
         borda.position.y = mesh.position.y;
+        if (detalhe !== null) detalhe.position.y = s.glow * H * 0.12;
+        laminas.forEach((l, i) => {
+          // Aceso, o rack "respira": as lâminas se afastam um pouco.
+          l.position.y = ((H * 1.6) / 3) * (i + 0.5) + s.glow * H * (0.05 + i * 0.05);
+          bordasDasLaminas[i]!.position.y = l.position.y;
+        });
         if (s.ping > 0 && s.ping < 1) {
           anel.visible = true;
           anel.scale.setScalar(raioDoAnel * (1 + s.ping * 0.8));
@@ -568,7 +701,10 @@ export class IsoScene {
 
   #ligacao(spec: Extract<EntitySpec, { type: "link" }>, p: Paleta, tom: Tone): Peca {
     const root = new Group();
-    const pontos = pontosDoCaminho(spec.path, 1, 48, 1.5);
+    // Tudo que tem tamanho fixo (ponta, altura, rótulo) escala com a peça: num
+    // nível fundo, uma ponta de seta de 4,5 unidades cobre a porta inteira.
+    const k = spec.textScale ?? 1;
+    const pontos = pontosDoCaminho(spec.path, 1, 48, 1.5 * k);
     const geo = new LineGeometry();
     geo.setPositions(pontos.flatMap((v) => [v.x, v.y, v.z]));
     const mat = this.#linha(corDe(p.tom(tom), p.tinta), 2, spec.dashed === true);
@@ -578,14 +714,14 @@ export class IsoScene {
     const segmentos = pontos.length - 1;
 
     const pontaMat = new MeshStandardMaterial({ transparent: true });
-    const ponta = new Mesh(new ConeGeometry(4.5, 11, 16), pontaMat);
+    const ponta = new Mesh(new ConeGeometry(4.5 * k, 11 * k, 16), pontaMat);
     ponta.visible = spec.arrow === true;
     root.add(ponta);
 
     const at = spec.labelAt ?? 0.5;
     const meio = poseAt(spec.path, at);
     const { obj, el } = etiqueta("iso-link", spec.label ?? "");
-    obj.position.set(meio.x, 10, meio.y);
+    obj.position.set(meio.x, 10 * k, meio.y);
     root.add(obj);
     let tomAtual = "";
     return {
@@ -613,7 +749,7 @@ export class IsoScene {
         root.position.set(s.dx, 0, s.dy);
         if (ponta.visible) {
           const tip = poseAt(spec.path, s.progress);
-          ponta.position.set(tip.x, 1.5, tip.y);
+          ponta.position.set(tip.x, 1.5 * k, tip.y);
           ponta.rotation.set(0, -(tip.angle * Math.PI) / 180, -Math.PI / 2);
           pontaMat.opacity = visivel;
         }
@@ -645,7 +781,11 @@ export class IsoScene {
     }
     const { obj, el } = etiqueta("iso-token", spec.label ?? "");
     root.add(obj);
-    const salto = Math.min(60, 16 + pathLength(spec.path) * 0.08);
+    // Arco e altura proporcionais ao caminho: num nível fundo o caminho mede
+    // unidades, e um salto fixo de 16 jogaria a ficha para fora do quadro.
+    const comprimento = pathLength(spec.path);
+    const salto = Math.min(60, comprimento * 0.22);
+    const base = Math.min(14, comprimento * 0.12);
     let tomAtual = "";
     return {
       spec,
@@ -668,7 +808,7 @@ export class IsoScene {
         }
         mat.opacity = visivel;
         haloMat.opacity = 0.5 * visivel;
-        const aqui = pontoNoAr(spec.path, s.progress, 14, salto);
+        const aqui = pontoNoAr(spec.path, s.progress, base, salto);
         esfera.position.set(aqui.x + s.dx, aqui.y, aqui.z + s.dy);
         esfera.scale.setScalar(s.scale);
         brilho.position.copy(esfera.position);
@@ -676,11 +816,27 @@ export class IsoScene {
           const u = s.progress - (k + 1) * 0.022;
           m.visible = u > 0;
           if (!m.visible) return;
-          const q = pontoNoAr(spec.path, u, 14, salto);
+          const q = pontoNoAr(spec.path, u, base, salto);
           m.position.set(q.x + s.dx, q.y, q.z + s.dy);
         });
-        obj.position.set(esfera.position.x, esfera.position.y + r + 10, esfera.position.z);
-        escrever(el, s.label);
+        obj.position.set(esfera.position.x, esfera.position.y + r * 2.2, esfera.position.z);
+        // Etiqueta de pacote: cabeçalho na cor do tipo e o conteúdo embaixo.
+        const chave = `${s.label}\u0000${s.sublabel}`;
+        if (el.dataset.k !== chave) {
+          el.dataset.k = chave;
+          el.replaceChildren();
+          const head = document.createElement("span");
+          head.className = "iso-token__head";
+          head.textContent = s.label;
+          el.appendChild(head);
+          if (s.sublabel !== "") {
+            const sub = document.createElement("span");
+            sub.className = "iso-token__sub";
+            sub.textContent = s.sublabel;
+            el.appendChild(sub);
+          }
+          el.hidden = s.label === "";
+        }
         marcar(el, "tone", s.tone);
       },
     };
@@ -689,8 +845,9 @@ export class IsoScene {
   #barra(spec: Extract<EntitySpec, { type: "bar" }>, p: Paleta, tom: Tone): Peca {
     const root = new Group();
     const { box } = spec;
-    const alto = 4;
-    const base = 1 + (spec.layer ?? 0) * .75;
+    const k = spec.textScale ?? 1;
+    const alto = 4 * k;
+    const base = (1 + (spec.layer ?? 0) * .75) * k;
     const mat = new MeshStandardMaterial({ roughness: 0.5, transparent: true, emissiveIntensity: 0.15 });
     const geo = new BoxGeometry(1, alto, 1);
     const mesh = new Mesh(geo, mat);
@@ -722,7 +879,7 @@ export class IsoScene {
         const h = baixo ? box.h * s.progress : box.h;
         mesh.scale.set(Math.max(0.01, w), 1, Math.max(0.01, h));
         mesh.position.set(box.x + w / 2 + s.dx, base + alto / 2, box.y + h / 2 + s.dy);
-        obj.position.set(box.x + box.w + 10 + s.dx, base + alto + 2, box.y + 8 + s.dy);
+        obj.position.set(box.x + box.w + 10 * k + s.dx, base + alto + 2 * k, box.y + 8 * k + s.dy);
         escrever(el, s.label);
         marcar(el, "tone", s.tone);
       },

@@ -1,4 +1,4 @@
-import type { Chapter, Film, Step } from "./choreography.js";
+import type { Chapter, Film, Packet, Step } from "./choreography.js";
 import { CAMERA, initialState, type Animatable, type CameraState, type EntitySpec } from "./scene.js";
 
 /**
@@ -22,6 +22,10 @@ export interface Frame<D> {
   readonly detail: D | undefined;
   /** Avanço dentro do capítulo, 0–1. */
   readonly local: number;
+  /** Quantos pacotes do registro já saíram neste instante. */
+  readonly sent: number;
+  /** O último pacote a sair, se algum já saiu. */
+  readonly packet: Packet | undefined;
 }
 
 const PROPS = ["opacity", "dx", "dy", "scale", "glow", "ping", "progress", "dim", "label", "sublabel", "tone"] as const;
@@ -34,19 +38,35 @@ export function chapterAt<D>(film: Film<D>, t: number): number {
   return index;
 }
 
+const suave = (a: number, b: number, x: number) => {
+  const u = Math.min(1, Math.max(0, (x - a) / Math.max(1e-9, b - a)));
+  return u * u * (3 - 2 * u);
+};
+
+/** Quanto do nível de detalhe deixa a peça aparecer neste zoom, 0–1. */
+export function visibilidadeDoNivel(lod: EntitySpec["lod"], zoom: number): number {
+  if (lod === undefined) return 1;
+  // Em logaritmo: zoom é multiplicativo, e a rampa tem de durar o mesmo em cada nível.
+  const z = Math.log(zoom);
+  const entra = lod.appear === undefined ? 1 : suave(Math.log(lod.appear * 0.7), Math.log(lod.appear), z);
+  const sai = lod.vanish === undefined ? 1 : 1 - suave(Math.log(lod.vanish), Math.log(lod.vanish * 1.4), z);
+  return entra * sai;
+}
+
 export function frameAt<D>(film: Film<D>, t: number): Frame<D> {
   const { timeline } = film;
-  const entities = film.entities.map((spec) => {
-    const base = initialState(spec) as unknown as Record<string, number | string>;
-    const state = { ...base };
-    for (const prop of PROPS) state[prop] = timeline.sample(spec.id, prop, t, base[prop]!);
-    return { spec, state: state as unknown as Animatable };
-  });
   const camera: CameraState = {
     cx: Number(timeline.sample(CAMERA, "cx", t, film.camera.cx)),
     cy: Number(timeline.sample(CAMERA, "cy", t, film.camera.cy)),
     zoom: Number(timeline.sample(CAMERA, "zoom", t, film.camera.zoom)),
   };
+  const entities = film.entities.map((spec) => {
+    const base = initialState(spec) as unknown as Record<string, number | string>;
+    const state = { ...base };
+    for (const prop of PROPS) state[prop] = timeline.sample(spec.id, prop, t, base[prop]!);
+    if (spec.lod !== undefined) state.opacity = Number(state.opacity) * visibilidadeDoNivel(spec.lod, camera.zoom);
+    return { spec, state: state as unknown as Animatable };
+  });
   const chapterIndex = chapterAt(film, t);
   const chapter = film.chapters[chapterIndex];
   let step: Step<D> | undefined;
@@ -60,7 +80,9 @@ export function frameAt<D>(film: Film<D>, t: number): Frame<D> {
     }
   }
   const local = chapter === undefined ? 0 : Math.min(1, Math.max(0, (t - chapter.start) / Math.max(1, chapter.end - chapter.start)));
-  return { t, entities, camera, chapterIndex, chapter, step, detail, local };
+  let sent = 0;
+  while (sent < film.packets.length && film.packets[sent]!.t <= t) sent += 1;
+  return { t, entities, camera, chapterIndex, chapter, step, detail, local, sent, packet: film.packets[sent - 1] };
 }
 
 /** O retângulo visível para uma câmera, na proporção do palco. */

@@ -1,7 +1,7 @@
 # Kubernetes e OpenTelemetry no espaço
 
 As cenas destes dois handbooks usam `@ovh/stage3d`: o filme derivado do domínio
-é desenhado em Three.js, com duas lentes do mesmo estado. **Iso** usa câmera
+é desenhado em Three.js (WebGPU, com recuperação em WebGL2), com duas lentes do mesmo estado. **Iso** usa câmera
 ortográfica; **3D** usa perspectiva. Os handbooks oferecem atalhos para abrir os
 labs diretamente com `?view=3d#experiment`.
 
@@ -63,6 +63,7 @@ sombras. O SVG permanece disponível para a leitura plana.
 `pnpm qa:labs --only=labs/<slug>/` audita desktop e celular com CPU a 4×. Além da
 vista padrão, mede Iso e 3D, verifica acessibilidade e transbordamento e fotografa
 os capítulos e as vistas em temas claro e escuro. O CI guarda os relatórios e
-as fotografias de cada lab em artefatos separados. Alertas de desempenho são
+as fotografias de cada lab em artefatos separados, incluindo o backend usado em
+cada vista. Alertas de desempenho são
 registrados; erros de página, console, controles sem nome ou rolagem horizontal
 reprovam o QA. `--strict` também reprova alertas.

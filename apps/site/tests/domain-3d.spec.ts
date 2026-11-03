@@ -20,6 +20,7 @@ test("Kubernetes 3D uses the actual nodes and Pods, keeps selection and does not
   const lab = page.getByTestId("pod-lifecycle-lab");
   const stage = lab.locator(".iso-stage");
   await expect(stage).toHaveAttribute("data-ready", "true", { timeout: 20_000 });
+  await stage.scrollIntoViewIfNeeded();
   await expect(stage).toHaveAttribute("data-projection", "perspective");
   await expect(stage.locator('[data-entity^="pod:"]')).toHaveCount(2);
   const clock = await lab.getByTestId("simulation-time").textContent();

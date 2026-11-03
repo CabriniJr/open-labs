@@ -144,3 +144,19 @@ fica de pé é **topologia**. Por isso o lab de propagação gera dois filmes do
 mesmo modelo — `filmeDoContexto(opções, "sequence" | "topology")` — com os mesmos
 verbos e durações, e um teste cobra que capítulos e passos batam ao milissegundo.
 O leitor troca entre *Sequence*, *Topology* e *Iso* no meio de um capítulo.
+
+## Pacotes: o que atravessou o fio
+
+`d.packet({ tag, tone, from, to, protocol, payload, bytes? })` registra um pacote no
+instante do cursor; não move nada no palco. O player usa o registro para:
+
+- o **cartão do pacote** em vigor, na narração ("Packet 3 of 9 · OTLP");
+- a tabela **Packet flow**, que revela as linhas conforme o tempo anda e destaca a
+  atual (`packetsTitle`, `packetLegend` — a legenda diz o que a COR significa, e
+  por padrão é o protocolo).
+
+A ficha que anda no palco pode ter etiqueta de duas linhas: `label` é o cabeçalho
+(cheio, na cor do tom) e `sublabel` o conteúdo — no plano e no isométrico.
+
+`bytes` só quando o domínio sabe o tamanho. Um número inventado na coluna é pior
+que um travessão.

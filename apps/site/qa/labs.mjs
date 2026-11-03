@@ -245,7 +245,8 @@ async function medir3d(page, cdp) {
     await page.getByRole("button", { name: "Reset camera", exact: true }).click();
     const layout = await acessibilidade(page);
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
-    results.push({ view: name, perf, gesture, a11y: layout, overflow });
+    const backend = await stage.getAttribute("data-backend");
+    results.push({ view: name, backend, perf, gesture, a11y: layout, overflow });
     await cdp.send("Emulation.setCPUThrottlingRate", { rate: 1 });
   }
   return results;
@@ -299,6 +300,7 @@ async function auditar(browser, lab, perfil) {
   if (parado.longasPorSegundo > ORCAMENTO.longasPorSegundo) alertas.push(`parado: ${parado.longasPorSegundo} ms/s de long task`);
   if (noZoom !== null && noZoom.p95 > ORCAMENTO.zoomP95) alertas.push(`zoom: p95 ${noZoom.p95} ms > ${ORCAMENTO.zoomP95}`);
   for (const s of spatial) {
+    if (!["webgpu", "webgl2"].includes(s.backend)) falhas.push(`${s.view}: GPU backend unavailable (${s.backend})`);
     if (s.perf.p95 > ORCAMENTO.paradoP95) alertas.push(`${s.view}: p95 ${s.perf.p95} ms > ${ORCAMENTO.paradoP95}`);
     if (s.perf.longasPorSegundo > ORCAMENTO.longasPorSegundo) alertas.push(`${s.view}: ${s.perf.longasPorSegundo} ms/s de long task`);
     if (s.gesture.p95 > ORCAMENTO.zoomP95) alertas.push(`${s.view} gesture: p95 ${s.gesture.p95} ms > ${ORCAMENTO.zoomP95}`);
@@ -325,8 +327,8 @@ function relatorio(resultados) {
     linhas.push(`| ${r.lab} | ${r.perfil} | ${r.parado.fps} · ${r.parado.p95} ms | ${z} | ${v} |`);
   }
   const comErro = resultados.filter((r) => r.erros.length > 0);
-  linhas.push("", "## Vistas espaciais · CPU a 4×", "", "| lab | perfil | vista | playback fps · p95 | orbit + zoom fps · p95 | long tasks playback / gesture ms/s |", "|---|---|---|---|---|---|");
-  for (const r of resultados) for (const s of r.spatial ?? []) linhas.push(`| ${r.lab} | ${r.perfil} | ${s.view} | ${s.perf.fps} · ${s.perf.p95} ms | ${s.gesture.fps} · ${s.gesture.p95} ms | ${s.perf.longasPorSegundo} / ${s.gesture.longasPorSegundo} |`);
+  linhas.push("", "## Vistas espaciais · CPU a 4×", "", "| lab | perfil | vista · backend | playback fps · p95 | orbit + zoom fps · p95 | long tasks playback / gesture ms/s |", "|---|---|---|---|---|---|");
+  for (const r of resultados) for (const s of r.spatial ?? []) linhas.push(`| ${r.lab} | ${r.perfil} | ${s.view} · ${s.backend} | ${s.perf.fps} · ${s.perf.p95} ms | ${s.gesture.fps} · ${s.gesture.p95} ms | ${s.perf.longasPorSegundo} / ${s.gesture.longasPorSegundo} |`);
   if (comErro.length > 0) {
     linhas.push("", "## Erros", "");
     for (const r of comErro) for (const e of r.erros) linhas.push(`- \`${r.lab}\` (${r.perfil}): ${e}`);

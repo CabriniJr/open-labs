@@ -31,7 +31,7 @@ export function IsoStage<D>({ film, t, frame, label, className, options, project
 
   useEffect(() => {
     if (!host.current) return;
-    try { scene.current = new IsoScene(host.current, options); setReady(true); }
+    try { scene.current = new IsoScene(host.current, options, error => { if (error) setFailure(error.message); else setReady(true); }); }
     catch (error) { setFailure(error instanceof Error ? error.message : String(error)); }
     return () => { scene.current?.dispose(); scene.current = null; };
     // Options define the lifetime of the renderer, not the current model frame.

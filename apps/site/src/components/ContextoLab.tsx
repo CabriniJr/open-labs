@@ -190,6 +190,12 @@ export function ContextoLab() {
         film={filme}
         views={views}
         flatLabel="Sequence"
+        packetLegend={[
+          { label: "first trace", tone: "kind-1" },
+          ...(propagacao.traces.length > 1 ? [{ label: "orphan trace", tone: "kind-3" as const }] : []),
+          ...(propagacao.chamadas.some((c) => c.headers.traceparent === undefined) ? [{ label: "no context", tone: "live" as const }] : []),
+          ...(amostrado ? [] : [{ label: "not sampled", tone: "muted" as const }]),
+        ]}
         label="Sequence diagram: a checkout request crossing six services, carrying traceparent and baggage headers on each hop."
         controls={
           <>

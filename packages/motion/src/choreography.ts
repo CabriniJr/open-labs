@@ -1,4 +1,4 @@
-import type { EaseName } from "./ease.js";
+import { ease, type EaseName } from "./ease.js";
 import { bounds, pathBox, type Box } from "./geometry.js";
 import {
   CAMERA,
@@ -9,6 +9,7 @@ import {
   type EntitySpec,
   type Prop,
   type PropValue,
+  type Tone,
 } from "./scene.js";
 import { Timeline } from "./timeline.js";
 
@@ -32,6 +33,23 @@ export interface Step<D> {
   readonly detail?: D;
 }
 
+/**
+ * Um pacote no registro do filme: o que atravessou o fio, de onde, para onde.
+ * É o que vira a tabela de pacotes e o cartão do pacote no player — o palco
+ * mostra a ficha andando, o registro diz o que ela era.
+ */
+export interface Packet {
+  readonly t: number;
+  readonly tag: string;
+  readonly tone: Tone;
+  readonly from: string;
+  readonly to: string;
+  readonly protocol: string;
+  readonly payload: string;
+  /** Tamanho em bytes, quando o domínio sabe dizer. */
+  readonly bytes?: number;
+}
+
 export interface Chapter<D> {
   readonly id: string;
   readonly title: string;
@@ -49,6 +67,8 @@ export interface Film<D = unknown> {
   readonly chapters: readonly Chapter<D>[];
   readonly duration: number;
   readonly camera: CameraState;
+  /** Os pacotes que o filme registrou, em ordem de tempo. */
+  readonly packets: readonly Packet[];
 }
 
 export interface Timing {
@@ -107,6 +127,12 @@ export class Director<D> {
   /** Avança o cursor sem fazer nada. */
   wait(ms: number): this {
     this.#cursor += ms;
+    return this;
+  }
+
+  /** Registra um pacote neste instante (ver `Packet`). Não move nada no palco. */
+  packet(p: Omit<Packet, "t">): this {
+    this.#film.registrar({ ...p, t: this.#cursor });
     return this;
   }
 
@@ -195,8 +221,42 @@ export class Director<D> {
     return this.#each(ids, { wait: false, ...timing }, 350, (id, start, dur) => this.#film.animate(id, "dim", level, start, dur, timing.ease));
   }
 
+  /**
+   * Leva a câmera até o alvo, voando como um mapa: zoom em escala logarítmica
+   * e o centro girando em torno do ponto que fica parado na tela. Interpolar os
+   * dois em linha reta fazia o alvo fugir do quadro no meio de um mergulho de
+   * 20× e voltar no fim — a descida enjoava em vez de explicar.
+   */
   camera(target: CameraTarget, timing: Timing = {}): this {
-    return this.to(CAMERA, this.#film.frame(target, this.#cursor + (timing.delay ?? 0)), { dur: 900, ease: "outExpo", ...timing });
+    const dur = timing.dur ?? 900;
+    const start = this.#cursor + (timing.delay ?? 0);
+    const destino = this.#film.frame(target, start);
+    const z0 = Number(this.#film.valueAt(CAMERA, "zoom", start));
+    const x0 = Number(this.#film.valueAt(CAMERA, "cx", start));
+    const y0 = Number(this.#film.valueAt(CAMERA, "cy", start));
+    const { zoom: z1, cx: x1, cy: y1 } = destino;
+    if (dur <= 0) {
+      this.#film.jump(CAMERA, "zoom", z1, start);
+      this.#film.jump(CAMERA, "cx", x1, start);
+      this.#film.jump(CAMERA, "cy", y1, start);
+      return this.#advance(start, timing);
+    }
+    const passos = 36;
+    const fixo = Math.abs(z1 - z0) / Math.max(z0, z1) > 0.05;
+    const fx = fixo ? (x1 * z1 - x0 * z0) / (z1 - z0) : 0;
+    const fy = fixo ? (y1 * z1 - y0 * z0) / (z1 - z0) : 0;
+    for (const [prop, v] of [["zoom", z0], ["cx", x0], ["cy", y0]] as const) this.#film.jump(CAMERA, prop, v, start);
+    for (let i = 1; i <= passos; i += 1) {
+      const u = ease(timing.ease ?? "inOut", i / passos);
+      const z = Math.exp(Math.log(z0) + (Math.log(z1) - Math.log(z0)) * u);
+      const cx = fixo ? fx + ((x0 - fx) * z0) / z : x0 + (x1 - x0) * u;
+      const cy = fixo ? fy + ((y0 - fy) * z0) / z : y0 + (y1 - y0) * u;
+      const t = start + (dur * i) / passos;
+      this.#film.timelineAdd(CAMERA, "zoom", { t, v: z, ease: "linear" });
+      this.#film.timelineAdd(CAMERA, "cx", { t, v: i === passos ? x1 : cx, ease: "linear" });
+      this.#film.timelineAdd(CAMERA, "cy", { t, v: i === passos ? y1 : cy, ease: "linear" });
+    }
+    return this.#advance(start + dur, timing);
   }
 
   /**
@@ -257,6 +317,7 @@ export class FilmBuilder<D = unknown> {
   readonly #entities = new Map<string, EntitySpec>();
   readonly #timeline = new Timeline();
   readonly #chapters: Chapter<D>[] = [];
+  readonly #packets: Packet[] = [];
   #cursor = 0;
 
   constructor(options: FilmOptions) {
@@ -301,6 +362,15 @@ export class FilmBuilder<D = unknown> {
     return this;
   }
 
+  /** Escreve um quadro-chave cru, para verbos que calculam a própria curva. */
+  timelineAdd(id: string, prop: string, frame: { t: number; v: PropValue; ease?: EaseName }): void {
+    this.#timeline.add(id, prop, frame);
+  }
+
+  registrar(p: Packet): void {
+    this.#packets.push(p);
+  }
+
   /** Valor de uma propriedade num instante, levando em conta o que já foi escrito. */
   valueAt(id: string, prop: Prop | keyof CameraState, t: number): PropValue {
     return this.#timeline.sample(id, prop, t, this.#initial(id, prop));
@@ -329,7 +399,9 @@ export class FilmBuilder<D = unknown> {
     const { width, height } = this.#options;
     if (target.at !== undefined) return { cx: width / 2, cy: height / 2, zoom: 1, ...target.at };
     const box = target.box ?? bounds((target.focus ?? []).map((id) => this.boxOf(id, t)));
-    const pad = target.pad ?? 40;
+    // A folga é proporcional ao alvo quando não é dita: 40 unidades num chip
+    // é margem; numa porta lógica de 1 unidade, é o desenho inteiro.
+    const pad = target.pad ?? Math.min(40, Math.max(box.w, box.h) * 0.08);
     const w = Math.max(box.w + pad * 2, 1);
     const h = Math.max(box.h + pad * 2, 1);
     const zoom = Math.max(1, Math.min(width / w, height / h, target.maxZoom ?? this.#options.maxZoom ?? 4));
@@ -347,6 +419,7 @@ export class FilmBuilder<D = unknown> {
       chapters: [...this.#chapters],
       duration: Math.max(last?.end ?? 0, this.#timeline.end),
       camera: { cx: width / 2, cy: height / 2, zoom: 1 },
+      packets: [...this.#packets].sort((a, b) => a.t - b.t),
     };
   }
 

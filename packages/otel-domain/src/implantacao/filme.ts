@@ -68,10 +68,10 @@ export function filmeDaImplantacao(opcoes: OpcoesDeImplantacao): { filme: Film<D
 
   for (const no of NOS_DO_CLUSTER) f.add({ type: "region", id: `regiao:${no}`, box: NO[no]!, label: no, tone: "container" });
   for (const pod of PODS) f.add({ type: "node", id: `pod:${pod.id}`, box: caixaDe(pod.id), label: pod.id, sublabel: "app + SDK", tone: "processor", shape: "pill" });
-  if (temAgent) for (const no of NOS_DO_CLUSTER) f.add({ type: "node", id: `col:agent-${no.slice(-1)}`, box: caixaDe(`agent-${no.slice(-1)}`), label: `agent-${no.slice(-1)}`, sublabel: "Collector · DaemonSet", tone: "conduit" });
+  if (temAgent) for (const no of NOS_DO_CLUSTER) f.add({ type: "node", id: `col:agent-${no.slice(-1)}`, box: caixaDe(`agent-${no.slice(-1)}`), label: `agent-${no.slice(-1)}`, sublabel: "Collector · DaemonSet", tone: "conduit", shape: "stack" });
   if (temGateway) {
     f.add({ type: "region", id: "regiao:gateway", box: GATEWAY, label: "gateway · Deployment", tone: "conduit" });
-    for (const r of REPLICAS) f.add({ type: "node", id: `col:${r}`, box: caixaDe(r), label: r, sublabel: "Collector", tone: "conduit" });
+    for (const r of REPLICAS) f.add({ type: "node", id: `col:${r}`, box: caixaDe(r), label: r, sublabel: "Collector", tone: "conduit", shape: "stack" });
   }
   f.add({ type: "node", id: "col:backend", box: BACKEND, label: "backend", sublabel: `${e.conexoesComBackend} connections`, tone: "container", shape: "cylinder" });
 
@@ -88,7 +88,7 @@ export function filmeDaImplantacao(opcoes: OpcoesDeImplantacao): { filme: Film<D
         // Por baixo das peças: um fio que cruza um Pod some atrás dele em vez de riscá-lo.
         f.add({ type: "link", id: `fio:${par}`, path: fioDe(s.de, s.para), dashed: true, tone: "muted", hidden: true, arrow: true, layer: -1 });
       }
-      f.add({ type: "token", id: `ficha:${span.id}:${k}`, path: fioDe(s.de, s.para), tone: TOM_DO_TRACE[span.trace], hidden: true, layer: 4, size: 5.5, label: span.trace });
+      f.add({ type: "token", id: `ficha:${span.id}:${k}`, path: fioDe(s.de, s.para), tone: TOM_DO_TRACE[span.trace], hidden: true, layer: 4, size: 5.5, label: "OTLP", sublabel: `${span.trace} · ${span.id.split("-")[1]}` });
     });
   }
 
@@ -173,6 +173,14 @@ export function filmeDaImplantacao(opcoes: OpcoesDeImplantacao): { filme: Film<D
       d.stagger(SPANS, 160, (x, span) => {
         const s = e.caminhos.get(span.id)![k];
         if (s === undefined) return;
+        x.packet({
+          tag: "OTLP",
+          tone: TOM_DO_TRACE[span.trace],
+          from: s.de,
+          to: s.para,
+          protocol: s.para === "backend" ? "OTLP → backend" : "OTLP/gRPC",
+          payload: `${span.trace} ${span.id.split("-")[1]} span${s.para.startsWith("gateway-") && !(opcoes.rotearPorTrace && modo === "agent-gateway") ? " · connection pinned by the Service" : s.para.startsWith("gateway-") ? " · routed by trace ID" : ""}`,
+        });
         x.send(`ficha:${span.id}:${k}`, { dur: 900 });
         x.ping(idDe(s.para));
       });

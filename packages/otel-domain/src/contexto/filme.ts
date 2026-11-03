@@ -114,7 +114,7 @@ const BLOCO = { w: 164, h: 74 };
 function geometriaDeTopologia(): Geometria {
   const caixaDe = (lane: Lane): Box => ({ x: NO_GRAFO[lane].x - BLOCO.w / 2, y: NO_GRAFO[lane].y - BLOCO.h / 2, w: BLOCO.w, h: BLOCO.h });
   return {
-    servico: (lane, label, sub, tone, hidden) => ({ type: "node", id: `lane:${lane}`, box: caixaDe(lane), label, sublabel: sub, tone, hidden, shape: lane === "collector" ? "cylinder" : "box" }),
+    servico: (lane, label, sub, tone, hidden) => ({ type: "node", id: `lane:${lane}`, box: caixaDe(lane), label, sublabel: sub, tone, hidden, shape: lane === "collector" ? "stack" : "box" }),
     span: (servico) => {
       const b = caixaDe(servico);
       return { box: { x: b.x, y: b.y + b.h + 9, w: b.w, h: 9 }, grow: "right" };
@@ -176,14 +176,14 @@ export function filmeDoContexto(
     const pai = p.spans.find((s) => s.servico === c.de) ?? null;
     const tone: Tone = semContexto ? "live" : pai !== null ? tomDoSpan(pai) : c.extraido?.sampled === false ? "muted" : tomDoTrace.get(c.extraido?.traceId ?? "") ?? "ink";
     f.add({ type: "link", id: `call:${i}`, layer: 2, path: g.chamada(c.de, c.para, row), arrow: true, label: c.rota, sublabel: semContexto ? "headers dropped" : "", tone: semContexto ? "live" : "ink", hidden: true, labelAt: 0.5 });
-    f.add({ type: "token", id: `ctx:${i}`, path: g.chamada(c.de, c.para, row), tone, label: rotuloDoContexto(c.headers), hidden: true, layer: 3, size: 6 });
+    f.add({ type: "token", id: `ctx:${i}`, path: g.chamada(c.de, c.para, row), tone, label: c.rota, sublabel: c.headers.traceparent === undefined ? "no traceparent" : rotuloDoContexto(c.headers), hidden: true, layer: 3, size: 6 });
   });
 
   // A exportação: um span por ficha, de cada serviço até o Collector.
   const exportaveis = p.spans.filter((s) => s.amostrado);
   exportaveis.forEach((s, i) => {
     f.add({ type: "link", id: `export-line:${s.servico}`, path: g.exporta(s.servico, i), dashed: true, tone: "muted", hidden: true });
-    f.add({ type: "token", id: `export:${s.servico}`, path: g.exporta(s.servico, i), tone: tomDoSpan(s), hidden: true, layer: 3, size: 4.5, trail: 4 });
+    f.add({ type: "token", id: `export:${s.servico}`, path: g.exporta(s.servico, i), tone: tomDoSpan(s), hidden: true, layer: 3, size: 4.5, trail: 4, label: "OTLP", sublabel: s.nome });
   });
 
   // As notas: o que o leitor precisa ler perto de onde aconteceu.
@@ -229,8 +229,22 @@ export function filmeDoContexto(
     },
   );
 
+  const tomDaFicha = (i: number): Tone => {
+    const c = p.chamadas[i]!;
+    if (c.headers.traceparent === undefined) return "live";
+    const pai = p.spans.find((s) => s.servico === c.de);
+    return pai !== undefined ? tomDoSpan(pai) : "ink";
+  };
   const salto = (i: number, foco: Foco | null) => (d: Director<DetalheDoContexto>) => {
     const c = p.chamadas[i]!;
+    d.packet({
+      tag: "HTTP",
+      tone: tomDaFicha(i),
+      from: c.de,
+      to: c.para,
+      protocol: "HTTP",
+      payload: `${c.rota} · ${c.headers.traceparent === undefined ? "no traceparent, no baggage" : `traceparent ${c.headers.traceparent}${c.headers.baggage === undefined ? "" : ` · baggage ${c.headers.baggage}`}`}`,
+    });
     d.together(
       (x) => x.draw(`call:${i}`, { dur: 1000 }),
       (x) => x.send(`ctx:${i}`, { dur: 1000 }),
@@ -325,6 +339,7 @@ export function filmeDoContexto(
       d.show("lane:collector");
       d.stagger(exportaveis, 220, (x, s) => {
         x.draw(`export-line:${s.servico}`, { dur: 500, wait: false });
+        x.packet({ tag: "OTLP", tone: tomDoSpan(s), from: s.servico, to: "collector", protocol: "OTLP", payload: `span "${s.nome}" · trace ${s.traceId.slice(0, 8)}… · span ${s.spanId.slice(0, 8)}…${s.parentId === null ? " · root" : ` · parent ${s.parentId.slice(0, 8)}…`}` });
         x.send(`export:${s.servico}`, { dur: 900 });
         x.hide(`export-line:${s.servico}`, { dur: 400, wait: false });
       });
