@@ -140,6 +140,18 @@
   --dui-viva: #ff7070;
 }
 
+/*
+ * Câmera em movimento: nenhum filtro.
+ *
+ * No zoom, a área de um filtro cresce com a escala, e cada quadro do gesto
+ * re-rasterizava todas as sombras do palco ampliadas. Elas voltam quando a
+ * câmera para — o olho não lê halo durante um movimento, lê depois dele.
+ */
+.dui-stage[data-movendo],
+.dui-stage[data-movendo] * {
+  filter: none !important;
+}
+
 /* ---------- fios ---------- */
 
 .dui-stage__trilho {
@@ -209,12 +221,16 @@
   stroke-width: 3.5;
   stroke-linecap: round;
   stroke-dasharray: 26 400;
-  filter: drop-shadow(0 0 5px color-mix(in oklab, var(--dui-dado) 60%, transparent));
+  /*
+   * Sem sombra, de propósito. O pulso anda a cada quadro, e uma sombra num
+   * traço que anda é um filtro re-rasterizado a cada quadro, do tamanho do fio.
+   * Medido em 03/11/2026: tirar os filtros do que se move levou a CPU, parada,
+   * de 13 para 27 quadros por segundo (CPU a 4×). A espessura já diz "passando".
+   */
 }
 
 .dui-stage__fio[data-linha="control"] .dui-stage__pulso {
   stroke: var(--dui-sinal);
-  filter: drop-shadow(0 0 5px color-mix(in oklab, var(--dui-sinal) 60%, transparent));
 }
 
 /*
@@ -252,16 +268,24 @@
 
 /* ---------- carga ---------- */
 
+/*
+ * A carga se move a cada quadro, e por isso não leva filtro: o halo é um disco
+ * translúcido desenhado atrás dela (`.dui-stage__carga-halo`), que custa uma
+ * pintura e não uma rasterização com desfoque por quadro.
+ */
 .dui-stage__carga {
   fill: var(--dui-dado);
   stroke: var(--paper);
   stroke-width: 1.5;
-  filter: drop-shadow(0 0 6px color-mix(in oklab, var(--dui-dado) 70%, transparent));
+}
+
+.dui-stage__carga-halo {
+  fill: color-mix(in oklab, var(--dui-dado) 20%, transparent);
+  stroke: none;
 }
 
 .dui-stage__carga[data-sinal="true"] {
   fill: var(--dui-sinal);
-  filter: drop-shadow(0 0 6px color-mix(in oklab, var(--dui-sinal) 70%, transparent));
 }
 
 /*
@@ -395,12 +419,17 @@
   animation-delay: var(--dui-atraso, 0ms);
 }
 
+/*
+ * O pulso de acender anima a ESPESSURA, e não a sombra: animar `filter`
+ * re-rasteriza o desfoque a cada quadro em toda porta acesa ao mesmo tempo, e
+ * era isso que travava o lab de portas parado. A sombra fica, estática.
+ */
 @keyframes dui-acender {
   from {
-    filter: drop-shadow(0 0 12px color-mix(in oklab, var(--dui-alto) 85%, transparent));
+    stroke-width: 4;
   }
   to {
-    filter: drop-shadow(0 0 6px color-mix(in oklab, var(--dui-alto) 45%, transparent));
+    stroke-width: 2;
   }
 }
 
@@ -1057,7 +1086,7 @@
 }
 
 .dui-stage__carga-grupo--acomodada .dui-stage__carga {
-  filter: drop-shadow(0 0 4px color-mix(in oklab, var(--dui-dado) 55%, transparent));
+  stroke-width: 1.5;
 }
 
 /*

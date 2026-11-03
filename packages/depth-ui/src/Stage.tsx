@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import {
   borneNode,
   bornePort,
@@ -25,6 +25,8 @@ import {
   ZOOM_MAXIMO,
   encaixar,
   fracaoDoQuadro,
+  LIMIAR_CHEIO,
+  LIMIAR_ENTRA,
   LIMIAR_LEGIVEL,
   quantoAparece,
   tabelaLegivel,
@@ -237,8 +239,28 @@ interface CamadaProps extends StageProps {
   readonly fantasma?: boolean | undefined;
 }
 
+/**
+ * O que mudou no livro-caixa, guardado por estado.
+ *
+ * Cada interior aberto é uma camada, e cada camada perguntava a mesma coisa ao
+ * livro-caixa inteiro: com o somador aberto até o fundo, a mesma subtração
+ * rodava dezenas de vezes por tick. A resposta só depende do par de estados.
+ */
+const DELTAS = new WeakMap<WorldState, { readonly antes: WorldState | undefined; readonly mudou: Readonly<Record<string, number>> }>();
+
 /** O que mudou no livro-caixa entre dois estados. É a fonte de todo movimento. */
 function delta(
+  state: WorldState,
+  previous: WorldState | undefined,
+): Readonly<Record<string, number>> {
+  const guardado = DELTAS.get(state);
+  if (guardado !== undefined && guardado.antes === previous) return guardado.mudou;
+  const mudou = deltaSemMemoria(state, previous);
+  DELTAS.set(state, { antes: previous, mudou });
+  return mudou;
+}
+
+function deltaSemMemoria(
   state: WorldState,
   previous: WorldState | undefined,
 ): Readonly<Record<string, number>> {
@@ -523,6 +545,9 @@ function Carga({
           />
         </g>
       ) : null}
+      {forma === "unidade" || forma === "feixe" ? (
+        <circle className="dui-stage__carga-halo" r={forma === "feixe" ? raio * 1.6 : raio * 2.1} />
+      ) : null}
       {forma === "feixe"
         ? fila(quantos, raio).map((dx, i) => (
             <circle
@@ -654,7 +679,7 @@ function MascaraDoTunel({
   );
 }
 
-function Camada({
+function CamadaSemMemoria({
   tree,
   wires,
   view,
@@ -708,7 +733,52 @@ function Camada({
    * tiver. Enquanto o catálogo não tem um `kind` dessa família, é o desenho que
    * lê o fato onde ele está escrito: nos fios.
    */
+  /*
+   * Índices montados UMA vez por desenho.
+   *
+   * Cada pergunta abaixo (quem trabalhou, quem está recolhida, de que família é,
+   * para onde sai) era respondida varrendo o livro-caixa, os lugares ou os fios
+   * inteiros — por peça, e às vezes por peça de dentro de peça. Medido em
+   * 03/11/2026 no zoom do lab de portas, com a CPU a 4×: 3,9 quadros por
+   * segundo, e `trabalhou` sozinha era a função mais cara do perfil. As
+   * respostas são as mesmas; só deixaram de ser recalculadas.
+   */
+  const saidaPorFonte = new Map<string, Wire[]>();
+  for (const w of wires) {
+    const lista = saidaPorFonte.get(w.from);
+    if (lista === undefined) saidaPorFonte.set(w.from, [w]);
+    else lista.push(w);
+  }
+  const recolhidas = new Set(view.places.filter((p) => p.collapsed === true).map((p) => p.id));
+  /**
+   * Quem recebeu ou emitiu neste tick, lido das chaves do livro-caixa.
+   *
+   * `out:a.b.porta` diz que `a.b` emitiu — mas também casava `a`, porque a
+   * pergunta antiga era `startsWith("out:a.")`. Para não mudar a resposta, todo
+   * prefixo antes de um ponto entra no conjunto.
+   */
+  const ativos = new Set<string>();
+  for (const [chave, quanto] of Object.entries(mudou)) {
+    if (quanto <= 0) continue;
+    if (chave.startsWith("in:")) {
+      ativos.add(chave.slice(3));
+      continue;
+    }
+    const resto = chave.startsWith("out:") ? chave.slice(4) : chave.startsWith("sigin:") ? chave.slice(6) : undefined;
+    if (resto === undefined) continue;
+    for (let i = resto.indexOf("."); i !== -1; i = resto.indexOf(".", i + 1)) ativos.add(resto.slice(0, i));
+  }
+  const familias = new Map<string, Family>();
+
   const familia = (id: string): Family => {
+    const pronta = familias.get(id);
+    if (pronta !== undefined) return pronta;
+    const calculada = familiaSemMemoria(id);
+    familias.set(id, calculada);
+    return calculada;
+  };
+
+  const familiaSemMemoria = (id: string): Family => {
     const node = tree.byId.get(id);
     let base = node === undefined ? "container" : familyOf(node.kind);
 
@@ -719,7 +789,7 @@ function Camada({
     if (base === "container" && recolhida(id)) base = familiaDoInterior(id) ?? base;
 
     if (base !== "processor") return base;
-    const saindo = wires.filter((w) => w.from === id);
+    const saindo = saidaPorFonte.get(id) ?? [];
     if (saindo.length > 0 && saindo.every((w) => (w.line ?? "data") === "control")) {
       return "controller";
     }
@@ -727,8 +797,7 @@ function Camada({
   };
 
   /** Esta caixa está desenhada fechada nesta view? */
-  const recolhida = (id: string): boolean =>
-    view.places.find((p) => p.id === id)?.collapsed === true;
+  const recolhida = (id: string): boolean => recolhidas.has(id);
 
   /**
    * A família do que mora dentro. `processor` ganha de tudo: uma caixa que
@@ -747,14 +816,7 @@ function Camada({
   };
 
   /** Trabalhou: recebeu ou emitiu alguma coisa neste tick. */
-  const trabalhou = (id: string): boolean =>
-    Object.entries(mudou).some(
-      ([chave, quanto]) =>
-        quanto > 0 &&
-        (chave.startsWith(`out:${id}.`) ||
-          chave === `in:${id}` ||
-          chave.startsWith(`sigin:${id}.`)),
-    );
+  const trabalhou = (id: string): boolean => ativos.has(id);
 
   /** Os ids de tudo que está dentro de um objeto, ele inclusive. */
   const dentroDe = (id: string): readonly string[] => {
@@ -815,21 +877,14 @@ function Camada({
    * numa barra verde chapada com as pistas boiando dentro. A regra é a mesma
    * que separa contêiner de peça: quem tem gente dentro é moldura.
    */
-  const molduras = new Set<string>(
-    view.places
-      .filter((place) =>
-        view.places.some((outro) => {
-          if (outro.id === place.id) return false;
-          let cursor = tree.parent.get(outro.id);
-          while (cursor !== undefined) {
-            if (cursor === place.id) return true;
-            cursor = tree.parent.get(cursor);
-          }
-          return false;
-        }),
-      )
-      .map((place) => place.id),
-  );
+  const molduras = new Set<string>();
+  for (const outro of view.places) {
+    // Sobe a partir de cada caixa desenhada: todo ancestral que também está
+    // desenhado é moldura. Mesma resposta da busca par a par, sem o quadrado.
+    for (let cursor = tree.parent.get(outro.id); cursor !== undefined; cursor = tree.parent.get(cursor)) {
+      if (lugares.has(cursor)) molduras.add(cursor);
+    }
+  }
 
   /**
    * Para que lado uma pista anda.
@@ -842,8 +897,8 @@ function Camada({
   const sentidoDaPista = (id: string): 1 | -1 => {
     const meu = lugares.get(id);
     if (meu === undefined) return 1;
-    const alvos = wires
-      .filter((w) => w.from === id && typeof w.to === "string")
+    const alvos = (saidaPorFonte.get(id) ?? [])
+      .filter((w) => typeof w.to === "string")
       .map((w) => ondeCai(String(w.to)))
       .filter((p): p is NodePlacement => p !== undefined && p !== FORA);
     if (alvos.length === 0) return 1;
@@ -2074,6 +2129,12 @@ function Camada({
                        podem ter o mesmo `d` sem se tocarem na tela. */
                     data-dentro={place.id}
                     opacity={aparece}
+                    /* O esmaecer é contínuo mesmo com a árvore em degraus: a
+                       fração do quadro medida no degrau, corrigida pela escala
+                       viva. É a mesma conta de `quantoAparece`, no CSS. */
+                    style={{
+                      opacity: `clamp(0, calc((${fracaoDoQuadro(place, quadro)} * var(--dui-escala, 1) / var(--dui-escala-degrau, 1) - ${LIMIAR_ENTRA}) / ${LIMIAR_CHEIO - LIMIAR_ENTRA}), 1)`,
+                    }}
                     transform={`translate(${place.x + (dentro?.dx ?? 0)} ${
                       place.y + (dentro?.dy ?? 0)
                     }) scale(${dentro?.escala ?? 1})`}
@@ -2681,6 +2742,34 @@ function Camada({
 /** Quanto dura a viagem da câmera. Curta o bastante para não cansar. */
 const DURACAO_DA_TRANSICAO = 420;
 
+/**
+ * A camada só é refeita quando o que ela desenha muda.
+ *
+ * A câmera mexe no `viewBox` a cada quadro, e isso é barato; o caro era a
+ * árvore inteira — cada interior aberto, cada fio roteado — sendo recriada junto.
+ * Com o zoom chegando aqui em degraus (`DEGRAU_DO_ZOOM`), entre um degrau e o
+ * outro nenhuma camada é refeita; o que precisa ser contínuo, o esmaecer do
+ * interior, é feito pelo CSS a partir de `--dui-escala`.
+ */
+const Camada = memo(CamadaSemMemoria);
+
+/**
+ * O degrau do zoom que a árvore enxerga: 25% de escala.
+ *
+ * Um clique de roda é 14%, então a árvore é refeita a cada dois cliques, e
+ * nunca a cada evento de pinça ou trackpad. O arredondamento é para o mais
+ * perto: um interior nasce no máximo ~12% de zoom fora do limiar exato, e
+ * como o esmaecer é calculado no CSS com a escala viva, nascer cedo é nascer
+ * transparente; nascer tarde é surgir a ~10% de opacidade, que o olho não lê
+ * como salto.
+ */
+export const DEGRAU_DO_ZOOM = 1.25;
+
+export function escalaEmDegrau(escala: number): number {
+  if (escala <= 1) return 1;
+  return DEGRAU_DO_ZOOM ** Math.round(Math.log(escala) / Math.log(DEGRAU_DO_ZOOM));
+}
+
 export function Stage(props: StageProps) {
   const { view, tickMs = 700, state, tree, alvoDeCamera, partirDe, onEnquadrado } = props;
 
@@ -2689,6 +2778,20 @@ export function Stage(props: StageProps) {
   // nós.
   const emissoes = useMemo(() => emissoesPorPorta(state, tree), [state, tree]);
   const svgRef = useRef<SVGSVGElement | null>(null);
+  /**
+   * A câmera está andando? Enquanto sim, o palco desenha sem filtros (ver
+   * `stage.css`). É um atributo no SVG e não um estado de React: mudar o
+   * atributo não refaz árvore nenhuma, e o gesto continua barato.
+   */
+  const paradaRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const mexeu = (): void => {
+    const svg = svgRef.current;
+    if (svg === null) return;
+    if (!svg.hasAttribute("data-movendo")) svg.setAttribute("data-movendo", "");
+    clearTimeout(paradaRef.current);
+    paradaRef.current = setTimeout(() => svg.removeAttribute("data-movendo"), 180);
+  };
+  useEffect(() => () => clearTimeout(paradaRef.current), []);
   const [camera, setCamera] = useState({
     escala: 1,
     x: view.width / 2,
@@ -2759,6 +2862,7 @@ export function Stage(props: StageProps) {
     if (alvo === null) return;
     const rodou = (e: WheelEvent) => {
       e.preventDefault();
+      mexeu();
       const caixa = alvo.getBoundingClientRect();
       setCamera((atual) => {
         const lq = view.width / atual.escala;
@@ -2811,6 +2915,7 @@ export function Stage(props: StageProps) {
     let vivo = true;
     const passo = (agora: number) => {
       if (!vivo) return;
+      mexeu();
       const t = Math.min(1, (agora - inicio) / DURACAO_DA_TRANSICAO);
       const suave = t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2;
       setCamera({
@@ -2834,6 +2939,15 @@ export function Stage(props: StageProps) {
 
   const larguraDoQuadro = view.width / daVista.escala;
   const alturaDoQuadro = view.height / daVista.escala;
+  /*
+   * A árvore vê o zoom em degraus; o `viewBox`, contínuo.
+   *
+   * Tentou-se `useDeferredValue` aqui, e ele piorou a coisa certa: com o somador
+   * de 32 bits aberto, o último desenho adiado só ficava pronto bem depois de o
+   * gesto parar — o leitor via a caixa ampliada e o interior atrasado. Síncrono
+   * em degraus refaz menos vezes e nunca fica para trás.
+   */
+  const escalaDoDesenho = escalaEmDegrau(daVista.escala);
 
   /** O quadro nunca sai do desenho: fora dele não há nada para ver. */
   const enquadrar = (escala: number, x: number, y: number) => {
@@ -2859,13 +2973,18 @@ export function Stage(props: StageProps) {
       viewBox={`${daVista.x - larguraDoQuadro / 2} ${daVista.y - alturaDoQuadro / 2} ${larguraDoQuadro} ${alturaDoQuadro}`}
       role="img"
       aria-label={view.title}
-      style={{ ["--dui-tick" as string]: `${tickMs}ms` }}
+      style={{
+        ["--dui-tick" as string]: `${tickMs}ms`,
+        ["--dui-escala" as string]: daVista.escala,
+        ["--dui-escala-degrau" as string]: escalaDoDesenho,
+      }}
       onPointerDown={(e) => {
         if (e.button !== 0 || daVista.escala <= 1) return;
         const alvo = e.currentTarget;
         alvo.setPointerCapture(e.pointerId);
         const partiu = { x: e.clientX, y: e.clientY, camera: daVista };
         const arrastar = (ev: PointerEvent) => {
+          mexeu();
           const caixa = alvo.getBoundingClientRect();
           // O mesmo encaixe do zoom: arrastar tem de mover o desenho exatamente
           // o que o dedo andou, e a faixa vazia não é desenho.
@@ -2913,7 +3032,7 @@ export function Stage(props: StageProps) {
       <Camada
         {...props}
         emissoes={emissoes}
-        unidadesPorQuadro={larguraDoQuadro}
+        unidadesPorQuadro={view.width / escalaDoDesenho}
         profundidade={0}
         dilatacao={1}
       />
