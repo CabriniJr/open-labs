@@ -85,6 +85,10 @@ test("o lab não rola na horizontal", async ({ page }) => {
 });
 
 test("descer da CPU até a porta lógica, e achar o somador vivo lá embaixo", async ({ page }) => {
+  // Quatro descidas no lab mais pesado: com a suíte em paralelo (e o 3D em
+  // WebGL por software ao lado), o teste inteiro passava dos 30 s padrão sem
+  // nenhuma asserção falhar — o tempo era do teste, não de um passo.
+  test.setTimeout(60_000);
   await page.goto("labs/cpu/");
   await expect(page.locator(".dui-stage")).toBeVisible({ timeout: 15_000 });
 

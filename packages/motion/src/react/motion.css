@@ -49,6 +49,14 @@
   fill: var(--ink-muted);
   font-size: calc(10px * var(--mo-k, 1));
 }
+.mo-icon path {
+  fill: none;
+  stroke: var(--mo-c);
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.mo-icon path.mo-icon__fill { fill: var(--mo-c); stroke: none; }
 .mo-badge {
   fill: var(--mo-c);
   font-size: calc(9px * var(--mo-k, 1));
@@ -185,6 +193,37 @@
   gap: var(--space-2);
   min-width: 0;
   outline: none;
+}
+/*
+ * Janela à esquerda, andamento à direita. Empilhados, o capítulo e a narração
+ * caem abaixo da dobra e quem assiste perde o que está acontecendo; lado a lado,
+ * o olho vai da cena ao texto sem rolar. Decide a largura do próprio player
+ * (container query), não a da janela: o mesmo player vive num artigo estreito
+ * e num lab largo.
+ */
+.mo-player { container-type: inline-size; }
+.mo-player__layout,
+.mo-player__main,
+.mo-player__side {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-2);
+  min-width: 0;
+  align-content: start;
+}
+@container (min-width: 54rem) {
+  .mo-player__layout { grid-template-columns: minmax(0, 1.75fr) minmax(18rem, 1fr); align-items: start; }
+  /*
+   * Sem sticky. As duas colunas grudando no topo com alturas diferentes faziam
+   * a cena entrar sob a barra do site e a lista de capítulos rolar por dentro
+   * dela mesma, desencontradas — "a janela quebra quando rola". Lado a lado, a
+   * cena e o andamento já estão juntos na tela; a página rola inteira.
+   */
+  .mo-player__side .mo-chapters { flex-direction: column; overflow: visible; }
+  .mo-player__side .mo-chapters { gap: 2px; }
+  .mo-player__side .mo-chapter { width: 100%; padding: 4px 10px; border-color: transparent; border-radius: var(--radius-2, 8px); white-space: normal; text-align: left; }
+  .mo-player__side .mo-chapter[data-state="current"] { border-color: var(--accent); }
+  .mo-player__side .mo-player__below { grid-template-columns: minmax(0, 1fr); }
 }
 .mo-player:focus-visible .mo-player__screen { outline: 2px solid var(--accent); outline-offset: 3px; }
 
@@ -329,7 +368,7 @@
   grid-template-columns: minmax(0, 1fr);
   gap: var(--space-2);
 }
-@media (min-width: 60rem) {
+@container (min-width: 40rem) and (max-width: 53.99rem) {
   .mo-player__below { grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); }
 }
 

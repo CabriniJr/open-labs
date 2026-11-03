@@ -1,5 +1,6 @@
-import { bounds, connect, film, sequence, type Box, type Director, type EntitySpec, type Film, type Path, type Point, type Tone } from "@ovh/motion";
+import { bounds, connect, film, sequence, type Box, type Director, type EntitySpec, type Film, type Glyph, type Path, type Point, type Tone } from "@ovh/motion";
 import { propagar, type Chamada, type OpcoesDePropagacao, type Propagacao, type Servico, type SpanGerado } from "./propagacao.js";
+import { ICONES_OTEL as I } from "../icones/icones.js";
 
 /**
  * O filme do lab "Hard context and baggage", escrito sobre o palco animado.
@@ -85,7 +86,7 @@ function geometriaDeSequencia(): Geometria {
   const seq = sequence({ lanes: LANES, width: LARGURA, top: 60, headWidth: 136, headHeight: 58, firstRow: 186, rowHeight: 70 });
   const bottom = seq.bottom(7.4);
   return {
-    servico: (lane, label, sub, tone, hidden) => ({ type: "lane", id: `lane:${lane}`, head: seq.head(lane), bottom, label, sublabel: sub, tone, hidden, sticky: true }),
+    servico: (lane, label, sub, tone, hidden) => ({ type: "lane", id: `lane:${lane}`, head: seq.head(lane), bottom, label, sublabel: sub, tone, hidden, sticky: true, icon: ICONE_DO_SERVICO[lane] }),
     span: (servico, entrada) => ({ box: seq.activation(servico, entrada, FIM_DOS_SPANS, 14), grow: "down" }),
     chamada: (de, para, row) => seq.message(de, para, row),
     exporta: (servico, i) => seq.message(servico, "collector", LINHA_DO_EXPORT + i * 0.32),
@@ -98,6 +99,17 @@ function geometriaDeSequencia(): Geometria {
     },
   };
 }
+
+/** O papel de cada serviço, no ícone que ele tem em todo o handbook. */
+const ICONE_DO_SERVICO: Record<Lane, Glyph> = {
+  browser: I.browser,
+  gateway: I.gateway,
+  checkout: I.service,
+  inventory: I.service,
+  proxy: I.proxy,
+  payments: I.service,
+  collector: I.collector,
+};
 
 /** Onde cada serviço fica no grafo: a requisição anda da esquerda para a direita e o Collector recolhe embaixo. */
 const NO_GRAFO: Record<Lane, Point> = {
@@ -114,7 +126,7 @@ const BLOCO = { w: 164, h: 74 };
 function geometriaDeTopologia(): Geometria {
   const caixaDe = (lane: Lane): Box => ({ x: NO_GRAFO[lane].x - BLOCO.w / 2, y: NO_GRAFO[lane].y - BLOCO.h / 2, w: BLOCO.w, h: BLOCO.h });
   return {
-    servico: (lane, label, sub, tone, hidden) => ({ type: "node", id: `lane:${lane}`, box: caixaDe(lane), label, sublabel: sub, tone, hidden, shape: lane === "collector" ? "stack" : "box" }),
+    servico: (lane, label, sub, tone, hidden) => ({ type: "node", id: `lane:${lane}`, box: caixaDe(lane), label, sublabel: sub, tone, hidden, shape: lane === "collector" ? "stack" : "box", icon: ICONE_DO_SERVICO[lane] }),
     span: (servico) => {
       const b = caixaDe(servico);
       return { box: { x: b.x, y: b.y + b.h + 9, w: b.w, h: 9 }, grow: "right" };

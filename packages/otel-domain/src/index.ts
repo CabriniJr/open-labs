@@ -167,3 +167,14 @@ export type { DetalheDaImplantacao, LinhaDaTabela } from "./implantacao/filme.js
 // A vitrine do Collector: o modo showcase do lab do pipeline.
 export { envelopeDaVitrine, filmeDaVitrineOtel } from "./vitrine/filme.js";
 export type { DetalheDaVitrineOtel } from "./vitrine/filme.js";
+
+// A identidade do handbook: os ícones de cada papel, iguais em todo lab.
+export { ICONES_OTEL } from "./icones/icones.js";
+export type { IconeOtel } from "./icones/icones.js";
+
+// O payload OTLP em protobuf: o codificador e o filme do lab.
+export { bytesEmJson, chave, codificarRequisicao, hex, varint } from "./protobuf/codificar.js";
+export type { CampoCodificado, Codificacao, TipoDoCampo, WireType } from "./protobuf/codificar.js";
+export { envelopeDoProtobuf, SPAN_DO_PROTOBUF, tomDoCampo } from "./protobuf/exemplo.js";
+export { filmeDaViagem, spanDaViagem } from "./protobuf/viagem.js";
+export type { Codificacao as CodificacaoDaViagem, DetalheDaViagem, LinhaDoDiario, OpcoesDaViagem } from "./protobuf/viagem.js";

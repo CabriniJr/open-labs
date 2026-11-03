@@ -185,6 +185,8 @@ export function MotionPlayer<D>({ film, label, renderDetail, controls, autoplay 
 
   return (
     <div className={["mo-player", className].filter(Boolean).join(" ")} tabIndex={0} onKeyDown={onKey} data-testid={testId} data-playing={clock.playing ? "" : undefined}>
+      <div className="mo-player__layout">
+      <div className="mo-player__main">
       <div className="mo-steps" aria-hidden="true">
         <span className="mo-steps__bars">
           {chapters.map((c, i) => (
@@ -271,7 +273,9 @@ export function MotionPlayer<D>({ film, label, renderDetail, controls, autoplay 
           </select>
         </label>
       </div>
+      </div>
 
+      <aside className="mo-player__side" aria-label="Progress">
       <ol className="mo-chapters" aria-label="Chapters">
         {chapters.map((c, i) => (
           <li key={c.id}>
@@ -292,6 +296,8 @@ export function MotionPlayer<D>({ film, label, renderDetail, controls, autoplay 
           <p className="mo-narration__keys mono" aria-hidden="true">space play · ←/→ chapter</p>
         </section>
         {renderDetail !== undefined ? <section className="mo-detail">{renderDetail(frame, clock)}</section> : null}
+      </div>
+      </aside>
       </div>
       {film.packets.length > 0 ? (
         <PacketTable film={film as Film<unknown>} sent={frame.sent} title={packetsTitle} legend={packetLegend} chapterOf={(t) => chapterAt(film, t)} />

@@ -1,4 +1,5 @@
-import { film, line, pt, type Box, type Film, type Point, type Shape, type Tone } from "@ovh/motion";
+import { film, line, pt, type Box, type Film, type Glyph, type Point, type Shape, type Tone } from "@ovh/motion";
+import { ICONES_OTEL as I } from "../icones/icones.js";
 import { attribute, toOtlpJson, type ExportTraceServiceRequest, type OtelSpan } from "../otlp.js";
 
 /**
@@ -73,8 +74,8 @@ const esq = (b: Box, f = 0.5): Point => pt(b.x, b.y + b.h * f);
 export function filmeDaVitrineOtel(): Film<DetalheDaVitrineOtel> {
   const env = envelopeDaVitrine();
   const f = film<DetalheDaVitrineOtel>({ width: 1280, height: 720, gap: 500, maxZoom: 60 });
-  const no = (n: number, id: string, box: Box, label: string, opt: { sub?: string; tone?: Tone; shape?: Shape; hidden?: boolean } = {}) =>
-    f.add({ type: "node", id, box, label, sublabel: opt.sub ?? "", tone: opt.tone ?? "processor", shape: opt.shape ?? "box", textScale: NIVEL[n]!.k, lod: NIVEL[n]!.lod, hidden: opt.hidden === true, layer: n });
+  const no = (n: number, id: string, box: Box, label: string, opt: { sub?: string; tone?: Tone; shape?: Shape; hidden?: boolean; icon?: Glyph } = {}) =>
+    f.add({ type: "node", id, box, label, ...(opt.icon === undefined ? {} : { icon: opt.icon }), sublabel: opt.sub ?? "", tone: opt.tone ?? "processor", shape: opt.shape ?? "box", textScale: NIVEL[n]!.k, lod: NIVEL[n]!.lod, hidden: opt.hidden === true, layer: n });
   const fio = (n: number, id: string, a: Point, b: Point, tone: Tone = "ink") =>
     f.add({ type: "link", id, path: line(a, b), tone, arrow: true, textScale: NIVEL[n]!.k, lod: NIVEL[n]!.lod, hidden: true, layer: n });
   const ficha = (n: number, id: string, path: ReturnType<typeof line>, label: string, sub: string, tone: Tone) =>
@@ -89,10 +90,10 @@ export function filmeDaVitrineOtel(): Film<DetalheDaVitrineOtel> {
   const S2 = B(80, 470, 210, 90);
   const COL = B(500, 230, 300, 260);
   const BACK = B(1010, 300, 200, 120);
-  no(0, "svc:checkout", S1, "checkout", { sub: "app + SDK", tone: "kind-1" });
-  no(0, "svc:payments", S2, "payments", { sub: "app + SDK", tone: "kind-3" });
-  no(0, "collector", COL, "Collector", { sub: "traces pipeline", tone: "conduit", shape: "stack" });
-  no(0, "backend", BACK, "backend", { sub: "trace storage", tone: "container", shape: "cylinder" });
+  no(0, "svc:checkout", S1, "checkout", { sub: "app + SDK", tone: "kind-1", icon: I.service });
+  no(0, "svc:payments", S2, "payments", { sub: "app + SDK", tone: "kind-3", icon: I.service });
+  no(0, "collector", COL, "Collector", { sub: "traces pipeline", tone: "conduit", shape: "stack", icon: I.collector });
+  no(0, "backend", BACK, "backend", { sub: "trace storage", tone: "container", shape: "cylinder", icon: I.backend });
   fio(0, "f:s1", dir(S1), esq(COL, 0.3), "kind-1");
   fio(0, "f:s2", dir(S2), esq(COL, 0.7), "kind-3");
   fio(0, "f:exp", dir(COL), esq(BACK), "conduit");
@@ -107,10 +108,10 @@ export function filmeDaVitrineOtel(): Film<DetalheDaVitrineOtel> {
   const BAT = L1(160, 100, 70, 60);
   const EXP = L1(244, 110, 46, 40);
   regiao(1, "pipeline", COL, "service.pipelines.traces", "conduit");
-  no(1, "rcv", RCV, "otlp", { sub: "receiver", tone: "conduit", shape: "pill" });
-  no(1, "mem", MEM, "memory_limiter", { sub: "processor", tone: "processor" });
-  no(1, "bat", BAT, "batch", { sub: "processor", tone: "processor", shape: "register" });
-  no(1, "exp", EXP, "otlphttp", { sub: "exporter", tone: "conduit", shape: "pill" });
+  no(1, "rcv", RCV, "otlp", { sub: "receiver", tone: "conduit", shape: "pill", icon: I.receiver });
+  no(1, "mem", MEM, "memory_limiter", { sub: "processor", tone: "processor", icon: I.limiter });
+  no(1, "bat", BAT, "batch", { sub: "processor", tone: "processor", shape: "register", icon: I.batch });
+  no(1, "exp", EXP, "otlphttp", { sub: "exporter", tone: "conduit", shape: "pill", icon: I.exporter });
   fio(1, "f1:a", dir(RCV), esq(MEM));
   fio(1, "f1:b", dir(MEM), esq(BAT));
   fio(1, "f1:c", dir(BAT), esq(EXP));

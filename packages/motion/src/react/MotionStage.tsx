@@ -3,7 +3,7 @@ import type { Film } from "../choreography.js";
 import { frameAt, viewBox, type Frame, type ResolvedEntity } from "../frame.js";
 import { pathD, poseAt } from "../geometry.js";
 import { contornoD, formaDe } from "../shapes.js";
-import type { Animatable, EntitySpec, LaneSpec, LinkSpec, NodeSpec, TokenSpec } from "../scene.js";
+import type { Animatable, EntitySpec, Glyph, LaneSpec, LinkSpec, NodeSpec, TokenSpec } from "../scene.js";
 
 /**
  * O palco: desenha um quadro do filme em SVG. Não guarda estado nenhum — o
@@ -42,6 +42,24 @@ function Label({ text, sub, y = 0, k = 1 }: { text: string; sub: string; y?: num
         </text>
       ) : null}
     </>
+  );
+}
+
+/** O ícone da peça no canto de cima, à esquerda, do tamanho que a caixa comporta. */
+function Icone({ glyph, box, k }: { glyph: Glyph; box: { w: number; h: number }; k: number }) {
+  const lado = Math.min(box.h * 0.34, box.w * 0.22, 18 * k);
+  if (lado < 4) return null;
+  const pad = Math.min(box.h, box.w) * 0.1;
+  const s = lado / 24;
+  return (
+    <g className="mo-icon" transform={`translate(${f(-box.w / 2 + pad)} ${f(-box.h / 2 + pad)}) scale(${f(s)})`} aria-hidden="true">
+      {glyph.paths.map((d, i) => (
+        <path key={`s${i}`} d={d} />
+      ))}
+      {glyph.fill?.map((d, i) => (
+        <path key={`f${i}`} d={d} className="mo-icon__fill" />
+      ))}
+    </g>
   );
 }
 
@@ -113,6 +131,7 @@ function Body({ spec, state, box, shape, badge }: { spec: EntitySpec; state: Rea
         </g>
       ) : null}
       {shapeOf(shape, box.w, box.h, "mo-node__shape")}
+      {spec.icon !== undefined ? <Icone glyph={spec.icon} box={box} k={k} /> : null}
       {badge !== undefined ? (
         <text className="mo-badge" x={-box.w / 2 + 10 * k} y={-box.h / 2 + 12 * k} dominantBaseline="central">
           {badge}

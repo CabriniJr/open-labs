@@ -1,4 +1,5 @@
 import { film, type Box, type Film, type Tone } from "@ovh/motion";
+import { ICONES_K8S } from "./icones/icones.js";
 import { NODES, nodeResources, type ClusterState, type Pod } from "./model.js";
 
 /**
@@ -92,9 +93,9 @@ export function filmeDaTransicao(antes: Readonly<ClusterState> | null, depois: R
   const antesPorUid = new Map((antes?.pods ?? []).map((p) => [p.uid, p]));
   const depoisPorUid = new Map(depois.pods.map((p) => [p.uid, p]));
 
-  f.add({ type: "region", id: "plano", box: PLANO, label: "control plane", tone: "controller" });
+  f.add({ type: "region", id: "plano", box: PLANO, label: "control plane", tone: "controller", icon: ICONES_K8S.controller });
   f.add({ type: "node", id: "controlador", box: CONTROLADOR, label: depois.workload?.kind === "Pod" ? "no controller" : "ReplicaSet", sublabel: depois.workload === null ? "nothing applied" : `${depois.workload.name} · want ${depois.workload.replicas}`, tone: "controller" });
-  f.add({ type: "node", id: "escalonador", box: ESCALONADOR, label: "scheduler", sublabel: "fits requests", tone: "processor" });
+  f.add({ type: "node", id: "escalonador", box: ESCALONADOR, label: "scheduler", sublabel: "fits requests", tone: "processor", icon: ICONES_K8S.scheduler });
   f.add({ type: "region", id: "fila", box: FILA, label: "pending", tone: "high" });
   for (const no of NODES) {
     const caixa = NOS[no.id]!;
@@ -121,7 +122,7 @@ export function filmeDaTransicao(antes: Readonly<ClusterState> | null, depois: R
     const antesP = antesPorUid.get(uid);
     const p = depoisP ?? antesP!;
     const box = aqui.get(uid) ?? la.get(uid)!;
-    f.add({ type: "node", id: `pod:${uid}`, box, label: rotulo(p), sublabel: situacao(p), tone: tomDoPod(p), shape: "pill", hidden: antesP === undefined && antes !== null, layer: 3, title: `${p.name} (${p.uid})` });
+    f.add({ type: "node", id: `pod:${uid}`, box, label: rotulo(p), sublabel: situacao(p), tone: tomDoPod(p), shape: "pill", icon: ICONES_K8S.pod, hidden: antesP === undefined && antes !== null, layer: 3, title: `${p.name} (${p.uid})` });
   }
 
   f.chapter({ id: `t${depois.tick}`, title: `t = ${depois.tick}s`, body: depois.events.at(-1)?.detail ?? "" }, (d) => {

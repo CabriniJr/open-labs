@@ -23,6 +23,20 @@ motor que já existe. O que não é negociável é a régua de qualidade abaixo.
 (`ModosDoLab`): um filme que conta o mecanismo, com descida de nível animada, e o
 modelo que o leitor desmonta. Exemplos: `CpuModos`, `CollectorModos`.
 
+**O motor de fluxos não é obrigatório.** Ele serve quando o leitor precisa
+abrir camadas de um sistema que roda (pipeline, CPU). Quando o assunto é o que
+acontece com *uma coisa* no caminho — o protobuf é o caso de referência —, o
+formato que ensina é o do hero antigo, modernizado no filme: **o papelzinho
+pulando de app em app**, com ícone em cada app, e **uma tela ao lado somando o
+texto** do que cada um fez, em verbos curtos ("checkout *cria* o span", "o SDK
+*carimba* service.name", "o SDK *escreve* 8 campos → 173 B", "o Collector *lê e
+junta*", "o backend *guarda*"). A profundidade fica no papel: a câmera desce
+para dentro dele (os campos) e de um campo (do que ele é feito). A
+interatividade são escolhas que refazem o filme (codificação, um atributo a
+mais). **Não mostre a máquina por dentro** — buffer em hexa, offsets — como
+showcase: isso é a simulação, para quem quer cavar. Simples primeiro, fundo
+depois.
+
 Combine à vontade: um filme pode ter vistas *Sequence / Topology / Iso* no
 mesmo relógio (veja `ContextoLab.tsx`). Se nada serve, **escreva o componente**
 — nenhum contrato existe para impedir uma mídia que ensina melhor.
@@ -90,12 +104,35 @@ Caixa é o último recurso. Use a forma que diz o que a peça é (`chip`, `mux`,
 nível: interior aninhado dentro da caixa, `lod` e `textScale` por nível, e
 `d.camera({ box })` (ver `docs/motion.md`, "Profundidade").
 
+### Ícones: o que a peça é, num relance
+
+`icon: Glyph` em qualquer peça (`{ paths, fill? }`, traço 24×24). No 3D vira um
+selo que flutua sobre o rótulo; no plano, o canto da caixa. **O motor não tem
+ícones**: cada handbook tem o catálogo dele (`ICONES_OTEL`, `ICONES_K8S`,
+`ICONES_CPU`), e um papel tem o mesmo ícone em todos os labs do handbook. Papel
+novo → ícone novo no catálogo, nunca um desenho solto no filme.
+
+### Roteiro do handbook
+
+Antes de criar um lab, leia o roteiro do handbook (`docs/roteiros/<handbook>.md`):
+pergunta, mal-entendido, mídia, capítulos, o que a altura significa no 3D,
+ícones, correlações com os outros labs e critério de pronto. Criou ou mudou um
+lab? Atualize o roteiro no mesmo PR.
+
 ## 5. 3D / isométrico com `@ovh/stage3d`
 
 - Entre como `views` do `MotionPlayer`, com `lazy()` + `Suspense`: o three.js
   só baixa quando o leitor pede.
 - Topologia fica de pé; diagrama de sequência não (o tempo vira profundidade).
 - Peça `custom` não aparece no 3D — se o lab depende dela, a vista 3D não serve.
+- **A altura tem significado ou não existe**: aninhamento, camada de implantação,
+  nível de zoom. `elevation`, `height` e `lift` animável.
+- Rótulo **cede**, não empilha: no 3D, um rótulo que cobriria outro some até
+  ter espaço (prioridade: aceso, depois peça maior). Não aperte layout para
+  "caber" rótulos no isométrico — espace as peças e deixe a regra decidir.
+- Layout do player: janela à esquerda, andamento (capítulos, narração, painel)
+  à direita, por container query no `MotionPlayer`, sem `sticky` (quebra a
+  rolagem). Não refaça no lab.
 
 ## 6. Regras de desempenho (aprendidas medindo)
 
