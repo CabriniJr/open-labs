@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { ClusterScene } from "./ClusterScene";
 import { InteractiveSession } from "@ovh/interactive-core";
 import {
   AVAILABLE_IMAGES, clusterSummary, DEPLOYMENT_MANIFEST, EXPERIMENTS,
@@ -66,6 +67,7 @@ export function PodLifecycleLab() {
   const [playing, setPlaying] = useState(false);
   const [experiment, setExperiment] = useState("healthy");
   const [selected, setSelected] = useState<string | null>(null);
+  const [vista, setVista] = useState<"tree" | "flat" | "iso">("tree");
   const [errors, setErrors] = useState<readonly string[]>([]);
   const [message, setMessage] = useState("Two replicas are ready. Change the manifest, then apply it.");
   const downloadRef = useRef<HTMLAnchorElement>(null);
@@ -150,9 +152,21 @@ export function PodLifecycleLab() {
           <div><small>Memory available</small><strong>{summary.memoryAvailable}<span> Mi</span></strong></div>
         </div>
         <section className="podlab-graph-panel" aria-label="Observed resources">
-          <div className="podlab-panel-title"><span>Resource tree</span><span>OBSERVED</span></div>
-          <ResourceTree state={state} selected={pod?.uid ?? null} onSelect={setSelected} />
-          <p className="podlab-graph-key"><span>─ ownership</span><span>Node badge = scheduling assignment</span><span>Click a Pod to inspect it</span></p>
+          <div className="podlab-panel-title">
+            <span>{vista === "tree" ? "Resource tree" : "Cluster"}</span>
+            <span className="podlab-vistas" role="radiogroup" aria-label="View">
+              {([["tree", "Tree"], ["flat", "Cluster"], ["iso", "Iso"]] as const).map(([id, nome]) => (
+                <button key={id} type="button" role="radio" aria-checked={vista === id} onClick={() => setVista(id)}>{nome}</button>
+              ))}
+            </span>
+          </div>
+          {vista === "tree" ? <>
+            <ResourceTree state={state} selected={pod?.uid ?? null} onSelect={setSelected} />
+            <p className="podlab-graph-key"><span>─ ownership</span><span>Node badge = scheduling assignment</span><span>Click a Pod to inspect it</span></p>
+          </> : <>
+            <ClusterScene state={state} modo={vista} />
+            <p className="podlab-graph-key"><span>Pods sit on the node they are bound to</span><span>Bars = reserved requests</span><span>Colour = status</span></p>
+          </>}
         </section>
         <div className="podlab-node-grid">
           {nodes.map((n) => <section key={n.id} className="podlab-node" aria-label={n.id}>

@@ -95,3 +95,24 @@ test("o grafo rola dentro do lab, os downloads existem e a página cabe no viewp
   await page.getByLabel("Kubernetes manifest").focus();
   await expect(page.getByLabel("Kubernetes manifest")).toBeFocused();
 });
+
+test("a cena do cluster, plana e isométrica, mostra os Pods no nó em que estão", async ({ page }) => {
+  const erros: string[] = [];
+  page.on("pageerror", (e) => erros.push(String(e)));
+  await open(page);
+  await page.getByRole("radio", { name: "Cluster", exact: true }).click();
+  const cena = page.getByTestId("cluster-scene");
+  await expect(cena.locator("svg.mo-stage")).toHaveCount(1);
+  // Dois Pods prontos, cada um como peça na cena.
+  await expect(cena.locator('[data-entity^="pod:"]')).toHaveCount(2);
+  const editor = page.getByLabel("Kubernetes manifest");
+  await editor.fill((await editor.inputValue()).replace("replicas: 2", "replicas: 3"));
+  await page.getByRole("button", { name: "Apply manifest", exact: true }).click();
+  await step(page, 1);
+  await expect(cena.locator('[data-entity^="pod:"]')).toHaveCount(3);
+  await page.getByRole("radio", { name: "Iso", exact: true }).click();
+  await expect(cena.locator(".iso-stage canvas")).toHaveCount(1, { timeout: 15_000 });
+  await page.getByRole("radio", { name: "Tree", exact: true }).click();
+  await expect(page.getByLabel("Resource ownership graph")).toBeVisible();
+  expect(erros).toEqual([]);
+});

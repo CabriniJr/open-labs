@@ -149,3 +149,21 @@ export { spanDoHeroi } from "./heroi/carga.js";
 export type { SpanDoHeroi } from "./heroi/carga.js";
 export { ATRIBUTO_DO_COLLECTOR, ROTULOS_HEROI, VALOR_DO_COLLECTOR } from "./heroi/labels.js";
 export { VIEW_HEROI, VIEWS_DO_HEROI } from "./heroi/views.js";
+
+// O lab da propagação de contexto, sobre o palco animado.
+export { formatBaggage, parseBaggage } from "./contexto/baggage.js";
+export type { Baggage } from "./contexto/baggage.js";
+export { CAMINHO, INSTRUMENTADOS, OPCOES_PADRAO, propagar } from "./contexto/propagacao.js";
+export type { Chamada as ChamadaDePropagacao, OpcoesDePropagacao, Propagacao, Servico, SpanGerado } from "./contexto/propagacao.js";
+export { ALTURA, LARGURA, filmeDoContexto, rotuloDoContexto } from "./contexto/filme.js";
+export type { DetalheDoContexto, Foco } from "./contexto/filme.js";
+
+// O lab da implantação do Collector: agent, gateway, e onde um trace fica inteiro.
+export { entregar, MODOS, NOS_DO_CLUSTER, PODS, REPLICAS, SPANS } from "./implantacao/modelo.js";
+export type { Entrega, Modo, OpcoesDeImplantacao } from "./implantacao/modelo.js";
+export { ALTURA_DA_IMPLANTACAO, LARGURA_DA_IMPLANTACAO, filmeDaImplantacao } from "./implantacao/filme.js";
+export type { DetalheDaImplantacao, LinhaDaTabela } from "./implantacao/filme.js";
+
+// A vitrine do Collector: o modo showcase do lab do pipeline.
+export { envelopeDaVitrine, filmeDaVitrineOtel } from "./vitrine/filme.js";
+export type { DetalheDaVitrineOtel } from "./vitrine/filme.js";

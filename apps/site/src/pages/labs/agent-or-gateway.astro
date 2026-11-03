@@ -1,0 +1,49 @@
+---
+import { ImplantacaoLab } from "../../components/ImplantacaoLab.tsx";
+import { Predicao } from "../../components/Predicao.tsx";
+import SiteFooter from "../../components/SiteFooter.astro";
+import SiteNav from "../../components/SiteNav.astro";
+import Base from "../../layouts/Base.astro";
+import { url } from "../../lib/urls";
+import "../../styles/docs.css";
+import "@ovh/motion/src/react/motion.css";
+import "@ovh/stage3d/src/iso.css";
+import "../../components/ContextoLab.css";
+import "../../components/ImplantacaoLab.css";
+import "../../components/Predicao.css";
+---
+
+<Base title="Agent or gateway — OpenTelemetry Visual Handbook" description="Deploy the OpenTelemetry Collector as SDK-direct, per-node agent, gateway or agent plus gateway, and watch where spans go, what it costs, and whether tail sampling can see a whole trace.">
+  <SiteNav current="labs" />
+  <main id="content" class="deplab-page">
+    <section class="lab-head editorial">
+      <div class="prose">
+        <p class="lab-head__eyebrow mono"><a href={url("handbooks/otel")}>OpenTelemetry Visual Handbook</a> · phase 03 · lab</p>
+        <h1>Where does the<br />Collector live?</h1>
+        <p>The same six Pods, two requests, and four ways to deploy the Collector. Each one moves spans along a different path. Each one also changes three things: what the backend sees, what you configure, and whether any single Collector ever holds a whole trace.</p>
+        <p>The paths, counts and colours are computed from a deployment model. Change the deployment and the film is rebuilt.</p>
+      </div>
+      <aside class="lab-head__note mono"><p>SDK → AGENT → GATEWAY → BACKEND</p><p>Kubernetes Service balancing is per connection; gRPC keeps connections open.</p></aside>
+    </section>
+
+    <section class="lab-palco" aria-label="Collector deployment experiment"><ImplantacaoLab client:visible /></section>
+
+    <section class="lab-prosa editorial">
+      <div class="prose">
+        <h2>Break it, one choice at a time</h2>
+        <ol>
+          <li><b>Start with “Gateway”.</b> Two backend connections instead of six, and credentials in one place. Then reach “Who holds a whole trace?”. Every replica shows fragments.</li>
+          <li><b>Switch to “Agent + gateway”.</b> Traffic stays on the node first. The traces are still split, because each agent is pinned to one replica.</li>
+          <li><b>Turn on “Route by trace ID”.</b> The agent's <code>loadbalancing</code> exporter hashes the trace ID. Each replica now holds one whole trace, and a tail sampling policy can see errors and latency before it decides.</li>
+          <li><b>Try “SDK → backend”.</b> It has the fewest moving parts and the most connections. No Collector means nowhere to batch, retry, redact or tail-sample.</li>
+        </ol>
+        <h2>Why the IP matters</h2>
+        <p><code>k8sattributes</code> identifies the sending Pod by the connection's source IP. A gateway behind agents only sees the agents' IPs. With agents, enrich in the agent, or pass the Pod IP along. <a href="https://opentelemetry.io/docs/collector/deployment/">Collector deployment patterns →</a> · <a href="https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/exporter/loadbalancingexporter">loadbalancing exporter →</a></p>
+        <h2>The boundary of this experiment</h2>
+        <p>The cluster is fixed: two nodes, three services and two requests, with each request crossing both nodes. Connection pinning is one possible arrangement, fixed so that no trace lands whole by chance. Trace-ID routing assigns T1 and T2 to different replicas. It does not model retries, queue sizes, autoscaling, OTLP/HTTP connection reuse or the sampling policy itself.</p>
+      </div>
+      <div class="lab-predicao"><Predicao client:visible pergunta="A gateway Deployment has two replicas behind a Kubernetes Service. Can a tail sampler on each replica see whole traces?" opcoes={["Yes, the Service spreads spans evenly", "No, connections are pinned and a trace's spans come from many Pods"]} correta={1} revelacao="A Service balances connections, and each SDK keeps one gRPC connection. The spans of a trace come from different Pods, so they land on different replicas. Routing by trace ID in a layer before the gateway fixes it." /></div>
+    </section>
+  </main>
+  <SiteFooter />
+</Base>

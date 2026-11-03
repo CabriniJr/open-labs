@@ -1,0 +1,10 @@
+.cpuvit { --mo-aspect: 16 / 9; }
+.cpuvit-detail { display: grid; gap: var(--space-2); }
+.cpuvit-niveis { display: flex; flex-wrap: wrap; gap: 4px; margin: 0; padding: 0; list-style: none; font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; }
+.cpuvit-niveis li { padding: 3px 10px; border: 1px solid var(--rule); border-radius: 999px; color: var(--ink-faint); }
+.cpuvit-niveis li[data-done] { color: var(--ink-muted); }
+.cpuvit-niveis li[data-on] { border-color: var(--accent); background: color-mix(in oklab, var(--accent) 12%, transparent); color: var(--ink); }
+.cpuvit-linhas { display: grid; gap: 2px; margin: 0; font-size: 0.82rem; }
+.cpuvit-linhas div { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 12px; padding: 5px 0; border-bottom: 1px solid color-mix(in oklab, var(--rule) 60%, transparent); }
+.cpuvit-linhas dt { color: var(--ink-muted); }
+.cpuvit-linhas dd { margin: 0; overflow-wrap: anywhere; }

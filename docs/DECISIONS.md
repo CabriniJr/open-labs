@@ -462,3 +462,32 @@ tentar: a régua da §9 e a exigência de fonte primária continuam sendo trabal
 humana. O que o formato garante é que nada **desaparece em silêncio**; o que ele não
 garante é que valha a pena ler. Essa distinção precisa estar na cabeça de quem revisa um
 PR de handbook, e é a última seção de `handbooks.md` justamente por isso.
+
+## 11. Um terceiro motor, para o que é coreografia
+
+*Decidido em 2026-11-03.*
+
+A §9 separou dois casos: fluxo com camadas vai para o motor de grafos; o resto vira lab
+PhET-like, enxuto e próprio. Faltava um terceiro, e ele aparece toda vez que o assunto é
+um **protocolo**: atores fixos, mensagens que viajam numa ordem, e uma pergunta que é sobre
+*o que atravessa cada salto*. Propagação de contexto, um handshake, uma reconciliação.
+
+Isso não é fluxo com camadas — não há *dentro* em um header. E também não é um lab de
+estado com botões: o que ensina é ver a coisa **andar**, com a câmera indo aonde ela está.
+Escrever isso à mão em cada lab é o caminho por que o projeto já passou com as cores (§ do
+catálogo): cada um escolhe bem por conta própria até o dia em que não escolhe.
+
+**A decisão:** `@ovh/motion`, um palco animado agnóstico — geometria, linha do tempo pura,
+ferramentas de coreografia e um player com capítulos. Ele vale as mesmas três regras dos
+outros motores:
+
+1. **Fronteira vigiada.** Está em `pnpm boundaries` e em `check-catalogo`: não conhece
+   domínio e não escreve tinta.
+2. **Derivado, não roteirizado.** Um filme é função de um modelo do domínio. O filme do lab
+   de propagação sai de `propagar()`, e o teste interroga o quadro, não o desenho.
+3. **Dado puro.** O `Film` é amostrável em qualquer instante. Voltar, pular e mudar uma
+   opção no meio não perdem a posição nem dão quadros diferentes para o mesmo instante.
+
+**O que ele não é:** substituto do `depth-core`. Um assunto que tem camadas e que se abre
+continua lá. Se um dia um filme precisar descer para dentro de uma peça, o caminho é o palco
+de fluxos, não um zoom de câmera que finge profundidade.

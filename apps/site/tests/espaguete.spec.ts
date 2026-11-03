@@ -371,6 +371,17 @@ const SEM_PALCO: ReadonlySet<string> = new Set([
     linha.
   */
   "labs/pod-lifecycle/",
+  /*
+    O primeiro lab do palco animado (`@ovh/motion`), 03/11/2026. Ele tem palco,
+    mas não o de fluxos: é um diagrama de sequência gerado de um modelo de
+    propagação, com raias fixas e mensagens horizontais — não há roteamento de
+    fio para cruzar. A medida de cruzamentos é do roteador do `depth-ui`, e o
+    teste abaixo confirma que esta página não tem `.dui-stage`.
+  */
+  "labs/hard-context-and-baggage/",
+  // O segundo lab do palco animado, pelo mesmo motivo: filme com vista
+  // isométrica, sem o roteador de fios do `depth-ui`.
+  "labs/agent-or-gateway/",
 ]);
 
 test("todo lab publicado COM palco tem teto de cruzamentos medido", () => {

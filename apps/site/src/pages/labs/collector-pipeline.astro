@@ -2,7 +2,7 @@
 import LabAssessment from "../../components/LabAssessment.astro";
 import { EXERCICIOS_DO_COLLECTOR, MAL_ENTENDIDOS_DO_COLLECTOR } from "@ovh/otel-domain";
 import { Exercicio } from "../../components/Exercicio.tsx";
-import { CollectorLab } from "../../components/CollectorLab.tsx";
+import { CollectorModos } from "../../components/CollectorModos.tsx";
 import { Predicao } from "../../components/Predicao.tsx";
 import SiteFooter from "../../components/SiteFooter.astro";
 import SiteNav from "../../components/SiteNav.astro";
@@ -10,6 +10,10 @@ import Base from "../../layouts/Base.astro";
 import { url } from "../../lib/urls";
 import "../../styles/docs.css";
 import "../../components/CollectorLab.css";
+import "../../components/ModosDoLab.css";
+import "../../components/CpuVitrine.css";
+import "@ovh/motion/src/react/motion.css";
+import "@ovh/stage3d/src/iso.css";
 import "../../components/Predicao.css";
 import "../../components/PainelDaCarga.css";
 import "@ovh/depth-ui/src/stage.css";
@@ -58,7 +62,7 @@ const exercicios = EXERCICIOS_DO_COLLECTOR.map(montarExercicio);
     </section>
 
     <section class="lab-palco">
-      <CollectorLab client:only="react" />
+      <CollectorModos client:only="react" />
     </section>
 
     <section class="lab-prosa editorial">

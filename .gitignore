@@ -5,10 +5,13 @@ tsconfig.tsbuildinfo
 *.tsbuildinfo
 test-results/
 playwright-report/
+apps/site/qa-report/
 .DS_Store
 .vercel
 apps/site/public/delivery-host/
-.claude/
+# Configuração local do Claude Code fica fora; as skills do projeto, não.
+.claude/*
+!.claude/skills/
 
 # Build local do lab Java: o repo guarda a fonte, não o artefato.
 target/

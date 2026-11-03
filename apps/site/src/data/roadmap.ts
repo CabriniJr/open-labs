@@ -102,7 +102,7 @@ export const labs: readonly RoadmapLab[] = [
   // A Entrega 2 mudou de rumo e este lab nunca foi construído — então ele é
   // caminho declarado, como os outros, e é assim que tem que aparecer.
   { id: "anatomy-of-a-trace", title: "Anatomy of a Trace", href: "labs/anatomy-of-a-trace", status: "available", side: "left", y: 244, phase: 2 },
-  { id: "hard-context-and-baggage", title: "Hard context and baggage", href: "#", status: "coming", side: "right", y: 244, phase: 2 },
+  { id: "hard-context-and-baggage", title: "Hard context and baggage", href: "labs/hard-context-and-baggage", status: "available", side: "right", y: 244, phase: 2 },
   { id: "reading-an-otlp-payload", title: "Reading an OTLP payload", href: "#", status: "coming", side: "left", y: 300, phase: 2 },
   // A fase 2 prometia "the shape the data has" e modelava um sinal só: três nós
   // de trace, zero de métrica, zero de log. A promessa da fase 1 é que os três
@@ -116,7 +116,7 @@ export const labs: readonly RoadmapLab[] = [
   // Collector muda depois.
   { id: "providers", title: "The three providers", href: "labs/providers", status: "available", side: "left", y: 490, phase: 3 },
   { id: "collector-pipeline", title: "The Collector pipeline", href: "labs/collector-pipeline", status: "available", side: "left", y: 546, phase: 3 },
-  { id: "agent-or-gateway", title: "Agent or gateway", href: "#", status: "coming", side: "right", y: 546, phase: 3 },
+  { id: "agent-or-gateway", title: "Agent or gateway", href: "labs/agent-or-gateway", status: "available", side: "right", y: 546, phase: 3 },
 
   { id: "manual-spans", title: "Manual spans", href: "#", status: "coming", side: "left", y: 680, phase: 4 },
   { id: "zero-code-instrumentation", title: "Zero-code instrumentation", href: "#", status: "coming", side: "right", y: 680, phase: 4 },

@@ -1,0 +1,104 @@
+/*
+ * O palco isométrico. Cor só do catálogo, pelo tom (`data-tone`), como no
+ * palco plano: os rótulos são HTML por cima do WebGL e falam a mesma língua.
+ */
+.iso-stage {
+  position: relative;
+  width: 100%;
+  aspect-ratio: var(--mo-aspect, 16 / 9);
+  overflow: hidden;
+  background: var(--paper);
+  cursor: grab;
+  touch-action: pan-y;
+  user-select: none;
+}
+.iso-stage:active { cursor: grabbing; }
+.iso-stage__canvas { display: block; width: 100%; height: 100%; }
+.iso-stage__labels { position: absolute; inset: 0; pointer-events: none; }
+.iso-stage__falha { position: absolute; inset: auto 16px 16px; margin: 0; color: var(--ink-muted); font-size: var(--size-step--1); }
+
+.iso-stage [data-tone] { --iso-c: var(--dui-tinta); }
+.iso-stage [data-tone="muted"] { --iso-c: var(--ink-faint); }
+.iso-stage [data-tone="live"] { --iso-c: var(--dui-viva); }
+.iso-stage [data-tone="high"] { --iso-c: var(--dui-alto); }
+.iso-stage [data-tone="processor"] { --iso-c: var(--dui-processor); }
+.iso-stage [data-tone="container"] { --iso-c: var(--dui-container); }
+.iso-stage [data-tone="controller"] { --iso-c: var(--dui-controller); }
+.iso-stage [data-tone="conduit"] { --iso-c: var(--dui-conduit); }
+.iso-stage [data-tone="kind-1"] { --iso-c: var(--dui-especie-1); }
+.iso-stage [data-tone="kind-2"] { --iso-c: var(--dui-especie-2); }
+.iso-stage [data-tone="kind-3"] { --iso-c: var(--dui-especie-3); }
+.iso-stage [data-tone="kind-4"] { --iso-c: var(--dui-especie-4); }
+.iso-stage [data-tone="kind-5"] { --iso-c: var(--dui-especie-5); }
+
+.iso-label,
+.iso-link,
+.iso-token,
+.iso-note,
+.iso-bar,
+.iso-region {
+  font-family: var(--font-mono);
+  white-space: pre;
+  line-height: 1.3;
+  pointer-events: none;
+}
+
+.iso-label {
+  display: grid;
+  justify-items: center;
+  padding: 3px 9px;
+  border: 1px solid color-mix(in oklab, var(--iso-c) 50%, var(--rule));
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--paper-raised) 88%, transparent);
+  color: var(--ink);
+  font-size: calc(11.5px * var(--iso-k, 1));
+  font-weight: 500;
+  transform: translateY(-50%);
+  box-shadow: 0 6px 14px -10px color-mix(in oklab, var(--ink) 50%, transparent);
+}
+.iso-label[data-lit] { border-color: var(--iso-c); }
+.iso-sub { display: block; color: var(--ink-muted); font-size: calc(9.5px * var(--iso-k, 1)); font-weight: 400; }
+
+.iso-link {
+  display: grid;
+  justify-items: center;
+  color: var(--ink);
+  font-size: calc(10.5px * var(--iso-k, 1));
+  text-shadow: 0 0 3px var(--paper), 0 0 3px var(--paper), 0 0 6px var(--paper);
+}
+.iso-link .iso-sub { color: var(--iso-c); }
+
+.iso-token {
+  display: grid;
+  overflow: hidden;
+  border: 1px solid var(--iso-c);
+  border-radius: 4px;
+  background: color-mix(in oklab, var(--iso-c) 10%, var(--paper-raised));
+  color: var(--ink);
+  font-size: calc(10px * var(--iso-k, 1));
+  text-align: center;
+  transform: translateY(-50%);
+  box-shadow: 0 8px 18px -12px color-mix(in oklab, var(--iso-c) 70%, transparent);
+}
+.iso-token__head { padding: 1px 8px; background: var(--iso-c); color: var(--paper); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; font-size: 0.9em; }
+.iso-token__sub { padding: 2px 8px; }
+
+.iso-note {
+  color: var(--iso-c);
+  font-size: 10.5px;
+  text-shadow: 0 0 3px var(--paper), 0 0 6px var(--paper);
+}
+.iso-note[data-tone="ink"] { color: var(--ink-muted); }
+.iso-note--start { transform: translateX(50%); }
+.iso-note--end { transform: translateX(-50%); }
+
+.iso-bar { color: var(--iso-c); font-size: calc(9.5px * var(--iso-k, 1)); }
+.iso-region { color: var(--iso-c); font-size: calc(10px * var(--iso-k, 1)); letter-spacing: 0.08em; text-transform: uppercase; }
+
+/* Tela estreita: o bloco e a ficha dizem o essencial; o resto está no painel. */
+.iso-stage[data-compacto] .iso-sub,
+.iso-stage[data-compacto] .iso-link,
+.iso-stage[data-compacto] .iso-bar,
+.iso-stage[data-compacto] .iso-note,
+.iso-stage[data-compacto] .iso-token { display: none; }
+.iso-stage[data-compacto] .iso-label { padding: 1px 6px; }

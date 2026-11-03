@@ -20,6 +20,8 @@ export default defineWorkspace([
         "packages/handbook-format/src/**/*.test.ts",
         "apps/site/src/**/*.test.ts",
         "packages/depth-ui/src/**/*.test.ts",
+        "packages/motion/src/**/*.test.ts",
+        "packages/stage3d/src/**/*.test.ts",
         "scripts/**/*.test.mjs",
       ],
     },
@@ -29,7 +31,7 @@ export default defineWorkspace([
     test: {
       name: "dom",
       environment: "jsdom",
-      include: ["packages/depth-ui/src/**/*.test.tsx", "apps/site/src/**/*.test.tsx"],
+      include: ["packages/depth-ui/src/**/*.test.tsx", "packages/motion/src/**/*.test.tsx", "apps/site/src/**/*.test.tsx"],
     },
   },
 ]);
