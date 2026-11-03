@@ -1,3 +1,5 @@
+@import "./spatial.css";
+
 .dui-depth {
   display: grid;
   grid-template-columns: 9rem minmax(0, 1fr) minmax(0, 22rem);
@@ -208,4 +210,3 @@
   height: 0.28rem;
   border-radius: 999px;
 }
-@import "./spatial.css";
