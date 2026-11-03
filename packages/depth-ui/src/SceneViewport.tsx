@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { clamp, DEFAULT_CAMERA, projector, type Point3, type SpatialCamera, type SpatialMode, type SpatialScene } from "./spatial.js";
-import "./spatial.css";
 
 export interface SceneViewportProps {
   readonly scene: SpatialScene | (() => SpatialScene); readonly label: string; readonly children: ReactNode;
