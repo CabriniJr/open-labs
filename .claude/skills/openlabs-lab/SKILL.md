@@ -90,12 +90,34 @@ Caixa é o último recurso. Use a forma que diz o que a peça é (`chip`, `mux`,
 nível: interior aninhado dentro da caixa, `lod` e `textScale` por nível, e
 `d.camera({ box })` (ver `docs/motion.md`, "Profundidade").
 
+### Ícones: o que a peça é, num relance
+
+`icon: Glyph` em qualquer peça (`{ paths, fill? }`, traço 24×24). No 3D vira um
+selo que flutua sobre o rótulo; no plano, o canto da caixa. **O motor não tem
+ícones**: cada handbook tem o catálogo dele (`ICONES_OTEL`, `ICONES_K8S`,
+`ICONES_CPU`), e um papel tem o mesmo ícone em todos os labs do handbook. Papel
+novo → ícone novo no catálogo, nunca um desenho solto no filme.
+
+### Roteiro do handbook
+
+Antes de criar um lab, leia o roteiro do handbook (`docs/roteiros/<handbook>.md`):
+pergunta, mal-entendido, mídia, capítulos, o que a altura significa no 3D,
+ícones, correlações com os outros labs e critério de pronto. Criou ou mudou um
+lab? Atualize o roteiro no mesmo PR.
+
 ## 5. 3D / isométrico com `@ovh/stage3d`
 
 - Entre como `views` do `MotionPlayer`, com `lazy()` + `Suspense`: o three.js
   só baixa quando o leitor pede.
 - Topologia fica de pé; diagrama de sequência não (o tempo vira profundidade).
 - Peça `custom` não aparece no 3D — se o lab depende dela, a vista 3D não serve.
+- **A altura tem significado ou não existe**: aninhamento, camada de implantação,
+  nível de zoom. `elevation`, `height` e `lift` animável.
+- Rótulo **cede**, não empilha: no 3D, um rótulo que cobriria outro some até
+  ter espaço (prioridade: aceso, depois peça maior). Não aperte layout para
+  "caber" rótulos no isométrico — espace as peças e deixe a regra decidir.
+- Layout do player: janela à esquerda, andamento (capítulos, narração, painel)
+  à direita, por container query no `MotionPlayer`. Não refaça no lab.
 
 ## 6. Regras de desempenho (aprendidas medindo)
 

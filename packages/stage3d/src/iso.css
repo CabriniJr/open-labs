@@ -57,6 +57,42 @@
   box-shadow: 0 6px 14px -10px color-mix(in oklab, var(--ink) 50%, transparent);
 }
 .iso-label[data-lit] { border-color: var(--iso-c); }
+/* Cedeu a vez: outro rótulo, mais importante, ocupa o lugar. */
+.iso-label[data-cede] { visibility: hidden; }
+/*
+ * O selo do ícone flutua sobre a peça, acima do rótulo, preso a ele por uma
+ * haste: diz o que a peça é antes de se ler o nome. Posição absoluta para não
+ * mexer na âncora do rótulo, que é o que a câmera mira.
+ */
+.iso-label { position: relative; }
+.iso-icon {
+  position: absolute;
+  left: 50%;
+  bottom: 100%;
+  display: grid;
+  place-items: center;
+  width: calc(26px * var(--iso-k, 1));
+  height: calc(26px * var(--iso-k, 1));
+  border: 1px solid color-mix(in oklab, var(--iso-c) 70%, var(--rule));
+  border-radius: 50%;
+  background: color-mix(in oklab, var(--paper-raised) 92%, var(--iso-c));
+  color: var(--iso-c);
+  transform: translate(-50%, calc(-7px * var(--iso-k, 1)));
+  box-shadow: 0 6px 14px -8px color-mix(in oklab, var(--ink) 55%, transparent);
+}
+.iso-icon::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  width: 1px;
+  height: calc(7px * var(--iso-k, 1));
+  background: color-mix(in oklab, var(--iso-c) 60%, transparent);
+}
+.iso-icon svg { width: 62%; height: 62%; }
+.iso-icon path { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.iso-icon path[data-fill] { fill: currentColor; stroke: none; }
+.iso-label[data-lit] .iso-icon { background: color-mix(in oklab, var(--paper-raised) 70%, var(--iso-c)); border-color: var(--iso-c); }
 .iso-sub { display: block; color: var(--ink-muted); font-size: calc(9.5px * var(--iso-k, 1)); font-weight: 400; }
 
 .iso-link {

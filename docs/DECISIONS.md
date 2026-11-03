@@ -491,3 +491,26 @@ outros motores:
 **O que ele não é:** substituto do `depth-core`. Um assunto que tem camadas e que se abre
 continua lá. Se um dia um filme precisar descer para dentro de uma peça, o caminho é o palco
 de fluxos, não um zoom de câmera que finge profundidade.
+
+## 12. Ícones são do handbook; rótulos cedem; o roteiro é contrato de conteúdo
+
+**Ícone.** O motor aceita `icon: Glyph` em qualquer peça e não traz desenho
+nenhum. O catálogo de ícones é da identidade do handbook (`ICONES_OTEL`,
+`ICONES_K8S`, `ICONES_CPU`), e um papel tem o mesmo ícone em todos os labs do
+handbook. É o que deixa o leitor reconhecer o Collector de um lab para o outro
+sem ler o rótulo. Um ícone no motor seria um assunto no motor, e a fronteira
+(`check-boundaries`) existe para impedir isso.
+
+**Rótulo que cede.** No isométrico, rótulos que no plano tinham folga se
+empilhavam. Apertar o layout de cada filme para caber no 3D tornava o plano
+pior. A regra fica no palco 3D: o rótulo de prioridade menor some enquanto
+cobriria outro. A prioridade é aceso, depois a peça maior.
+
+**Janela à esquerda, andamento à direita.** Empilhados, a narração caía abaixo
+da dobra e quem assistia o filme não via o que o capítulo dizia. O layout é do
+`MotionPlayer` (container query), não de cada lab.
+
+**Roteiro.** `docs/roteiros/<handbook>.md` diz, por lab, a pergunta, o
+mal-entendido, a mídia, os capítulos, o significado da altura no 3D, os ícones
+e as correlações. É o contrato de conteúdo. O da forma é a skill. Os dois são
+atualizados no PR que muda o lab.

@@ -1,4 +1,5 @@
 import { arc, connect, film, type Box, type Film, type Path, type Tone } from "@ovh/motion";
+import { ICONES_OTEL as I } from "../icones/icones.js";
 import { entregar, NOS_DO_CLUSTER, PODS, REPLICAS, SPANS, type Entrega, type OpcoesDeImplantacao } from "./modelo.js";
 
 /**
@@ -67,13 +68,13 @@ export function filmeDaImplantacao(opcoes: OpcoesDeImplantacao): { filme: Film<D
   const f = film<DetalheDaImplantacao>({ width: LARGURA_DA_IMPLANTACAO, height: ALTURA_DA_IMPLANTACAO, gap: 400, maxZoom: 1.6 });
 
   for (const no of NOS_DO_CLUSTER) f.add({ type: "region", id: `regiao:${no}`, box: NO[no]!, label: no, tone: "container" });
-  for (const pod of PODS) f.add({ type: "node", id: `pod:${pod.id}`, box: caixaDe(pod.id), label: pod.id, sublabel: "app + SDK", tone: "processor", shape: "pill" });
-  if (temAgent) for (const no of NOS_DO_CLUSTER) f.add({ type: "node", id: `col:agent-${no.slice(-1)}`, box: caixaDe(`agent-${no.slice(-1)}`), label: `agent-${no.slice(-1)}`, sublabel: "Collector · DaemonSet", tone: "conduit", shape: "stack" });
+  for (const pod of PODS) f.add({ type: "node", id: `pod:${pod.id}`, box: caixaDe(pod.id), label: pod.id, sublabel: "app + SDK", tone: "processor", shape: "pill", icon: I.pod });
+  if (temAgent) for (const no of NOS_DO_CLUSTER) f.add({ type: "node", id: `col:agent-${no.slice(-1)}`, box: caixaDe(`agent-${no.slice(-1)}`), label: `agent-${no.slice(-1)}`, sublabel: "Collector · DaemonSet", tone: "conduit", shape: "stack", icon: I.agent });
   if (temGateway) {
     f.add({ type: "region", id: "regiao:gateway", box: GATEWAY, label: "gateway · Deployment", tone: "conduit" });
-    for (const r of REPLICAS) f.add({ type: "node", id: `col:${r}`, box: caixaDe(r), label: r, sublabel: "Collector", tone: "conduit", shape: "stack" });
+    for (const r of REPLICAS) f.add({ type: "node", id: `col:${r}`, box: caixaDe(r), label: r, sublabel: "Collector", tone: "conduit", shape: "stack", icon: I.collector });
   }
-  f.add({ type: "node", id: "col:backend", box: BACKEND, label: "backend", sublabel: `${e.conexoesComBackend} connections`, tone: "container", shape: "cylinder" });
+  f.add({ type: "node", id: "col:backend", box: BACKEND, label: "backend", sublabel: `${e.conexoesComBackend} connections`, tone: "container", shape: "cylinder", icon: I.backend });
 
   const idDe = (x: string) => (x.startsWith("agent-") || x.startsWith("gateway-") || x === "backend" ? `col:${x}` : `pod:${x}`);
 

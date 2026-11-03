@@ -103,7 +103,7 @@ export const labs: readonly RoadmapLab[] = [
   // caminho declarado, como os outros, e é assim que tem que aparecer.
   { id: "anatomy-of-a-trace", title: "Anatomy of a Trace", href: "labs/anatomy-of-a-trace", status: "available", side: "left", y: 244, phase: 2 },
   { id: "hard-context-and-baggage", title: "Hard context and baggage", href: "labs/hard-context-and-baggage", status: "available", side: "right", y: 244, phase: 2 },
-  { id: "reading-an-otlp-payload", title: "Reading an OTLP payload", href: "#", status: "coming", side: "left", y: 300, phase: 2 },
+  { id: "reading-an-otlp-payload", title: "Reading an OTLP payload", href: "labs/reading-an-otlp-payload", status: "available", side: "left", y: 300, phase: 2 },
   // A fase 2 prometia "the shape the data has" e modelava um sinal só: três nós
   // de trace, zero de métrica, zero de log. A promessa da fase 1 é que os três
   // soltos não são observabilidade, e um currículo que só modela trace repete o

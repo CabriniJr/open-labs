@@ -73,3 +73,5 @@ export type { Acesso, LinhaDeTempo } from "./micro/tempo.js";
 // A vitrine: o modo showcase do lab, um mergulho do chip às portas sobre a execução real.
 export { execucaoDaVitrine, filmeDaVitrine } from "./vitrine/filme.js";
 export type { DetalheDaVitrine } from "./vitrine/filme.js";
+
+export { ICONES_CPU } from "./icones/icones.js";

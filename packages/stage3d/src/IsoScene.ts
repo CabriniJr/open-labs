@@ -1,4 +1,4 @@
-import { formaDe, pathLength, poseAt, type CameraState, type EntitySpec, type Film, type Frame, type Tone } from "@ovh/motion";
+import { formaDe, pathLength, poseAt, type CameraState, type EntitySpec, type Film, type Frame, type Glyph, type Tone } from "@ovh/motion";
 import {
   BoxGeometry,
   CanvasTexture,
@@ -84,18 +84,42 @@ function corDe(css: string, reserva: string): Color {
  * Escreve rótulo e sub-rótulo só quando mudam. Um rótulo é DOM, e reescrever
  * DOM a cada quadro em todas as peças é layout a cada quadro.
  */
-function escrever(el: HTMLElement, label: string, sub = "", classeDoSub = "iso-sub"): void {
+function escrever(el: HTMLElement, label: string, sub = "", classeDoSub = "iso-sub", icone: Element | null = null): void {
   const chave = `${label}\u0000${sub}`;
   if (el.dataset.k === chave) return;
   el.dataset.k = chave;
   el.textContent = label;
+  if (icone !== null) el.prepend(icone);
   if (sub !== "") {
     const span = document.createElement("span");
     span.className = classeDoSub;
     span.textContent = sub;
     el.appendChild(span);
   }
-  el.hidden = label === "" && sub === "";
+  el.hidden = label === "" && sub === "" && icone === null;
+}
+
+const SVG = "http://www.w3.org/2000/svg";
+/** O selo do ícone: um SVG de traço, na tinta do tom (`currentColor`). */
+function selo(glyph: Glyph): Element {
+  const span = document.createElement("span");
+  span.className = "iso-icon";
+  span.setAttribute("aria-hidden", "true");
+  const svg = document.createElementNS(SVG, "svg");
+  svg.setAttribute("viewBox", "0 0 24 24");
+  for (const d of glyph.paths) {
+    const p = document.createElementNS(SVG, "path");
+    p.setAttribute("d", d);
+    svg.appendChild(p);
+  }
+  for (const d of glyph.fill ?? []) {
+    const p = document.createElementNS(SVG, "path");
+    p.setAttribute("d", d);
+    p.setAttribute("data-fill", "");
+    svg.appendChild(p);
+  }
+  span.appendChild(svg);
+  return span;
 }
 
 function marcar(el: HTMLElement, chave: string, valor: string | null): void {
@@ -150,6 +174,8 @@ export class IsoScene {
   readonly #sol = new DirectionalLight(0xffffff, 1.6);
   readonly #ceu = new HemisphereLight(0xffffff, 0x888888, 1.4);
   readonly #pecas = new Map<string, Peca>();
+  /** Os rótulos das peças, para decidir quais cabem na tela sem se cobrir. */
+  readonly #rotulosDeNo: { readonly obj: CSS2DObject; readonly el: HTMLElement; readonly area: number; readonly k: number }[] = [];
   readonly #mundo = new Group();
   readonly #observador: IntersectionObserver | null;
   readonly #resize: ResizeObserver | null;
@@ -376,8 +402,49 @@ export class IsoScene {
     this.#enquadrar(this.#frame?.camera ?? film.camera);
     this.#renderer.render(this.#scene, this.#camera);
     this.#labels.render(this.#scene, this.#camera);
+    this.#cederRotulos();
     // Para o QA: quantas chamadas de desenho o último quadro fez.
     this.#host.dataset.chamadas = String(this.#renderer.info.render.drawCalls ?? this.#renderer.info.render.calls ?? 0);
+  }
+
+  /**
+   * Rótulo cede, não empilha. Na vista isométrica o eixo de profundidade
+   * encolhe, e peças que no plano têm folga ficam com os rótulos uns sobre os
+   * outros — uma pilha de texto ilegível. A cada quadro, os rótulos das peças
+   * entram por prioridade (aceso primeiro, depois a peça maior) e um rótulo que
+   * cobriria outro já posto some até ter espaço. O tamanho é estimado pelo
+   * texto, sem medir o DOM: medir seria layout a cada quadro.
+   */
+  #cederRotulos(): void {
+    const w = this.#host.clientWidth;
+    const h = this.#host.clientHeight;
+    const kTela = Number(this.#host.style.getPropertyValue("--iso-k")) || 1;
+    const v = new Vector3();
+    const candidatos: { el: HTMLElement; x: number; y: number; w: number; h: number; p: number }[] = [];
+    for (const r of this.#rotulosDeNo) {
+      const { el } = r;
+      if (el.hidden || Number(el.style.opacity || "1") < 0.05 || !r.obj.parent?.visible) {
+        marcar(el, "cede", null);
+        continue;
+      }
+      r.obj.getWorldPosition(v).project(this.#camera);
+      const x = (v.x * 0.5 + 0.5) * w;
+      const y = (-v.y * 0.5 + 0.5) * h;
+      const linhas = el.textContent ?? "";
+      const sub = el.querySelector(".iso-sub")?.textContent ?? "";
+      const chars = Math.max(linhas.length - sub.length, sub.length * 0.83);
+      const lw = (chars * 6.9 + 20) * kTela;
+      const lh = ((sub === "" ? 20 : 34) + ("icon" in el.dataset ? 32 : 0)) * kTela;
+      const aceso = "lit" in el.dataset;
+      candidatos.push({ el, x: x - lw / 2, y: y - lh * 0.75, w: lw, h: lh, p: (aceso ? 1e12 : 0) + r.area });
+    }
+    candidatos.sort((a, b) => b.p - a.p);
+    const postos: { x: number; y: number; w: number; h: number }[] = [];
+    for (const c of candidatos) {
+      const cobre = postos.some((o) => c.x < o.x + o.w - 2 && o.x < c.x + c.w - 2 && c.y < o.y + o.h - 2 && o.y < c.y + c.h - 2);
+      marcar(c.el, "cede", cobre ? "" : null);
+      if (!cobre) postos.push(c);
+    }
   }
 
   #malha(film: Film<unknown>, p: Paleta): Object3D {
@@ -572,7 +639,13 @@ export class IsoScene {
     const raioDoAnel = Math.max(box.w, box.h) * 0.62;
 
     const { obj, el } = etiqueta("iso-label", spec.label ?? "");
+    const icone = spec.icon === undefined ? null : selo(spec.icon);
+    if (icone !== null) {
+      el.prepend(icone);
+      el.dataset.icon = "";
+    }
     obj.position.set(0, (shape === "stack" ? H * 1.6 : H) * 1.08 + Math.min(4, H * 0.3), 0);
+    this.#rotulosDeNo.push({ obj, el, area: box.w * box.h, k: spec.textScale ?? 1 });
     corpo.add(obj);
 
     // A linha de vida de uma raia: tracejada no chão, da cabeça até o fundo.
@@ -634,7 +707,7 @@ export class IsoScene {
           anel.scale.setScalar(raioDoAnel * (1 + s.ping * 0.8));
           anelMat.opacity = 1 - s.ping;
         } else anel.visible = false;
-        escrever(el, s.label, s.sublabel);
+        escrever(el, s.label, s.sublabel, "iso-sub", icone);
         opacidade(el, visivel);
         marcar(el, "tone", s.tone);
         marcar(el, "lit", s.glow > 0.05 ? "" : null);
@@ -836,6 +909,7 @@ export class IsoScene {
   }
 
   #limparMundo(): void {
+    this.#rotulosDeNo.length = 0;
     this.#mundo.traverse((o) => {
       const m = o as Mesh;
       m.geometry?.dispose?.();

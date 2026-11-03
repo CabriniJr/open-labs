@@ -72,6 +72,16 @@ export interface Animatable {
 export type Prop = keyof Animatable;
 export type PropValue = number | string;
 
+/**
+ * Um ícone de traço numa grade de 24×24: os caminhos de `paths` são traço,
+ * os de `fill` são cheios. O motor não tem ícones; quem tem é o handbook, que
+ * entrega o desenho junto da peça. A tinta é a do tom da peça.
+ */
+export interface Glyph {
+  readonly paths: readonly string[];
+  readonly fill?: readonly string[];
+}
+
 interface Common {
   readonly id: string;
   /** Ordem de desenho: maior fica por cima. */
@@ -104,6 +114,11 @@ interface Common {
    * `silicon` é escuro e espelhado (o die), `pcb` é fosco (a placa).
    */
   readonly material?: "matte" | "metal" | "silicon" | "pcb" | "glass";
+  /**
+   * O que a peça é, num relance: no 3D, um selo que flutua sobre ela, acima do
+   * rótulo; no plano, no canto da caixa.
+   */
+  readonly icon?: Glyph;
 }
 
 export interface NodeSpec extends Common {

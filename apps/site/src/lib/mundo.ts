@@ -1,4 +1,7 @@
+import { ICONES_CPU } from "@ovh/cpu-domain";
+import { ICONES_K8S } from "@ovh/kubernetes-domain";
 import { connect, film, line, pt, type Box, type Film } from "@ovh/motion";
+import { ICONES_OTEL } from "@ovh/otel-domain";
 
 /**
  * O mundo da página inicial: os três assuntos do site como ilhas de um mesmo
@@ -24,10 +27,10 @@ export function filmeDoMundo(): Film<null> {
   const S2 = B(otel.x + 30, otel.y + 190, 130, 60);
   const COL = B(otel.x + 230, otel.y + 100, 130, 110);
   const BACK = B(otel.x + 420, otel.y + 110, 110, 90);
-  f.add({ type: "node", id: "o:s1", box: S1, label: "checkout", sublabel: "SDK", tone: "kind-1", shape: "pill" });
-  f.add({ type: "node", id: "o:s2", box: S2, label: "payments", sublabel: "SDK", tone: "kind-3", shape: "pill" });
-  f.add({ type: "node", id: "o:col", box: COL, label: "Collector", tone: "conduit", shape: "stack" });
-  f.add({ type: "node", id: "o:back", box: BACK, label: "backend", tone: "container", shape: "cylinder" });
+  f.add({ type: "node", id: "o:s1", box: S1, label: "checkout", sublabel: "SDK", tone: "kind-1", shape: "pill", icon: ICONES_OTEL.service });
+  f.add({ type: "node", id: "o:s2", box: S2, label: "payments", sublabel: "SDK", tone: "kind-3", shape: "pill", icon: ICONES_OTEL.service });
+  f.add({ type: "node", id: "o:col", box: COL, label: "Collector", tone: "conduit", shape: "stack", icon: ICONES_OTEL.otel });
+  f.add({ type: "node", id: "o:back", box: BACK, label: "backend", tone: "container", shape: "cylinder", icon: ICONES_OTEL.backend });
   const p1 = connect(S1, COL, 8);
   const p2 = connect(S2, COL, 8);
   const p3 = connect(COL, BACK, 8);
@@ -44,10 +47,10 @@ export function filmeDoMundo(): Film<null> {
   f.add({ type: "region", id: "i:k8s", box: k8s, label: "Kubernetes", tone: "processor" });
   const NO = B(k8s.x + 150, k8s.y + 60, 380, 180);
   const CP = B(k8s.x + 25, k8s.y + 100, 100, 90);
-  f.add({ type: "node", id: "k:cp", box: CP, label: "scheduler", tone: "controller" });
+  f.add({ type: "node", id: "k:cp", box: CP, label: "scheduler", tone: "controller", icon: ICONES_K8S.scheduler });
   f.add({ type: "node", id: "k:no", box: NO, label: "", tone: "container", material: "pcb", height: 8 });
   const vaga = (i: number) => B(NO.x + 20 + (i % 3) * 120, NO.y + 22 + Math.floor(i / 3) * 78, 100, 60);
-  for (let i = 0; i < 5; i += 1) f.add({ type: "node", id: `k:pod${i}`, box: vaga(i), label: `pod-${i + 1}`, sublabel: "Running", tone: "conduit", shape: "pill", elevation: 8, hidden: i === 4 });
+  for (let i = 0; i < 5; i += 1) f.add({ type: "node", id: `k:pod${i}`, box: vaga(i), label: `pod-${i + 1}`, sublabel: "Running", tone: "conduit", shape: "pill", elevation: 8, hidden: i === 4, ...(i % 2 === 0 ? { icon: ICONES_K8S.pod } : {}) });
   f.add({ type: "token", id: "k:agenda", path: line(pt(CP.x + CP.w, CP.y + CP.h / 2), pt(vaga(4).x, vaga(4).y + 30)), tone: "controller", hidden: true, size: 5, label: "BIND", sublabel: "pod-5 → node" });
 
   // ── CPU: a placa, o encapsulamento, a tampa e o die ──
@@ -58,10 +61,10 @@ export function filmeDoMundo(): Film<null> {
   const DIE = B(PKG.x + 100, PKG.y + 100, 120, 120);
   const TAMPA = B(PKG.x + 24, PKG.y + 24, 272, 272);
   f.add({ type: "node", id: "c:placa", box: PLACA, label: "", tone: "conduit", material: "pcb", height: 5 });
-  f.add({ type: "node", id: "c:dimm", box: DIMM, label: "DRAM", tone: "kind-2", shape: "memory", material: "pcb", elevation: 5, height: 26 });
+  f.add({ type: "node", id: "c:dimm", box: DIMM, label: "DRAM", tone: "kind-2", shape: "memory", material: "pcb", elevation: 5, height: 26, icon: ICONES_CPU.memory });
   f.add({ type: "node", id: "c:pkg", box: PKG, label: "", tone: "conduit", material: "pcb", shape: "chip", elevation: 5, height: 5 });
   f.add({ type: "node", id: "c:die", box: DIE, label: "silicon", sublabel: "RV32I", tone: "processor", material: "silicon", elevation: 10, height: 2, hidden: true });
-  f.add({ type: "node", id: "c:tampa", box: TAMPA, label: "RV32I", sublabel: "core", tone: "container", material: "metal", elevation: 10, height: 10 });
+  f.add({ type: "node", id: "c:tampa", box: TAMPA, label: "RV32I", sublabel: "core", tone: "container", material: "metal", elevation: 10, height: 10, icon: ICONES_CPU.chip });
   const busca = line(pt(DIMM.x + DIMM.w, DIMM.y + 150), pt(PKG.x, PKG.y + 160));
   f.add({ type: "link", id: "c:bus", path: busca, tone: "muted", elevation: 5 });
   f.add({ type: "token", id: "c:fetch", path: busca, tone: "kind-1", hidden: true, size: 5, label: "FETCH", sublabel: "add x3,x1,x2", elevation: 5 });

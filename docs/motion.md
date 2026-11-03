@@ -190,3 +190,25 @@ conta o mecanismo, com câmera e narração; a **simulation** é o modelo que o 
 desmonta. O filme do showcase continua sendo derivado do domínio — a vitrine da
 CPU executa o programa no RV32I de referência; a do Collector monta o envelope com
 `toOtlpJson` e conta os bytes do JSON.
+
+## Ícones e rótulos no 3D
+
+Toda peça aceita `icon: Glyph` — `{ paths: string[]; fill?: string[] }`, traço
+numa grade 24×24, na tinta do tom da peça. No 3D, o ícone é um selo redondo
+que flutua sobre o rótulo, preso por uma haste; no plano, fica no canto de cima
+da caixa, do tamanho que ela comporta. O motor não traz ícone nenhum: o desenho
+é da identidade do handbook (`ICONES_OTEL` em `otel-domain`, `ICONES_K8S`,
+`ICONES_CPU`) e chega junto da peça.
+
+No isométrico, rótulos **cedem**: a cada quadro, os rótulos das peças entram
+por prioridade (peça acesa primeiro, depois a de maior área) e um rótulo que
+cobriria outro já posto fica oculto (`data-cede`) até ter espaço. O tamanho é
+estimado pelo texto, sem medir o DOM. Uma troca de capítulo que acende outra
+peça devolve o rótulo dela.
+
+## Layout do player
+
+Com o player largo (container ≥ 54rem), a cena fica à esquerda e o andamento
+(capítulos, narração, pacote atual, painel do nível) à direita, os dois
+fixos abaixo da barra do site (`--mo-sticky-top`). Estreito, empilha. A tabela
+de pacotes fica sempre embaixo, na largura toda.

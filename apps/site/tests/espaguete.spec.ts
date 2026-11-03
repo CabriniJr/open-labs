@@ -382,6 +382,9 @@ const SEM_PALCO: ReadonlySet<string> = new Set([
   // O segundo lab do palco animado, pelo mesmo motivo: filme com vista
   // isométrica, sem o roteador de fios do `depth-ui`.
   "labs/agent-or-gateway/",
+  // Filme com vista isométrica e um analisador de bytes em React: os blocos
+  // são campos em ordem de byte, sem fio roteado para cruzar.
+  "labs/reading-an-otlp-payload/",
 ]);
 
 test("todo lab publicado COM palco tem teto de cruzamentos medido", () => {

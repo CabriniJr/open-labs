@@ -1,4 +1,5 @@
-import { descida, elbow, film, line, pt, type Box, type Director, type Film, type FilmBuilder, type Point, type Shape, type Tone } from "@ovh/motion";
+import { descida, elbow, film, line, pt, type Box, type Director, type Film, type FilmBuilder, type Point, type Glyph, type Shape, type Tone } from "@ovh/motion";
+import { ICONES_CPU } from "../icones/icones.js";
 import { encode, type Instruction } from "../isa.js";
 import { initialCpu, stepCpu } from "../reference.js";
 
@@ -108,11 +109,11 @@ export function filmeDaVitrine(): Film<DetalheDaVitrine> {
   // O nível 0 é visto de longe e no encapsulamento: texto em tamanho cheio.
   const NIVEL = nv.map((n, i) => ({ lod: n.lod, k: i === 0 ? 1 : n.k, elev: i === 0 ? 0 : SOBRE_O_DIE }));
 
-  const no = (n: number, id: string, box: Box, label: string, opt: { sub?: string; tone?: Tone; shape?: Shape; hidden?: boolean; layer?: number; material?: "matte" | "metal" | "silicon" | "pcb"; elevation?: number; height?: number } = {}) =>
+  const no = (n: number, id: string, box: Box, label: string, opt: { sub?: string; tone?: Tone; shape?: Shape; hidden?: boolean; layer?: number; material?: "matte" | "metal" | "silicon" | "pcb"; elevation?: number; height?: number; icon?: Glyph } = {}) =>
     f.add({
       type: "node", id, box, label, sublabel: opt.sub ?? "", tone: opt.tone ?? "processor", shape: opt.shape ?? "box",
       textScale: NIVEL[n]!.k, lod: NIVEL[n]!.lod, hidden: opt.hidden === true, layer: opt.layer ?? n,
-      elevation: opt.elevation ?? NIVEL[n]!.elev, ...(opt.material === undefined ? {} : { material: opt.material }), ...(opt.height === undefined ? {} : { height: opt.height }),
+      elevation: opt.elevation ?? NIVEL[n]!.elev, ...(opt.material === undefined ? {} : { material: opt.material }), ...(opt.height === undefined ? {} : { height: opt.height }), ...(opt.icon === undefined ? {} : { icon: opt.icon }),
     });
   const fio = (n: number, id: string, path: ReturnType<typeof line>, tone: Tone = "ink", dashed = false, elevation?: number) =>
     f.add({ type: "link", id, path, tone, dashed, arrow: true, textScale: NIVEL[n]!.k, lod: NIVEL[n]!.lod, hidden: true, layer: n, elevation: elevation ?? NIVEL[n]!.elev });
@@ -125,11 +126,11 @@ export function filmeDaVitrine(): Film<DetalheDaVitrine> {
 
   // ── nível 0: a placa-mãe, o encapsulamento e o die debaixo da tampa ──
   no(0, "placa", PLACA, "", { tone: "conduit", material: "pcb", height: ALT.placa, layer: -2, elevation: 0 });
-  no(0, "dimm1", DIMM1, "DRAM", { sub: "program", tone: "kind-2", shape: "memory", material: "pcb", elevation: ALT.placa, height: 30 });
+  no(0, "dimm1", DIMM1, "DRAM", { sub: "program", tone: "kind-2", shape: "memory", material: "pcb", elevation: ALT.placa, height: 30, icon: ICONES_CPU.memory });
   no(0, "dimm2", DIMM2, "DRAM", { tone: "kind-2", shape: "memory", material: "pcb", elevation: ALT.placa, height: 30 });
   no(0, "substrato", PKG, "", { tone: "conduit", material: "pcb", elevation: ALT.placa, height: ALT.substrato, shape: "chip", layer: 0 });
   no(0, "die", DIE, "silicon die", { sub: "RV32I core + SRAM", tone: "processor", material: "silicon", elevation: SOBRE_O_SUBSTRATO, height: ALT.die, hidden: true, layer: 1 });
-  no(0, "tampa", TAMPA, "RV32I", { sub: "single-cycle · 32-bit", tone: "container", material: "metal", elevation: SOBRE_O_SUBSTRATO, height: ALT.tampa, layer: 2 });
+  no(0, "tampa", TAMPA, "RV32I", { sub: "single-cycle · 32-bit", tone: "container", material: "metal", elevation: SOBRE_O_SUBSTRATO, height: ALT.tampa, layer: 2, icon: ICONES_CPU.chip });
   fio(0, "barramento", line(dir(DIMM2), esq(PKG)), "ink", false, ALT.placa);
   ficha(0, "busca", line(dir(DIMM2), esq(PKG)), "FETCH", hex(e.palavra), "kind-1", ALT.placa);
   nota(0, "programa", pt(DIMM1.x + 56, DIMM1.y + DIMM1.h + 34), TEXTO.map((t, i) => `${i === 2 ? "▶ " : "  "}${t}`).join("\n"), "ink", "middle", ALT.placa);
@@ -151,7 +152,7 @@ export function filmeDaVitrine(): Film<DetalheDaVitrine> {
   no(2, "imem", IMEM, "instruction", { sub: "memory", tone: "container", shape: "memory" });
   no(2, "ctrl", CTRL, "decode + control", { tone: "controller" });
   no(2, "regs", REGS, "registers", { sub: `x1=${e.a} x2=${e.b}`, tone: "kind-2", shape: "register" });
-  no(2, "ula", ALU, "ALU", { tone: "processor", shape: "alu" });
+  no(2, "ula", ALU, "ALU", { tone: "processor", shape: "alu", icon: ICONES_CPU.alu });
   no(2, "dmem", DMEM, "data", { sub: "unused", tone: "muted", shape: "memory" });
   const k2 = NIVEL[2]!.k;
   fio(2, "f:pc-imem", line(dir(PC), esq(IMEM)));
