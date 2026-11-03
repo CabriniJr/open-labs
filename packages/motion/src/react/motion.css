@@ -41,17 +41,17 @@
 
 .mo-label {
   fill: var(--ink);
-  font-size: 12.5px;
+  font-size: calc(12.5px * var(--mo-k, 1));
   font-weight: 500;
   letter-spacing: 0.01em;
 }
 .mo-sublabel {
   fill: var(--ink-muted);
-  font-size: 10px;
+  font-size: calc(10px * var(--mo-k, 1));
 }
 .mo-badge {
   fill: var(--mo-c);
-  font-size: 9px;
+  font-size: calc(9px * var(--mo-k, 1));
   font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -61,71 +61,71 @@
 .mo-node__shape {
   fill: color-mix(in oklab, var(--mo-c) 9%, var(--mo-surface));
   stroke: color-mix(in oklab, var(--mo-c) 70%, var(--rule));
-  stroke-width: 1.5;
+  stroke-width: calc(1.5px * var(--mo-k, 1));
   transition: filter 160ms ease;
 }
 .mo-node[data-lit] .mo-node__shape {
   fill: color-mix(in oklab, var(--mo-c) calc(9% + var(--mo-glow) * 16%), var(--mo-surface));
   stroke: var(--mo-c);
-  stroke-width: 2;
-  filter: drop-shadow(0 0 calc(var(--mo-glow) * 12px) color-mix(in oklab, var(--mo-c) 65%, transparent));
+  stroke-width: calc(2px * var(--mo-k, 1));
+  filter: drop-shadow(0 0 calc(var(--mo-glow) * 12px * var(--mo-k, 1)) color-mix(in oklab, var(--mo-c) 65%, transparent));
 }
 .mo-node__ping {
   fill: none;
   stroke: var(--mo-c);
-  stroke-width: 2;
+  stroke-width: calc(2px * var(--mo-k, 1));
 }
 
 /* linha de vida */
 .mo-lane__life {
   stroke: color-mix(in oklab, var(--mo-c) 35%, var(--rule));
-  stroke-width: 1.5;
-  stroke-dasharray: 3 5;
+  stroke-width: calc(1.5px * var(--mo-k, 1));
+  stroke-dasharray: calc(3px * var(--mo-k, 1)) calc(5px * var(--mo-k, 1));
 }
 
 /* ligação */
 .mo-link__path {
   fill: none;
   stroke: color-mix(in oklab, var(--mo-c) 75%, var(--rule));
-  stroke-width: 1.75;
+  stroke-width: calc(1.75px * var(--mo-k, 1));
   stroke-linecap: round;
   stroke-linejoin: round;
 }
-.mo-link[data-dashed] .mo-link__path { stroke-dasharray: 5 5; }
+.mo-link[data-dashed] .mo-link__path { stroke-dasharray: calc(5px * var(--mo-k, 1)) calc(5px * var(--mo-k, 1)); }
 .mo-link[data-lit] .mo-link__path {
   stroke: var(--mo-c);
-  stroke-width: 2.25;
-  filter: drop-shadow(0 0 calc(var(--mo-glow) * 6px) color-mix(in oklab, var(--mo-c) 70%, transparent));
+  stroke-width: calc(2.25px * var(--mo-k, 1));
+  filter: drop-shadow(0 0 calc(var(--mo-glow) * 6px * var(--mo-k, 1)) color-mix(in oklab, var(--mo-c) 70%, transparent));
 }
 /* Máscara: branco é luminância (o que aparece), não tinta. */
 .mo-link__reveal {
   fill: none;
   stroke: white;
-  stroke-width: 24;
+  stroke-width: calc(24px * var(--mo-k, 1));
 }
 .mo-link__arrow { fill: color-mix(in oklab, var(--mo-c) 85%, var(--rule)); }
 .mo-link__label {
   fill: var(--ink);
-  font-size: 11px;
+  font-size: calc(11px * var(--mo-k, 1));
   font-weight: 500;
   paint-order: stroke;
   stroke: var(--paper);
-  stroke-width: 4px;
+  stroke-width: calc(4px * var(--mo-k, 1));
   stroke-linejoin: round;
 }
 .mo-link__sublabel {
   fill: var(--mo-c);
-  font-size: 9.5px;
+  font-size: calc(9.5px * var(--mo-k, 1));
   paint-order: stroke;
   stroke: var(--paper);
-  stroke-width: 4px;
+  stroke-width: calc(4px * var(--mo-k, 1));
 }
 
 /* ficha */
 .mo-token__core {
   fill: var(--mo-c);
   stroke: var(--paper);
-  stroke-width: 1.5;
+  stroke-width: calc(1.5px * var(--mo-k, 1));
 }
 /* Sem `filter`: a ficha se move a cada quadro, e desfoque por quadro é caro. */
 .mo-token__halo {
@@ -138,7 +138,7 @@
 }
 .mo-token__text {
   fill: var(--ink);
-  font-size: 10px;
+  font-size: calc(10px * var(--mo-k, 1));
   font-weight: 500;
 }
 
@@ -146,24 +146,25 @@
 .mo-bar rect {
   fill: color-mix(in oklab, var(--mo-c) 55%, var(--mo-surface));
   stroke: var(--mo-c);
-  stroke-width: 1;
+  stroke-width: calc(1px * var(--mo-k, 1));
 }
-.mo-bar[data-lit] rect { filter: drop-shadow(0 0 calc(var(--mo-glow) * 8px) color-mix(in oklab, var(--mo-c) 70%, transparent)); }
-.mo-bar__label { fill: var(--mo-c); font-size: 9.5px; }
+.mo-bar[data-lit] rect { filter: drop-shadow(0 0 calc(var(--mo-glow) * 8px * var(--mo-k, 1)) color-mix(in oklab, var(--mo-c) 70%, transparent)); }
+.mo-bar__label { fill: var(--mo-c); font-size: calc(9.5px * var(--mo-k, 1)); }
 
 /* nota */
 .mo-note text {
   fill: var(--mo-c);
-  font-size: 11px;
+  font-size: calc(11px * var(--mo-k, 1));
 }
 .mo-note[data-tone="ink"] text { fill: var(--ink-muted); }
-.mo-note__sub { font-size: 9.5px; opacity: 0.8; }
+.mo-note__sub { font-size: calc(9.5px * var(--mo-k, 1)); opacity: 0.8; }
 
 /* região */
 .mo-region rect {
+  stroke-width: calc(1px * var(--mo-k, 1));
   fill: color-mix(in oklab, var(--mo-c) 5%, transparent);
   stroke: color-mix(in oklab, var(--mo-c) 40%, var(--rule));
-  stroke-dasharray: 6 6;
+  stroke-dasharray: calc(6px * var(--mo-k, 1)) calc(6px * var(--mo-k, 1));
 }
 .mo-region[data-lit] rect {
   fill: color-mix(in oklab, var(--mo-c) calc(5% + var(--mo-glow) * 8%), transparent);
@@ -171,7 +172,7 @@
 }
 .mo-region__label {
   fill: var(--mo-c);
-  font-size: 10px;
+  font-size: calc(10px * var(--mo-k, 1));
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -241,7 +242,7 @@
   color: var(--ink);
   cursor: pointer;
 }
-.mo-btn svg { width: 14px; height: 14px; fill: currentColor; stroke: currentColor; stroke-width: 1.6; stroke-linejoin: round; }
+.mo-btn svg { width: 14px; height: 14px; fill: currentColor; stroke: currentColor; stroke-width: calc(1.6px * var(--mo-k, 1)); stroke-linejoin: round; }
 .mo-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
 .mo-btn:disabled { opacity: 0.4; cursor: default; }
 .mo-btn--primary { width: 42px; height: 42px; background: var(--accent); border-color: var(--accent); color: var(--paper); }
@@ -407,8 +408,8 @@
 /* ---------- pacotes: etiqueta de duas linhas, cartão e tabela ---------- */
 
 .mo-token__head { fill: var(--mo-c); stroke: none; }
-.mo-token__text--head { fill: var(--paper); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; font-size: 9.5px; }
-.mo-token__sub { fill: var(--ink); font-size: 9.5px; }
+.mo-token__text--head { fill: var(--paper); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; font-size: calc(9.5px * var(--mo-k, 1)); }
+.mo-token__sub { fill: var(--ink); font-size: calc(9.5px * var(--mo-k, 1)); }
 
 .mo-steps { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; }
 .mo-steps__bars { display: inline-flex; gap: 4px; }
@@ -465,6 +466,11 @@
 }
 
 /* Equipamento: as lâminas e os LEDs do rack. */
-.mo-node__blade { stroke: color-mix(in oklab, var(--mo-c) 45%, var(--rule)); stroke-width: 1; }
+.mo-node__blade { stroke: color-mix(in oklab, var(--mo-c) 45%, var(--rule)); stroke-width: calc(1px * var(--mo-k, 1)); }
 .mo-node__led { fill: var(--mo-c); }
 .mo-node[data-lit] .mo-node__led { fill: var(--dui-alto); }
+
+/* Detalhes da forma: pinos, células, o traço extra da XOR, a bolinha do NOT. */
+.mo-node__detail { fill: none; stroke: color-mix(in oklab, var(--mo-c) 55%, var(--rule)); stroke-width: calc(1px * var(--mo-k, 1)); }
+.mo-node__dot { fill: var(--mo-surface); }
+.mo-node[data-lit] .mo-node__detail { stroke: var(--mo-c); }

@@ -303,3 +303,20 @@ test("uma palavra viaja como barra e um bit como ponto", async ({ page }) => {
   await expect(naInstrucao).toHaveCount(1, { timeout: 10_000 });
   expect(await naInstrucao.evaluate((el) => el.tagName.toLowerCase())).toBe("rect");
 });
+
+test("o modo showcase da CPU desce do chip às portas, e a simulação continua lá", async ({ page }) => {
+  const erros: string[] = [];
+  page.on("pageerror", (e) => erros.push(String(e)));
+  await page.goto("labs/cpu/");
+  await page.getByRole("tab", { name: /Showcase/ }).click();
+  const vit = page.getByTestId("cpu-showcase");
+  await expect(vit).toBeVisible();
+  await vit.getByRole("button", { name: /bit 2, five gates/ }).click();
+  await vit.getByRole("button", { name: "Pause" }).click();
+  await expect(vit.locator(".cpuvit-niveis li[data-on]")).toHaveText("gates");
+  await vit.getByRole("radio", { name: "Iso" }).click();
+  await expect(vit.locator(".iso-stage canvas")).toHaveCount(1, { timeout: 15_000 });
+  await page.getByRole("tab", { name: /Simulation/ }).click();
+  await expect(page.locator("svg.dui-stage").first()).toBeVisible();
+  expect(erros).toEqual([]);
+});

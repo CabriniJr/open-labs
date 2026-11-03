@@ -1,4 +1,4 @@
-import { pathLength, poseAt, type CameraState, type EntitySpec, type Film, type Frame, type Tone } from "@ovh/motion";
+import { formaDe, pathLength, poseAt, type CameraState, type EntitySpec, type Film, type Frame, type Tone } from "@ovh/motion";
 import {
   BoxGeometry,
   CanvasTexture,
@@ -7,6 +7,8 @@ import {
   CylinderGeometry,
   DirectionalLight,
   EdgesGeometry,
+  ExtrudeGeometry,
+  Shape as ContornoDoThree,
   Group,
   HemisphereLight,
   Line,
@@ -24,6 +26,7 @@ import {
   SphereGeometry,
   Sprite,
   SpriteMaterial,
+  Vector2,
   Vector3,
   BufferGeometry,
   type Material,
@@ -427,11 +430,16 @@ export class IsoScene {
         const root = new Group();
         const { box } = spec;
         const mat = new MeshStandardMaterial({ color: corDe(p.tom(tomInicial), p.tinta), transparent: true, opacity: 0.08 });
-        const placa = new Mesh(new BoxGeometry(box.w, 1, box.h), mat);
-        placa.position.set(box.x + box.w / 2, 0.5, box.y + box.h / 2);
+        // Espessura da placa proporcional à peça: com 1 unidade fixa, ela
+        // enterrava as portas de um nível fundo, que medem menos que isso.
+        const esp = 1 * (spec.textScale ?? 1);
+        const placa = new Mesh(new BoxGeometry(box.w, esp, box.h), mat);
+        // O topo fica um fio acima do chão: rente a ele, os dois brigavam pelo
+        // mesmo pixel (z-fighting em listras).
+        placa.position.set(box.x + box.w / 2, esp * 0.02 - esp / 2, box.y + box.h / 2);
         root.add(placa);
         const { obj, el } = etiqueta("iso-region", spec.label ?? "");
-        obj.position.set(box.x + 12, ALTURA_DO_ROTULO, box.y + 12);
+        obj.position.set(box.x + 12 * (spec.textScale ?? 1), ALTURA_DO_ROTULO * (spec.textScale ?? 1), box.y + 12 * (spec.textScale ?? 1));
         root.add(obj);
         return {
           spec,
@@ -458,20 +466,36 @@ export class IsoScene {
     const box = spec.type === "node" ? spec.box : spec.head;
     const shape = spec.type === "node" ? (spec.shape ?? "box") : "box";
     const alturaRel = this.#options.alturaRelativa ?? 0.5;
-    const H = Math.max(12, Math.min(44, Math.min(box.w, box.h) * alturaRel));
+    // Proporcional à peça, sem piso absoluto: uma porta lógica de 1 unidade
+    // num nível fundo não pode virar uma torre de 12.
+    const H = Math.min(44, Math.min(box.w, box.h) * alturaRel);
+    const pequena = Math.min(box.w, box.h) < 24;
     const root = new Group();
     const corpo = new Group();
     corpo.position.set(box.x + box.w / 2, 0, box.y + box.h / 2);
     root.add(corpo);
 
+    // Formas do catálogo: o MESMO contorno do palco plano, levantado em sólido.
+    const extrudada = !["circle", "cylinder", "pill", "box", "stack", "diamond"].includes(shape);
+    const forma = extrudada ? formaDe(shape, box.w, box.h) : null;
     const geo =
       shape === "circle" || shape === "cylinder"
         ? new CylinderGeometry(Math.min(box.w, box.h) / 2, Math.min(box.w, box.h) / 2, H, 40)
-        : shape === "pill" || shape === "box"
-          ? new RoundedBoxGeometry(box.w, H, box.h, 3, Math.min(8, H / 3, box.h / 2.5))
-          : new BoxGeometry(box.w * 0.72, H, box.h * 0.72);
+        : forma !== null
+          ? (() => {
+              // y do palco é z do mundo; a extrusão sobe em y depois da rotação.
+              const c = new ContornoDoThree(forma.contorno.map((p) => new Vector2(p.x, -p.y)));
+              const g = new ExtrudeGeometry(c, { depth: H, bevelEnabled: true, bevelThickness: H * 0.06, bevelSize: Math.min(box.w, box.h) * 0.02, bevelSegments: 2, curveSegments: 6 });
+              g.rotateX(-Math.PI / 2);
+              g.translate(0, -H / 2, 0);
+              return g;
+            })()
+          : shape === "pill" || shape === "box" || shape === "stack"
+            ? new RoundedBoxGeometry(box.w, H, box.h, 3, Math.min(8, H / 3, box.h / 2.5))
+            : new BoxGeometry(box.w * 0.72, H, box.h * 0.72);
     const mat = new MeshStandardMaterial({ roughness: 0.62, metalness: 0.05, transparent: true });
     const mesh = new Mesh(geo, mat);
+    let detalhe: LineSegments | null = null;
     // Equipamento: o bloco vira três lâminas com fresta entre elas.
     const laminas: Mesh[] = [];
     if (shape === "stack") {
@@ -487,9 +511,29 @@ export class IsoScene {
     }
     mesh.position.y = H / 2;
     if (shape === "diamond") mesh.rotation.y = Math.PI / 4;
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
+    // Sombra só para peça grande: o mapa de sombra cobre o filme inteiro, e numa
+    // peça de uma unidade ele vira serrilhado.
+    mesh.castShadow = !pequena;
+    mesh.receiveShadow = !pequena;
     corpo.add(mesh);
+    // Os detalhes da forma na face de cima; os pinos de um chip, rentes à base.
+    if (forma !== null && (forma.detalhes.length > 0 || forma.circulos.length > 0)) {
+      const pts: Vector3[] = [];
+      const fora = (p: { x: number; y: number }) => Math.abs(p.x) > box.w / 2 + 1e-6 || Math.abs(p.y) > box.h / 2 + 1e-6;
+      for (const d of forma.detalhes) {
+        const y = d.some(fora) ? H * 0.18 : H * 1.01;
+        for (let i = 1; i < d.length; i += 1) pts.push(new Vector3(d[i - 1]!.x, y, d[i - 1]!.y), new Vector3(d[i]!.x, y, d[i]!.y));
+      }
+      for (const c of forma.circulos) {
+        for (let i = 0; i < 24; i += 1) {
+          const a0 = (i / 24) * Math.PI * 2;
+          const a1 = ((i + 1) / 24) * Math.PI * 2;
+          pts.push(new Vector3(c.x + Math.cos(a0) * c.r, H * 1.01, c.y + Math.sin(a0) * c.r), new Vector3(c.x + Math.cos(a1) * c.r, H * 1.01, c.y + Math.sin(a1) * c.r));
+        }
+      }
+      detalhe = new LineSegments(new BufferGeometry().setFromPoints(pts), new LineBasicMaterial({ transparent: true }));
+      corpo.add(detalhe);
+    }
     for (const l of laminas) corpo.add(l);
 
     const bordaMat = new LineBasicMaterial({ transparent: true });
@@ -514,7 +558,7 @@ export class IsoScene {
     const raioDoAnel = Math.max(box.w, box.h) * 0.62;
 
     const { obj, el } = etiqueta("iso-label", spec.label ?? "");
-    obj.position.set(0, (shape === "stack" ? H * 1.6 : H) + 4, 0);
+    obj.position.set(0, (shape === "stack" ? H * 1.6 : H) * 1.08 + Math.min(4, H * 0.3), 0);
     corpo.add(obj);
 
     // A linha de vida de uma raia: tracejada no chão, da cabeça até o fundo.
@@ -549,6 +593,7 @@ export class IsoScene {
           mat.color = base.clone().lerp(t, 0.2);
           mat.emissive = t;
           bordaMat.color = t;
+          if (detalhe !== null) (detalhe.material as LineBasicMaterial).color = t;
           anelMat.color = t;
           anelMat.emissive = t;
           vidaMat?.color.copy(t);
@@ -556,14 +601,18 @@ export class IsoScene {
         mat.emissiveIntensity = 0.04 + s.glow * 0.38;
         mat.opacity = visivel;
         bordaMat.opacity = Math.min(1, visivel * (0.55 + 0.45 * s.glow));
+        if (detalhe !== null) (detalhe.material as LineBasicMaterial).opacity = visivel * 0.8;
         corpo.position.set(box.x + box.w / 2 + s.dx, 0, box.y + box.h / 2 + s.dy);
         corpo.scale.setScalar(s.scale);
         // Acender levanta a peça um pouco: a energia vira altura.
-        mesh.position.y = H / 2 + s.glow * 3;
+        // Proporcional à peça: 3 unidades fixas jogavam uma porta de 0,45 de
+        // altura sete alturas para cima, longe do próprio rótulo.
+        mesh.position.y = H / 2 + s.glow * H * 0.12;
         borda.position.y = mesh.position.y;
+        if (detalhe !== null) detalhe.position.y = s.glow * H * 0.12;
         laminas.forEach((l, i) => {
           // Aceso, o rack "respira": as lâminas se afastam um pouco.
-          l.position.y = ((H * 1.6) / 3) * (i + 0.5) + s.glow * (2 + i * 2);
+          l.position.y = ((H * 1.6) / 3) * (i + 0.5) + s.glow * H * (0.05 + i * 0.05);
           bordasDasLaminas[i]!.position.y = l.position.y;
         });
         if (s.ping > 0 && s.ping < 1) {
@@ -587,7 +636,10 @@ export class IsoScene {
 
   #ligacao(spec: Extract<EntitySpec, { type: "link" }>, p: Paleta, tom: Tone): Peca {
     const root = new Group();
-    const pontos = pontosDoCaminho(spec.path, 1, 48, 1.5);
+    // Tudo que tem tamanho fixo (ponta, altura, rótulo) escala com a peça: num
+    // nível fundo, uma ponta de seta de 4,5 unidades cobre a porta inteira.
+    const k = spec.textScale ?? 1;
+    const pontos = pontosDoCaminho(spec.path, 1, 48, 1.5 * k);
     const geo = new LineGeometry();
     geo.setPositions(pontos.flatMap((v) => [v.x, v.y, v.z]));
     const mat = this.#linha(corDe(p.tom(tom), p.tinta), 2, spec.dashed === true);
@@ -597,14 +649,14 @@ export class IsoScene {
     const segmentos = pontos.length - 1;
 
     const pontaMat = new MeshStandardMaterial({ transparent: true });
-    const ponta = new Mesh(new ConeGeometry(4.5, 11, 16), pontaMat);
+    const ponta = new Mesh(new ConeGeometry(4.5 * k, 11 * k, 16), pontaMat);
     ponta.visible = spec.arrow === true;
     root.add(ponta);
 
     const at = spec.labelAt ?? 0.5;
     const meio = poseAt(spec.path, at);
     const { obj, el } = etiqueta("iso-link", spec.label ?? "");
-    obj.position.set(meio.x, 10, meio.y);
+    obj.position.set(meio.x, 10 * k, meio.y);
     root.add(obj);
     let tomAtual = "";
     return {
@@ -632,7 +684,7 @@ export class IsoScene {
         root.position.set(s.dx, 0, s.dy);
         if (ponta.visible) {
           const tip = poseAt(spec.path, s.progress);
-          ponta.position.set(tip.x, 1.5, tip.y);
+          ponta.position.set(tip.x, 1.5 * k, tip.y);
           ponta.rotation.set(0, -(tip.angle * Math.PI) / 180, -Math.PI / 2);
           pontaMat.opacity = visivel;
         }
@@ -664,7 +716,11 @@ export class IsoScene {
     }
     const { obj, el } = etiqueta("iso-token", spec.label ?? "");
     root.add(obj);
-    const salto = Math.min(60, 16 + pathLength(spec.path) * 0.08);
+    // Arco e altura proporcionais ao caminho: num nível fundo o caminho mede
+    // unidades, e um salto fixo de 16 jogaria a ficha para fora do quadro.
+    const comprimento = pathLength(spec.path);
+    const salto = Math.min(60, comprimento * 0.22);
+    const base = Math.min(14, comprimento * 0.12);
     let tomAtual = "";
     return {
       spec,
@@ -687,7 +743,7 @@ export class IsoScene {
         }
         mat.opacity = visivel;
         haloMat.opacity = 0.5 * visivel;
-        const aqui = pontoNoAr(spec.path, s.progress, 14, salto);
+        const aqui = pontoNoAr(spec.path, s.progress, base, salto);
         esfera.position.set(aqui.x + s.dx, aqui.y, aqui.z + s.dy);
         esfera.scale.setScalar(s.scale);
         brilho.position.copy(esfera.position);
@@ -695,10 +751,10 @@ export class IsoScene {
           const u = s.progress - (k + 1) * 0.022;
           m.visible = u > 0;
           if (!m.visible) return;
-          const q = pontoNoAr(spec.path, u, 14, salto);
+          const q = pontoNoAr(spec.path, u, base, salto);
           m.position.set(q.x + s.dx, q.y, q.z + s.dy);
         });
-        obj.position.set(esfera.position.x, esfera.position.y + r + 10, esfera.position.z);
+        obj.position.set(esfera.position.x, esfera.position.y + r * 2.2, esfera.position.z);
         // Etiqueta de pacote: cabeçalho na cor do tipo e o conteúdo embaixo.
         const chave = `${s.label}\u0000${s.sublabel}`;
         if (el.dataset.k !== chave) {
@@ -724,7 +780,7 @@ export class IsoScene {
   #barra(spec: Extract<EntitySpec, { type: "bar" }>, p: Paleta, tom: Tone): Peca {
     const root = new Group();
     const { box } = spec;
-    const alto = 9;
+    const alto = 9 * (spec.textScale ?? 1);
     const mat = new MeshStandardMaterial({ roughness: 0.5, transparent: true, emissiveIntensity: 0.15 });
     const geo = new BoxGeometry(1, alto, 1);
     const mesh = new Mesh(geo, mat);
@@ -756,7 +812,7 @@ export class IsoScene {
         const h = baixo ? box.h * s.progress : box.h;
         mesh.scale.set(Math.max(0.01, w), 1, Math.max(0.01, h));
         mesh.position.set(box.x + w / 2 + s.dx, alto / 2, box.y + h / 2 + s.dy);
-        obj.position.set(box.x + box.w + 10 + s.dx, alto + 2, box.y + 8 + s.dy);
+        obj.position.set(box.x + box.w + 10 * (spec.textScale ?? 1) + s.dx, alto * 1.2, box.y + 8 * (spec.textScale ?? 1) + s.dy);
         escrever(el, s.label);
         marcar(el, "tone", s.tone);
       },

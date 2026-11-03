@@ -38,19 +38,35 @@ export function chapterAt<D>(film: Film<D>, t: number): number {
   return index;
 }
 
+const suave = (a: number, b: number, x: number) => {
+  const u = Math.min(1, Math.max(0, (x - a) / Math.max(1e-9, b - a)));
+  return u * u * (3 - 2 * u);
+};
+
+/** Quanto do nível de detalhe deixa a peça aparecer neste zoom, 0–1. */
+export function visibilidadeDoNivel(lod: EntitySpec["lod"], zoom: number): number {
+  if (lod === undefined) return 1;
+  // Em logaritmo: zoom é multiplicativo, e a rampa tem de durar o mesmo em cada nível.
+  const z = Math.log(zoom);
+  const entra = lod.appear === undefined ? 1 : suave(Math.log(lod.appear * 0.7), Math.log(lod.appear), z);
+  const sai = lod.vanish === undefined ? 1 : 1 - suave(Math.log(lod.vanish), Math.log(lod.vanish * 1.4), z);
+  return entra * sai;
+}
+
 export function frameAt<D>(film: Film<D>, t: number): Frame<D> {
   const { timeline } = film;
-  const entities = film.entities.map((spec) => {
-    const base = initialState(spec) as unknown as Record<string, number | string>;
-    const state = { ...base };
-    for (const prop of PROPS) state[prop] = timeline.sample(spec.id, prop, t, base[prop]!);
-    return { spec, state: state as unknown as Animatable };
-  });
   const camera: CameraState = {
     cx: Number(timeline.sample(CAMERA, "cx", t, film.camera.cx)),
     cy: Number(timeline.sample(CAMERA, "cy", t, film.camera.cy)),
     zoom: Number(timeline.sample(CAMERA, "zoom", t, film.camera.zoom)),
   };
+  const entities = film.entities.map((spec) => {
+    const base = initialState(spec) as unknown as Record<string, number | string>;
+    const state = { ...base };
+    for (const prop of PROPS) state[prop] = timeline.sample(spec.id, prop, t, base[prop]!);
+    if (spec.lod !== undefined) state.opacity = Number(state.opacity) * visibilidadeDoNivel(spec.lod, camera.zoom);
+    return { spec, state: state as unknown as Animatable };
+  });
   const chapterIndex = chapterAt(film, t);
   const chapter = film.chapters[chapterIndex];
   let step: Step<D> | undefined;
