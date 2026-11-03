@@ -53,7 +53,8 @@ test("the motion timeline and experiment switches survive a view change", async 
   await viewport.locator(".scene-spatial").focus();
   await page.keyboard.press("ArrowRight");
   await expect(timeline).toHaveValue(position);
-  await lab.getByRole("switch", { name: "Proxy forwards headers" }).click();
+  await lab.getByRole("switch", { name: "Proxy forwards headers" }).focus();
+  await page.keyboard.press("Space");
   await expect(lab.locator(".ctxlab-status")).toHaveText("1 request · 2 traces");
   await expect(viewport).toHaveAttribute("data-mode", "3d");
   await viewport.getByRole("button", { name: "Scene contents" }).click();
