@@ -1,7 +1,7 @@
-import type { Film } from "@ovh/motion";
-import { MotionPlayer, MotionStage, type MotionView } from "@ovh/motion/react";
-import { filmeDoContexto, OPCOES_PADRAO, type DetalheDoContexto, type Foco, type SpanGerado } from "@ovh/otel-domain";
-import { lazy, Suspense, useMemo, useState } from "react";
+import type { Film, Frame } from "@ovh/motion";
+import { MotionPlayer, MotionStage, type MotionView, type Clock } from "@ovh/motion/react";
+import { filmeDoContexto, OPCOES_PADRAO, type DetalheDoContexto, type Foco, type SpanGerado, type Propagacao, formatTraceparent } from "@ovh/otel-domain";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 
 /*
  * O three.js só desce quando o leitor escolhe a vista isométrica: quem fica no
@@ -122,7 +122,7 @@ function Fio({ detalhe }: { detalhe: DetalheDoContexto }) {
           ? `${c.para} has no SDK: nothing is extracted and no span is created.`
           : extraido === null
             ? `${c.para} found no valid context, so it starts a new root span.`
-            : `${c.para} extracts the context and creates span ${c.span.spanId.slice(0, 8)}…, child of ${extraido.spanId.slice(0, 8)}….`}
+            : `${c.para} ${detalhe.spans.some((s) => s.spanId === c.span?.spanId) ? "created" : "will create"} span ${c.span.spanId.slice(0, 8)}…, child of ${extraido.spanId.slice(0, 8)}….`}
       </p>
     </div>
   );
@@ -183,7 +183,114 @@ function Chave({ id, rotulo, ligado, onChange, dica }: { id: string; rotulo: str
   );
 }
 
+/** O pacote em trânsito e o painel compartilham o instante, inclusive antes da chegada. */
+function detalheEm(frame: Frame<DetalheDoContexto>, propagacao: Propagacao): DetalheDoContexto | undefined {
+  const d = frame.detail;
+  if (d === undefined || d.exportados || frame.packet?.protocol !== "HTTP") return d;
+  const chamada = propagacao.chamadas.find((c) => c.de === frame.packet?.from && c.para === frame.packet.to);
+  return chamada === undefined ? d : { ...d, chamada, foco: d.chamada === chamada ? d.foco : null };
+}
+
+function CabecalhoVivo({ detalhe, propagacao }: { detalhe: DetalheDoContexto; propagacao: Propagacao }) {
+  const c = detalhe.chamada;
+  const raiz = propagacao.raiz;
+  const valor = c === null ? formatTraceparent({ traceId: raiz.traceId, spanId: raiz.spanId, sampled: raiz.amostrado }) : c.headers.traceparent;
+  const partes = valor?.split("-");
+  return (
+    <section className="ctxlab-live" aria-label="Live trace context" data-testid="live-context">
+      <div className="ctxlab-live__title">
+        <span className="ctxlab-live__mark" aria-hidden="true"><IconeDoModo modo="inspector" /></span>
+        <div><p className="ctxlab-h mono">{detalhe.exportados ? "Collected spans" : c === null ? "Root context" : "Request on the wire"}</p>
+          <b>{detalhe.exportados ? "Services → Collector → backend" : c === null ? "Browser · click checkout" : `${c.de} → ${c.para}`}</b></div>
+        <span className="ctxlab-live__count mono">{detalhe.spans.length} {detalhe.spans.length === 1 ? "span" : "spans"} {detalhe.exportados ? "processed" : "created"}</span>
+      </div>
+      <div className="ctxlab-live__fields mono">
+        {CAMPOS.map((campo, i) => <div key={campo.foco} data-field={campo.foco} data-on={detalhe.foco === campo.foco ? "" : undefined}>
+          <span>{campo.nome}</span><code>{partes?.[i] ?? "—"}</code>
+        </div>)}
+      </div>
+      <p className="ctxlab-live__note mono" data-lost={valor === undefined ? "" : undefined}>
+        {valor === undefined ? "No traceparent arrived. This receiver starts a new trace." : "trace-id connects the request · parent-id identifies the caller"}
+      </p>
+    </section>
+  );
+}
+
+function IconeDoModo({ modo }: { modo: "showcase" | "simulation" | "inspector" }) {
+  return <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    {modo === "showcase" ? <path d="m8 4 12 8-12 8z" /> : modo === "simulation" ? <><path d="M4 7h6m4 0h6M4 17h10m4 0h2" /><circle cx="12" cy="7" r="2" /><circle cx="16" cy="17" r="2" /></> : <><path d="M6 7v10h5m-5-5h11" /><rect x="3" y="3" width="6" height="4" rx="1" /><rect x="17" y="10" width="5" height="4" rx="1" /><rect x="11" y="15" width="7" height="4" rx="1" /></>}
+  </svg>;
+}
+
+function Saltos({ filme, propagacao, detalhe, clock }: { filme: Film<DetalheDoContexto>; propagacao: Propagacao; detalhe: DetalheDoContexto; clock: Clock }) {
+  return <nav className="ctxlab-hops" aria-label="Inspect a request hop">
+    <span className="ctxlab-h mono">Follow the request</span>
+    <div>{propagacao.chamadas.map((c, i) => {
+      const pacote = filme.packets.find((p) => p.protocol === "HTTP" && p.from === c.de && p.to === c.para);
+      return <button type="button" key={i} aria-label={`Inspect hop ${i + 1}: ${c.de} to ${c.para}`} aria-pressed={detalhe.chamada === c} onClick={() => { clock.pause(); clock.seek((pacote?.t ?? 0) + 10); }}>
+        <span className="mono">0{i + 1}</span> {c.de} <span aria-hidden="true">→</span> {c.para}
+      </button>;
+    })}</div>
+  </nav>;
+}
+
+function Inspetor({ detalhe }: { detalhe: DetalheDoContexto }) {
+  const [selecionado, setSelecionado] = useState<string | null>(null);
+  const spans = detalhe.exportados ? detalhe.spans.filter((s) => s.amostrado) : detalhe.spans;
+  const porId = new Map(spans.map((s) => [s.spanId, s]));
+  const span = spans.find((s) => s.spanId === selecionado) ?? spans.at(-1);
+  const profundidade = (s: SpanGerado) => {
+    let d = 0; let pai = s.parentId;
+    while (pai !== null && porId.has(pai)) { d += 1; pai = porId.get(pai)!.parentId; }
+    return d;
+  };
+  return <section className="ctxlab-inspector" aria-label="Trace inspector">
+    <div className="ctxlab-inspector__tree">
+      <p className="ctxlab-h mono">{detalhe.exportados ? "Exported span tree" : "Spans created so far"}</p>
+      <h3>One request, seen from every service.</h3>
+      <p className="ctxlab-note">Select a span to inspect its identity and parent. Rows show creation order, not measured duration.</p>
+      <div className="ctxlab-spanlist" role="group" aria-label="Select a span">
+        {spans.map((s, i) => <button type="button" key={s.spanId} aria-pressed={span?.spanId === s.spanId} onClick={() => setSelecionado(s.spanId)} data-orphan={s.parentId === null && i > 0 ? "" : undefined} style={{ ["--depth" as string]: profundidade(s) }}>
+          <span className="ctxlab-spanlist__order mono">{String(i + 1).padStart(2, "0")}</span>
+          <span className="ctxlab-spanlist__name"><b>{s.servico}</b><small className="mono">{s.nome}</small></span>
+          <span className="ctxlab-spanlist__relation mono">{s.parentId === null ? i > 0 ? "new root" : "root" : "child"}</span>
+        </button>)}
+      </div>
+      {spans.length === 0 ? <p className="ctxlab-note">No spans exported. Context still propagated with sampled = 0.</p> : null}
+      <p className="ctxlab-inspector__foot mono">The proxy has no SDK. It never creates a span.</p>
+    </div>
+    <div className="ctxlab-inspector__properties">
+      {span !== undefined ? <>
+        <p className="ctxlab-h mono">Selected span</p><h3>{span.servico} <span className="mono">/ {span.nome}</span></h3>
+        <dl className="ctxlab-properties mono">
+          <dt>trace-id</dt><dd>{span.traceId}</dd>
+          <dt>span-id</dt><dd>{span.spanId}</dd>
+          <dt>parent-id</dt><dd>{span.parentId ?? "none · root span"}</dd>
+          <dt>sampled</dt><dd>{span.amostrado ? "01 · yes" : "00 · no"}</dd>
+        </dl>
+        <p className="ctxlab-h mono">Context this span can inject</p>
+        <div className="ctxlab-injected mono"><Traceparent valor={formatTraceparent({ traceId: span.traceId, spanId: span.spanId, sampled: span.amostrado })} foco={null} /></div>
+        <p className="ctxlab-note">The outgoing parent-id is this span's own id. The receiver uses it to connect its child span.</p>
+      </> : null}
+      <Fio detalhe={detalhe} />
+    </div>
+  </section>;
+}
+
 export function ContextoLab() {
+  const [modo, setModo] = useState<"showcase" | "simulation" | "inspector">("simulation");
+  const escolherModo = (novo: typeof modo) => {
+    setModo(novo);
+    try { history.replaceState(null, "", `#${novo}`); } catch { /* A escolha também funciona sem histórico. */ }
+  };
+  useEffect(() => {
+    const ler = () => {
+      const hash = window.location.hash.slice(1);
+      if (hash === "showcase" || hash === "inspector" || hash === "simulation") setModo(hash);
+    };
+    ler(); window.addEventListener("hashchange", ler);
+    return () => window.removeEventListener("hashchange", ler);
+  }, []);
   const [proxyRepassa, setProxyRepassa] = useState(true);
   const [amostrado, setAmostrado] = useState(true);
   const { filme, propagacao } = useMemo(() => filmeDoContexto({ ...OPCOES_PADRAO, proxyRepassa, amostrado }), [proxyRepassa, amostrado]);
@@ -191,8 +298,24 @@ export function ContextoLab() {
   const inteiro = propagacao.traces.length === 1;
 
   return (
-    <div className="ctxlab" data-testid="context-lab">
+    <div className="ctxlab" data-testid="context-lab" data-mode={modo}>
+      <div className="ctxlab-modes" role="tablist" aria-label="Context lab mode">
+        {([
+          ["showcase", "Showcase", "Watch context travel"],
+          ["simulation", "Simulation", "Change the experiment"],
+          ["inspector", "Trace inspector", "Read spans and headers"],
+        ] as const).map(([id, title, description]) => <button key={id} id={`ctx-mode-${id}`} type="button" role="tab" aria-selected={modo === id} aria-controls="ctx-workspace" tabIndex={modo === id ? 0 : -1} onClick={() => escolherModo(id)} onKeyDown={(e) => {
+          const ids = ["showcase", "simulation", "inspector"] as const;
+          if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key)) return;
+          e.preventDefault(); e.stopPropagation();
+          const next = e.key === "Home" ? 0 : e.key === "End" ? 2 : (ids.indexOf(modo) + (e.key === "ArrowRight" ? 1 : 2)) % 3;
+          escolherModo(ids[next]!); document.getElementById(`ctx-mode-${ids[next]}`)?.focus();
+        }}><span className="ctxlab-modes__icon"><IconeDoModo modo={id} /></span><span><b>{title}</b><small>{description}</small></span></button>)}
+      </div>
+      <div id="ctx-workspace" role="tabpanel" aria-labelledby={`ctx-mode-${modo}`}>
+
       <MotionPlayer
+        className={modo === "inspector" ? "ctxlab-player--inspector" : ""}
         film={filme}
         views={views}
         flatLabel="Sequence"
@@ -203,6 +326,15 @@ export function ContextoLab() {
           ...(amostrado ? [] : [{ label: "not sampled", tone: "muted" as const }]),
         ]}
         label="Sequence diagram: a checkout request crossing six services, carrying traceparent and baggage headers on each hop."
+        renderHeader={(frame, clock) => {
+          const d = detalheEm(frame, propagacao);
+          if (d === undefined) return null;
+          return <><CabecalhoVivo detalhe={d} propagacao={propagacao} />{modo !== "showcase" ? <Saltos filme={filme} propagacao={propagacao} detalhe={d} clock={clock} /> : null}</>;
+        }}
+        renderScreen={modo === "inspector" ? (frame) => {
+          const d = detalheEm(frame, propagacao);
+          return d === undefined ? null : <Inspetor detalhe={d} />;
+        } : undefined}
         controls={
           <>
             <Chave id="ctx-proxy" rotulo="Proxy forwards headers" ligado={proxyRepassa} onChange={setProxyRepassa} dica="An uninstrumented proxy either forwards unknown headers or rebuilds the request without them." />
@@ -213,8 +345,8 @@ export function ContextoLab() {
           </>
         }
         renderDetail={(frame) => {
-          const d = frame.detail;
-          if (d === undefined) return null;
+          const d = detalheEm(frame, propagacao);
+          if (d === undefined || modo === "inspector") return null;
           return (
             <div className="ctxlab-detail">
               <Fio detalhe={d} />
@@ -223,6 +355,7 @@ export function ContextoLab() {
           );
         }}
       />
+      </div>
     </div>
   );
 }

@@ -1,4 +1,5 @@
 ---
+import HandbookArtwork from "../../components/HandbookArtwork.astro";
 import SiteFooter from "../../components/SiteFooter.astro";
 import SiteNav from "../../components/SiteNav.astro";
 import { Roadmap } from "../../components/Roadmap.tsx";
@@ -77,6 +78,7 @@ if (orfaos.length > 0) {
         <p>{handbook.blurb}</p>
       </div>
       <aside class="hb-head__note mono">
+        <HandbookArtwork id={handbook.id} subject={handbook.subject} tema={handbook.tema} />
         <p>Model: {handbook.model}</p>
         <p>
           {

@@ -36,11 +36,19 @@ export function posicaoDaCamera(alvo: Vec3, azimute: number, elevacao: number, d
  * caixa de largura `(w + h)·cos45` e altura `(w + h)·sin45·sin(elev)`. O quadro
  * precisa caber nas duas direções.
  */
-export function meiaAlturaParaCaber(largura: number, altura: number, aspecto: number, elevacao = ISO_ELEVACAO): number {
-  const diagonal = (largura + altura) * Math.SQRT1_2;
-  const telaW = diagonal;
-  const telaH = diagonal * Math.sin(elevacao);
+export function meiaAlturaParaCaber(largura: number, altura: number, aspecto: number, elevacao = ISO_ELEVACAO, azimute = ISO_AZIMUTE): number {
+  const telaW = largura * Math.abs(Math.cos(azimute)) + altura * Math.abs(Math.sin(azimute));
+  const telaH = (largura * Math.abs(Math.sin(azimute)) + altura * Math.abs(Math.cos(azimute))) * Math.sin(elevacao);
   return Math.max(telaH / 2, telaW / 2 / aspecto);
+}
+
+/** Arrasto em pixels → deslocamento no plano do chão, relativo à câmera. */
+export function deslocamentoNoChao(dx: number, dy: number, escala: number, azimute: number, elevacao: number): { x: number; z: number } {
+  const vertical = dy / Math.sin(elevacao);
+  return {
+    x: escala * (-dx * Math.cos(azimute) - vertical * Math.sin(azimute)),
+    z: escala * (dx * Math.sin(azimute) - vertical * Math.cos(azimute)),
+  };
 }
 
 /**

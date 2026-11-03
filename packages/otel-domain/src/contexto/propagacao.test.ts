@@ -56,6 +56,12 @@ describe("propagation", () => {
 });
 
 describe("the film is derived from the model", () => {
+  it("registers every HTTP hop, including the uninstrumented branch, for inspection", () => {
+    const { filme, propagacao } = filmeDoContexto(OPCOES_PADRAO);
+    const pacotes = filme.packets.filter((p) => p.protocol === "HTTP");
+    expect(pacotes.map((p) => [p.from, p.to])).toEqual(propagacao.chamadas.map((c) => [c.de, c.para]));
+    for (const p of pacotes) expect(frameAt(filme, p.t + 10).packet).toBe(p);
+  });
   it("paints the payments span in another trace's tone when the proxy drops context", () => {
     const tone = (proxyRepassa: boolean) => {
       const { filme } = filmeDoContexto({ ...OPCOES_PADRAO, proxyRepassa });

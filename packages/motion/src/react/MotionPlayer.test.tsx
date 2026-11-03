@@ -34,4 +34,20 @@ describe("MotionPlayer", () => {
     expect(screen.getByText("the second body")).toBeTruthy();
     expect(screen.getByText("detail two")).toBeTruthy();
   });
+
+  it("keeps a custom inspector and live header on the same clock as playback", () => {
+    const f = filme();
+    render(<MotionPlayer film={f} label="s" renderHeader={(fr) => <output aria-label="live context">{fr.detail}</output>}
+      renderScreen={(fr) => <section aria-label="inspector">{fr.detail}</section>} />);
+    fireEvent.change(screen.getByRole("slider", { name: "Timeline" }), { target: { value: f.chapters[1]!.start + 100 } });
+    expect(screen.getByLabelText("live context").textContent).toBe("detail two");
+    expect(screen.getByLabelText("inspector").textContent).toBe("detail two");
+    expect(screen.queryByRole("img", { name: "s" })).toBeNull();
+  });
+
+  it("leaves space on an embedded button to its native action", () => {
+    render(<MotionPlayer film={filme()} label="s" controls={<button type="button">Inspect</button>} />);
+    fireEvent.keyDown(screen.getByRole("button", { name: "Inspect" }), { key: " " });
+    expect(screen.getByRole("button", { name: "Play" })).toBeTruthy();
+  });
 });
