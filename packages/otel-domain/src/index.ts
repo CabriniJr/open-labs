@@ -157,3 +157,9 @@ export { CAMINHO, INSTRUMENTADOS, OPCOES_PADRAO, propagar } from "./contexto/pro
 export type { Chamada as ChamadaDePropagacao, OpcoesDePropagacao, Propagacao, Servico, SpanGerado } from "./contexto/propagacao.js";
 export { ALTURA, LARGURA, filmeDoContexto, rotuloDoContexto } from "./contexto/filme.js";
 export type { DetalheDoContexto, Foco } from "./contexto/filme.js";
+
+// O lab da implantação do Collector: agent, gateway, e onde um trace fica inteiro.
+export { entregar, MODOS, NOS_DO_CLUSTER, PODS, REPLICAS, SPANS } from "./implantacao/modelo.js";
+export type { Entrega, Modo, OpcoesDeImplantacao } from "./implantacao/modelo.js";
+export { ALTURA_DA_IMPLANTACAO, LARGURA_DA_IMPLANTACAO, filmeDaImplantacao } from "./implantacao/filme.js";
+export type { DetalheDaImplantacao, LinhaDaTabela } from "./implantacao/filme.js";

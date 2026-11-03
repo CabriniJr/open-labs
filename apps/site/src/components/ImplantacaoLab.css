@@ -1,0 +1,26 @@
+/* O lab da implantação do Collector. Tinta só do catálogo. */
+.deplab { --mo-aspect: 16 / 9; }
+.deplab-page .lab-palco { max-width: 1400px; margin-inline: auto; padding: 0 var(--space-3) var(--space-4); }
+@media (max-width: 700px) { .deplab-page .lab-palco { padding-inline: var(--space-1); } }
+
+.deplab-modes { display: inline-flex; flex-wrap: wrap; gap: 4px; padding: 3px; border: 1px solid var(--rule); border-radius: 999px; }
+.deplab-modes button { padding: 5px 12px; border: 0; border-radius: 999px; background: transparent; color: var(--ink-muted); font: inherit; font-size: var(--size-step--1); cursor: pointer; }
+.deplab-modes button[aria-checked="true"] { background: var(--accent); color: var(--paper); }
+.deplab-modes button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.ctxlab-switch[data-disabled] { opacity: 0.45; cursor: default; }
+
+.deplab-h { margin: 0 0 8px; color: var(--ink-muted); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; }
+.deplab-table dl { display: grid; gap: 4px; margin: 0; }
+.deplab-table dl > div {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: 12px;
+  padding: 6px 10px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-2);
+  transition: background 200ms ease, border-color 200ms ease;
+}
+.deplab-table dl > div[data-on] { border-color: var(--accent); background: color-mix(in oklab, var(--accent) 8%, transparent); }
+.deplab-table dt { color: var(--ink-muted); font-size: var(--size-step--1); }
+.deplab-table dd { margin: 0; font-family: var(--font-mono); font-size: 0.8rem; }
+.deplab-table div[data-tone] dd { color: var(--mo-c); }

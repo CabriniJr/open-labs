@@ -379,6 +379,9 @@ const SEM_PALCO: ReadonlySet<string> = new Set([
     teste abaixo confirma que esta página não tem `.dui-stage`.
   */
   "labs/hard-context-and-baggage/",
+  // O segundo lab do palco animado, pelo mesmo motivo: filme com vista
+  // isométrica, sem o roteador de fios do `depth-ui`.
+  "labs/agent-or-gateway/",
 ]);
 
 test("todo lab publicado COM palco tem teto de cruzamentos medido", () => {

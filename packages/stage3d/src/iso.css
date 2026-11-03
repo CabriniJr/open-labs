@@ -87,8 +87,8 @@
 .iso-note--start { transform: translateX(50%); }
 .iso-note--end { transform: translateX(-50%); }
 
-.iso-bar { color: var(--iso-c); font-size: 9.5px; }
-.iso-region { color: var(--iso-c); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; }
+.iso-bar { color: var(--iso-c); font-size: calc(9.5px * var(--iso-k, 1)); }
+.iso-region { color: var(--iso-c); font-size: calc(10px * var(--iso-k, 1)); letter-spacing: 0.08em; text-transform: uppercase; }
 
 /* Tela estreita: o bloco e a ficha dizem o essencial; o resto está no painel. */
 .iso-stage[data-compacto] .iso-sub,
