@@ -1,4 +1,4 @@
-import { useMemo, useState, type KeyboardEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type KeyboardEvent, type ReactNode } from "react";
 import type { Film } from "../choreography.js";
 import { frameAt, type Frame } from "../frame.js";
 import { MotionStage } from "./MotionStage.js";
@@ -11,6 +11,18 @@ import { useClock, type Clock } from "./useClock.js";
  * capítulo é um degrau: as setas vão de um para o outro, e o painel ao lado
  * mostra o que está acontecendo *agora*, desenhado por quem escreveu o filme.
  */
+/**
+ * Uma vista alternativa do mesmo filme: outra mídia, mesmo tempo e mesmos
+ * capítulos. O palco plano é sempre a primeira e não precisa ser declarado; o
+ * player não sabe o que uma vista desenha — uma vista 3D entra por aqui sem que
+ * este pacote dependa de WebGL.
+ */
+export interface MotionView<D> {
+  readonly id: string;
+  readonly label: string;
+  readonly render: (args: { readonly film: Film<D>; readonly t: number; readonly frame: Frame<D>; readonly label: string }) => ReactNode;
+}
+
 export interface MotionPlayerProps<D> {
   readonly film: Film<D>;
   /** Rótulo acessível do palco. */
@@ -22,7 +34,15 @@ export interface MotionPlayerProps<D> {
   readonly autoplay?: boolean;
   readonly className?: string;
   readonly testId?: string;
+  /** Vistas além do palco plano. */
+  readonly views?: readonly MotionView<D>[];
+  /** Qual vista abre primeiro; lembrada por leitor quando o navegador deixa. */
+  readonly initialView?: string;
+  /** Como o seletor chama o palco plano. */
+  readonly flatLabel?: string;
 }
+
+const CHAVE_DA_VISTA = "mo-view";
 
 const SPEEDS = [0.5, 1, 1.5, 2] as const;
 
@@ -31,7 +51,26 @@ function fmt(ms: number): string {
   return `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
 }
 
-export function MotionPlayer<D>({ film, label, renderDetail, controls, autoplay = false, className, testId }: MotionPlayerProps<D>) {
+export function MotionPlayer<D>({ film, label, renderDetail, controls, autoplay = false, className, testId, views = [], initialView, flatLabel = "Flat" }: MotionPlayerProps<D>) {
+  const [vista, setVista] = useState(initialView ?? "flat");
+  useEffect(() => {
+    if (views.length === 0) return;
+    try {
+      const salva = localStorage.getItem(CHAVE_DA_VISTA);
+      if (salva !== null && (salva === "flat" || views.some((v) => v.id === salva))) setVista(salva);
+    } catch {
+      // Armazenamento bloqueado: vale a vista inicial.
+    }
+  }, [views]);
+  const escolher = (id: string) => {
+    setVista(id);
+    try {
+      localStorage.setItem(CHAVE_DA_VISTA, id);
+    } catch {
+      // Sem armazenamento, a escolha vale só nesta visita.
+    }
+  };
+  const alternativa = views.find((v) => v.id === vista);
   const marks = useMemo(() => film.chapters.map((c) => c.end), [film]);
   const clock = useClock({ duration: film.duration, marks, autoplay });
   const t = Math.min(clock.t, film.duration);
@@ -76,7 +115,16 @@ export function MotionPlayer<D>({ film, label, renderDetail, controls, autoplay 
     <div className={["mo-player", className].filter(Boolean).join(" ")} tabIndex={0} onKeyDown={onKey} data-testid={testId} data-playing={clock.playing ? "" : undefined}>
       {controls !== undefined ? <div className="mo-player__controls">{controls}</div> : null}
       <div className="mo-player__screen">
-        <MotionStage film={film} t={t} frame={frame} label={label} selected={selected} onSelect={id => setSelected(id === selected ? null : id)} />
+        {alternativa === undefined ? <MotionStage film={film} t={t} frame={frame} label={label} selected={selected} onSelect={id => setSelected(id === selected ? null : id)} /> : alternativa.render({ film, t, frame, label })}
+        {views.length > 0 ? (
+          <div className="mo-views" role="radiogroup" aria-label="View">
+            {[{ id: "flat", label: flatLabel }, ...views].map((v) => (
+              <button key={v.id} type="button" role="radio" aria-checked={(alternativa?.id ?? "flat") === v.id} className="mo-views__opt" onClick={() => escolher(v.id)}>
+                {v.label}
+              </button>
+            ))}
+          </div>
+        ) : null}
         <p className="mo-player__hud mono" aria-hidden="true">
           <span>{String(current + 1).padStart(2, "0")}</span>
           <span className="mo-player__hud-sep">/</span>

@@ -109,3 +109,38 @@ modelo, sim, e é ele que o teste interroga.
 - O palco não tem layout automático de grafo — para isso existe o `depth-ui`. Aqui as
   posições vêm do autor ou das ferramentas de `layout.ts` (`sequence`, `grid`, `ring`,
   `connect`).
+
+## Vistas: o mesmo filme em outra mídia
+
+O `MotionPlayer` aceita `views`: vistas extras que desenham **no mesmo relógio**
+(mesmo `t`, mesmos capítulos, mesmo painel de detalhe). O palco plano é sempre a
+primeira. O motor não depende do que uma vista desenha, e é assim que o 3D entra
+sem que `@ovh/motion` saiba o que é WebGL.
+
+### `@ovh/stage3d` — isométrico em three.js
+
+`IsoStage` recebe um `Film` e o desenha de pé: o chão é o plano do palco (`x → x`,
+`y → z`), `node`/`lane` viram blocos com altura e sombra, `link` vira linha no chão
+com ponta, `token` faz um arco no ar com rastro e halo, `bar` vira trilho, `note`
+e rótulos são HTML por cima (fonte e tokens do site). A câmera é ortográfica na
+isometria verdadeira e segue a câmera do filme; arrastar gira, duplo clique volta.
+
+Regras de custo, porque 3D na web trava fácil:
+
+- desenha **sob demanda** (só quando o quadro muda ou a vista gira);
+- para fora da tela (`IntersectionObserver`); DPR limitado a 2;
+- nenhuma geometria nasce por quadro: o filme monta a cena uma vez;
+- rótulos só são reescritos quando o texto muda;
+- `dispose()` devolve tudo à GPU; o three.js é carregado por `lazy()` só quando
+  o leitor escolhe a vista (≈ 510 KB num chunk próprio).
+
+Cores vêm dos tokens do catálogo lidos no elemento (`tons.ts`) e são relidas na
+troca de tema. `custom` não tem tradução para 3D e fica de fora dessa vista.
+
+### Layout é do domínio
+
+Diagrama de sequência deitado no chão lê mal: o tempo vira profundidade. O que
+fica de pé é **topologia**. Por isso o lab de propagação gera dois filmes do
+mesmo modelo — `filmeDoContexto(opções, "sequence" | "topology")` — com os mesmos
+verbos e durações, e um teste cobra que capítulos e passos batam ao milissegundo.
+O leitor troca entre *Sequence*, *Topology* e *Iso* no meio de um capítulo.

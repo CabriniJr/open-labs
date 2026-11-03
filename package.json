@@ -19,7 +19,8 @@
     "sdk:pack": "node scripts/sdk-release.mjs",
     "sdk:smoke": "node scripts/sdk-smoke.mjs",
     "delivery:build": "node scripts/delivery.mjs",
-    "delivery:smoke": "node scripts/delivery-smoke.mjs"
+    "delivery:smoke": "node scripts/delivery-smoke.mjs",
+    "qa:labs": "pnpm --filter @ovh/site qa:labs --"
   },
   "devDependencies": {
     "@testing-library/react": "^16.1.0",

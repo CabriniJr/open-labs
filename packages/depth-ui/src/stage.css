@@ -152,6 +152,25 @@
   filter: none !important;
 }
 
+/*
+ * A moldura do palco: recorta o desenho enquanto a câmera anda no compositor
+ * (ver `Stage.tsx`), e é ela — não o SVG transformado — que dá a medida da
+ * tela para a roda e o arraste.
+ */
+.dui-stage__moldura {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-3);
+}
+
+.dui-stage {
+  transform-origin: 0 0;
+}
+
+.dui-stage[data-movendo] {
+  will-change: transform;
+}
+
 /* ---------- fios ---------- */
 
 .dui-stage__trilho {
@@ -799,7 +818,9 @@
 }
 
 .dui-stage__objeto[data-ativo="true"] .dui-stage__gira {
-  animation: dui-girar var(--dui-tick) linear infinite;
+  /* Em degraus, como um mecanismo de relógio: giro contínuo repintava o SVG
+     a cada quadro em cada peça ativa — 27 engrenagens no lab de portas. */
+  animation: dui-girar var(--dui-tick) steps(8, end) infinite;
 }
 
 @keyframes dui-girar {

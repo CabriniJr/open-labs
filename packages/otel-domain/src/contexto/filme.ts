@@ -1,4 +1,4 @@
-import { film, sequence, type Box, type Director, type Film, type Tone } from "@ovh/motion";
+import { bounds, connect, film, sequence, type Box, type Director, type EntitySpec, type Film, type Path, type Point, type Tone } from "@ovh/motion";
 import { propagar, type Chamada, type OpcoesDePropagacao, type Propagacao, type Servico, type SpanGerado } from "./propagacao.js";
 
 /**
@@ -61,9 +61,84 @@ export function rotuloDoContexto(headers: Readonly<Record<string, string>>): str
   return `${curto(trace)} ${curto(span)} ${flags}`;
 }
 
-export function filmeDoContexto(opcoes: OpcoesDePropagacao): { filme: Film<DetalheDoContexto>; propagacao: Propagacao } {
-  const p = propagar(opcoes);
+/**
+ * Duas geometrias para a MESMA história.
+ *
+ * `sequence` é o diagrama de sequência: o tempo desce, cada serviço é uma
+ * raia. `topology` é o grafo dos serviços, que é a forma que fica de pé na
+ * vista isométrica. Os verbos e as durações são os mesmos nas duas — só muda
+ * onde cada peça mora —, então os dois filmes andam no mesmo relógio e o
+ * leitor pode trocar de vista no meio de um capítulo.
+ */
+export type LayoutDoContexto = "sequence" | "topology";
+
+interface Geometria {
+  readonly servico: (lane: Lane, label: string, sub: string, tone: Tone, hidden: boolean) => EntitySpec;
+  readonly span: (servico: Servico, entrada: number) => { box: Box; grow: "down" | "right" };
+  readonly chamada: (de: Servico, para: Servico, row: number) => Path;
+  readonly exporta: (servico: Servico, i: number) => Path;
+  readonly nota: (lane: Lane, row: number, align: "start" | "end") => { at: Point; align: "start" | "end" | "middle" };
+  readonly caixa: (de: Lane, ate: Lane, r0: number, r1: number) => Box;
+}
+
+function geometriaDeSequencia(): Geometria {
   const seq = sequence({ lanes: LANES, width: LARGURA, top: 60, headWidth: 136, headHeight: 58, firstRow: 186, rowHeight: 70 });
+  const bottom = seq.bottom(7.4);
+  return {
+    servico: (lane, label, sub, tone, hidden) => ({ type: "lane", id: `lane:${lane}`, head: seq.head(lane), bottom, label, sublabel: sub, tone, hidden, sticky: true }),
+    span: (servico, entrada) => ({ box: seq.activation(servico, entrada, FIM_DOS_SPANS, 14), grow: "down" }),
+    chamada: (de, para, row) => seq.message(de, para, row),
+    exporta: (servico, i) => seq.message(servico, "collector", LINHA_DO_EXPORT + i * 0.32),
+    nota: (lane, row, align) => ({ at: { x: seq.x(lane) + (align === "start" ? 18 : -18), y: seq.row(row) }, align }),
+    caixa: (de, ate, r0, r1) => {
+      const x0 = seq.x(de) - 90;
+      const x1 = seq.x(ate) + 90;
+      const y0 = r0 < 0 ? 40 : seq.row(r0) - 110;
+      return { x: x0, y: y0, w: x1 - x0, h: seq.row(r1) - y0 + 30 };
+    },
+  };
+}
+
+/** Onde cada serviço fica no grafo: a requisição anda da esquerda para a direita e o Collector recolhe embaixo. */
+const NO_GRAFO: Record<Lane, Point> = {
+  browser: { x: 130, y: 300 },
+  gateway: { x: 380, y: 300 },
+  checkout: { x: 630, y: 300 },
+  inventory: { x: 890, y: 150 },
+  proxy: { x: 890, y: 450 },
+  payments: { x: 1145, y: 450 },
+  collector: { x: 630, y: 615 },
+};
+const BLOCO = { w: 164, h: 74 };
+
+function geometriaDeTopologia(): Geometria {
+  const caixaDe = (lane: Lane): Box => ({ x: NO_GRAFO[lane].x - BLOCO.w / 2, y: NO_GRAFO[lane].y - BLOCO.h / 2, w: BLOCO.w, h: BLOCO.h });
+  return {
+    servico: (lane, label, sub, tone, hidden) => ({ type: "node", id: `lane:${lane}`, box: caixaDe(lane), label, sublabel: sub, tone, hidden, shape: lane === "collector" ? "cylinder" : "box" }),
+    span: (servico) => {
+      const b = caixaDe(servico);
+      return { box: { x: b.x, y: b.y + b.h + 9, w: b.w, h: 9 }, grow: "right" };
+    },
+    chamada: (de, para) => connect(caixaDe(de), caixaDe(para), 10),
+    exporta: (servico) => connect(caixaDe(servico), caixaDe("collector"), 12),
+    nota: (lane) => {
+      const b = caixaDe(lane);
+      return { at: { x: b.x + b.w / 2, y: b.y + b.h + 40 }, align: "middle" };
+    },
+    caixa: (de, ate) => {
+      const i0 = LANES.indexOf(de);
+      const i1 = LANES.indexOf(ate);
+      return bounds(LANES.slice(i0, i1 + 1).map(caixaDe));
+    },
+  };
+}
+
+export function filmeDoContexto(
+  opcoes: OpcoesDePropagacao,
+  layout: LayoutDoContexto = "sequence",
+): { filme: Film<DetalheDoContexto>; propagacao: Propagacao } {
+  const p = propagar(opcoes);
+  const g = layout === "topology" ? geometriaDeTopologia() : geometriaDeSequencia();
   const f = film<DetalheDoContexto>({ width: LARGURA, height: ALTURA, gap: 450, maxZoom: 1.75 });
 
   // Cada trace ganha uma espécie de carga; não amostrado fica apagado.
@@ -71,10 +146,9 @@ export function filmeDoContexto(opcoes: OpcoesDePropagacao): { filme: Film<Detal
   p.traces.forEach((t, i) => tomDoTrace.set(t.traceId, (["kind-1", "kind-3", "kind-4"] as const)[i] ?? "kind-5"));
   const tomDoSpan = (s: SpanGerado): Tone => (s.amostrado ? tomDoTrace.get(s.traceId) ?? "kind-5" : "muted");
 
-  const bottom = seq.bottom(7.4);
   for (const lane of LANES) {
     const [label, sub] = ROTULO[lane];
-    f.add({ type: "lane", id: `lane:${lane}`, head: seq.head(lane), bottom, label, sublabel: sub, tone: TOM_DO_SERVICO[lane], hidden: lane === "collector", sticky: true });
+    f.add(g.servico(lane, label, sub, TOM_DO_SERVICO[lane], lane === "collector"));
   }
 
   // As barras de span: uma por span, do salto que o criou até o fim da história.
@@ -87,7 +161,7 @@ export function filmeDoContexto(opcoes: OpcoesDePropagacao): { filme: Film<Detal
     f.add({
       type: "bar",
       id: `span:${s.servico}`,
-      box: seq.activation(s.servico, linhaDeEntrada(s.servico), FIM_DOS_SPANS, 14),
+      ...g.span(s.servico, linhaDeEntrada(s.servico)),
       tone: tomDoSpan(s),
       label: curto(s.spanId),
       hidden: true,
@@ -101,27 +175,25 @@ export function filmeDoContexto(opcoes: OpcoesDePropagacao): { filme: Film<Detal
     const semContexto = c.headers.traceparent === undefined;
     const pai = p.spans.find((s) => s.servico === c.de) ?? null;
     const tone: Tone = semContexto ? "live" : pai !== null ? tomDoSpan(pai) : c.extraido?.sampled === false ? "muted" : tomDoTrace.get(c.extraido?.traceId ?? "") ?? "ink";
-    f.add({ type: "link", id: `call:${i}`, layer: 2, path: seq.message(c.de, c.para, row), arrow: true, label: c.rota, sublabel: semContexto ? "headers dropped" : "", tone: semContexto ? "live" : "ink", hidden: true, labelAt: 0.5 });
-    f.add({ type: "token", id: `ctx:${i}`, path: seq.message(c.de, c.para, row), tone, label: rotuloDoContexto(c.headers), hidden: true, layer: 3, size: 6 });
+    f.add({ type: "link", id: `call:${i}`, layer: 2, path: g.chamada(c.de, c.para, row), arrow: true, label: c.rota, sublabel: semContexto ? "headers dropped" : "", tone: semContexto ? "live" : "ink", hidden: true, labelAt: 0.5 });
+    f.add({ type: "token", id: `ctx:${i}`, path: g.chamada(c.de, c.para, row), tone, label: rotuloDoContexto(c.headers), hidden: true, layer: 3, size: 6 });
   });
 
   // A exportação: um span por ficha, de cada serviço até o Collector.
   const exportaveis = p.spans.filter((s) => s.amostrado);
   exportaveis.forEach((s, i) => {
-    const row = LINHA_DO_EXPORT + i * 0.32;
-    f.add({ type: "link", id: `export-line:${s.servico}`, path: seq.message(s.servico, "collector", row), dashed: true, tone: "muted", hidden: true });
-    f.add({ type: "token", id: `export:${s.servico}`, path: seq.message(s.servico, "collector", row), tone: tomDoSpan(s), hidden: true, layer: 3, size: 4.5, trail: 4 });
+    f.add({ type: "link", id: `export-line:${s.servico}`, path: g.exporta(s.servico, i), dashed: true, tone: "muted", hidden: true });
+    f.add({ type: "token", id: `export:${s.servico}`, path: g.exporta(s.servico, i), tone: tomDoSpan(s), hidden: true, layer: 3, size: 4.5, trail: 4 });
   });
 
   // As notas: o que o leitor precisa ler perto de onde aconteceu.
   /** Uma nota ao lado da raia: `"end"` à esquerda dela, `"start"` à direita — nunca em cima do fio. */
   const nota = (id: string, lane: Lane, row: number, text: string, tone: Tone, align: "start" | "end") =>
-    f.add({ type: "note", id, at: { x: seq.x(lane) + (align === "start" ? 18 : -18), y: seq.row(row) }, align, label: text, tone, hidden: true, layer: 4 });
+    f.add({ type: "note", id, ...g.nota(lane, row, align), label: text, tone, hidden: true, layer: 4 });
 
   const raiz = p.raiz;
   nota("n:root", "browser", -0.78, `trace ${curto(raiz.traceId)} · ${raiz.amostrado ? "sampled" : "not sampled"}`, tomDoSpan(raiz), "start");
   const pagamentos = p.chamadas[4]!;
-  const proxyEntrada = p.chamadas[3]!;
   const orfao = pagamentos.span !== null && pagamentos.span.traceId !== raiz.traceId;
   nota("n:proxy", "proxy", 3.4, opcoes.proxyRepassa ? "no span here —\nheaders pass through" : "no span here —\nheaders dropped", opcoes.proxyRepassa ? "ink" : "live", "end");
   nota(
@@ -135,12 +207,7 @@ export function filmeDoContexto(opcoes: OpcoesDePropagacao): { filme: Film<Detal
   nota("n:baggage", "inventory", 2.45, `baggage: ${Object.entries(p.chamadas[2]!.span?.baggage ?? {}).map(([k, v]) => `${k}=${v}`).join(", ") || "∅"}`, "kind-2", "end");
   nota("n:collector", "collector", LINHA_DO_EXPORT - 0.6, exportaveis.length > 0 ? `${exportaveis.length} spans · ${new Set(exportaveis.map((s) => s.traceId)).size} trace(s)` : "nothing to export", exportaveis.length > 0 ? "conduit" : "live", "end");
 
-  const caixa = (de: Lane, ate: Lane, r0: number, r1: number): Box => {
-    const x0 = seq.x(de) - 90;
-    const x1 = seq.x(ate) + 90;
-    const y0 = r0 < 0 ? 40 : seq.row(r0) - 110;
-    return { x: x0, y: y0, w: x1 - x0, h: seq.row(r1) - y0 + 30 };
-  };
+  const caixa = g.caixa;
 
   const conhecidos = (n: number) => p.spans.slice(0, n);
   const detalhe = (chamada: Chamada | null, foco: Foco | null, n: number, exportados = false): DetalheDoContexto => ({ chamada, foco, spans: conhecidos(n), exportados });

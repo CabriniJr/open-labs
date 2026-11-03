@@ -46,6 +46,9 @@ const { title, description, lang = "en", domain = "otel" } = Astro.props;
         cabeçalho porque é só declaração de token: ela não pinta nada sozinha. */}
     <style is:global set:html={temas}></style>
     <title>{title}</title>
+    {/* A marca do cabeçalho, como ícone. Sem ele, toda primeira visita pedia
+        /favicon.ico e o console abria com um 404 — o QA dos labs pegou. */}
+    <link rel="icon" type="image/svg+xml" href={`${import.meta.env.BASE_URL.replace(/\/$/, "")}/favicon.svg`} />
     <meta name="description" content={description} />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />

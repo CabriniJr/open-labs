@@ -74,13 +74,15 @@
 }
 
 /* Preenche a altura que o palco der, em vez de derivá-la da proporção. */
-.explorer__palco > .dui-stage {
+.explorer__palco > .dui-stage__moldura,
+.explorer__palco > .dui-stage__moldura > .dui-stage {
   block-size: 100%;
 }
 
 .explorer, .explorer__corpo { min-width: 0; max-width: 100%; }
 .explorer__palco { display: flex; flex-direction: column; }
-.explorer__palco > .scene-spatial, .explorer__palco .scene-planar > .dui-stage { flex: 1; min-height: 0; height: 100%; max-height: none; }
+.explorer__palco > .scene-spatial, .explorer__palco .scene-planar > .dui-stage__moldura { flex: 1; min-height: 0; height: 100%; max-height: none; }
+.explorer__palco .dui-stage__moldura > .dui-stage { height: 100%; }
 .explorer[data-cheia="true"] .scene-viewport { height: 100%; display: flex; flex-direction: column; }
 .explorer[data-cheia="true"] .scene-canvas { flex: 1; min-height: 0; }
 

@@ -82,3 +82,16 @@ describe("the film is derived from the model", () => {
     expect(inject.steps.map((s) => s.detail?.foco).filter(Boolean)).toEqual(["version", "trace-id", "parent-id", "flags"]);
   });
 });
+
+describe("the two layouts tell the same story", () => {
+  it("keep every chapter and every beat on the same clock", () => {
+    for (const proxyRepassa of [true, false]) {
+      const a = filmeDoContexto({ ...OPCOES_PADRAO, proxyRepassa }, "sequence").filme;
+      const b = filmeDoContexto({ ...OPCOES_PADRAO, proxyRepassa }, "topology").filme;
+      expect(b.chapters.map((c) => [c.id, c.start, c.end, c.steps.map((s) => s.t)])).toEqual(
+        a.chapters.map((c) => [c.id, c.start, c.end, c.steps.map((s) => s.t)]),
+      );
+      expect(b.entities.map((e) => e.id).sort()).toEqual(a.entities.map((e) => e.id).sort());
+    }
+  });
+});

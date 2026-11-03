@@ -35,6 +35,8 @@ const AGNOSTIC = [
   "packages/depth-ui/",
   /* O palco animado: atores, fichas, câmera e tempo. Serve a qualquer assunto. */
   "packages/motion/",
+  /* O mesmo filme, de pé: a vista isométrica em three.js. */
+  "packages/stage3d/",
   "packages/model-format/",
   "packages/mermaid-skeleton/",
   /*

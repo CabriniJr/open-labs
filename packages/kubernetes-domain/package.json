@@ -8,6 +8,7 @@
   "types": "./src/index.ts",
   "dependencies": {
     "@ovh/interactive-core": "workspace:*",
+    "@ovh/motion": "workspace:*",
     "yaml": "^2.5.0",
     "zod": "^3.23.0"
   }
