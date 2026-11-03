@@ -127,9 +127,9 @@
   stroke: var(--paper);
   stroke-width: 1.5;
 }
+/* Sem `filter`: a ficha se move a cada quadro, e desfoque por quadro é caro. */
 .mo-token__halo {
-  fill: color-mix(in oklab, var(--mo-c) 22%, transparent);
-  filter: blur(3px);
+  fill: color-mix(in oklab, var(--mo-c) 16%, transparent);
 }
 .mo-token__ghost { fill: var(--mo-c); }
 .mo-token__tag {
