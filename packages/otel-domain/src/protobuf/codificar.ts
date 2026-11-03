@@ -141,9 +141,8 @@ function span(s: OtelSpan): No[] {
   return nos;
 }
 
-/** O `ExportTraceServiceRequest` em protobuf, com o mapa de cada campo. */
-export function codificarRequisicao(req: ExportTraceServiceRequest): Codificacao {
-  const nos: No[] = req.resourceSpans.map((rs) => ({
+function arvoreDaRequisicao(req: ExportTraceServiceRequest): No[] {
+  return req.resourceSpans.map((rs) => ({
     nome: "resource_spans",
     numero: 1,
     tipo: "message",
@@ -159,9 +158,90 @@ export function codificarRequisicao(req: ExportTraceServiceRequest): Codificacao
       ),
     ],
   }));
+}
+
+function codificarArvore(nos: readonly No[]): Codificacao {
   const campos: CampoCodificado[] = [];
   const bytes = escrever(nos, 0, 0, "", campos);
   return { bytes: Uint8Array.from(bytes), campos };
+}
+
+/** O `ExportTraceServiceRequest` em protobuf, com o mapa de cada campo. */
+export function codificarRequisicao(req: ExportTraceServiceRequest): Codificacao {
+  return codificarArvore(arvoreDaRequisicao(req));
+}
+
+/** As primeiras `n` folhas da árvore, na ordem de escrita, com as mensagens que as contêm. */
+function podar(nos: readonly No[], n: number): { nos: No[]; resto: number } {
+  const out: No[] = [];
+  let resto = n;
+  for (const no of nos) {
+    if (resto <= 0) break;
+    if (no.tipo === "message") {
+      const dentro = podar(no.filhos, resto);
+      if (dentro.nos.length === 0) continue;
+      out.push({ ...no, filhos: dentro.nos });
+      resto = dentro.resto;
+    } else {
+      out.push(no);
+      resto -= 1;
+    }
+  }
+  return { nos: out, resto };
+}
+
+const folhas = (nos: readonly No[]): number => nos.reduce((s, no) => s + (no.tipo === "message" ? folhas(no.filhos) : 1), 0);
+
+/** Uma mensagem em volta do campo novo que mudou de comprimento. */
+export interface Reacao {
+  readonly campo: CampoCodificado;
+  readonly antes: number;
+  readonly depois: number;
+  /** O varint do comprimento ganhou um byte: tudo depois dele andou uma casa. */
+  readonly cresceu: boolean;
+}
+
+export interface EtapaDaCodificacao {
+  readonly n: number;
+  /** O campo escrito nesta etapa. */
+  readonly campo: CampoCodificado;
+  readonly cod: Codificacao;
+  /** Mensagens que abriram nesta etapa (a cabeça delas apareceu agora). */
+  readonly abertas: readonly CampoCodificado[];
+  /** Mensagens que já existiam e mudaram de comprimento. */
+  readonly reacoes: readonly Reacao[];
+}
+
+/**
+ * A codificação em etapas: a requisição com uma folha, com duas, … até todas.
+ * Cada etapa é uma codificação inteira de verdade, então o que muda de uma
+ * para a outra é exatamente a reação do formato ao campo novo: a cabeça das
+ * mensagens que abrem, e o comprimento de todas as que o envolvem — que,
+ * passando de 127, ganha um byte e empurra o resto.
+ */
+export function etapasDaCodificacao(req: ExportTraceServiceRequest): readonly EtapaDaCodificacao[] {
+  const arvore = arvoreDaRequisicao(req);
+  const total = folhas(arvore);
+  const etapas: EtapaDaCodificacao[] = [];
+  let anterior: Codificacao = { bytes: new Uint8Array(), campos: [] };
+  for (let n = 1; n <= total; n += 1) {
+    const cod = codificarArvore(podar(arvore, n).nos);
+    const antes = new Map(anterior.campos.map((c) => [c.caminho, c]));
+    const novos = cod.campos.filter((c) => !antes.has(c.caminho));
+    const campo = novos.find((c) => c.tipo !== "message")!;
+    const abertas = novos.filter((c) => c.tipo === "message");
+    const reacoes: Reacao[] = [];
+    for (const c of cod.campos) {
+      const a = antes.get(c.caminho);
+      if (a === undefined || c.tipo !== "message") continue;
+      const da = a.fim - a.inicio - a.cabeca;
+      const de = c.fim - c.inicio - c.cabeca;
+      if (da !== de) reacoes.push({ campo: c, antes: da, depois: de, cresceu: c.cabeca > a.cabeca });
+    }
+    etapas.push({ n, campo, cod, abertas, reacoes });
+    anterior = cod;
+  }
+  return etapas;
 }
 
 /** O mesmo envelope em OTLP/JSON, em bytes UTF-8 — para comparar o tamanho. */

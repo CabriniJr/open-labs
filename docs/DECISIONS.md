@@ -514,3 +514,11 @@ da dobra e quem assistia o filme não via o que o capítulo dizia. O layout é d
 mal-entendido, a mídia, os capítulos, o significado da altura no 3D, os ícones
 e as correlações. É o contrato de conteúdo. O da forma é a skill. Os dois são
 atualizados no PR que muda o lab.
+
+**Fluxo só quando algo viaja.** O primeiro showcase do protobuf era um filme
+com fichas voando do objeto para o fio e o relevo 3D do aninhamento. Ele foi
+trocado por etapas: o buffer cresce um campo por vez, e o que se destaca é a
+reação do formato (cabeças que abrem, comprimentos que sobem, o byte a mais
+quando um comprimento passa de 127). No protobuf nada se move. O que ensina é
+a estrutura mudando, e um fio animado escondia exatamente isso. A pergunta
+antes de escolher a mídia é: *algo se move, ou algo muda?*

@@ -173,7 +173,8 @@ export { ICONES_OTEL } from "./icones/icones.js";
 export type { IconeOtel } from "./icones/icones.js";
 
 // O payload OTLP em protobuf: o codificador e o filme do lab.
-export { bytesEmJson, chave, codificarRequisicao, hex, varint } from "./protobuf/codificar.js";
-export type { CampoCodificado, Codificacao, TipoDoCampo, WireType } from "./protobuf/codificar.js";
-export { envelopeDoProtobuf, filmeDoProtobuf, SPAN_DO_PROTOBUF, tomDoCampo } from "./protobuf/filme.js";
-export type { DetalheDoProtobuf } from "./protobuf/filme.js";
+export { bytesEmJson, chave, codificarRequisicao, etapasDaCodificacao, hex, varint } from "./protobuf/codificar.js";
+export type { CampoCodificado, Codificacao, EtapaDaCodificacao, Reacao, TipoDoCampo, WireType } from "./protobuf/codificar.js";
+export { envelopeDoProtobuf, SPAN_DO_PROTOBUF, tomDoCampo } from "./protobuf/exemplo.js";
+export { narrarEtapa } from "./protobuf/narracao.js";
+export type { NarracaoDaEtapa } from "./protobuf/narracao.js";

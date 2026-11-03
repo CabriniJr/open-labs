@@ -24,11 +24,14 @@ test("o payload OTLP: o showcase toca, e a simulação recalcula os bytes", asyn
   await expect(lab.locator(".pblab__leitura")).toContainText("field 5, wire type 2");
   expect(await lab.locator(".pblab__byte[data-on]").count()).toBeGreaterThan(2);
 
+  // O showcase é em etapas: o buffer cresce, e na etapa 10 o comprimento de
+  // resource_spans passa de 127 e ganha um byte.
   await page.getByRole("tab", { name: /Showcase/ }).click();
   const vit = page.getByTestId("protobuf-showcase");
   await expect(vit).toBeVisible();
-  await vit.getByRole("button", { name: /Messages nest by length/ }).click();
-  await vit.getByRole("button", { name: "Pause" }).click();
-  await expect(vit.locator(".cpuvit-niveis li[data-on]")).toHaveText("nesting");
+  await expect(vit.locator(".pbet__buffer .pbet__byte")).toHaveCount(20);
+  for (let k = 0; k < 9; k += 1) await vit.getByRole("button", { name: "Next step" }).click();
+  await expect(vit.locator(".pbet__reacoes li[data-cresceu]")).toContainText("resource_spans: 105 → 128 B");
+  await expect(vit.locator(".pbet__cabecas li[data-cresceu] .pbet__hex")).toHaveText("0a 80 01");
   expect(erros).toEqual([]);
 });

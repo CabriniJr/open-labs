@@ -59,3 +59,30 @@ describe("o protobuf do OTLP", () => {
     expect(bytes.length).toBeLessThan(bytesEmJson(REQ) / 2);
   });
 });
+
+describe("a codificação em etapas", () => {
+  it("cada etapa escreve uma folha, e a última é a requisição inteira", async () => {
+    const { etapasDaCodificacao } = await import("./codificar.js");
+    const etapas = etapasDaCodificacao(REQ);
+    const inteira = codificarRequisicao(REQ);
+    expect(etapas.at(-1)!.cod.bytes).toEqual(inteira.bytes);
+    expect(etapas.length).toBe(inteira.campos.filter((c) => c.tipo !== "message").length);
+    // A primeira folha abre as mensagens em volta dela.
+    expect(etapas[0]!.abertas.map((c) => c.nome)).toEqual(["resource_spans", "resource", "attributes"]);
+  });
+
+  it("um campo novo faz reagir o comprimento de toda mensagem em volta", async () => {
+    const { etapasDaCodificacao } = await import("./codificar.js");
+    const etapas = etapasDaCodificacao(REQ);
+    const nome = etapas.find((e) => e.campo.caminho.endsWith("spans[0].name"))!;
+    expect(nome.reacoes.map((r) => r.campo.nome)).toEqual(["resource_spans", "scope_spans", "spans"]);
+    for (const r of nome.reacoes) expect(r.depois - r.antes).toBe(nome.campo.fim - nome.campo.inicio);
+  });
+
+  it("passando de 127, o comprimento ganha um byte", async () => {
+    const { etapasDaCodificacao } = await import("./codificar.js");
+    const longo = toOtlpJson({ attributes: [attribute("service.name", "checkout")] }, [{ ...SPAN, name: "x".repeat(120) }], "s");
+    const etapas = etapasDaCodificacao(longo);
+    expect(etapas.some((e) => e.reacoes.some((r) => r.cresceu && r.antes <= 127 && r.depois > 127))).toBe(true);
+  });
+});

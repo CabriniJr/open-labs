@@ -32,7 +32,12 @@ do roteiro deve mudar o roteiro primeiro, com o motivo.
 6. **Os labs se citam.** Cada lab diz, no texto e no filme quando couber, de
    onde vem o conceito que ele usa e para onde ele leva. A seção "Correlações"
    abaixo é a fonte. A prosa do lab (`Where this connects`) a segue.
-7. **Janela à esquerda, andamento à direita.** No showcase e no 3D, a cena fica
+7. **Fluxo só quando algo viaja.** Se nada se move de um lugar a outro e o que
+   ensina é ver a estrutura mudando (um header que cresce, comprimentos que
+   reagem), o showcase é em **etapas**, sem motor de fluxos nem fichas voando.
+   Cada etapa sai do domínio, e a reação ao passo fica destacada. O caso de
+   referência é o `reading-an-otlp-payload`.
+8. **Janela à esquerda, andamento à direita.** No showcase e no 3D, a cena fica
    à esquerda e os capítulos, a narração e o painel do nível ficam à direita
    (`MotionPlayer`, por container query). Não reimplemente o layout no lab.
 
@@ -51,8 +56,8 @@ do roteiro deve mudar o roteiro primeiro, com o motivo.
 | `backend` | armazenamento do backend | vitrine, implantação, hero |
 | `queue` | fila / broker | *a aplicar* em propagação por fila |
 | `host`, `pod` | infraestrutura | implantação, *a aplicar* em host signals |
-| `trace`, `metric`, `log` | os três sinais | protobuf (trace), *a aplicar* em pilares |
-| `bytes` | payload no fio | *a aplicar* em protobuf |
+| `trace`, `metric`, `log` | os três sinais | *a aplicar* em pilares e anatomia |
+| `bytes` | payload no fio | *a aplicar* onde um filme mostrar o envelope saindo (vitrine do Collector) |
 | `context`, `baggage` | propagação | *a aplicar* em contexto |
 | `sampler` | decisão de amostragem | *a aplicar* em amostragem |
 
@@ -102,11 +107,11 @@ própria (formulário, analisador, editor).
 
 #### reading-an-otlp-payload — *Reading an OTLP payload* · disponível (filme + 3D + livre)
 - **Pergunta.** O que exatamente sai no fio quando o SDK exporta um span?
-- **Mal-entendido.** "O payload carrega os nomes dos campos" / "JSON e protobuf custam o mesmo".
+- **Mal-entendido.** "O payload carrega os nomes dos campos" / "JSON e protobuf custam o mesmo" / "o comprimento de uma mensagem tem tamanho fixo".
 - **Modelo.** `otel-domain/protobuf/codificar.ts`, um codificador real com os números de campo de `opentelemetry-proto`, que devolve o mapa de cada campo (offset, chave, wire type, profundidade).
-- **Showcase.** objeto → chaves → varint → ids crus → fixed64 → aninhamento → fio (protobuf contra JSON). **3D:** altura do bloco = quantas mensagens o envolvem.
+- **Showcase (em etapas, sem fluxo).** O buffer cresce um campo por etapa (13 no exemplo). Em cada etapa aparecem a conta da chave em bits, como o valor foi escrito (texto, ids crus, varint em grupos de 7 bits, fixed64) e a **reação**: as cabeças das mensagens que abrem e o comprimento de cada mensagem em volta subindo. Nas etapas 10 e 12, `resource_spans` e depois `scope_spans` passam de 127 bytes, o comprimento ganha um byte (`80 01`) e tudo depois anda uma casa. Cada etapa é uma codificação inteira de verdade (`etapasDaCodificacao`), e a narração sai dos bytes (`narrarEtapa`). Não há 3D: altura aqui não ensinaria nada que o recuo das cabeças já não mostre.
 - **Simulação (livre).** Um analisador no estilo Wireshark: hexa à esquerda e árvore de campos à direita, com o campo aceso nos dois. O leitor muda o nome, o status (127/128 mostra o varint crescer), o pai e os atributos.
-- **Ícones.** `trace` (o span). *A aplicar:* `bytes` no fio.
+- **Ícones.** Nenhum. O lab não tem palco de peças: os tons por jeito de escrever (texto, bytes, varint, fixed64, cabeça) fazem o papel.
 - **Correlações.** ← hard-context (traceparent hex ↔ 16 bytes), ← anatomy (o id que monta a árvore), → collector-pipeline (o receiver `otlp` decodifica isto), → agent-or-gateway (gRPC e conexões), → cardinality-and-the-bill (o custo em bytes de cada atributo).
 - **Próximo passo.** Mostrar o quadro gRPC (5 bytes de prefixo) e os headers HTTP/2 em volta. Anexo `grpc-http2`.
 
@@ -199,7 +204,7 @@ O codificador do protobuf já serve o anexo `protobuf-encoding`. O próximo é
 
 ## Fila (ordem de construção)
 
-1. Ícones que faltam em contexto (`context`/`baggage` nos tokens) e o ícone `bytes` no fio do protobuf.
+1. Ícones que faltam em contexto (`context`/`baggage` nos tokens) e o ícone `bytes` no envelope da vitrine do Collector.
 2. Showcase de `anatomy-of-a-trace` (árvore em escada no 3D).
 3. `the-shape-of-a-metric` (o handbook só modela trace no showcase).
 4. `a-log-that-knows-its-trace`.
