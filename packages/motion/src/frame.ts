@@ -1,5 +1,5 @@
 import type { Chapter, Film, Packet, Step } from "./choreography.js";
-import { CAMERA, initialState, type Animatable, type CameraState, type EntitySpec } from "./scene.js";
+import { boxOf, CAMERA, initialState, type Animatable, type CameraState, type EntitySpec } from "./scene.js";
 
 /**
  * Um quadro: o filme inteiro resolvido num instante. É o que o renderizador
@@ -28,7 +28,7 @@ export interface Frame<D> {
   readonly packet: Packet | undefined;
 }
 
-const PROPS = ["opacity", "dx", "dy", "scale", "glow", "ping", "progress", "dim", "label", "sublabel", "tone"] as const;
+const PROPS = ["opacity", "dx", "dy", "scale", "glow", "ping", "progress", "dim", "lift", "label", "sublabel", "tone"] as const;
 
 export function chapterAt<D>(film: Film<D>, t: number): number {
   let index = 0;
@@ -59,12 +59,25 @@ export function frameAt<D>(film: Film<D>, t: number): Frame<D> {
     cx: Number(timeline.sample(CAMERA, "cx", t, film.camera.cx)),
     cy: Number(timeline.sample(CAMERA, "cy", t, film.camera.cy)),
     zoom: Number(timeline.sample(CAMERA, "zoom", t, film.camera.zoom)),
+    elev: Number(timeline.sample(CAMERA, "elev", t, 0)),
   };
   const entities = film.entities.map((spec) => {
     const base = initialState(spec) as unknown as Record<string, number | string>;
     const state = { ...base };
     for (const prop of PROPS) state[prop] = timeline.sample(spec.id, prop, t, base[prop]!);
-    if (spec.lod !== undefined) state.opacity = Number(state.opacity) * visibilidadeDoNivel(spec.lod, camera.zoom);
+    if (spec.lod !== undefined) {
+      const vis = visibilidadeDoNivel(spec.lod, camera.zoom);
+      state.opacity = Number(state.opacity) * vis;
+      if (vis < 1) {
+        // A troca de nível não é só um esmaecer: o que chega sobe da superfície
+        // e cresce um pouco até o lugar; o que sai afunda. No plano a altura não
+        // existe, e fica a escala; no 3D, as duas.
+        const caixa = boxOf(spec);
+        const porte = caixa === null ? 0 : Math.min(caixa.w, caixa.h);
+        state.scale = Number(state.scale) * (0.92 + 0.08 * vis);
+        state.lift = Number(state.lift) - (1 - vis) * porte * 0.35;
+      }
+    }
     return { spec, state: state as unknown as Animatable };
   });
   const chapterIndex = chapterAt(film, t);

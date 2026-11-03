@@ -92,6 +92,8 @@ export interface CameraTarget {
   readonly at?: Partial<CameraState>;
   /** O máximo de aproximação; sem isso, um alvo pequeno enche a tela. */
   readonly maxZoom?: number;
+  /** No 3D, a altura da superfície que se olha (a base do nível de destino). */
+  readonly elevation?: number;
 }
 
 export interface ChapterInput<D> {
@@ -246,6 +248,11 @@ export class Director<D> {
     const fx = fixo ? (x1 * z1 - x0 * z0) / (z1 - z0) : 0;
     const fy = fixo ? (y1 * z1 - y0 * z0) / (z1 - z0) : 0;
     for (const [prop, v] of [["zoom", z0], ["cx", x0], ["cy", y0]] as const) this.#film.jump(CAMERA, prop, v, start);
+    // A altura do olhar anda junto, para o 3D chegar mirando a superfície do nível.
+    const e0 = Number(this.#film.valueAt(CAMERA, "elev", start));
+    const e1 = target.elevation ?? target.at?.elev ?? e0;
+    this.#film.jump(CAMERA, "elev", e0, start);
+    if (e1 !== e0) this.#film.timelineAdd(CAMERA, "elev", { t: start + dur, v: e1, ease: timing.ease ?? "inOut" });
     for (let i = 1; i <= passos; i += 1) {
       const u = ease(timing.ease ?? "inOut", i / passos);
       const z = Math.exp(Math.log(z0) + (Math.log(z1) - Math.log(z0)) * u);
@@ -430,12 +437,41 @@ export class FilmBuilder<D = unknown> {
   #initial(id: string, prop: string): PropValue {
     if (id === CAMERA) {
       const { width, height } = this.#options;
-      return ({ cx: width / 2, cy: height / 2, zoom: 1 } as Record<string, number>)[prop] ?? 0;
+      return ({ cx: width / 2, cy: height / 2, zoom: 1, elev: 0 } as Record<string, number>)[prop] ?? 0;
     }
     const spec = this.#entities.get(id);
     if (spec === undefined) return 0;
     return (initialState(spec) as unknown as Record<string, PropValue>)[prop] ?? 0;
   }
+}
+
+/**
+ * Os níveis de uma descida, calculados do enquadramento de cada um.
+ *
+ * Dados os quadros em que a câmera para em cada nível (do mais de fora ao mais
+ * de dentro), devolve para cada nível o `lod` e o `textScale` que fazem a troca
+ * acontecer no meio do caminho entre um zoom e o próximo — na média geométrica,
+ * com folga para os dois lados — e o texto ler no mesmo tamanho em todos. Era
+ * conta feita à mão, e errada na primeira vez (o chip ainda visível por cima do
+ * datapath).
+ */
+export function descida(
+  builder: FilmBuilder<unknown> | { frame: (t: CameraTarget) => CameraState },
+  quadros: readonly Box[],
+): { readonly lod: { readonly appear?: number; readonly vanish?: number }; readonly k: number; readonly zoom: number }[] {
+  // O zoom real de cada quadro, inclusive o primeiro: assumir 1 para ele fazia o
+  // nível de baixo começar a aparecer antes de a câmera chegar ao de cima.
+  const zooms = quadros.map((box) => builder.frame({ box }).zoom);
+  return zooms.map((z, i) => {
+    const antes = zooms[i - 1];
+    const depois = zooms[i + 1];
+    const meio = (a: number, b: number) => Math.sqrt(a * b);
+    const lod: { appear?: number; vanish?: number } = {};
+    // Troca na média geométrica: some de cima em [m/1.18, m·1.18], entra o de baixo no mesmo trecho.
+    if (antes !== undefined) lod.appear = meio(antes, z) * 1.18;
+    if (depois !== undefined) lod.vanish = meio(z, depois) / 1.18;
+    return { lod, k: 1 / z, zoom: z };
+  });
 }
 
 export function film<D = unknown>(options: FilmOptions): FilmBuilder<D> {

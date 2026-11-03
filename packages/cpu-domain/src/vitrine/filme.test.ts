@@ -11,16 +11,26 @@ describe("the CPU showcase is the real execution", () => {
     expect(e.estagios.slice(0, 4).map((s) => s.cout)).toEqual([1, 1, 1, 0]);
   });
 
-  it("shows one level at a time: diving swaps the chip for the datapath, the datapath for the gates", () => {
+  it("lifts the lid, then shows one level at a time on the way down", () => {
     const f = filmeDaVitrine();
-    const op = (t: number, id: string) => frameAt(f, t).entities.find((x) => x.spec.id === id)!.state.opacity;
-    const fim = (id: string) => f.chapters.find((c) => c.id === id)!.end;
-    expect(op(fim("board"), "chip")).toBeGreaterThan(0.9);
-    expect(op(fim("core"), "chip")).toBeLessThan(0.05);
-    expect(op(fim("core"), "regs")).toBeGreaterThan(0.9);
-    expect(op(fim("gates"), "regs")).toBeLessThan(0.05);
-    expect(op(fim("gates"), "g:or")).toBeGreaterThan(0.9);
-    expect(op(fim("board"), "g:or")).toBeLessThan(0.05);
+    const op = (cap: string, id: string) => frameAt(f, f.chapters.find((c) => c.id === cap)!.end).entities.find((x) => x.spec.id === id)!.state.opacity;
+    expect(op("board", "tampa")).toBeGreaterThan(0.9);
+    expect(op("board", "die")).toBeLessThan(0.05);
+    expect(op("lid", "tampa")).toBeLessThan(0.05);
+    expect(op("lid", "die")).toBeGreaterThan(0.9);
+    // Enquanto a tampa sobe, a planta do die ainda não existe: um nível por vez.
+    expect(op("lid", "core")).toBeLessThan(0.05);
+    expect(op("die", "core")).toBeGreaterThan(0.9);
+    expect(op("die", "placa")).toBeLessThan(0.05);
+    expect(op("core", "regs")).toBeGreaterThan(0.9);
+    expect(op("core", "core")).toBeLessThan(0.05);
+    expect(op("alu", "somador")).toBeGreaterThan(0.9);
+    expect(op("alu", "regs")).toBeLessThan(0.05);
+    expect(op("adder", "fa:2")).toBeGreaterThan(0.9);
+    expect(op("gates", "g:or")).toBeGreaterThan(0.9);
+    expect(op("gates", "fa:2")).toBeLessThan(0.05);
+    // E o filme fecha o ciclo: a tampa volta no fim, para a vitrine poder repetir.
+    expect(op("up", "tampa")).toBeGreaterThan(0.9);
   });
 
   it("the camera keeps the dive target on screen the whole way down", () => {

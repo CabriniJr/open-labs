@@ -1,5 +1,6 @@
 ---
 import { HeroSim } from "../components/HeroSim.tsx";
+import { HeroMundo } from "../components/HeroMundo.tsx";
 import HandbookCard from "../components/HandbookCard.astro";
 import SiteFooter from "../components/SiteFooter.astro";
 import SiteNav from "../components/SiteNav.astro";
@@ -8,6 +9,9 @@ import Base from "../layouts/Base.astro";
 import { url } from "../lib/urls";
 import { HANDBOOKS } from "../data/handbooks";
 import "../components/HeroSim.css";
+import "../components/HeroMundo.css";
+import "@ovh/motion/src/react/motion.css";
+import "@ovh/stage3d/src/iso.css";
 import "../styles/docs.css";
 
 /**
@@ -47,8 +51,8 @@ const GESTOS = [
   <SiteNav current="home" />
 
   <main id="content">
-    <section class="hero editorial">
-      <div>
+    <section class="hero hero--mundo">
+      <div class="hero__texto">
         <h1>See how the thing actually works.</h1>
         <p class="hero__lede prose">
           OpenLabs builds handbooks that run. Most material shows you a diagram
@@ -57,22 +61,23 @@ const GESTOS = [
           that produced what you just saw.
         </p>
         <p class="prose">
-          Different subjects, shared tools. Below is a piece of the OpenTelemetry
-          handbook, running: a span leaving a service, picking up what the
-          collector adds to it, and landing in a backend. Click a different one
-          and you follow that one instead.
+          Different subjects, shared tools: a flow you can open, a cluster that
+          reconciles, a chip you can lift the lid off and follow down to the
+          gates. Each lab has a showcase that walks you through it and a
+          simulation you can break.
         </p>
         <p class="hero__cta">
           <a class="cta cta--primary" href={url("handbooks")}>Browse the handbooks</a>
           <a class="cta" href={url("docs")}>Read the documentation</a>
         </p>
       </div>
-      <aside class="hero__note mono">
-        <p>Live simulation. Not a video.</p>
-      </aside>
+      <div class="hero__mundo" aria-label="Every subject on one floor">
+        <HeroMundo client:load />
+      </div>
     </section>
 
     <section class="hero-stage">
+      <p class="hero-stage__eyebrow mono">Live simulation, not a video · OpenTelemetry · click a span to follow it</p>
       <HeroSim client:visible />
     </section>
 

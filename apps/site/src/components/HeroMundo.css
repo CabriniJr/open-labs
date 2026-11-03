@@ -1,0 +1,44 @@
+.hero-mundo { display: grid; gap: var(--space-2); max-width: 92rem; margin-inline: auto; padding: 0 var(--space-3) var(--space-3); }
+.hero-mundo__palco {
+  --mo-aspect: 16 / 9;
+  overflow: hidden;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-3);
+  background: var(--paper);
+  box-shadow: 0 30px 60px -40px color-mix(in oklab, var(--ink) 55%, transparent);
+}
+.hero-mundo__palco .mo-stage { border-radius: 0; }
+.hero-mundo__ilhas { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: var(--space-1); margin: 0; padding: 0; list-style: none; }
+.hero-mundo__ilhas a {
+  display: grid;
+  gap: 2px;
+  height: 100%;
+  padding: 12px 16px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-3);
+  background: var(--paper-raised);
+  color: var(--ink);
+  transition: border-color 220ms ease, transform 220ms ease, background 220ms ease;
+}
+.hero-mundo__ilhas b { font-family: var(--font-display); font-size: var(--size-step-1); }
+.hero-mundo__ilhas span { color: var(--ink-muted); font-size: var(--size-step--1); }
+.hero-mundo__ilhas li[data-on] a { border-color: var(--accent); background: color-mix(in oklab, var(--accent) 8%, var(--paper-raised)); transform: translateY(-2px); }
+.hero-mundo__ilhas a:hover { border-color: var(--accent); }
+.hero-stage__eyebrow { max-width: 92rem; margin: 0 auto var(--space-1); padding-inline: var(--space-3); color: var(--ink-muted); font-size: var(--size-step--1); letter-spacing: 0.06em; text-transform: uppercase; }
+
+/* A hero em duas colunas: o texto e o mundo lado a lado, o mundo acima da dobra. */
+.hero--mundo {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+  align-items: center;
+  max-width: 96rem;
+  margin-inline: auto;
+  padding: var(--space-4) var(--space-3) var(--space-3);
+}
+@media (min-width: 70rem) {
+  .hero--mundo { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.25fr); }
+}
+.hero--mundo .hero__texto h1 { font-size: clamp(2.4rem, 1.6rem + 3vw, 4.4rem); max-width: 12ch; margin-top: 0; }
+.hero--mundo .hero__lede { font-size: var(--size-step-1); }
+.hero__mundo .hero-mundo { padding: 0; }
