@@ -2836,7 +2836,10 @@ export function Stage(props: StageProps) {
   const gestoRef = useRef(false);
   const congeladasRef = useRef(props);
   const [, setFimDoGesto] = useState(0);
-  if (!gestoRef.current) congeladasRef.current = props;
+  // Congela só o ESTADO do modelo. Trocar de vista (duplo clique, descer um
+  // nível) passa sempre: congelada, a vista nova esperava a câmera parar, e a
+  // descida da ULA ao somador mostrava a caixa velha (pego pelo CI, micro-lab).
+  if (!gestoRef.current || congeladasRef.current.view !== props.view || congeladasRef.current.tree !== props.tree) congeladasRef.current = props;
   const desenhadas = congeladasRef.current;
   const emissoes = useMemo(() => emissoesPorPorta(desenhadas.state, tree), [desenhadas.state, tree]);
   const svgRef = useRef<SVGSVGElement | null>(null);
