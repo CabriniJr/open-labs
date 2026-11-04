@@ -218,3 +218,11 @@ export type { BaldeDoIncidente, DetalheDosPilares, Incidente, LinhaDeLog, Opcoes
 // O showcase da amostragem: quando se decide, e com quanto do trace.
 export { ALTURA_DA_AMOSTRAGEM, amostrar, filmeDaVitrineDaAmostragem, LARGURA_DA_AMOSTRAGEM, OPCOES_DA_VITRINE_DA_AMOSTRAGEM, TAXA_DA_VITRINE, traceQueFalha } from "./amostragem/vitrine.js";
 export type { Amostragem, DecisaoDeTrace, DetalheDaVitrineDaAmostragem, ModoDaAmostragem, OpcoesDaVitrineDaAmostragem, SpanDaVitrineDeAmostragem } from "./amostragem/vitrine.js";
+
+// O showcase da cardinalidade: o cubo de séries, um atributo de cada vez.
+export { ALTURA_DA_CARDINALIDADE, BALDES_DA_VITRINE, bytesDasChaves, etapasDoCubo, EXPORTACOES_DA_VITRINE, filmeDaVitrineDaCardinalidade, LARGURA_DA_CARDINALIDADE, OPCOES_DA_VITRINE_DA_CARDINALIDADE } from "./cardinalidade/vitrine.js";
+export type { DetalheDaVitrineDaCardinalidade, EtapaDoCubo, OpcoesDaVitrineDaCardinalidade } from "./cardinalidade/vitrine.js";
+
+// O showcase dos providers: o processo em três andares, e quem decide o que sai.
+export { ALTURA_DOS_PROVIDERS, filmeDaVitrineDosProviders, LARGURA_DOS_PROVIDERS, LOTE_DA_VITRINE, OPCOES_DA_VITRINE_DOS_PROVIDERS, REQUISICOES_DA_VITRINE, rodarProviders } from "./providers/vitrine.js";
+export type { DetalheDaVitrineDosProviders, OpcoesDaVitrineDosProviders, ProcessoInstrumentado } from "./providers/vitrine.js";

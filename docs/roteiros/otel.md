@@ -136,9 +136,9 @@ própria (formulário, analisador, editor).
 
 ### Fase 3 — a arquitetura
 
-#### providers — *The three providers* · disponível (fluxo)
+#### providers — *The three providers* · disponível (fluxo + filme + 3D)
 - **Pergunta.** Quem decide o que sai do processo: o Tracer, o Meter, o Logger, ou os providers?
-- **Showcase (a fazer).** TracerProvider → SpanProcessor → Exporter, com sampler e batch. **3D:** o processo como uma caixa com três andares, um por provider.
+- **Showcase.** Feito (`providers/vitrine.ts`, modelo `rodarProviders`): o código só fala com a API; o TracerProvider amostra, junta e **empurra**; o MeterProvider agrega e é **puxado** pelo PeriodicReader (um ponto, não quatro medições); o LoggerProvider junta e empurra, sem sampler. **3D:** o processo em três andares, um por provider. **Interativo:** "SDK instalado" (sem ele, a API é no-op e nada sai) e a taxa do sampler refazem o filme.
 - **Ícones.** `sdk`, `sampler`, `batch`, `exporter`.
 - **Correlações.** → collector-pipeline (o que o SDK faz e o Collector refaz), → head-vs-tail-sampling.
 
@@ -193,8 +193,8 @@ própria (formulário, analisador, editor).
 - **3D.** A fila do exporter como uma coluna que enche. A altura é a ocupação, e o vermelho é o limite.
 - **Ícones.** `queue`, `limiter`, `exporter`, `backend`. **Correlações.** ← collector-pipeline.
 
-#### cardinality-and-the-bill — *Cardinality and the bill* · disponível (estado)
-- **Showcase (a fazer).** Cada valor novo de atributo vira uma série. **3D:** o cubo de séries (atributo × valor × tempo) crescendo. Correlação em bytes com o protobuf: a chave do atributo viaja inteira em todo ponto.
+#### cardinality-and-the-bill — *Cardinality and the bill* · disponível (estado + filme + 3D)
+- **Showcase.** Feito (`cardinalidade/vitrine.ts`, cada passo é `calcular` com um atributo a mais): 1 série; a rota vira fileira (12); o status, grade (72); o método, altura — no 3D cada célula ganha 4 andares (288); o `enduser.id` repete o cubo uma vez por cliente (2 304 000). No fim, o ponto no fio: os bytes só das chaves (UTF-8 dos nomes) em todo ponto, vezes os pontos por minuto. **Interativo:** "adicionar enduser.id" refaz o filme.
 - **Correlações.** ← reading-an-otlp-payload, ← the-shape-of-a-metric.
 
 #### the-rollout — *The rollout* · a construir (filme)
@@ -214,5 +214,5 @@ O codificador do protobuf já serve o anexo `protobuf-encoding`. O próximo é
 3. ~~`the-shape-of-a-metric`~~ Feito.
 4. ~~`a-log-that-knows-its-trace`~~ Feito.
 5. ~~`propagating-through-a-queue`~~ Feito.
-6. Showcases de `three-pillars`, `providers`, `head-vs-tail-sampling` e `cardinality-and-the-bill`.
+6. ~~Showcases de `three-pillars`, `providers`, `head-vs-tail-sampling` e `cardinality-and-the-bill`.~~ Feitos.
 7. `backpressure-and-drops`, `manual-spans`, `zero-code-instrumentation`, `host-and-kubernetes-signals` e `the-rollout`.

@@ -1,12 +1,17 @@
 ---
 import LabAssessment from "../../components/LabAssessment.astro";
 import { MAL_ENTENDIDOS_DA_CARDINALIDADE } from "@ovh/otel-domain";
-import { CardinalidadeLab } from "../../components/CardinalidadeLab.tsx";
+import { CardinalidadeModos } from "../../components/CardinalidadeModos.tsx";
 import { Predicao } from "../../components/Predicao.tsx";
 import SiteFooter from "../../components/SiteFooter.astro";
 import SiteNav from "../../components/SiteNav.astro";
 import Base from "../../layouts/Base.astro";
 import { url } from "../../lib/urls";
+import "../../components/ModosDoLab.css";
+import "../../components/CpuVitrine.css";
+import "../../components/ContextoLab.css";
+import "@ovh/motion/src/react/motion.css";
+import "@ovh/stage3d/src/iso.css";
 import "../../styles/docs.css";
 import "../../components/CardinalidadeLab.css";
 import "../../components/Predicao.css";
@@ -43,13 +48,13 @@ import "../../components/Predicao.css";
         </p>
       </div>
       <aside class="lab-head__note mono">
-        <p>No simulation here, and that is deliberate.</p>
         <p>Cardinality is not a flow — it is a product. See <code>DECISIONS.md</code> §9.</p>
+        <p>The showcase builds the product one attribute at a time; the calculator is yours.</p>
       </aside>
     </section>
 
     <section class="lab-palco">
-      <CardinalidadeLab client:visible />
+      <CardinalidadeModos client:only="react" />
     </section>
 
     <section class="lab-prosa editorial">

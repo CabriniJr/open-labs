@@ -71,3 +71,34 @@ test("a vitrine da amostragem: head perde o erro, tail roteado o guarda, tail es
   await veredito("Tail, spread", /kept, in half/, "(error)only payments");
   expect(erros).toEqual([]);
 });
+
+test("a vitrine da cardinalidade monta o cubo até 2 304 000, e sem o cliente para em 288", async ({ page }) => {
+  const erros: string[] = [];
+  page.on("pageerror", (e) => erros.push(String(e)));
+  await page.goto("labs/cardinality-and-the-bill/#showcase");
+  const vit = page.getByTestId("cardinality-showcase");
+  await expect(vit).toBeVisible();
+  await vit.getByRole("button", { name: /every point carries every key/ }).click();
+  await vit.getByRole("button", { name: "Pause" }).click();
+  await expect(vit.locator(".cpuvit-linhas")).toContainText("series2 304 000");
+  await vit.getByText("Add enduser.id").click();
+  await vit.getByRole("button", { name: /every point carries every key/ }).click();
+  await expect(vit.locator(".cpuvit-linhas")).toContainText("series288");
+  expect(erros).toEqual([]);
+});
+
+test("a vitrine dos providers: sem SDK nada sai; com ele, spans empurrados e um ponto puxado", async ({ page }) => {
+  const erros: string[] = [];
+  page.on("pageerror", (e) => erros.push(String(e)));
+  await page.goto("labs/providers/#showcase");
+  const vit = page.getByTestId("providers-showcase");
+  await expect(vit).toBeVisible();
+  await vit.getByRole("button", { name: /the providers decided/ }).click();
+  await vit.getByRole("button", { name: "Pause" }).click();
+  await expect(vit.locator(".cpuvit-linhas")).toContainText("metric points out1");
+  await vit.getByText("SDK installed").click();
+  await vit.getByRole("button", { name: /the providers decided/ }).click();
+  await expect(vit.locator(".cpuvit-linhas")).toContainText("spans out0");
+  await expect(vit.locator(".cpuvit-linhas")).toContainText("metric points out0");
+  expect(erros).toEqual([]);
+});
