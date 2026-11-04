@@ -1,5 +1,6 @@
 import { frameAt } from "@ovh/motion";
 import { describe, expect, it } from "vitest";
+import { ICONES_OTEL } from "../icones/icones.js";
 import { envelopeDaVitrine, filmeDaVitrineOtel } from "./filme.js";
 
 describe("the Collector showcase", () => {
@@ -21,5 +22,10 @@ describe("the Collector showcase", () => {
     expect(op("envelope", "cel:0")).toBeLessThan(0.05);
     expect(op("envelope", "sp:0:0")).toBeGreaterThan(0.9);
     expect(op("export", "collector")).toBeGreaterThan(0.9);
+  });
+
+  it("the request on the wire wears the bytes icon", () => {
+    const exp = filmeDaVitrineOtel().entities.find((e) => e.id === "t0:exp")!;
+    expect(exp.icon).toBe(ICONES_OTEL.bytes);
   });
 });

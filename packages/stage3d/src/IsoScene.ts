@@ -886,6 +886,7 @@ export class IsoScene {
           const head = document.createElement("span");
           head.className = "iso-token__head";
           head.textContent = s.label;
+          if (spec.icon !== undefined) head.prepend(selo(spec.icon));
           el.appendChild(head);
           if (s.sublabel !== "") {
             const sub = document.createElement("span");

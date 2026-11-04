@@ -188,7 +188,9 @@ export function filmeDoContexto(
     const pai = p.spans.find((s) => s.servico === c.de) ?? null;
     const tone: Tone = semContexto ? "live" : pai !== null ? tomDoSpan(pai) : c.extraido?.sampled === false ? "muted" : tomDoTrace.get(c.extraido?.traceId ?? "") ?? "ink";
     f.add({ type: "link", id: `call:${i}`, layer: 2, path: g.chamada(c.de, c.para, row), arrow: true, label: c.rota, sublabel: semContexto ? "headers dropped" : "", tone: semContexto ? "live" : "ink", hidden: true, labelAt: 0.5 });
-    f.add({ type: "token", id: `ctx:${i}`, path: g.chamada(c.de, c.para, row), tone, label: c.rota, sublabel: c.headers.traceparent === undefined ? "no traceparent" : rotuloDoContexto(c.headers), hidden: true, layer: 3, size: 6 });
+    // O ícone diz o que viaja no header: contexto, contexto com baggage, ou nada.
+    const icone = semContexto ? undefined : c.headers.baggage !== undefined ? I.baggage : I.context;
+    f.add({ type: "token", id: `ctx:${i}`, path: g.chamada(c.de, c.para, row), tone, label: c.rota, sublabel: semContexto ? "no traceparent" : rotuloDoContexto(c.headers), hidden: true, layer: 3, size: 6, ...(icone === undefined ? {} : { icon: icone }) });
   });
 
   // A exportação: um span por ficha, de cada serviço até o Collector.

@@ -78,8 +78,8 @@ export function filmeDaVitrineOtel(): Film<DetalheDaVitrineOtel> {
     f.add({ type: "node", id, box, label, ...(opt.icon === undefined ? {} : { icon: opt.icon }), sublabel: opt.sub ?? "", tone: opt.tone ?? "processor", shape: opt.shape ?? "box", textScale: NIVEL[n]!.k, lod: NIVEL[n]!.lod, hidden: opt.hidden === true, layer: n });
   const fio = (n: number, id: string, a: Point, b: Point, tone: Tone = "ink") =>
     f.add({ type: "link", id, path: line(a, b), tone, arrow: true, textScale: NIVEL[n]!.k, lod: NIVEL[n]!.lod, hidden: true, layer: n });
-  const ficha = (n: number, id: string, path: ReturnType<typeof line>, label: string, sub: string, tone: Tone) =>
-    f.add({ type: "token", id, path, label, sublabel: sub, tone, size: 5 * NIVEL[n]!.k, trail: 4, textScale: NIVEL[n]!.k, lod: NIVEL[n]!.lod, hidden: true, layer: 10 + n });
+  const ficha = (n: number, id: string, path: ReturnType<typeof line>, label: string, sub: string, tone: Tone, icon?: Glyph) =>
+    f.add({ type: "token", id, path, label, sublabel: sub, tone, size: 5 * NIVEL[n]!.k, trail: 4, textScale: NIVEL[n]!.k, lod: NIVEL[n]!.lod, hidden: true, layer: 10 + n, ...(icon === undefined ? {} : { icon }) });
   const regiao = (n: number, id: string, box: Box, label: string, tone: Tone) =>
     f.add({ type: "region", id, box, label, tone, textScale: NIVEL[n]!.k, lod: NIVEL[n]!.lod, layer: -1 });
   const nota = (n: number, id: string, at: Point, label: string, tone: Tone = "ink", align: "start" | "middle" | "end" = "start") =>
@@ -98,7 +98,7 @@ export function filmeDaVitrineOtel(): Film<DetalheDaVitrineOtel> {
   fio(0, "f:s2", dir(S2), esq(COL, 0.7), "kind-3");
   fio(0, "f:exp", dir(COL), esq(BACK), "conduit");
   env.spans.forEach((s, i) => ficha(0, `t0:${i}`, s.servico === "checkout" ? line(dir(S1), esq(COL, 0.3)) : line(dir(S2), esq(COL, 0.7)), "OTLP", s.nome, s.tom));
-  ficha(0, "t0:exp", line(dir(COL), esq(BACK)), "EXPORT", `${env.bytes} B · ${TAMANHO_DO_LOTE} spans`, "conduit");
+  ficha(0, "t0:exp", line(dir(COL), esq(BACK)), "EXPORT", `${env.bytes} B · ${TAMANHO_DO_LOTE} spans`, "conduit", I.bytes);
 
   // ── nível 1: o pipeline ──
   const o = { x: COL.x, y: COL.y };

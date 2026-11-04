@@ -58,8 +58,8 @@ do roteiro deve mudar o roteiro primeiro, com o motivo.
 | `queue` | fila / broker | *a aplicar* em propagação por fila |
 | `host`, `pod` | infraestrutura | implantação, *a aplicar* em host signals |
 | `trace`, `metric`, `log` | os três sinais | *a aplicar* em pilares e anatomia |
-| `bytes` | payload no fio | *a aplicar* onde um filme mostrar o envelope saindo (vitrine do Collector) |
-| `context`, `baggage` | propagação | *a aplicar* em contexto |
+| `bytes` | payload no fio | vitrine do Collector (a requisição exportada) |
+| `context`, `baggage` | propagação | contexto (a ficha do header: `baggage` quando ele viaja, `context` só com `traceparent`, nada quando o proxy descarta) |
 | `sampler` | decisão de amostragem | *a aplicar* em amostragem |
 
 ## A espinha: fases e labs
@@ -103,7 +103,7 @@ própria (formulário, analisador, editor).
 - **Pergunta.** Como o `trace_id` atravessa processos, e o que o baggage carrega?
 - **Mal-entendido.** "Baggage é atributo de span" / "o proxy propaga sozinho".
 - **Showcase.** Já existe (nascimento, injeção, extração, fan-out, proxy, export). Ícones aplicados por serviço.
-- **Lacuna.** Ícones `context` e `baggage` nos tokens de cabeçalho. Correlação explícita com o protobuf (traceparent em hex → 16 bytes).
+- **Lacuna.** Correlação explícita com o protobuf (traceparent em hex → 16 bytes). Os ícones `context` e `baggage` já estão nas fichas do header.
 - **Correlações.** ← anatomy-of-a-trace, → reading-an-otlp-payload, → propagating-through-a-queue.
 
 #### reading-an-otlp-payload — *Reading an OTLP payload* · disponível (filme + 3D + livre)
@@ -205,7 +205,7 @@ O codificador do protobuf já serve o anexo `protobuf-encoding`. O próximo é
 
 ## Fila (ordem de construção)
 
-1. Ícones que faltam em contexto (`context`/`baggage` nos tokens) e o ícone `bytes` no envelope da vitrine do Collector.
+1. ~~Ícones que faltam em contexto e o ícone `bytes` no envelope da vitrine.~~ Feito: a ficha do palco (plano e iso) desenha o ícone no cabeçalho.
 2. Showcase de `anatomy-of-a-trace` (árvore em escada no 3D).
 3. `the-shape-of-a-metric` (o handbook só modela trace no showcase).
 4. `a-log-that-knows-its-trace`.

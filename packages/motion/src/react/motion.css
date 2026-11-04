@@ -447,6 +447,11 @@
 /* ---------- pacotes: etiqueta de duas linhas, cartão e tabela ---------- */
 
 .mo-token__head { fill: var(--mo-c); stroke: none; }
+/* O ícone da ficha mora no cabeçalho cheio: traço na cor do papel, como o texto. */
+.mo-token__icon path { fill: none; stroke: var(--paper); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.mo-token__icon path.mo-icon__fill { fill: var(--paper); stroke: none; }
+.mo-token__icon--solto path { stroke: var(--mo-c); }
+.mo-token__icon--solto path.mo-icon__fill { fill: var(--mo-c); }
 .mo-token__text--head { fill: var(--paper); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; font-size: calc(9.5px * var(--mo-k, 1)); }
 .mo-token__sub { fill: var(--ink); font-size: calc(9.5px * var(--mo-k, 1)); }
 
