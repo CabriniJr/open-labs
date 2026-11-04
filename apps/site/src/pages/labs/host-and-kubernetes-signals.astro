@@ -1,0 +1,214 @@
+---
+import LabAssessment from "../../components/LabAssessment.astro";
+import { MAL_ENTENDIDOS_DOS_NOS } from "@ovh/otel-domain";
+import { NosModos } from "../../components/NosModos.tsx";
+import { Predicao } from "../../components/Predicao.tsx";
+import SiteFooter from "../../components/SiteFooter.astro";
+import SiteNav from "../../components/SiteNav.astro";
+import Base from "../../layouts/Base.astro";
+import { url } from "../../lib/urls";
+import "../../styles/docs.css";
+import "../../components/ModosDoLab.css";
+import "../../components/CpuVitrine.css";
+import "../../components/ContextoLab.css";
+import "../../components/ImplantacaoLab.css";
+import "../../components/MetricaLab.css";
+import "@ovh/motion/src/react/motion.css";
+import "@ovh/stage3d/src/iso.css";
+import "../../components/Predicao.css";
+---
+
+<Base
+  domain="otel"
+  title="Host and Kubernetes signals — OpenLabs"
+  description="An agent Collector on every node reads the host with hostmetrics and the kubelet with kubeletstats; k8sattributes adds Pod names to spans by asking the API server who owns the IP it saw — which works in the agent and silently fails in a gateway, unless Pods are associated by a resource attribute."
+>
+  <SiteNav current="labs" />
+
+  <main id="content">
+    <section class="lab-head editorial">
+      <div class="prose">
+        <p class="lab-head__eyebrow mono">
+          <a href={url("handbooks/otel")}>OpenTelemetry Visual Handbook</a> · lab
+        </p>
+        <h1>Where k8s.pod.name comes from, and why it went missing</h1>
+        <p>
+          The Pod dashboard has CPU per Pod. The traces have no Pod at all —
+          ever since <code>k8sattributes</code> moved to the gateway &ldquo;to
+          keep the agents light&rdquo;. Nothing errored; the lookup just stopped
+          finding anyone.
+        </p>
+        <p>
+          The agent on each node collects two kinds of signal that already know
+          their names: <code>hostmetrics</code> reads the node, and
+          <code>kubeletstats</code> asks the kubelet about its Pods. Spans are
+          different: they arrive from an <b>IP</b>, and
+          <code>k8sattributes</code> asks the API server which Pod owns it. The
+          answer depends on which IP it saw.
+        </p>
+      </div>
+      <aside class="lab-head__note mono">
+        <p>In 3D, Pods and agents stand on their node.</p>
+        <p>For Pods themselves, see the <a href={url("handbooks/kubernetes")}>Kubernetes handbook</a>.</p>
+      </aside>
+    </section>
+
+    <section class="lab-palco">
+      <NosModos client:only="react" />
+    </section>
+
+    <section class="lab-prosa editorial">
+      <div class="prose">
+        <h2>Break it</h2>
+        <ol>
+          <li>
+            <b>Run k8sattributes in the gateway.</b> Every span asks about
+            10.0.1.4 or 10.0.1.5 — the agents' addresses — and no Pod has them.
+            Zero spans can be grouped by Pod.
+          </li>
+          <li>
+            <b>Move it to the agent.</b> The connection now comes from the Pod,
+            and every span gets its name, namespace, deployment and node.
+          </li>
+          <li>
+            <b>Back to the gateway, and associate by <code>k8s.pod.ip</code>.</b>
+            The SDK put the Pod's IP on the resource, so the gateway can find the
+            Pod without seeing its connection.
+          </li>
+          <li>
+            <b>Look at the right-hand list in any setting.</b> Host and kubelet
+            metrics always carry their names: they never needed a lookup.
+          </li>
+        </ol>
+
+        <h2>Predict before you look</h2>
+        <p>Answer first, then try it in the simulation.</p>
+      </div>
+      <div class="lab-predicao">
+        <Predicao
+          client:visible
+          pergunta="Apps send spans to an agent Collector on their node, which forwards to a gateway. k8sattributes runs only in the gateway, with the default association by connection IP. What do the spans carry?"
+          opcoes={[
+            "No Pod attributes — the gateway looks up the agent's IP, and no Pod owns it",
+            "The Pod attributes of the Pod that sent each span",
+            "The attributes of the agent's own Pod",
+          ]}
+          correta={0}
+          revelacao="By default, k8sattributes associates data with a Pod through the IP of the incoming connection. At the gateway, that connection is from the agent, which runs with the node's address. The API server has no Pod with that IP, so nothing is added. Running it in the agent, or associating by a k8s.pod.ip resource attribute the SDK sets, fixes it."
+        />
+      </div>
+    </section>
+
+    <section class="lab-prosa editorial">
+      <div class="prose">
+        <h2>What people get wrong</h2>
+        <p>Each row is a belief the simulation is built to take apart. The right column is the documentation, with the link.</p>
+      </div>
+      <div class="lab-mal-entendidos">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">What people believe</th>
+              <th scope="col">What the docs say</th>
+            </tr>
+          </thead>
+          <tbody>
+            {
+              MAL_ENTENDIDOS_DOS_NOS.map((m) => (
+                <tr>
+                  <td>{m.crenca}</td>
+                  <td>
+                    {m.spec}{" "}
+                    <a href={m.fonte} rel="noreferrer noopener" target="_blank">
+                      source
+                    </a>
+                  </td>
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="lab-prosa editorial">
+      <div class="prose">
+        <h2>Where this connects</h2>
+        <p>
+          <a href={url("labs/agent-or-gateway")}>Agent or gateway</a> is the
+          deployment decision this lab depends on — the source IP is one more
+          thing that changes between them. <a href={url("labs/three-pillars")}>Three
+          pillars</a> is why joining Pod metrics to Pod traces matters during an
+          incident.
+        </p>
+      </div>
+    </section>
+    <LabAssessment href="labs/host-and-kubernetes-signals" />
+  </main>
+
+  <SiteFooter />
+</Base>
+
+<style>
+  .lab-head {
+    padding-block: var(--space-4) var(--space-2);
+  }
+
+  .lab-head__eyebrow {
+    margin: 0 0 var(--space-1);
+    color: var(--accent);
+    font-size: var(--size-step--1);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  h1 {
+    margin: 0 0 var(--space-2);
+    font-size: var(--size-step-2);
+    max-width: 24ch;
+  }
+
+  .lab-head__note {
+    align-self: end;
+    color: var(--ink-muted);
+    font-size: var(--size-step--1);
+  }
+
+  .lab-head__note p {
+    margin: 0 0 0.35rem;
+  }
+
+  .lab-palco {
+    margin-block: var(--space-2) var(--space-4);
+  }
+
+  .lab-prosa {
+    padding-block-end: var(--space-4);
+  }
+
+  .lab-predicao {
+    grid-column: 1 / -1;
+    margin-block-start: var(--space-2);
+    max-width: var(--measure);
+  }
+
+  .lab-mal-entendidos {
+    grid-column: 1 / -1;
+    margin-block-start: var(--space-2);
+    overflow-x: auto;
+  }
+
+  .lab-mal-entendidos table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: var(--size-step--1);
+  }
+
+  .lab-mal-entendidos th,
+  .lab-mal-entendidos td {
+    border-block-end: 1px solid var(--border);
+    padding: var(--space-1) var(--space-2);
+    text-align: start;
+    vertical-align: top;
+  }
+</style>

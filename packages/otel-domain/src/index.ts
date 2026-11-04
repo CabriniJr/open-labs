@@ -240,3 +240,10 @@ export type { Camada, Passo as PassoZeroCode, SpanZeroCode, TraceZeroCode } from
 export { ALTURA_ZERO_CODE, filmeZeroCode, LARGURA_ZERO_CODE, OPCOES_ZERO_CODE } from "./zerocode/filme.js";
 export type { DetalheZeroCode, OpcoesZeroCode } from "./zerocode/filme.js";
 export { MAL_ENTENDIDOS_ZERO_CODE } from "./zerocode/labels.js";
+
+// Sinais do host e do Kubernetes: os receivers do agent e o k8sattributes pelo IP.
+export { enriquecer, ipDoAgent, metricasDosNos, NOS as NOS_DO_HOST, OPCOES_DOS_NOS, PODS_DO_CLUSTER, podComIp } from "./nos/modelo.js";
+export type { Associacao, Atributos as AtributosDoNo, MetricaDoNo, NoDoCluster, OndeEnriquece, OpcoesDosNos, PodDoCluster, SpanEnriquecido } from "./nos/modelo.js";
+export { ALTURA_DOS_NOS, filmeDosNos, LARGURA_DOS_NOS } from "./nos/filme.js";
+export type { DetalheDosNos, OpcoesDoFilmeDosNos } from "./nos/filme.js";
+export { MAL_ENTENDIDOS_DOS_NOS } from "./nos/labels.js";

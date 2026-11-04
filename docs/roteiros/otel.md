@@ -179,10 +179,13 @@ própria (formulário, analisador, editor).
 - **Simulação (livre).** `FilaLab`: o leitor publica, espera, consome uma ou o lote, e liga a injeção; a tabela é `tracesDaFila`.
 - **Ícones.** `queue`, `service`, `context`, `trace`, `backend`. **Correlações.** ← hard-context-and-baggage (o mesmo inject/extract, com a mensagem como portador), ← anatomy-of-a-trace (o órfão parece completo).
 
-#### host-and-kubernetes-signals — *Host and Kubernetes signals* · a construir (filme + 3D)
+#### host-and-kubernetes-signals — *Host and Kubernetes signals* · disponível (filme + livre + 3D)
 - **Pergunta.** De onde vêm `k8s.pod.name` e as métricas do nó, e quem as anexa?
-- **Showcase.** `kubeletstats`, `hostmetrics` e `k8sattributes` pelo IP de origem. Liga com o handbook de Kubernetes **por link**, sem importar o domínio dele (handbooks são independentes).
-- **Ícones.** `host`, `pod`, `agent`. **Correlações.** ← agent-or-gateway (o IP de origem).
+- **Mal-entendido.** "O k8sattributes sabe de que Pod veio o dado" / "métrica de Pod e trace de Pod sempre se casam" / "enriqueça no gateway, que vê tudo".
+- **Modelo.** `otel-domain/nos/modelo.ts`: um cluster mínimo escrito aqui (dois nós, três Pods, IPs), sem importar o domínio do Kubernetes; `enriquecer({ onde, associacao })` diz o IP que o `k8sattributes` perguntou e o que o API server respondeu; `metricasDosNos` é o que `hostmetrics` e `kubeletstats` trazem sem associação.
+- **Showcase.** Feito (`nos/filme.ts`): um agent por nó colhe host e kubelet; os spans chegam por IP ao agent e ao gateway; o `k8sattributes` pergunta ao API server — no agent acha o Pod, no gateway pergunta pelo IP do agent e não acha ninguém; o backend mostra o que dá para agrupar. **3D:** os Pods e o agent de pé sobre o nó (a altura é a camada de implantação). **Interativo:** onde o `k8sattributes` roda refaz o filme.
+- **Simulação (livre).** `NosLab`: onde roda (agent / gateway / nenhum) e a associação (IP da conexão / `k8s.pod.ip`); a tabela é `enriquecer`.
+- **Ícones.** `host`, `pod`, `agent`, `gateway`, `backend`. **Correlações.** ← agent-or-gateway (o IP de origem muda entre os dois), → three-pillars; o handbook de Kubernetes **por link**.
 
 ### Fase 5 — operar em escala
 
