@@ -394,6 +394,7 @@ const SEM_PALCO: ReadonlySet<string> = new Set([
   "labs/backpressure-and-drops/",
   "labs/zero-code-instrumentation/",
   "labs/host-and-kubernetes-signals/",
+  "labs/disconnected-signals/",
 ]);
 
 test("todo lab publicado COM palco tem teto de cruzamentos medido", () => {

@@ -81,13 +81,13 @@ própria (formulário, analisador, editor).
 - **Correlações.** → anatomy-of-a-trace (o que é um span), → a-log-that-knows-its-trace, → the-shape-of-a-metric.
 - **Pronto quando.** Ganhar o showcase, e o `qa:labs` passar nos dois modos.
 
-#### disconnected-signals — *The cost of disconnected signals* · a construir (filme + livre)
+#### disconnected-signals — *The cost of disconnected signals* · disponível (filme + livre + 3D)
 - **Pergunta.** Quanto tempo de incidente custa um sinal sem contexto?
-- **Mal-entendido.** "Correlacionar é luxo; dá para cruzar por horário."
-- **Mídia.** Filme de um incidente em tempo real, com relógio de MTTR. A versão livre é uma busca por horário que devolve dezenas de candidatos, contra uma busca por `trace_id` que devolve um.
-- **Modelo.** Gerador de tráfego com N requisições concorrentes (domínio novo: `otel-domain/incidente`).
-- **3D.** Linha do tempo como eixo de profundidade; cada requisição concorrente é uma faixa. Sem contexto, as faixas se sobrepõem.
-- **Correlações.** ← three-pillars, → hard-context-and-baggage.
+- **Mal-entendido.** "Correlacionar é luxo; dá para cruzar por horário" / "timestamps mais finos resolvem".
+- **Modelo.** `otel-domain/incidente/modelo.ts`: um gerador de tráfego determinístico (`rps`, durações de 40 a 900 ms) com uma falha; `investigar` devolve os candidatos — todos os ativos no segundo do log (por horário) ou um (por `trace_id`) — e o MTTR de um modelo com a premissa escrita na tela (4 min para detectar + 1,5 min por candidato). 5 / 20 / 80 req/s dão 7 / 32 / 118 candidatos.
+- **Showcase.** Feito (`incidente/filme.ts`): o tráfego em raias de concorrência; a falha e o log com o segundo; a busca acende cada candidato enquanto o relógio sobe; o custo. **3D:** a linha do tempo de pé, uma raia por requisição concorrente. **Interativo:** "trace_id no log" refaz o filme.
+- **Simulação (livre).** `IncidenteLab`: a busca — tráfego 5/20/80 e o `trace_id` no log; a lista de candidatos e o relógio.
+- **Correlações.** ← three-pillars, → hard-context-and-baggage, → a-log-that-knows-its-trace.
 
 ### Fase 2 — o modelo
 

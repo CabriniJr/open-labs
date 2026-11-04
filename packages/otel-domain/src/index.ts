@@ -247,3 +247,10 @@ export type { Associacao, Atributos as AtributosDoNo, MetricaDoNo, NoDoCluster, 
 export { ALTURA_DOS_NOS, filmeDosNos, LARGURA_DOS_NOS } from "./nos/filme.js";
 export type { DetalheDosNos, OpcoesDoFilmeDosNos } from "./nos/filme.js";
 export { MAL_ENTENDIDOS_DOS_NOS } from "./nos/labels.js";
+
+// O custo de sinais desconectados: busca por horário contra busca por trace_id.
+export { ativasNoSegundo, investigar, JANELA_S, MINUTOS_PARA_DETECTAR, MINUTOS_POR_CANDIDATO, OPCOES_DO_INCIDENTE, SEGUNDO_DO_ERRO, trafego } from "./incidente/modelo.js";
+export type { Busca, Incidente as IncidenteDesconectado, OpcoesDoIncidente, RequisicaoDoIncidente } from "./incidente/modelo.js";
+export { ALTURA_DO_INCIDENTE, filmeDoIncidente, LARGURA_DO_INCIDENTE, raias } from "./incidente/filme.js";
+export type { DetalheDoIncidente } from "./incidente/filme.js";
+export { MAL_ENTENDIDOS_DO_INCIDENTE } from "./incidente/labels.js";

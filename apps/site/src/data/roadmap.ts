@@ -96,7 +96,7 @@ export const phases: readonly RoadmapPhase[] = [
  */
 export const labs: readonly RoadmapLab[] = [
   { id: "three-pillars", title: "Three pillars, one blind spot", href: "labs/three-pillars", status: "available", side: "left", y: 110, phase: 1 },
-  { id: "disconnected-signals", title: "The cost of disconnected signals", href: "#", status: "coming", side: "right", y: 110, phase: 1 },
+  { id: "disconnected-signals", title: "The cost of disconnected signals", href: "labs/disconnected-signals", status: "available", side: "right", y: 110, phase: 1 },
 
   // "available" com href "#": o nó abria como link e não levava a lugar nenhum.
   // A Entrega 2 mudou de rumo e este lab nunca foi construído — então ele é

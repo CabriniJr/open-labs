@@ -108,3 +108,12 @@
 .zclab__waterfall li[data-origem="manual"] .zclab__barra { background: color-mix(in oklab, var(--dui-especie-2) 70%, transparent); }
 .zclab__trilho { position: relative; display: block; height: 0.9rem; border-radius: 3px; background: color-mix(in oklab, var(--rule) 40%, transparent); }
 .zclab__escuro { position: absolute; top: 0; bottom: 0; border-radius: 3px; background: var(--dui-viva); }
+
+/* A busca do incidente: a linha do log, a consulta, e a lista de candidatos. */
+.inclab__linha, .inclab__consulta { margin: 0 0 var(--space-1); padding: 0.5rem 0.7rem; border: 1px solid var(--rule); border-radius: var(--radius-2); font-size: var(--size-step--1); overflow-wrap: anywhere; }
+.inclab__linha { border-color: color-mix(in oklab, var(--dui-viva) 50%, var(--rule)); }
+.inclab__lista { display: grid; grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr)); gap: 4px; margin: 0; padding: 0; list-style: none; font-size: 0.72rem; }
+.inclab__lista li { padding: 0.2rem 0.45rem; border: 1px solid var(--rule); border-radius: var(--radius-1); color: var(--ink-muted); }
+.inclab__lista li[data-erro] { border-color: var(--dui-viva); color: var(--ink); }
+.inclab__lista span { float: inline-end; color: var(--ink-faint); }
+.inclab__lista li.inclab__mais { border-style: dashed; }
