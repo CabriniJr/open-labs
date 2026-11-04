@@ -116,13 +116,13 @@ própria (formulário, analisador, editor).
 - **Correlações.** ← hard-context (traceparent hex ↔ 16 bytes), ← anatomy (o id que monta a árvore), → collector-pipeline (o receiver `otlp` decodifica isto), → agent-or-gateway (gRPC e conexões), → cardinality-and-the-bill (o custo em bytes de cada atributo).
 - **Próximo passo.** Mostrar o quadro gRPC (5 bytes de prefixo) e os headers HTTP/2 em volta. Anexo `grpc-http2`.
 
-#### the-shape-of-a-metric — *The shape of a metric* · a construir (filme + estado + 3D)
-- **Pergunta.** O que é uma métrica no OTLP: um número, ou uma série com temporalidade?
-- **Mal-entendido.** "Counter é um número que sobe" (cumulativo vs delta, histograma com buckets).
-- **Modelo.** Agregador de instrumentos (Counter, UpDownCounter, Histogram) com temporalidade cumulativa e delta. O domínio `providers/metrics.ts` já tem a base.
-- **Showcase.** As medições chegam, o agregador soma por atributo, o exportador lê a cada intervalo, e o delta zera enquanto o cumulativo não. **3D:** histograma como barras em profundidade, bucket × tempo.
-- **Simulação.** Trocar a temporalidade e reiniciar o processo (o cumulativo "volta a zero" e o backend precisa saber).
-- **Ícones.** `metric`, `sdk`, `exporter`, `backend`.
+#### the-shape-of-a-metric — *The shape of a metric* · disponível (filme + livre + 3D)
+- **Pergunta.** O que é uma métrica no OTLP: um número, ou um ponto com temporalidade e início?
+- **Mal-entendido.** "Counter é um número que sobe" / "a série cumulativa só sobe" / "delta não perde nada".
+- **Modelo.** `otel-domain/metrica/modelo.ts`: um redutor puro (`registrar`, `coletar`, `reiniciar`) com Sum + Histogram de baldes explícitos (limite de cima inclusivo), e `lerNoBackend` com e sem respeito ao `inicio`. Sem atributos, de propósito: atributo é o assunto da cardinalidade.
+- **Showcase.** Feito (`metrica/filme.ts`, derivado de `rodar(roteiro)`): as medições entram no agregador e ficam no processo; o PeriodicReader puxa e um ponto sai; intervalo a intervalo a série cresce (cumulative) ou recomeça (delta); com o reinício, `inicio` muda, 2 medições morrem na memória e o backend ingênuo lê −9. **3D:** o histograma como balde × intervalo, e a altura é a contagem. **Interativo:** cumulative/delta e "o processo reinicia" refazem o filme.
+- **Simulação (livre).** `MetricaLab`: o leitor registra requisições rápidas/lentas, coleta quando quer, derruba o processo e liga "backend honours start time"; a tabela é `PontoExportado` e a leitura é `lerNoBackend`.
+- **Ícones.** `metric`, `service`, `exporter`, `backend`.
 - **Correlações.** ← three-pillars, → cardinality-and-the-bill, → reading-an-otlp-payload (o envelope de métricas tem a mesma forma de resource/scope).
 
 #### a-log-that-knows-its-trace — *A log that knows its trace* · a construir (filme + livre)
@@ -207,7 +207,7 @@ O codificador do protobuf já serve o anexo `protobuf-encoding`. O próximo é
 
 1. ~~Ícones que faltam em contexto e o ícone `bytes` no envelope da vitrine.~~ Feito: a ficha do palco (plano e iso) desenha o ícone no cabeçalho.
 2. ~~Showcase de `anatomy-of-a-trace` (árvore em escada no 3D).~~ Feito.
-3. `the-shape-of-a-metric` (o handbook só modela trace no showcase).
+3. ~~`the-shape-of-a-metric`~~ Feito.
 4. `a-log-that-knows-its-trace`.
 5. `propagating-through-a-queue`.
 6. Showcases de `three-pillars`, `providers`, `head-vs-tail-sampling` e `cardinality-and-the-bill`.

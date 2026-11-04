@@ -182,3 +182,10 @@ export type { Codificacao as CodificacaoDaViagem, DetalheDaViagem, LinhaDoDiario
 // O showcase da anatomia: uma requisição, e a árvore que o backend monta depois.
 export { ALTURA_DA_ANATOMIA, LARGURA_DA_ANATOMIA, OPCOES_DA_VITRINE_DA_ANATOMIA, filmeDaVitrineDaAnatomia, umaRequisicao } from "./anatomia/vitrine.js";
 export type { ChamadaDaVitrine, DetalheDaVitrineDaAnatomia, LinhaDoWaterfall, OpcoesDaVitrineDaAnatomia, RequisicaoDaVitrine, SpanDaVitrine } from "./anatomia/vitrine.js";
+
+// A forma de uma métrica: o agregador, a temporalidade e o que o backend conclui.
+export { baldeDe as baldeDoHistograma, coletar, INTERVALO_MS, lerNoBackend, LIMITES_DOS_BALDES, novoAgregador, OPCOES_DA_METRICA, registrar, reiniciar, roteiro, rodar, ROTULOS_DOS_BALDES } from "./metrica/modelo.js";
+export type { Agregador, Corrida, Evento, OpcoesDaMetrica, Passo, PontoExportado, Temporalidade } from "./metrica/modelo.js";
+export { ALTURA_DA_METRICA, LARGURA_DA_METRICA, filmeDaMetrica } from "./metrica/filme.js";
+export type { DetalheDaMetrica } from "./metrica/filme.js";
+export { MAL_ENTENDIDOS_DA_METRICA } from "./metrica/labels.js";

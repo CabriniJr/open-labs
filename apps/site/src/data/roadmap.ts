@@ -108,7 +108,7 @@ export const labs: readonly RoadmapLab[] = [
   // de trace, zero de métrica, zero de log. A promessa da fase 1 é que os três
   // soltos não são observabilidade, e um currículo que só modela trace repete o
   // erro que o handbook existe para desfazer.
-  { id: "the-shape-of-a-metric", title: "The shape of a metric", href: "#", status: "coming", side: "right", y: 300, phase: 2 },
+  { id: "the-shape-of-a-metric", title: "The shape of a metric", href: "labs/the-shape-of-a-metric", status: "available", side: "right", y: 300, phase: 2 },
   { id: "a-log-that-knows-its-trace", title: "A log that knows its trace", href: "#", status: "coming", side: "left", y: 356, phase: 2 },
 
   // `providers` sozinho na primeira fileira: é pré-requisito dos dois abaixo.

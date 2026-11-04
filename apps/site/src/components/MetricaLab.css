@@ -1,0 +1,72 @@
+/*
+ * A simulação da métrica. Cor só por sentido: o agregador no tom do
+ * processador, o histograma em kind-2, o que o backend leu errado em `live`.
+ */
+.metlab { display: grid; gap: var(--space-2); }
+.metlab__barra { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-2); }
+.metlab__relogio { margin-inline-start: auto; color: var(--ink-muted); font-size: var(--size-step--1); }
+
+.metlab__gestos { display: flex; flex-wrap: wrap; gap: var(--space-1); }
+.metlab__gesto {
+  padding: 0.45rem 0.8rem;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-2);
+  background: var(--paper-raised);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--size-step--1);
+  cursor: pointer;
+}
+.metlab__gesto:hover { border-color: var(--accent); }
+.metlab__gesto .mono { color: var(--ink-muted); }
+.metlab__gesto--coleta { border-color: color-mix(in oklab, var(--dui-controller) 60%, var(--rule)); }
+.metlab__gesto--queda { border-color: color-mix(in oklab, var(--dui-viva) 60%, var(--rule)); }
+.metlab__gesto--limpar { color: var(--ink-muted); }
+
+.metlab__corpo { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); gap: var(--space-2); align-items: start; }
+@media (max-width: 60rem) {
+  .metlab__corpo { grid-template-columns: minmax(0, 1fr); }
+}
+
+.metlab__cartao {
+  min-width: 0;
+  padding: var(--space-2);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-3);
+  background: var(--paper-raised);
+}
+.metlab__cartao h3 { margin: 0 0 var(--space-1); color: var(--ink-muted); font-size: var(--size-step--1); letter-spacing: 0.06em; text-transform: uppercase; }
+
+.metlab__agg { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-1); margin: 0 0 var(--space-2); }
+.metlab__agg div { padding: 0.4rem 0.6rem; border: 1px solid color-mix(in oklab, var(--dui-processor) 40%, var(--rule)); border-radius: var(--radius-2); }
+.metlab__agg dt { color: var(--ink-faint); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; }
+.metlab__agg dd { margin: 0; color: var(--ink); font-size: var(--size-step-0); }
+
+.metlab__baldes { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); align-items: end; gap: 6px; height: 9rem; margin: 0; padding: 0; list-style: none; }
+.metlab__baldes li { display: grid; grid-template-rows: 1fr auto auto; justify-items: center; height: 100%; gap: 2px; }
+.metlab__balde {
+  align-self: end;
+  width: 100%;
+  height: calc(var(--h, 0) * 100%);
+  min-height: 2px;
+  border-radius: 4px 4px 0 0;
+  background: color-mix(in oklab, var(--dui-especie-2) 70%, transparent);
+  transition: height 200ms ease;
+}
+.metlab__baldes b { font-size: var(--size-step--1); }
+.metlab__baldes small { color: var(--ink-faint); font-size: 0.68rem; }
+
+.metlab__vazio { margin: 0; color: var(--ink-muted); font-size: var(--size-step--1); }
+.metlab__tabela { display: block; overflow-x: auto; width: 100%; border-collapse: collapse; font-size: var(--size-step--1); }
+.metlab__tabela th,
+.metlab__tabela td { padding: 0.3rem 0.6rem; border-block-end: 1px solid var(--rule); text-align: end; white-space: nowrap; }
+.metlab__tabela th { color: var(--ink-faint); font-weight: 500; }
+.metlab__tabela tr[data-reset] td:nth-child(2) { color: var(--dui-viva); }
+.metlab__tabela td[data-ruim] { color: var(--dui-viva); font-weight: 600; }
+
+.metlab__grafico { display: block; width: 100%; max-height: 9rem; margin-block: var(--space-1); }
+.metlab__eixo { stroke: var(--rule); stroke-width: 1; }
+.metlab__coluna { fill: color-mix(in oklab, var(--dui-container) 75%, transparent); }
+.metlab__coluna--neg { fill: var(--dui-viva); }
+.metlab__veredito { margin: 0; color: var(--ink-muted); font-size: var(--size-step--1); }
+.metlab__veredito b { color: var(--ink); }
