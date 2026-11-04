@@ -233,3 +233,10 @@ export type { Contadores, EstadoDaPressao, LoteNaFila, OpcoesDaPressao } from ".
 export { ALTURA_DA_PRESSAO, filmeDaPressao, LARGURA_DA_PRESSAO } from "./pressao/filme.js";
 export type { DetalheDaPressao } from "./pressao/filme.js";
 export { MAL_ENTENDIDOS_DA_PRESSAO } from "./pressao/labels.js";
+
+// Instrumentação sem código: as bordas que o agente vê, e o miolo escuro.
+export { DURACAO_DA_REQUISICAO, PASSOS as PASSOS_ZERO_CODE, PASSOS_PROPRIOS, SPAN_RAIZ, traceDaRequisicao } from "./zerocode/modelo.js";
+export type { Camada, Passo as PassoZeroCode, SpanZeroCode, TraceZeroCode } from "./zerocode/modelo.js";
+export { ALTURA_ZERO_CODE, filmeZeroCode, LARGURA_ZERO_CODE, OPCOES_ZERO_CODE } from "./zerocode/filme.js";
+export type { DetalheZeroCode, OpcoesZeroCode } from "./zerocode/filme.js";
+export { MAL_ENTENDIDOS_ZERO_CODE } from "./zerocode/labels.js";

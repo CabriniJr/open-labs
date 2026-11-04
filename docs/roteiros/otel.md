@@ -164,10 +164,13 @@ própria (formulário, analisador, editor).
 - **Simulação (livre).** `ManualLab`: o editor — clicar no número da linha comenta; rodar linha a linha ou até o fim; ao lado, a memória do SDK e o que o backend recebeu.
 - **Ícones.** `trace`, `backend`. **Correlações.** ← anatomy-of-a-trace (o órfão), → cardinality-and-the-bill (o id no nome), → a-log-that-knows-its-trace (o span ativo), → semantic-conventions (anexo).
 
-#### zero-code-instrumentation — *Zero-code instrumentation* · a construir (filme + 3D)
+#### zero-code-instrumentation — *Zero-code instrumentation* · disponível (filme + livre + 3D)
 - **Pergunta.** O que o agente automático instrumenta, e o que ele não consegue ver?
-- **3D.** A pilha da aplicação em andares (framework HTTP, cliente de banco, código de negócio). O auto cobre as bordas, e o miolo fica escuro.
-- **Correlações.** ← manual-spans, ← providers.
+- **Mal-entendido.** "O auto instrumenta a aplicação inteira" / "sem span, não levou tempo" / "manual e automático são alternativas".
+- **Modelo.** `otel-domain/zerocode/modelo.ts`: os passos de um POST /checkout com tempo; o agente cria span só para framework, driver do banco e cliente HTTP; `traceDaRequisicao(manuais)` devolve os spans e os trechos do raiz sem filho (o tempo escuro).
+- **Showcase.** Feito (`zerocode/filme.ts`): o agente acende as bibliotecas; a requisição desce a pilha; o waterfall no mesmo eixo de tempo, com o trecho escuro marcado (150 de 240 ms). **3D:** a pilha em andares — framework em cima, o seu código no meio, bibliotecas embaixo. **Interativo:** "um span manual nas regras de desconto" refaz o filme.
+- **Simulação (livre).** `ZeroCodeLab`: uma chave por passo do seu código, e o waterfall com o tempo escuro.
+- **Ícones.** `sdk`, `service`. **Correlações.** ← manual-spans, ← providers.
 
 #### propagating-through-a-queue — *Propagating through a queue* · disponível (filme + livre + 3D)
 - **Pergunta.** Por que o trace morre no `send` e reaparece órfão no `consume`?

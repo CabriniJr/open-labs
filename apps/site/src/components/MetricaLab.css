@@ -98,3 +98,13 @@
 .prlab__coluna li[data-cheia] { border-style: solid; border-color: color-mix(in oklab, var(--dui-conduit) 60%, var(--rule)); background: color-mix(in oklab, var(--dui-conduit) 16%, transparent); }
 .prlab__coluna li[data-cheia][data-acima] { border-color: var(--dui-viva); background: color-mix(in oklab, var(--dui-viva) 16%, transparent); }
 .prlab__coluna small { color: var(--ink-faint); text-align: end; }
+
+/* O waterfall do zero-code: barras no eixo da requisição, e o trilho do tempo sem filho. */
+.zclab__chave { display: flex; margin-block-start: 0.3rem; font-size: 0.72rem; }
+.zclab__waterfall { display: grid; gap: 6px; margin: 0 0 var(--space-1); padding: 0; list-style: none; font-size: var(--size-step--1); }
+.zclab__waterfall li { display: grid; gap: 2px; }
+.zclab__waterfall small { color: var(--ink-muted); }
+.zclab__barra { display: block; height: 0.9rem; border-radius: 3px; background: color-mix(in oklab, var(--dui-especie-1) 70%, transparent); }
+.zclab__waterfall li[data-origem="manual"] .zclab__barra { background: color-mix(in oklab, var(--dui-especie-2) 70%, transparent); }
+.zclab__trilho { position: relative; display: block; height: 0.9rem; border-radius: 3px; background: color-mix(in oklab, var(--rule) 40%, transparent); }
+.zclab__escuro { position: absolute; top: 0; bottom: 0; border-radius: 3px; background: var(--dui-viva); }
