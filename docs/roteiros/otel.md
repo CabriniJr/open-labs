@@ -205,9 +205,13 @@ própria (formulário, analisador, editor).
 - **Showcase.** Feito (`cardinalidade/vitrine.ts`, cada passo é `calcular` com um atributo a mais): 1 série; a rota vira fileira (12); o status, grade (72); o método, altura — no 3D cada célula ganha 4 andares (288); o `enduser.id` repete o cubo uma vez por cliente (2 304 000). No fim, o ponto no fio: os bytes só das chaves (UTF-8 dos nomes) em todo ponto, vezes os pontos por minuto. **Interativo:** "adicionar enduser.id" refaz o filme.
 - **Correlações.** ← reading-an-otlp-payload, ← the-shape-of-a-metric.
 
-#### the-rollout — *The rollout* · a construir (filme)
+#### the-rollout — *The rollout* · disponível (filme + livre + 3D)
 - **Pergunta.** Em que ordem levar OTel para uma empresa sem parar nada?
-- **Mídia.** Filme em etapas (Collector primeiro, depois auto, depois manual e sampling), com custo e risco em cada etapa. É o capítulo que costura o handbook: cada etapa cita o lab que a explica.
+- **Mal-entendido.** "Começa pelo código" — os passos certos na ordem errada.
+- **Modelo.** `otel-domain/rollout/modelo.ts`: seis etapas, cada uma com o lab que a explica, o esforço (qualitativo, sem número inventado), as perguntas que destrava e do que depende; `planejar(ordem)` diz, etapa a etapa, o que faltava antes e a consequência.
+- **Showcase.** Feito (`rollout/filme.ts`): as etapas sobem a escada, cada uma acende as perguntas que passam a ter resposta; fora de ordem, a etapa fica vermelha com o aviso. **3D:** a escada — a altura é a maturidade. **Interativo:** "ordem recomendada / começar pelo código" refaz o filme.
+- **Simulação (livre).** `RolloutLab`: o planejador — subir e descer etapas, com os avisos e o link para cada lab.
+- **Correlações.** Costura o handbook: agent-or-gateway, zero-code-instrumentation, hard-context-and-baggage, a-log-that-knows-its-trace, manual-spans, head-vs-tail-sampling.
 
 ## Anexos (referência, não etapa)
 
@@ -223,4 +227,4 @@ O codificador do protobuf já serve o anexo `protobuf-encoding`. O próximo é
 4. ~~`a-log-that-knows-its-trace`~~ Feito.
 5. ~~`propagating-through-a-queue`~~ Feito.
 6. ~~Showcases de `three-pillars`, `providers`, `head-vs-tail-sampling` e `cardinality-and-the-bill`.~~ Feitos.
-7. `backpressure-and-drops`, `manual-spans`, `zero-code-instrumentation`, `host-and-kubernetes-signals` e `the-rollout`.
+7. ~~`backpressure-and-drops`, `manual-spans`, `zero-code-instrumentation`, `host-and-kubernetes-signals`, `disconnected-signals` e `the-rollout`.~~ Feitos. Todo lab do handbook está publicado com showcase e simulação.

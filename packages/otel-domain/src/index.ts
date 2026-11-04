@@ -254,3 +254,9 @@ export type { Busca, Incidente as IncidenteDesconectado, OpcoesDoIncidente, Requ
 export { ALTURA_DO_INCIDENTE, filmeDoIncidente, LARGURA_DO_INCIDENTE, raias } from "./incidente/filme.js";
 export type { DetalheDoIncidente } from "./incidente/filme.js";
 export { MAL_ENTENDIDOS_DO_INCIDENTE } from "./incidente/labels.js";
+
+// O rollout: a ordem das etapas, e o que cada uma pede antes.
+export { ETAPAS as ETAPAS_DO_ROLLOUT, ORDEM_CODIGO_PRIMEIRO, ORDEM_RECOMENDADA, planejar, riscos as riscosDoPlano } from "./rollout/modelo.js";
+export type { Etapa as EtapaDoRollout, IdDaEtapa, PassoDoPlano } from "./rollout/modelo.js";
+export { ALTURA_DO_ROLLOUT, filmeDoRollout, LARGURA_DO_ROLLOUT, OPCOES_DO_ROLLOUT } from "./rollout/filme.js";
+export type { DetalheDoRollout, OpcoesDoRollout } from "./rollout/filme.js";

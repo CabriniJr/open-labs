@@ -117,3 +117,15 @@
 .inclab__lista li[data-erro] { border-color: var(--dui-viva); color: var(--ink); }
 .inclab__lista span { float: inline-end; color: var(--ink-faint); }
 .inclab__lista li.inclab__mais { border-style: dashed; }
+
+/* O planejador do rollout: uma etapa por cartão, a fora de ordem em vermelho. */
+.rolab__plano { display: grid; gap: var(--space-1); margin: 0; padding: 0; list-style: none; }
+.rolab__plano li { padding: var(--space-1) var(--space-2); border: 1px solid var(--rule); border-radius: var(--radius-3); background: var(--paper-raised); }
+.rolab__plano li[data-risco] { border-color: color-mix(in oklab, var(--dui-viva) 60%, var(--rule)); }
+.rolab__plano p { margin: 0.3rem 0 0; color: var(--ink-muted); font-size: var(--size-step--1); }
+.rolab__cabeca { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--space-1); align-items: center; }
+.rolab__mover { display: inline-flex; gap: 4px; }
+.rolab__mover button { min-width: 2rem; padding: 0.2rem 0.5rem; border: 1px solid var(--rule); border-radius: var(--radius-1); background: var(--paper); color: var(--ink); font: inherit; cursor: pointer; }
+.rolab__mover button:disabled { opacity: 0.4; cursor: default; }
+.rolab__plano p.rolab__aviso { color: var(--dui-viva); }
+.rolab__plano p.rolab__rodape { color: var(--ink-faint); font-size: 0.72rem; }
