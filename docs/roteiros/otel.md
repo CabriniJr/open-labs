@@ -91,10 +91,10 @@ própria (formulário, analisador, editor).
 
 ### Fase 2 — o modelo
 
-#### anatomy-of-a-trace — *Anatomy of a Trace* · disponível (fluxo)
+#### anatomy-of-a-trace — *Anatomy of a Trace* · disponível (fluxo + filme + 3D)
 - **Pergunta.** O que é um trace, se nenhum serviço o possui inteiro?
 - **Mal-entendido.** "O trace é um objeto que um serviço cria e envia."
-- **Showcase (a fazer).** Os spans nascem em serviços diferentes, cada um com `trace_id` e `parent_span_id`, e o backend monta a árvore depois. **3D:** profundidade na árvore = altura. O waterfall vira escada.
+- **Showcase.** Feito (`anatomia/vitrine.ts`): a requisição cruza os quatro serviços com o `traceparent` (ícone `context`), cada span só sabe o pai, os spans saem quando terminam (o ledger chega primeiro) e o backend monta o waterfall com a mesma `montar` da simulação. **3D:** profundidade na árvore = altura, 14 por degrau, e o waterfall vira escada. **Interativo:** "um proxy derruba o header antes do payments" (duas árvores, outro tom) e "payments sem SDK" (o ledger se pendura no checkout, sem buraco) refazem o filme.
 - **Simulação.** Perder um span intermediário e ver a árvore órfã.
 - **Ícones.** `service`, `trace`, `backend`.
 - **Correlações.** → hard-context-and-baggage (como o id viaja), → reading-an-otlp-payload (o id em bytes).
@@ -206,7 +206,7 @@ O codificador do protobuf já serve o anexo `protobuf-encoding`. O próximo é
 ## Fila (ordem de construção)
 
 1. ~~Ícones que faltam em contexto e o ícone `bytes` no envelope da vitrine.~~ Feito: a ficha do palco (plano e iso) desenha o ícone no cabeçalho.
-2. Showcase de `anatomy-of-a-trace` (árvore em escada no 3D).
+2. ~~Showcase de `anatomy-of-a-trace` (árvore em escada no 3D).~~ Feito.
 3. `the-shape-of-a-metric` (o handbook só modela trace no showcase).
 4. `a-log-that-knows-its-trace`.
 5. `propagating-through-a-queue`.

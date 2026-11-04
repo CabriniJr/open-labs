@@ -178,3 +178,7 @@ export type { CampoCodificado, Codificacao, TipoDoCampo, WireType } from "./prot
 export { envelopeDoProtobuf, SPAN_DO_PROTOBUF, tomDoCampo } from "./protobuf/exemplo.js";
 export { filmeDaViagem, spanDaViagem } from "./protobuf/viagem.js";
 export type { Codificacao as CodificacaoDaViagem, DetalheDaViagem, LinhaDoDiario, OpcoesDaViagem } from "./protobuf/viagem.js";
+
+// O showcase da anatomia: uma requisição, e a árvore que o backend monta depois.
+export { ALTURA_DA_ANATOMIA, LARGURA_DA_ANATOMIA, OPCOES_DA_VITRINE_DA_ANATOMIA, filmeDaVitrineDaAnatomia, umaRequisicao } from "./anatomia/vitrine.js";
+export type { ChamadaDaVitrine, DetalheDaVitrineDaAnatomia, LinhaDoWaterfall, OpcoesDaVitrineDaAnatomia, RequisicaoDaVitrine, SpanDaVitrine } from "./anatomia/vitrine.js";
