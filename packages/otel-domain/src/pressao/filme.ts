@@ -1,4 +1,4 @@
-import { film, line, pt, type Box, type Director, type Film, type Tone } from "@ovh/motion";
+import { arc, film, line, pt, through, type Box, type Director, type Film, type Tone } from "@ovh/motion";
 import { ICONES_OTEL as I } from "../icones/icones.js";
 import { backendNoAr, LIMITE_DO_LIMITER, MEMORIA_MAXIMA, OPCOES_DA_PRESSAO, QUEDA, rodarPressao, SPANS_POR_LOTE, TEMPO_MAXIMO_DE_RETRY, type EstadoDaPressao, type OpcoesDaPressao } from "./modelo.js";
 
@@ -52,11 +52,33 @@ export function filmeDaPressao(opcoes: OpcoesDaPressao = OPCOES_DA_PRESSAO): Fil
   f.add({ type: "node", id: "backend", box: B(1080, 150, 170, 110), label: "backend", sublabel: "up", tone: "container", shape: "cylinder", icon: I.backend });
   CONTADORES.forEach(([chave, rotulo, tone], i) => f.add({ type: "node", id: `n:${chave}`, box: B(860, 300 + i * 78, 390, 64), label: "0", sublabel: rotulo, tone: tone === "live" ? "muted" : tone }));
 
-  // As fichas de cada tick: a chegada e as entregas.
+  // Os baldes: cada descarte termina na boca do contador dele.
+  const balde = (chave: (typeof CONTADORES)[number][0]) => pt(860, 300 + CONTADORES.findIndex(([c]) => c === chave) * 78 + 32);
+  const boca = pt(560, CEL(Math.min(opcoes.fila, celulas) - 1).y - 6);
+
+  // As fichas de cada tick: a chegada, as entregas e os descartes.
   corrida.forEach((e, i) => {
+    const anterior = corrida[i - 1];
     f.add({ type: "token", id: `in:${i}`, path: line(pt(210, 345), pt(250, 345)), label: "BATCH", sublabel: `#${i + 1}`, tone: e.chegada === "aceito" ? "kind-1" : "live", hidden: true, size: 4.5 });
     if (e.chegada === "aceito" || e.chegada === "crash") f.add({ type: "token", id: `q:${i}`, path: line(pt(420, 345), pt(480, CEL(Math.max(0, e.fila.length - 1)).y + 23)), tone: e.chegada === "crash" ? "live" : "kind-1", hidden: true, size: 4 });
     if (e.entreguesAgora > 0) f.add({ type: "token", id: `out:${i}`, path: line(pt(640, 300), pt(1080, 205)), label: "EXPORT", sublabel: `${e.entreguesAgora} batch${e.entreguesAgora > 1 ? "es" : ""}`, tone: "container", hidden: true, size: 4.5, icon: I.bytes });
+    // Recusado: o lote quica no limiter e volta para quem mandou — o único descarte que o remetente fica sabendo.
+    if (e.chegada === "recusado") f.add({ type: "token", id: `rec:${i}`, path: arc(pt(250, 330), pt(210, 330), 0.9), label: "REFUSED", sublabel: "error back to the SDK", tone: "live", hidden: true, size: 4.5 });
+    // Fila cheia: chega à boca da fila, não cabe, e cai no balde dele.
+    if (e.chegada === "fila-cheia") f.add({ type: "token", id: `cheia:${i}`, path: through([pt(420, 345), boca, pt(boca.x + 160, boca.y + 40), balde("filaCheia")]), label: "DROPPED", sublabel: "queue full", tone: "live", hidden: true, size: 4.5, trail: 5 });
+    // Retry esgotado: o mais antigo sai do fundo da coluna.
+    for (let j = 0; j < e.esgotadosAgora; j += 1) {
+      const fundo = CEL(j);
+      f.add({ type: "token", id: `esg:${i}:${j}`, path: through([pt(640, fundo.y + 23), pt(740, fundo.y + 23), balde("retryEsgotado")]), label: "GAVE UP", sublabel: `after ${TEMPO_MAXIMO_DE_RETRY} ticks`, tone: "live", hidden: true, size: 4.5, trail: 5 });
+    }
+    // Crash: tudo que estava na coluna despenca junto.
+    if (e.caiu) {
+      const naFila = (anterior?.fila.length ?? 0) + 1;
+      for (let k = 0; k < Math.min(naFila, celulas); k += 1) {
+        const c = CEL(k);
+        f.add({ type: "token", id: `perd:${i}:${k}`, path: through([pt(560, c.y + 23), pt(700, Math.max(c.y + 23, 560)), balde("perdidosNoCrash")]), label: k === 0 ? "LOST" : "", sublabel: k === 0 ? `${naFila} batches` : "", tone: "live", hidden: true, size: 4, trail: 3 });
+      }
+    }
   });
   f.add({ type: "note", id: "n:crash", at: pt(470, 90), label: "out of memory: the process restarts empty", tone: "live", align: "start", hidden: true });
 
@@ -66,9 +88,19 @@ export function filmeDaPressao(opcoes: OpcoesDaPressao = OPCOES_DA_PRESSAO): Fil
     d.set("relogio", { label: `tick ${t}`, sublabel: noAr ? "backend up" : "backend DOWN", tone: noAr ? "container" : "live" });
     if ((anterior === undefined ? true : backendNoAr(anterior.t - 1)) !== noAr) d.set("backend", { tone: noAr ? "container" : "live", sublabel: noAr ? "up" : "down" }).ping("backend");
     d.send(`in:${i}`, { dur: 260 });
-    if (e.chegada === "recusado") d.ping("limiter");
+    if (e.chegada === "recusado") d.ping("limiter").send(`rec:${i}`, { dur: 520 }).ping("app");
+    if (e.chegada === "fila-cheia") d.send(`cheia:${i}`, { dur: 760 }).ping("n:filaCheia");
     if (e.chegada === "aceito" || e.chegada === "crash") d.send(`q:${i}`, { dur: 220 });
-    if (e.caiu) d.show("n:crash", { dur: 250 }).ping(["limiter", "fila"]);
+    if (e.caiu) {
+      // A coluna inteira acende antes de despencar: o leitor vê o que estava guardado.
+      const naFila = Math.min((anterior?.fila.length ?? 0) + 1, celulas);
+      for (let k = 0; k < naFila; k += 1) d.set(`cel:${k}`, { tone: "live", label: "lost", sublabel: "" });
+      d.show("n:crash", { dur: 250 }).ping(["limiter", "fila"]).wait(250);
+      d.together(...Array.from({ length: naFila }, (_, k) => (x: Director<DetalheDaPressao>) => x.send(`perd:${i}:${k}`, { dur: 700, delay: k * 50 })));
+      d.ping("n:perdidosNoCrash");
+    }
+    // O lote que desiste sai do fundo antes de a coluna se redesenhar sem ele.
+    if (e.esgotadosAgora > 0) d.together(...Array.from({ length: e.esgotadosAgora }, (_, j) => (x: Director<DetalheDaPressao>) => x.send(`esg:${i}:${j}`, { dur: 700 }))).ping("n:retryEsgotado");
     for (let k = 0; k < celulas; k += 1) {
       const cheia = k < e.fila.length;
       const acima = (opcoes.limiter && k >= LIMITE_DO_LIMITER) || k >= opcoes.fila;

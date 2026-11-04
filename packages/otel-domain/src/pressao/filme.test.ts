@@ -1,4 +1,4 @@
-import { frameAt } from "@ovh/motion";
+import { frameAt, poseAt } from "@ovh/motion";
 import { describe, expect, it } from "vitest";
 import { filmeDaPressao } from "./filme.js";
 import { rodarPressao, SPANS_POR_LOTE } from "./modelo.js";
@@ -33,5 +33,26 @@ describe("the backpressure film is read from the model", () => {
     const f = filmeDaPressao();
     expect(estado(fim(f, "down"), "backend").tone).toBe("live");
     expect(estado(fim(f, "back"), "backend").tone).toBe("container");
+  });
+
+  it("every drop is an animation that ends in its own counter, as many as the model counted", () => {
+    for (const op of [{ fila: 4, limiter: true }, { fila: 15, limiter: true }, { fila: 15, limiter: false }]) {
+      const f = filmeDaPressao(op);
+      const c = rodarPressao(op).at(-1)!.contadores;
+      const n = (prefixo: string) => f.entities.filter((e) => e.id.startsWith(prefixo)).length;
+      expect(n("rec:")).toBe(c.recusados);
+      expect(n("cheia:")).toBe(c.filaCheia);
+      expect(n("esg:")).toBe(c.retryEsgotado);
+      expect(n("perd:")).toBe(Math.min(c.perdidosNoCrash, 10));
+    }
+  });
+
+  it("a refused batch goes back to the sender; a dropped one goes to its bin", () => {
+    const rec = filmeDaPressao({ fila: 15, limiter: true }).entities.find((e) => e.id.startsWith("rec:"))!;
+    // Termina no checkout, de onde o lote veio.
+    const destino = rec.type === "token" ? poseAt(rec.path, 1) : null;
+    expect(destino!.x).toBeLessThanOrEqual(210);
+    const cheia = filmeDaPressao({ fila: 4, limiter: true }).entities.find((e) => e.id.startsWith("cheia:"))!;
+    expect(cheia.type === "token" && cheia.label).toBe("DROPPED");
   });
 });
