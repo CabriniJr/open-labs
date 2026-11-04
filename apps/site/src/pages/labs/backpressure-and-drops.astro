@@ -1,0 +1,214 @@
+---
+import LabAssessment from "../../components/LabAssessment.astro";
+import { MAL_ENTENDIDOS_DA_PRESSAO } from "@ovh/otel-domain";
+import { PressaoModos } from "../../components/PressaoModos.tsx";
+import { Predicao } from "../../components/Predicao.tsx";
+import SiteFooter from "../../components/SiteFooter.astro";
+import SiteNav from "../../components/SiteNav.astro";
+import Base from "../../layouts/Base.astro";
+import { url } from "../../lib/urls";
+import "../../styles/docs.css";
+import "../../components/ModosDoLab.css";
+import "../../components/CpuVitrine.css";
+import "../../components/ContextoLab.css";
+import "../../components/ImplantacaoLab.css";
+import "../../components/MetricaLab.css";
+import "@ovh/motion/src/react/motion.css";
+import "@ovh/stage3d/src/iso.css";
+import "../../components/Predicao.css";
+---
+
+<Base
+  domain="otel"
+  title="Backpressure and drops — OpenLabs"
+  description="When the backend goes down, the Collector's exporter queues and retries with backoff — until the queue fills, the retries give up, the memory_limiter refuses at the edge, or, without a limiter, the process runs out of memory and loses the whole queue."
+>
+  <SiteNav current="labs" />
+
+  <main id="content">
+    <section class="lab-head editorial">
+      <div class="prose">
+        <p class="lab-head__eyebrow mono">
+          <a href={url("handbooks/otel")}>OpenTelemetry Visual Handbook</a> · lab
+        </p>
+        <h1>Where spans wait when the backend is down, and where they die</h1>
+        <p>
+          The backend was down for twelve seconds. Someone raised
+          <code>sending_queue.queue_size</code> after the last incident so
+          &ldquo;nothing gets lost&rdquo;. This time the Collector restarted
+          with an out-of-memory kill, and the traces from those twelve seconds
+          are gone — along with the ones that were queued before.
+        </p>
+        <p>
+          A span can die in four places on the way out: refused by the
+          <code>memory_limiter</code>, dropped because the queue is full,
+          dropped because the retries gave up, or lost with the process.
+          Only the first one is something the application ever hears about.
+        </p>
+      </div>
+      <aside class="lab-head__note mono">
+        <p>In 3D the queue is a column.</p>
+        <p>Height is occupancy; red is past a limit.</p>
+      </aside>
+    </section>
+
+    <section class="lab-palco">
+      <PressaoModos client:only="react" />
+    </section>
+
+    <section class="lab-prosa editorial">
+      <div class="prose">
+        <h2>Break it</h2>
+        <ol>
+          <li>
+            <b>Run a few ticks, then take the backend down.</b> The queue climbs
+            one batch a tick, and the retries spread out: 1, 2, 4 ticks.
+          </li>
+          <li>
+            <b>Keep it down with queue_size 4.</b> New batches are dropped as
+            &ldquo;queue full&rdquo;, and the oldest give up after their retries
+            run out.
+          </li>
+          <li>
+            <b>Switch to queue_size 15 and do it again.</b> With the limiter,
+            batches are refused at the edge before memory runs out. Turn the
+            limiter off: the queue grows past the process's memory and the
+            crash takes everything queued with it.
+          </li>
+          <li>
+            <b>Bring the backend back.</b> The queue drains a couple of batches
+            a tick, not all at once — recovery takes time too.
+          </li>
+        </ol>
+
+        <h2>Predict before you look</h2>
+        <p>Answer first, then try it in the simulation.</p>
+      </div>
+      <div class="lab-predicao">
+        <Predicao
+          client:visible
+          pergunta="A Collector has no memory_limiter and a sending_queue larger than the memory it can use. The backend goes down for longer than usual. What happens to the queued spans?"
+          opcoes={[
+            "The process runs out of memory and the in-memory queue is lost with it",
+            "They wait in the queue until the backend returns, however long that takes",
+            "The exporter refuses new spans and the SDK gets an error",
+          ]}
+          correta={0}
+          revelacao="The sending queue is held in process memory unless a persistent storage extension is configured. Without a memory_limiter, nothing stops it from growing past what the process can hold, so a long outage ends in an out-of-memory crash. The refusal back to the SDK is the memory_limiter's job — which is why it goes first in the pipeline."
+        />
+      </div>
+    </section>
+
+    <section class="lab-prosa editorial">
+      <div class="prose">
+        <h2>What people get wrong</h2>
+        <p>Each row is a belief the simulation is built to take apart. The right column is the documentation, with the link.</p>
+      </div>
+      <div class="lab-mal-entendidos">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">What people believe</th>
+              <th scope="col">What the docs say</th>
+            </tr>
+          </thead>
+          <tbody>
+            {
+              MAL_ENTENDIDOS_DA_PRESSAO.map((m) => (
+                <tr>
+                  <td>{m.crenca}</td>
+                  <td>
+                    {m.spec}{" "}
+                    <a href={m.fonte} rel="noreferrer noopener" target="_blank">
+                      source
+                    </a>
+                  </td>
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="lab-prosa editorial">
+      <div class="prose">
+        <h2>Where this connects</h2>
+        <p>
+          <a href={url("labs/collector-pipeline")}>The Collector pipeline</a> is
+          where <code>memory_limiter</code> and the exporter sit, and why the
+          order of processors matters. <a href={url("labs/agent-or-gateway")}>Agent
+          or gateway</a> is where this queue lives — on every node, or in a few
+          gateways — and so how much one outage costs.
+        </p>
+      </div>
+    </section>
+    <LabAssessment href="labs/backpressure-and-drops" />
+  </main>
+
+  <SiteFooter />
+</Base>
+
+<style>
+  .lab-head {
+    padding-block: var(--space-4) var(--space-2);
+  }
+
+  .lab-head__eyebrow {
+    margin: 0 0 var(--space-1);
+    color: var(--accent);
+    font-size: var(--size-step--1);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  h1 {
+    margin: 0 0 var(--space-2);
+    font-size: var(--size-step-2);
+    max-width: 24ch;
+  }
+
+  .lab-head__note {
+    align-self: end;
+    color: var(--ink-muted);
+    font-size: var(--size-step--1);
+  }
+
+  .lab-head__note p {
+    margin: 0 0 0.35rem;
+  }
+
+  .lab-palco {
+    margin-block: var(--space-2) var(--space-4);
+  }
+
+  .lab-prosa {
+    padding-block-end: var(--space-4);
+  }
+
+  .lab-predicao {
+    grid-column: 1 / -1;
+    margin-block-start: var(--space-2);
+    max-width: var(--measure);
+  }
+
+  .lab-mal-entendidos {
+    grid-column: 1 / -1;
+    margin-block-start: var(--space-2);
+    overflow-x: auto;
+  }
+
+  .lab-mal-entendidos table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: var(--size-step--1);
+  }
+
+  .lab-mal-entendidos th,
+  .lab-mal-entendidos td {
+    border-block-end: 1px solid var(--border);
+    padding: var(--space-1) var(--space-2);
+    text-align: start;
+    vertical-align: top;
+  }
+</style>

@@ -187,11 +187,13 @@ própria (formulário, analisador, editor).
 - **Showcase.** Feito (`amostragem/vitrine.ts`, modelo `amostrar`): oito traces, um falha no payments; a mesma taxa pelo mesmo hash nos três modos. **Head** decide na raiz e perde o erro; **tail roteado por trace** guarda o erro inteiro; **tail espalhado** (round-robin por span) guarda só a metade que viu o erro, órfã no backend. **3D:** a janela de decisão é um volume — a altura é quantos spans cada gateway segura. **Interativo:** o modo refaz o filme.
 - **Ícones.** `sampler`, `collector`. **Correlações.** ← agent-or-gateway (roteamento por trace ID), ← providers.
 
-#### backpressure-and-drops — *Backpressure and drops* · a construir (filme + estado + 3D)
+#### backpressure-and-drops — *Backpressure and drops* · disponível (filme + livre + 3D)
 - **Pergunta.** Quando o backend cai, onde os spans esperam e onde eles morrem?
-- **Modelo.** `memory_limiter`, `sending_queue` e retry com backoff. Contadores de descarte.
-- **3D.** A fila do exporter como uma coluna que enche. A altura é a ocupação, e o vermelho é o limite.
-- **Ícones.** `queue`, `limiter`, `exporter`, `backend`. **Correlações.** ← collector-pipeline.
+- **Mal-entendido.** "Fila maior não perde nada" / "o retry tenta até o backend voltar" / "se o Collector descarta, a aplicação vê erro".
+- **Modelo.** `otel-domain/pressao/modelo.ts`: um redutor por tick — o `memory_limiter` antes da fila, a `sending_queue` em lotes, retry com backoff 1, 2, 4… até `max_elapsed_time`, e o teto de memória do processo. Quatro contadores de descarte (recusado na borda, fila cheia, retry esgotado, perdido no crash) e todo lote termina em exatamente um.
+- **Showcase.** Feito (`pressao/filme.ts`, derivado de `rodarPressao`): saudável; o backend cai e a fila sobe com o backoff; o terceiro capítulo é o que de fato aconteceu (fila cheia / o limiter recusa na borda / sem limiter, o processo morre e leva a fila); o backend volta e a fila drena no ritmo do exporter; e os contadores. **3D:** a fila é uma coluna, a altura é a ocupação e o vermelho é o que passou de um limite. **Interativo:** `queue_size` 4/15 e o limiter refazem o filme.
+- **Simulação (livre).** `PressaoLab`: o leitor segura o interruptor do backend e avança tick a tick.
+- **Ícones.** `queue`, `limiter`, `exporter`, `backend`, `service`. **Correlações.** ← collector-pipeline (a ordem dos processadores), ← agent-or-gateway (onde a fila mora).
 
 #### cardinality-and-the-bill — *Cardinality and the bill* · disponível (estado + filme + 3D)
 - **Showcase.** Feito (`cardinalidade/vitrine.ts`, cada passo é `calcular` com um atributo a mais): 1 série; a rota vira fileira (12); o status, grade (72); o método, altura — no 3D cada célula ganha 4 andares (288); o `enduser.id` repete o cubo uma vez por cliente (2 304 000). No fim, o ponto no fio: os bytes só das chaves (UTF-8 dos nomes) em todo ponto, vezes os pontos por minuto. **Interativo:** "adicionar enduser.id" refaz o filme.

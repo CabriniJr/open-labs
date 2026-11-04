@@ -91,3 +91,10 @@
 .manlab__gutter[aria-pressed="true"] { color: var(--dui-viva); }
 .manlab__aviso { display: block; color: var(--dui-viva); font-style: normal; font-size: 0.72rem; }
 .metlab__cartao h3.manlab__h { margin-block-start: var(--space-2); }
+
+/* A coluna da sending_queue: de baixo para cima, as marcas dos limites à direita. */
+.prlab__coluna { display: grid; gap: 3px; margin: 0 0 var(--space-1); padding: 0; list-style: none; font-size: var(--size-step--1); }
+.prlab__coluna li { display: grid; grid-template-columns: minmax(0, 1fr) 8rem; align-items: center; min-height: 1.9rem; padding: 0 0.6rem; border: 1px dashed var(--rule); border-radius: var(--radius-1); }
+.prlab__coluna li[data-cheia] { border-style: solid; border-color: color-mix(in oklab, var(--dui-conduit) 60%, var(--rule)); background: color-mix(in oklab, var(--dui-conduit) 16%, transparent); }
+.prlab__coluna li[data-cheia][data-acima] { border-color: var(--dui-viva); background: color-mix(in oklab, var(--dui-viva) 16%, transparent); }
+.prlab__coluna small { color: var(--ink-faint); text-align: end; }

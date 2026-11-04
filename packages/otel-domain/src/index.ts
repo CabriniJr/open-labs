@@ -226,3 +226,10 @@ export type { DetalheDaVitrineDaCardinalidade, EtapaDoCubo, OpcoesDaVitrineDaCar
 // O showcase dos providers: o processo em três andares, e quem decide o que sai.
 export { ALTURA_DOS_PROVIDERS, filmeDaVitrineDosProviders, LARGURA_DOS_PROVIDERS, LOTE_DA_VITRINE, OPCOES_DA_VITRINE_DOS_PROVIDERS, REQUISICOES_DA_VITRINE, rodarProviders } from "./providers/vitrine.js";
 export type { DetalheDaVitrineDosProviders, OpcoesDaVitrineDosProviders, ProcessoInstrumentado } from "./providers/vitrine.js";
+
+// Backpressure e descartes: limiter, fila, retry e o crash sem limiter.
+export { backendNoAr, LIMITE_DO_LIMITER, MEMORIA_MAXIMA, novaPressao, OPCOES_DA_PRESSAO, QUEDA as QUEDA_DA_PRESSAO, rodarPressao, SPANS_POR_LOTE, TEMPO_MAXIMO_DE_RETRY, tick as tickDaPressao, totalDeLotes, VAZAO as VAZAO_DO_EXPORTER } from "./pressao/modelo.js";
+export type { Contadores, EstadoDaPressao, LoteNaFila, OpcoesDaPressao } from "./pressao/modelo.js";
+export { ALTURA_DA_PRESSAO, filmeDaPressao, LARGURA_DA_PRESSAO } from "./pressao/filme.js";
+export type { DetalheDaPressao } from "./pressao/filme.js";
+export { MAL_ENTENDIDOS_DA_PRESSAO } from "./pressao/labels.js";

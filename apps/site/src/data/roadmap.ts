@@ -126,7 +126,7 @@ export const labs: readonly RoadmapLab[] = [
   { id: "host-and-kubernetes-signals", title: "Host and Kubernetes signals", href: "#", status: "coming", side: "right", y: 736, phase: 4 },
 
   { id: "head-vs-tail-sampling", title: "Head vs tail sampling", href: "labs/head-vs-tail-sampling", status: "available", side: "left", y: 870, phase: 5 },
-  { id: "backpressure-and-drops", title: "Backpressure and drops", href: "#", status: "coming", side: "right", y: 870, phase: 5 },
+  { id: "backpressure-and-drops", title: "Backpressure and drops", href: "labs/backpressure-and-drops", status: "available", side: "right", y: 870, phase: 5 },
   // A fase 5 fala de custo desde a spec do handbook §3 e não tinha nó para ele.
   // Cardinalidade é onde o custo mora, e é decisão de atributo — coisa que se
   // toma na instrumentação e se paga na fatura, meses depois.
