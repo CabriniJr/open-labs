@@ -9,6 +9,7 @@ import Base from "../layouts/Base.astro";
 import { url } from "../lib/urls";
 import { HANDBOOKS } from "../data/handbooks";
 import "../components/HeroSim.css";
+import "../components/Explorer.css";
 import "../components/HeroMundo.css";
 import "@ovh/motion/src/react/motion.css";
 import "@ovh/stage3d/src/iso.css";
@@ -255,12 +256,16 @@ const GESTOS = [
     overflow: hidden;
   }
 
+  /*
+    Nome em cima, frase embaixo. Lado a lado, numa grade de três colunas, a
+    frase ficava espremida em ~10 caracteres por linha ao lado do nome.
+  */
   .levels__item {
     display: grid;
-    grid-template-columns: minmax(0, 12rem) minmax(0, 1fr);
-    gap: var(--space-1) var(--space-2);
-    padding-block: var(--space-1);
-    border-block-start: 1px solid var(--rule);
+    align-content: start;
+    gap: 0.35rem;
+    padding: var(--space-2);
+    background: var(--paper-raised);
   }
 
   .levels__name {
