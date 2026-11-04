@@ -214,3 +214,7 @@ export { MAL_ENTENDIDOS_MANUAIS } from "./manual/labels.js";
 // O showcase dos três pilares: um incidente, três gravadores, e o que os liga.
 export { ALTURA_DOS_PILARES, filmeDosPilares, incidente, LARGURA_DOS_PILARES, OPCOES_DOS_PILARES } from "./pilares/vitrine.js";
 export type { BaldeDoIncidente, DetalheDosPilares, Incidente, LinhaDeLog, OpcoesDosPilares, TraceDoIncidente } from "./pilares/vitrine.js";
+
+// O showcase da amostragem: quando se decide, e com quanto do trace.
+export { ALTURA_DA_AMOSTRAGEM, amostrar, filmeDaVitrineDaAmostragem, LARGURA_DA_AMOSTRAGEM, OPCOES_DA_VITRINE_DA_AMOSTRAGEM, TAXA_DA_VITRINE, traceQueFalha } from "./amostragem/vitrine.js";
+export type { Amostragem, DecisaoDeTrace, DetalheDaVitrineDaAmostragem, ModoDaAmostragem, OpcoesDaVitrineDaAmostragem, SpanDaVitrineDeAmostragem } from "./amostragem/vitrine.js";

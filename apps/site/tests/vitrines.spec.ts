@@ -53,3 +53,21 @@ test("a vitrine dos pilares: sem correlação o relógio dá quatro candidatos; 
   await expect(page.locator("svg.dui-stage").first()).toBeVisible();
   expect(erros).toEqual([]);
 });
+
+test("a vitrine da amostragem: head perde o erro, tail roteado o guarda, tail espalhado guarda metade", async ({ page }) => {
+  const erros: string[] = [];
+  page.on("pageerror", (e) => erros.push(String(e)));
+  await page.goto("labs/head-vs-tail-sampling/#showcase");
+  const vit = page.getByTestId("sampling-showcase");
+  await expect(vit).toBeVisible();
+  const veredito = async (modo: string, titulo: RegExp, esperado: string) => {
+    await vit.getByRole("radio", { name: modo }).click();
+    await vit.getByRole("button", { name: titulo }).click();
+    await vit.getByRole("button", { name: "Pause" }).click();
+    await expect(vit.locator(".cpuvit-linhas")).toContainText(esperado);
+  };
+  await veredito("Head", /never recorded/, "(error)dropped");
+  await veredito("Tail, routed by trace", /kept, whole/, "(error)whole");
+  await veredito("Tail, spread", /kept, in half/, "(error)only payments");
+  expect(erros).toEqual([]);
+});

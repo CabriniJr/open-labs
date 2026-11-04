@@ -183,8 +183,8 @@ própria (formulário, analisador, editor).
 
 ### Fase 5 — operar em escala
 
-#### head-vs-tail-sampling — *Head vs tail sampling* · disponível (fluxo)
-- **Showcase (a fazer).** O head decide no primeiro span, sem saber do erro. O tail espera o trace inteiro e precisa dele num só Collector. **3D:** a janela de decisão do tail como volume (tempo × spans retidos).
+#### head-vs-tail-sampling — *Head vs tail sampling* · disponível (fluxo + filme + 3D)
+- **Showcase.** Feito (`amostragem/vitrine.ts`, modelo `amostrar`): oito traces, um falha no payments; a mesma taxa pelo mesmo hash nos três modos. **Head** decide na raiz e perde o erro; **tail roteado por trace** guarda o erro inteiro; **tail espalhado** (round-robin por span) guarda só a metade que viu o erro, órfã no backend. **3D:** a janela de decisão é um volume — a altura é quantos spans cada gateway segura. **Interativo:** o modo refaz o filme.
 - **Ícones.** `sampler`, `collector`. **Correlações.** ← agent-or-gateway (roteamento por trace ID), ← providers.
 
 #### backpressure-and-drops — *Backpressure and drops* · a construir (filme + estado + 3D)
