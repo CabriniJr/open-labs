@@ -122,7 +122,7 @@ export const labs: readonly RoadmapLab[] = [
   { id: "zero-code-instrumentation", title: "Zero-code instrumentation", href: "#", status: "coming", side: "right", y: 680, phase: 4 },
   // Contexto não atravessa fila sozinho, e é a lacuna que mais aparece em
   // produção: o trace morre no `send` e reaparece órfão no `consume`.
-  { id: "propagating-through-a-queue", title: "Propagating through a queue", href: "#", status: "coming", side: "left", y: 736, phase: 4 },
+  { id: "propagating-through-a-queue", title: "Propagating through a queue", href: "labs/propagating-through-a-queue", status: "available", side: "left", y: 736, phase: 4 },
   { id: "host-and-kubernetes-signals", title: "Host and Kubernetes signals", href: "#", status: "coming", side: "right", y: 736, phase: 4 },
 
   { id: "head-vs-tail-sampling", title: "Head vs tail sampling", href: "labs/head-vs-tail-sampling", status: "available", side: "left", y: 870, phase: 5 },

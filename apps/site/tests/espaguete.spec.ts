@@ -389,6 +389,7 @@ const SEM_PALCO: ReadonlySet<string> = new Set([
   // (agregador com temporalidade; contexto por thread), sem fio roteado.
   "labs/the-shape-of-a-metric/",
   "labs/a-log-that-knows-its-trace/",
+  "labs/propagating-through-a-queue/",
 ]);
 
 test("todo lab publicado COM palco tem teto de cruzamentos medido", () => {

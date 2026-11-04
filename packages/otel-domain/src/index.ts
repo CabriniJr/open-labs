@@ -196,3 +196,10 @@ export type { Contexto, EstadoDoLog, Juncao, OpcoesDoLog, PassoDoLog, RegistroDe
 export { ALTURA_DO_LOG, LARGURA_DO_LOG, filmeDoLog } from "./log/filme.js";
 export type { DetalheDoLog } from "./log/filme.js";
 export { MAL_ENTENDIDOS_DO_LOG } from "./log/labels.js";
+
+// Propagar por uma fila: o contexto dentro da mensagem, e pai ou link do outro lado.
+export { consumirLote, consumirUm, esperar as esperarNaFila, novaFila, OPCOES_DA_FILA, publicar, rodarFila, roteiroDaFila, tracesDaFila } from "./fila/modelo.js";
+export type { Consumo, EstadoDaFila, Mensagem, OpcoesDaFila, PassoDaFila, SpanDaFila, TipoDoSpan, TraceDaFila } from "./fila/modelo.js";
+export { ALTURA_DA_FILA, LARGURA_DA_FILA, filmeDaFila } from "./fila/filme.js";
+export type { DetalheDaFila } from "./fila/filme.js";
+export { MAL_ENTENDIDOS_DA_FILA } from "./fila/labels.js";

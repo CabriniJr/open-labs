@@ -166,11 +166,12 @@ própria (formulário, analisador, editor).
 - **3D.** A pilha da aplicação em andares (framework HTTP, cliente de banco, código de negócio). O auto cobre as bordas, e o miolo fica escuro.
 - **Correlações.** ← manual-spans, ← providers.
 
-#### propagating-through-a-queue — *Propagating through a queue* · a construir (filme + estado + 3D)
+#### propagating-through-a-queue — *Propagating through a queue* · disponível (filme + livre + 3D)
 - **Pergunta.** Por que o trace morre no `send` e reaparece órfão no `consume`?
-- **Modelo.** Mensagem com headers, produtor e consumidor, link de span contra pai.
-- **Showcase.** O produtor injeta `traceparent` no header da mensagem, a fila guarda, e o consumidor extrai e cria um span com *link* (lote) ou com *pai* (uma mensagem). **3D:** a fila como um silo, com a altura sendo o tempo de espera.
-- **Ícones.** `queue`, `service`, `context`. **Correlações.** ← hard-context-and-baggage.
+- **Modelo.** `otel-domain/fila/modelo.ts`: um redutor (`publicar`, `esperar`, `consumirUm`, `consumirLote`) em que o produtor injeta o `traceparent` do span de publish nos headers da mensagem, e `tracesDaFila` monta o que o backend vê (pai, links, órfão).
+- **Showcase.** Feito (`fila/filme.ts`, derivado de `rodarFila`): três pedidos, três traces; a fila guarda corpo e headers; o consumidor extrai e o span de process é **filho** do publish (uma por vez) ou um trace novo com **três links** (lote); sem injeção, o trace termina no publish e o consumidor nasce órfão. **3D:** a fila é um silo, e a altura de cada mensagem é o tempo que ela esperou. **Interativo:** "uma por vez / em lote" e "injetar" refazem o filme.
+- **Simulação (livre).** `FilaLab`: o leitor publica, espera, consome uma ou o lote, e liga a injeção; a tabela é `tracesDaFila`.
+- **Ícones.** `queue`, `service`, `context`, `trace`, `backend`. **Correlações.** ← hard-context-and-baggage (o mesmo inject/extract, com a mensagem como portador), ← anatomy-of-a-trace (o órfão parece completo).
 
 #### host-and-kubernetes-signals — *Host and Kubernetes signals* · a construir (filme + 3D)
 - **Pergunta.** De onde vêm `k8s.pod.name` e as métricas do nó, e quem as anexa?
@@ -209,6 +210,6 @@ O codificador do protobuf já serve o anexo `protobuf-encoding`. O próximo é
 2. ~~Showcase de `anatomy-of-a-trace` (árvore em escada no 3D).~~ Feito.
 3. ~~`the-shape-of-a-metric`~~ Feito.
 4. ~~`a-log-that-knows-its-trace`~~ Feito.
-5. `propagating-through-a-queue`.
+5. ~~`propagating-through-a-queue`~~ Feito.
 6. Showcases de `three-pillars`, `providers`, `head-vs-tail-sampling` e `cardinality-and-the-bill`.
 7. `backpressure-and-drops`, `manual-spans`, `zero-code-instrumentation`, `host-and-kubernetes-signals` e `the-rollout`.
