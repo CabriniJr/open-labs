@@ -10,13 +10,13 @@ test("a log that knows its trace: fields link, text does not, and a bare worker 
   await lab.getByRole("button", { name: "log.info(…)" }).click();
   await expect(lab.locator("tbody tr").first().locator("td").last()).toHaveText("POST /checkout");
 
-  await lab.getByRole("switch", { name: /Hand the context/ }).uncheck();
+  await lab.getByText("Hand the context to new threads").click();
   await lab.getByRole("button", { name: "Spawn a worker thread" }).click();
   await lab.getByRole("radio", { name: "worker thread" }).click();
   await lab.getByRole("button", { name: "log.info(…)" }).click();
   await expect(lab.locator("tbody tr").nth(1).locator("td").last()).toHaveText("nothing (no context)");
 
-  await lab.getByRole("switch", { name: /Log bridge installed/ }).uncheck();
+  await lab.getByText("Log bridge installed").click();
   await lab.getByRole("button", { name: "Start a span" }).click();
   await lab.getByRole("button", { name: "log.info(…)" }).click();
   await expect(lab.locator("tbody tr").first().locator("td").last()).toHaveText("nothing (id in text)");

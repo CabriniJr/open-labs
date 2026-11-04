@@ -12,7 +12,7 @@ test("the shape of a metric: a restart makes a naive cumulative backend read neg
   await lab.getByRole("button", { name: /Slow request/ }).click();
   await lab.getByRole("button", { name: "Collect now" }).click();
   await expect(lab.locator("tbody tr").nth(1).locator("td").last()).toHaveText("-2");
-  await lab.getByRole("switch", { name: /honours start time/ }).check();
+  await lab.getByText("Backend honours start time").click();
   await expect(lab.locator("tbody tr").nth(1).locator("td").last()).toHaveText("1");
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(overflow).toBeLessThanOrEqual(1);

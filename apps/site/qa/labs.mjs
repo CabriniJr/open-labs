@@ -58,7 +58,8 @@ function labsDoBuild() {
 }
 
 async function subirPreview() {
-  const proc = spawn("npx", ["astro", "preview", "--port", String(PORTA), "--host", "127.0.0.1"], { cwd: SITE, stdio: "ignore" });
+  // O astro pelo próprio Node: `npx` é `npx.cmd` no Windows, e `spawn` sem shell não o acha.
+  const proc = spawn(process.execPath, [join(SITE, "node_modules/astro/astro.js"), "preview", "--port", String(PORTA), "--host", "127.0.0.1"], { cwd: SITE, stdio: "ignore" });
   for (let i = 0; i < 60; i += 1) {
     try {
       const r = await fetch(BASE);

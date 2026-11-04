@@ -27,7 +27,7 @@ test("a vitrine da anatomia monta a árvore no backend, e o proxy a parte em dua
   await vit.getByRole("button", { name: "Pause" }).click();
   await expect(vit.locator(".cpuvit-niveis li[data-on]")).toHaveText("tree");
   await expect(vit.locator(".cpuvit-linhas")).toContainText("traces1");
-  await vit.getByRole("switch", { name: /proxy strips headers/ }).check();
+  await vit.getByText("A proxy strips headers before payments").click();
   await vit.getByRole("button", { name: /The backend builds the tree/ }).click();
   await expect(vit.locator(".cpuvit-linhas")).toContainText("traces2");
   await page.getByRole("tab", { name: /Simulation/ }).click();
