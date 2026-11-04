@@ -189,3 +189,10 @@ export type { Agregador, Corrida, Evento, OpcoesDaMetrica, Passo, PontoExportado
 export { ALTURA_DA_METRICA, LARGURA_DA_METRICA, filmeDaMetrica } from "./metrica/filme.js";
 export type { DetalheDaMetrica } from "./metrica/filme.js";
 export { MAL_ENTENDIDOS_DA_METRICA } from "./metrica/labels.js";
+
+// Um log que sabe o trace dele: o contexto ativo por thread e a ponte que o lê.
+export { abrirSpan, aplicar, contextoAtivo, criarThread, fecharSpan, juntar, logar, novoProcesso, OPCOES_DO_LOG, ROTEIRO_DO_LOG, rodarLog } from "./log/modelo.js";
+export type { Contexto, EstadoDoLog, Juncao, OpcoesDoLog, PassoDoLog, RegistroDeLog, SpanDoLog } from "./log/modelo.js";
+export { ALTURA_DO_LOG, LARGURA_DO_LOG, filmeDoLog } from "./log/filme.js";
+export type { DetalheDoLog } from "./log/filme.js";
+export { MAL_ENTENDIDOS_DO_LOG } from "./log/labels.js";

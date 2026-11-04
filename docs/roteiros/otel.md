@@ -125,14 +125,14 @@ própria (formulário, analisador, editor).
 - **Ícones.** `metric`, `service`, `exporter`, `backend`.
 - **Correlações.** ← three-pillars, → cardinality-and-the-bill, → reading-an-otlp-payload (o envelope de métricas tem a mesma forma de resource/scope).
 
-#### a-log-that-knows-its-trace — *A log that knows its trace* · a construir (filme + livre)
+#### a-log-that-knows-its-trace — *A log that knows its trace* · disponível (filme + livre)
 - **Pergunta.** Como um log ganha `trace_id` e `span_id` sem o desenvolvedor escrever isso?
-- **Mal-entendido.** "Basta logar o trace_id na mensagem."
-- **Modelo.** A ponte do log (log bridge) lendo o contexto ativo. `LogRecord` com `trace_id` e `span_id` como campos, não como texto.
-- **Showcase.** O logger existente, a ponte, o contexto ativo, o LogRecord no envelope e o backend pulando do log para o trace.
-- **Simulação.** Logar fora do span ativo (o contexto some) e logar em thread nova sem propagação.
-- **Ícones.** `log`, `context`, `trace`.
-- **Correlações.** ← hard-context-and-baggage, ← reading-an-otlp-payload (LogRecord.trace_id é o mesmo campo de 16 bytes).
+- **Mal-entendido.** "Basta logar o trace_id na mensagem" / "todo log da requisição tem o trace" / "o log pendura no span raiz".
+- **Modelo.** `otel-domain/log/modelo.ts`: um redutor com pilha de contexto **por thread** (`abrirSpan`, `fecharSpan`, `logar`, `criarThread` com ou sem levar o contexto) e `juntar`, que liga log a span só pelo campo. Sem ponte, o id vai para o texto.
+- **Showcase.** Feito (`log/filme.ts`, derivado de `rodarLog`): o span fica ativo na thread e o log sai com os campos; o span filho ganha; o worker nasce vazio (ou com o contexto, se alguém levou); depois do fim do span não há contexto; e o backend liga por campo, com o motivo escrito em quem não liga. **Interativo:** ponte e propagação para o worker refazem o filme. **3D:** a vista Iso existe pelo player, mas a altura não carrega sentido aqui; o lab não depende dela.
+- **Simulação (livre).** `LogLab`: o leitor é o handler — escolhe a thread, abre e fecha spans, loga, cria o worker — e a tabela é `juntar`.
+- **Ícones.** `log`, `context`, `trace`, `sdk` (a ponte), `backend`.
+- **Correlações.** ← hard-context-and-baggage (o contexto entre processos; aqui, entre threads), ← reading-an-otlp-payload (LogRecord.trace_id é o mesmo campo de 16 bytes), ← three-pillars.
 
 ### Fase 3 — a arquitetura
 
@@ -208,7 +208,7 @@ O codificador do protobuf já serve o anexo `protobuf-encoding`. O próximo é
 1. ~~Ícones que faltam em contexto e o ícone `bytes` no envelope da vitrine.~~ Feito: a ficha do palco (plano e iso) desenha o ícone no cabeçalho.
 2. ~~Showcase de `anatomy-of-a-trace` (árvore em escada no 3D).~~ Feito.
 3. ~~`the-shape-of-a-metric`~~ Feito.
-4. `a-log-that-knows-its-trace`.
+4. ~~`a-log-that-knows-its-trace`~~ Feito.
 5. `propagating-through-a-queue`.
 6. Showcases de `three-pillars`, `providers`, `head-vs-tail-sampling` e `cardinality-and-the-bill`.
 7. `backpressure-and-drops`, `manual-spans`, `zero-code-instrumentation`, `host-and-kubernetes-signals` e `the-rollout`.

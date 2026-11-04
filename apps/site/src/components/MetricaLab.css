@@ -70,3 +70,12 @@
 .metlab__coluna--neg { fill: var(--dui-viva); }
 .metlab__veredito { margin: 0; color: var(--ink-muted); font-size: var(--size-step--1); }
 .metlab__veredito b { color: var(--ink); }
+
+/* A simulação do log reusa os cartões e a tabela; só os spans são dela. */
+.loglab__spans { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; font-size: var(--size-step--1); }
+.loglab__spans li { padding: 0.3rem 0.6rem; border: 1px solid var(--rule); border-radius: var(--radius-2); color: var(--ink-faint); }
+.loglab__spans li[data-aberto] { border-color: color-mix(in oklab, var(--dui-especie-1) 60%, var(--rule)); color: var(--ink); }
+.loglab__spans span { color: var(--ink-muted); }
+.loglab__spans small { float: inline-end; color: var(--ink-faint); }
+.metlab__tabela td.loglab__corpo { text-align: start; white-space: normal; min-width: 12rem; }
+.metlab__gesto:disabled { opacity: 0.45; cursor: default; }
