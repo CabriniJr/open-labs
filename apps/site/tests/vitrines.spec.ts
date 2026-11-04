@@ -36,3 +36,20 @@ test("a vitrine da anatomia monta a árvore no backend, e o proxy a parte em dua
   expect(overflow).toBeLessThanOrEqual(1);
   expect(erros).toEqual([]);
 });
+
+test("a vitrine dos pilares: sem correlação o relógio dá quatro candidatos; com ela, um", async ({ page }) => {
+  const erros: string[] = [];
+  page.on("pageerror", (e) => erros.push(String(e)));
+  await page.goto("labs/three-pillars/#showcase");
+  const vit = page.getByTestId("pillars-showcase");
+  await expect(vit).toBeVisible();
+  await vit.getByRole("button", { name: /Joined by the clock/ }).click();
+  await vit.getByRole("button", { name: "Pause" }).click();
+  await expect(vit.locator(".cpuvit-linhas")).toContainText("candidates4");
+  await vit.getByText("trace_id in logs, exemplars in metrics").click();
+  await vit.getByRole("button", { name: /One id through all three/ }).click();
+  await expect(vit.locator(".cpuvit-linhas")).toContainText("candidates1");
+  await page.getByRole("tab", { name: /Simulation/ }).click();
+  await expect(page.locator("svg.dui-stage").first()).toBeVisible();
+  expect(erros).toEqual([]);
+});

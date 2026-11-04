@@ -71,11 +71,11 @@ própria (formulário, analisador, editor).
 
 ### Fase 1 — o problema
 
-#### three-pillars — *Three pillars, one blind spot* · disponível (fluxo)
+#### three-pillars — *Three pillars, one blind spot* · disponível (fluxo + filme + 3D)
 - **Pergunta.** Logs, métricas e traces do mesmo incidente bastam para achar a causa?
 - **Mal-entendido.** "Ter os três sinais é ter observabilidade."
 - **Mídia.** Fluxo: o leitor segue a mesma requisição pelos três sinais e vê onde a correlação se perde.
-- **Showcase (a fazer).** 1) a requisição falha; 2) o log tem a mensagem e não tem o trace; 3) a métrica tem o pico e não tem a requisição; 4) o trace tem o caminho; 5) com `trace_id` no log e exemplar na métrica, os três se ligam. **3D:** três planos empilhados, um por sinal, e a requisição como uma coluna que os atravessa. A altura é o sinal.
+- **Showcase.** Feito (`pilares/vitrine.ts`, com o modelo `incidente`): seis requisições, a última falha; o log tem a frase e o segundo (e quatro requisições naquele segundo); o balde mais lento tem duas requisições e nenhuma identidade; o trace tem o caminho; com `trace_id` no log e exemplar no balde, os três apontam para o mesmo trace. **3D:** um plano por sinal (log 0, métrica 28, trace 56), e a requisição que falha ocupa a mesma coluna nos três — a linha que os atravessa é sólida com `trace_id` e tracejada quando só o relógio liga. **Interativo:** a correlação refaz o filme.
 - **Simulação.** Ligar e desligar a correlação (trace_id no log, exemplar) e ver qual pergunta deixa de ter resposta.
 - **Ícones.** `trace`, `metric`, `log`, `service`.
 - **Correlações.** → anatomy-of-a-trace (o que é um span), → a-log-that-knows-its-trace, → the-shape-of-a-metric.

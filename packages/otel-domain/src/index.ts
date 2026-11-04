@@ -210,3 +210,7 @@ export type { EstadoManual, Instrucao, NoBackend, OpcoesManuais, SpanManual } fr
 export { ALTURA_MANUAL, LARGURA_MANUAL, filmeManual } from "./manual/filme.js";
 export type { DetalheManual } from "./manual/filme.js";
 export { MAL_ENTENDIDOS_MANUAIS } from "./manual/labels.js";
+
+// O showcase dos três pilares: um incidente, três gravadores, e o que os liga.
+export { ALTURA_DOS_PILARES, filmeDosPilares, incidente, LARGURA_DOS_PILARES, OPCOES_DOS_PILARES } from "./pilares/vitrine.js";
+export type { BaldeDoIncidente, DetalheDosPilares, Incidente, LinhaDeLog, OpcoesDosPilares, TraceDoIncidente } from "./pilares/vitrine.js";

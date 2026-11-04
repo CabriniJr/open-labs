@@ -2,12 +2,17 @@
 import LabAssessment from "../../components/LabAssessment.astro";
 import { EXERCICIOS_DOS_PILARES } from "@ovh/otel-domain";
 import { Exercicio } from "../../components/Exercicio.tsx";
-import { PilaresLab } from "../../components/PilaresLab.tsx";
+import { PilaresModos } from "../../components/PilaresModos.tsx";
 import { Predicao } from "../../components/Predicao.tsx";
 import SiteFooter from "../../components/SiteFooter.astro";
 import SiteNav from "../../components/SiteNav.astro";
 import Base from "../../layouts/Base.astro";
 import { url } from "../../lib/urls";
+import "../../components/ModosDoLab.css";
+import "../../components/CpuVitrine.css";
+import "../../components/ContextoLab.css";
+import "@ovh/motion/src/react/motion.css";
+import "@ovh/stage3d/src/iso.css";
 import "../../styles/docs.css";
 import "../../components/PilaresLab.css";
 import "../../components/Predicao.css";
@@ -58,7 +63,7 @@ const exercicios = EXERCICIOS_DOS_PILARES.map(montarExercicio);
     </section>
 
     <section class="lab-palco">
-      <PilaresLab client:only="react" />
+      <PilaresModos client:only="react" />
     </section>
 
     <section class="lab-prosa editorial">
