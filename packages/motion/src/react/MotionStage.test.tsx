@@ -10,7 +10,7 @@ const GLIFO = { paths: ["M4 12h16"] };
 
 function filme(icone: boolean) {
   const f = film<null>({ width: 400, height: 200 });
-  f.add({ type: "token", id: "m", path: line(pt(20, 100), pt(380, 100)), label: "ctx", sublabel: "traceparent", ...(icone ? { icon: GLIFO } : {}) });
+  f.add({ type: "token", id: "m", path: line(pt(20, 100), pt(380, 100)), label: "msg", sublabel: "header", ...(icone ? { icon: GLIFO } : {}) });
   f.chapter({ id: "um", title: "Um", body: "" }, (d) => d.send("m", { dur: 800 }));
   return f.build();
 }
