@@ -43,9 +43,11 @@ test("both handbooks draw their own interactive map", async ({ page }) => {
   // O RISC-V ficou sem mapa enquanto o modelo dele não existia — desenhar o
   // caminho antes de andá-lo seria prometer. O modelo existe, e o mapa dele
   // mostra os dois labs que abrem e o resto como caminho declarado.
+  // O mapa do OpenTelemetry tinha labs por escrever; em 04/11/2026 todos foram
+  // publicados. O que o teste guarda é o mapa existir e abrir os labs.
   await page.goto("handbooks/otel/");
   await expect(page.locator(".roadmap")).toBeVisible();
-  await expect(page.locator('.roadmap__node[data-status="coming"]').first()).toBeVisible();
+  await expect(page.locator('.roadmap__node a[href*="labs/the-rollout"]').first()).toBeVisible();
 
   await page.goto("handbooks/cpu/");
   await expect(page.locator(".roadmap")).toBeVisible();
