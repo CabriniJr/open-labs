@@ -79,3 +79,15 @@
 .loglab__spans small { float: inline-end; color: var(--ink-faint); }
 .metlab__tabela td.loglab__corpo { text-align: start; white-space: normal; min-width: 12rem; }
 .metlab__gesto:disabled { opacity: 0.45; cursor: default; }
+
+/* O editor dos spans à mão: linhas numeradas, a atual em destaque, a comentada apagada. */
+.manlab__codigo { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; font-size: var(--size-step--1); }
+.manlab__codigo li { display: grid; grid-template-columns: 2.4rem minmax(0, 1fr); align-items: center; border-radius: var(--radius-1); }
+.manlab__codigo li[data-rodou] { background: color-mix(in oklab, var(--dui-processor) 8%, transparent); }
+.manlab__codigo li[data-atual] { background: color-mix(in oklab, var(--accent) 18%, transparent); }
+.manlab__codigo li[data-comentada] code { color: var(--ink-faint); }
+.manlab__codigo code { overflow-x: auto; padding: 0.3rem 0.5rem; white-space: pre; }
+.manlab__gutter { align-self: stretch; border: 0; border-inline-end: 1px solid var(--rule); background: none; color: var(--ink-faint); font: inherit; cursor: pointer; }
+.manlab__gutter[aria-pressed="true"] { color: var(--dui-viva); }
+.manlab__aviso { display: block; color: var(--dui-viva); font-style: normal; font-size: 0.72rem; }
+.metlab__cartao h3.manlab__h { margin-block-start: var(--space-2); }

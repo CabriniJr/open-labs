@@ -1,0 +1,218 @@
+---
+import LabAssessment from "../../components/LabAssessment.astro";
+import { MAL_ENTENDIDOS_MANUAIS } from "@ovh/otel-domain";
+import { ManualModos } from "../../components/ManualModos.tsx";
+import { Predicao } from "../../components/Predicao.tsx";
+import SiteFooter from "../../components/SiteFooter.astro";
+import SiteNav from "../../components/SiteNav.astro";
+import Base from "../../layouts/Base.astro";
+import { url } from "../../lib/urls";
+import "../../styles/docs.css";
+import "../../components/ModosDoLab.css";
+import "../../components/CpuVitrine.css";
+import "../../components/ContextoLab.css";
+import "../../components/ImplantacaoLab.css";
+import "../../components/MetricaLab.css";
+import "@ovh/motion/src/react/motion.css";
+import "@ovh/stage3d/src/iso.css";
+import "../../components/Predicao.css";
+---
+
+<Base
+  domain="otel"
+  title="Manual spans — OpenLabs"
+  description="A manual span is an open record in process memory until end() hands it to the exporter. Forget end() and it never arrives — and its children arrive as orphans. Attributes set after end() are dropped, and an id in the span name makes every request its own operation."
+>
+  <SiteNav current="labs" />
+
+  <main id="content">
+    <section class="lab-head editorial">
+      <div class="prose">
+        <p class="lab-head__eyebrow mono">
+          <a href={url("handbooks/otel")}>OpenTelemetry Visual Handbook</a> · lab
+        </p>
+        <h1>The span you forgot to end is the one you needed</h1>
+        <p>
+          The payment span is in the backend, root of nothing, pointing at a
+          parent that does not exist. The checkout span it belonged to never
+          arrived: an early <code>return</code> skipped <code>span.end()</code>,
+          and nothing complained.
+        </p>
+        <p>
+          Three calls do almost all manual instrumentation:
+          <code>startSpan</code>, <code>setAttribute</code>, <code>end</code>.
+          The rules between them are few and strict — a span leaves when it
+          <b>ends</b>, nothing sticks <b>after</b> it ends, and a child only
+          means something if its <b>parent</b> arrives too. Watch the handler
+          run, then edit it.
+        </p>
+      </div>
+      <aside class="lab-head__note mono">
+        <p>An editor, not a flow.</p>
+        <p>The subject is the order of three calls.</p>
+      </aside>
+    </section>
+
+    <section class="lab-palco">
+      <ManualModos client:only="react" />
+    </section>
+
+    <section class="lab-prosa editorial">
+      <div class="prose">
+        <h2>Break it</h2>
+        <ol>
+          <li>
+            <b>Comment out line 6, <code>span.end()</code>, and run to the
+            end.</b> The child arrives an orphan; checkout is still open in
+            memory and is never exported.
+          </li>
+          <li>
+            <b>Run again with every line on, and read line 7.</b>
+            <code>order.total</code> is set after the span ended, so it is
+            dropped — move it above <code>span.end()</code> in your head and the
+            attribute would be there.
+          </li>
+          <li>
+            <b>Comment out line 5, <code>child.end()</code>.</b> Now the parent
+            arrives and the child never does: the trace looks complete and is
+            missing the payment.
+          </li>
+          <li>
+            <b>Turn on &ldquo;put the order id in the span name&rdquo;.</b> The
+            warning appears: each order becomes a new operation. The id was
+            already an attribute — that is where it belongs.
+          </li>
+        </ol>
+
+        <h2>Predict before you look</h2>
+        <p>Answer first, then try it in the editor.</p>
+      </div>
+      <div class="lab-predicao">
+        <Predicao
+          client:visible
+          pergunta="A handler starts a parent span, starts and ends a child inside it, and then returns early without calling end() on the parent. What does the backend receive?"
+          opcoes={[
+            "Only the child, pointing at a parent that never arrives",
+            "Both spans, with the parent's duration cut at the return",
+            "Neither — the child waits for its parent",
+          ]}
+          correta={0}
+          revelacao="The span processor gets each span on its own end(). The child ended, so it was exported at once, carrying its parent's id. The parent never ended, so it was never handed to the exporter; it stays open in memory. The backend draws the child as an orphan root and has no record of the request at all."
+        />
+      </div>
+    </section>
+
+    <section class="lab-prosa editorial">
+      <div class="prose">
+        <h2>What people get wrong</h2>
+        <p>Each row is a belief the editor is built to take apart. The right column is the specification, with the link.</p>
+      </div>
+      <div class="lab-mal-entendidos">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">What people believe</th>
+              <th scope="col">What the spec says</th>
+            </tr>
+          </thead>
+          <tbody>
+            {
+              MAL_ENTENDIDOS_MANUAIS.map((m) => (
+                <tr>
+                  <td>{m.crenca}</td>
+                  <td>
+                    {m.spec}{" "}
+                    <a href={m.fonte} rel="noreferrer noopener" target="_blank">
+                      source
+                    </a>
+                  </td>
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="lab-prosa editorial">
+      <div class="prose">
+        <h2>Where this connects</h2>
+        <p>
+          <a href={url("labs/anatomy-of-a-trace")}>Anatomy of a trace</a> is why
+          the orphan still looks like a tree: the backend builds from what
+          arrived. <a href={url("labs/cardinality-and-the-bill")}>Cardinality
+          and the bill</a> is the price of an id in the wrong place, and
+          <a href={url("labs/a-log-that-knows-its-trace")}>A log that knows its
+          trace</a> needs the span you start here to be the active one.
+        </p>
+      </div>
+    </section>
+    <LabAssessment href="labs/manual-spans" />
+  </main>
+
+  <SiteFooter />
+</Base>
+
+<style>
+  .lab-head {
+    padding-block: var(--space-4) var(--space-2);
+  }
+
+  .lab-head__eyebrow {
+    margin: 0 0 var(--space-1);
+    color: var(--accent);
+    font-size: var(--size-step--1);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  h1 {
+    margin: 0 0 var(--space-2);
+    font-size: var(--size-step-2);
+    max-width: 24ch;
+  }
+
+  .lab-head__note {
+    align-self: end;
+    color: var(--ink-muted);
+    font-size: var(--size-step--1);
+  }
+
+  .lab-head__note p {
+    margin: 0 0 0.35rem;
+  }
+
+  .lab-palco {
+    margin-block: var(--space-2) var(--space-4);
+  }
+
+  .lab-prosa {
+    padding-block-end: var(--space-4);
+  }
+
+  .lab-predicao {
+    grid-column: 1 / -1;
+    margin-block-start: var(--space-2);
+    max-width: var(--measure);
+  }
+
+  .lab-mal-entendidos {
+    grid-column: 1 / -1;
+    margin-block-start: var(--space-2);
+    overflow-x: auto;
+  }
+
+  .lab-mal-entendidos table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: var(--size-step--1);
+  }
+
+  .lab-mal-entendidos th,
+  .lab-mal-entendidos td {
+    border-block-end: 1px solid var(--border);
+    padding: var(--space-1) var(--space-2);
+    text-align: start;
+    vertical-align: top;
+  }
+</style>

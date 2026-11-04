@@ -203,3 +203,10 @@ export type { Consumo, EstadoDaFila, Mensagem, OpcoesDaFila, PassoDaFila, SpanDa
 export { ALTURA_DA_FILA, LARGURA_DA_FILA, filmeDaFila } from "./fila/filme.js";
 export type { DetalheDaFila } from "./fila/filme.js";
 export { MAL_ENTENDIDOS_DA_FILA } from "./fila/labels.js";
+
+// Spans à mão: o tracer em miniatura, o programa do editor e o que o backend recebe.
+export { executar as executarInstrucao, noBackend, nomeDeAltaCardinalidade, novoTracer, OPCOES_MANUAIS, programa as programaManual, rodarManual } from "./manual/modelo.js";
+export type { EstadoManual, Instrucao, NoBackend, OpcoesManuais, SpanManual } from "./manual/modelo.js";
+export { ALTURA_MANUAL, LARGURA_MANUAL, filmeManual } from "./manual/filme.js";
+export type { DetalheManual } from "./manual/filme.js";
+export { MAL_ENTENDIDOS_MANUAIS } from "./manual/labels.js";

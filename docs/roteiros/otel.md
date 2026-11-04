@@ -156,10 +156,13 @@ própria (formulário, analisador, editor).
 
 ### Fase 4 — instrumentação
 
-#### manual-spans — *Manual spans* · a construir (livre + filme)
+#### manual-spans — *Manual spans* · disponível (livre + filme)
 - **Pergunta.** Quando criar um span à mão, e o que ele precisa ter?
-- **Mídia.** Um editor de código fictício com três botões (`startSpan`, `setAttribute`, `end`) e o trace montando ao lado. O filme mostra o span esquecido aberto (sem `end`).
-- **Ícones.** `service`, `trace`. **Correlações.** → semantic-conventions (anexo), → cardinality-and-the-bill.
+- **Mal-entendido.** "O span sai quando começa" / "dá para pôr atributo depois do end" / "o id do pedido vai no nome do span".
+- **Modelo.** `otel-domain/manual/modelo.ts`: um tracer em miniatura (`iniciar`, `atribuir`, `terminar`) com três regras — só sai o que terminou, nada gruda depois do `end()`, o filho cita o pai — e o aviso de nome de alta cardinalidade. O programa do handler é uma lista de instruções, e cada linha pode ser comentada.
+- **Showcase.** Feito (`manual/filme.ts`, derivado de `rodarManual`): o código à esquerda acende linha a linha, a memória do SDK mostra os spans abertos e encerrados, o filho sai antes do pai, e o atributo depois do `end()` é descartado. **Interativo:** "comentar `span.end()`" (o pai nunca chega, o filho chega órfão) e "id no nome" refazem o filme.
+- **Simulação (livre).** `ManualLab`: o editor — clicar no número da linha comenta; rodar linha a linha ou até o fim; ao lado, a memória do SDK e o que o backend recebeu.
+- **Ícones.** `trace`, `backend`. **Correlações.** ← anatomy-of-a-trace (o órfão), → cardinality-and-the-bill (o id no nome), → a-log-that-knows-its-trace (o span ativo), → semantic-conventions (anexo).
 
 #### zero-code-instrumentation — *Zero-code instrumentation* · a construir (filme + 3D)
 - **Pergunta.** O que o agente automático instrumenta, e o que ele não consegue ver?
