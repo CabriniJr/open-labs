@@ -1,0 +1,45 @@
+---
+id: otel-sampling
+title: Head decide antes de saber; tail precisa do trace inteiro
+seed: 11
+edgeTicks: 1
+params:
+  traces-por-tick: 2
+  spans-por-trace: 3
+  erro-a-cada: 4
+  head-mantem-1-em: 1
+  espera-do-tail: 2
+  tail-mantem-1-em: 5
+  rotear-por-trace: 1
+---
+flowchart LR
+  app([app]):::aplicacao
+  head[head sampler]:::guarda
+  balanceador[load balancer]:::receptor
+
+  gatewayA[tail sampler · A]:::acumulador
+  gatewayB[tail sampler · B]:::acumulador
+
+  backend[(backend)]:::destino
+  descartes[(dropped)]:::descarte
+
+  app  -- "exporta:span"     --> head
+
+  head -- "amostrado:span"   --> balanceador
+  head -- "cortado:span"     --> descartes
+
+  balanceador -- "paraA:span" --> gatewayA
+  balanceador -- "paraB:span" --> gatewayB
+
+  gatewayA -- "mantido:trace" --> backend
+  gatewayA -- "cortado:trace" --> descartes
+
+  gatewayB -- "mantido:trace" --> backend
+  gatewayB -- "cortado:trace" --> descartes
+
+  classDef aplicacao  family:processor,kind:source
+  classDef receptor   family:processor,kind:router
+  classDef guarda     family:processor,kind:router
+  classDef acumulador family:processor,kind:buffer
+  classDef destino    family:processor,kind:store
+  classDef descarte   family:processor,kind:store

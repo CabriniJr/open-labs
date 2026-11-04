@@ -1,0 +1,43 @@
+# O collector da frente: ele não amostra nada, ele só ROTEIA.
+#
+# Compare com `packages/otel-domain/src/amostragem/amostragem.mmd`: este arquivo
+# é a caixa `load balancer` do desenho, e os dois `tail.yaml` são os dois
+# gateways. A tese do lab não é do simulador — ela é desta linha de
+# configuração.
+#
+# O ponto a ler: `routing_key`. Com `traceID`, todo span de um trace vai para a
+# mesma instância, que é a única condição em que o `tail_sampling` do outro lado
+# decide sobre um trace e não sobre um pedaço. Troque por `service` e tudo
+# continua subindo, exportando e parecendo certo.
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+
+exporters:
+  # O nome mudou de `loadbalancing` para `load_balancing` na convenção
+  # lower_snake_case; o antigo segue como alias depreciado. Aqui está o novo,
+  # que é o que a imagem fixada no `compose.yaml` entende.
+  load_balancing:
+    # <handbook:trecho id="a-chave-de-roteamento">
+    # <handbook:lacuna>
+    routing_key: traceID
+    # </handbook:lacuna>
+    # </handbook:trecho>
+    protocol:
+      otlp:
+        tls:
+          insecure: true
+    resolver:
+      static:
+        hostnames:
+          - tail-a:4317
+          - tail-b:4317
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: []
+      exporters: [load_balancing]

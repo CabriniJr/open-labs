@@ -1,5 +1,39 @@
 # Decisões e ideias consolidadas
 
+**Avaliações, 19/10/2026:** a jornada de estudo inclui checkpoint por lab e
+avaliação final por handbook. São conteúdo portável com objetivos, gabaritos,
+resoluções, fontes, pontos e revisão editorial, independentes dos motores.
+As predições/exercícios imediatos permanecem durante o lab; a avaliação revela
+as resoluções após a entrega. Bundles v2 transportam os bancos; o leitor mantém
+v1. O capítulo **Interactive assessments** descreve os cinco tipos iniciais e
+a fronteira entre prática local e gestão autenticada de turmas.
+
+**Contratos e entregas, 19/10/2026:** conteúdo (`handbook/v1`, `bundle/v1`),
+implementação (`lab/v1`) e execução/distribuição (`host-template/v1`,
+`delivery/v1`) têm contratos separados. `flow` exige o Mermaid canônico;
+`state` exige seu runtime de estado; `direct` usa manipulação dedicada.
+O Studio monta ZIPs executáveis com versões e integridade verificadas.
+O capítulo **Runnable handbook deliveries** registra o contrato e os limites.
+
+**Studio alpha, 18/10/2026:** a primeira interface local de autoria reutiliza o
+contrato do SDK, edita currículo/artigos, preserva rascunhos inválidos e exporta
+fontes ou bundle validado. O briefing assistido é preparado para compartilhar
+com Claude/outro assistente, sem chamada automática de modelo. O capítulo
+**Handbook Studio**, no índice de autoria, descreve os fluxos e os limites.
+
+**Atualização de 18/10/2026:** a autoria independente tem artefatos alpha
+instaláveis de `handbook-format` e `interactive-core`, com prova de consumo
+fora do monorepo. O bundle v1 transporta conteúdo; as implementações de labs
+são dependências explícitas do host. O capítulo **Independent handbook authoring**,
+no índice de autoria, descreve o caminho e seus limites.
+
+**Atualização de 16/10/2026:** o framework admite interações além do motor de
+fluxos. Mermaid continua contrato canônico dos cenários de fluxo; estado,
+reconciliação e manipulação direta têm contratos próprios. O Pod lifecycle
+inaugura o Kubernetes Visual Handbook sem importar o motor de fluxos. Detalhes
+e limites no capítulo **Framework interativo e Pod lifecycle**, no índice
+“Escrever um lab”.
+
 **Data:** 2026-08-28, com o enquadramento revisto em 2026-08-29
 **Papel deste documento:** ponto de entrada. As ideias que sobreviveram, as que foram
 recusadas, e as réguas que decidem discussão futura. Os outros documentos aprofundam; este
@@ -26,9 +60,12 @@ OTel. Um repositório chamado *OTel Visual Handbook* cujo próximo entregável �
 datapath RV32I mente no título — e a mentira não é cosmética: sugere que o motor é de
 telemetria, quando o motor é justamente **o que não sabe o que é um span**.
 
-- **OpenLabs** é a casa: um motor composicional, e vários handbooks rodando nele
-- **Cada handbook é um `.model`** — `otel.model` (F4), `cpu.model` (F6). O que muda de
-  um para outro é o domínio, nunca o motor. É a mesma fronteira que o CI já guarda
+- **OpenLabs** é a casa: um framework de handbooks interativos, com motor
+  composicional, runtime de estado e implementações de manipulação direta
+- **Cada handbook reúne conteúdo e labs**, que podem usar modelos distintos.
+  `otel.model` (F4) e `cpu.model` (F6) compartilham o motor composicional;
+  Kubernetes usa estado/reconciliação. O domínio continua fora dos runtimes,
+  com fronteiras verificadas pelo CI
 - **Todo handbook tem a mesma anatomia**, e é ela que dá a página: **roadmap** (a ordem
   em que os conceitos se sustentam) · **artigos** (o texto que explica) · **labs** (o
   modelo que roda). Um handbook sem as três não está pronto, e a página diz isso em vez
@@ -216,8 +253,8 @@ que exige o motor.
 
 Nomenclatura · a ferramenta ensina e não opera · `model` é ilha com porto · reuso não é
 requisito · playground é editor de grafo com regras · segue com o motor · a gramática ·
-os quatro níveis como tipos de coisa · **o motor é pilar e não é obrigatório** (§9) · **o projeto é OpenLabs, e cada handbook é um
-`.model` com roadmap, artigos e labs** (o enquadramento, no topo).
+os quatro níveis como tipos de coisa · **o motor é pilar e não é obrigatório** (§9) · **o projeto é OpenLabs, e cada handbook tem
+roadmap, artigos e labs com contratos de interação próprios** (o enquadramento, no topo).
 
 ### Abertas, e nesta ordem de urgência
 
@@ -347,3 +384,144 @@ que nenhum modelo sustenta, que é o defeito mais caro do projeto. A trava é a 
 outros: **contraparte real**. Se o lab diz algo sobre o mundo, o repositório tem de ter como
 conferir contra a coisa de verdade — e sem modelo por baixo, essa dívida fica *maior*, não
 menor.
+
+---
+
+## 10. Handbook é submissão, e o contrato tem versão
+
+*Decidido em 2026-10-16. O caminho para quem submete está em `handbooks.md`; esta seção
+decide, e cria a régua.*
+
+### O problema
+
+Publicar um handbook exigia editar TypeScript dentro do site: `apps/site/src/data/handbooks.ts`,
+mais o mapa, mais um arquivo de tema. Isso faz duas coisas ruins ao mesmo tempo, e as duas
+são estruturais:
+
+- quem domina um assunto precisa aprender a casa inteira antes de escrever a primeira
+  linha. O custo de entrada não é o conteúdo, é o monorepo;
+- quem mantém a casa fica dono de conteúdo que não é dele. Um handbook de terceiro no meio
+  do nosso código é código nosso para sempre.
+
+### A decisão
+
+**Um handbook é um diretório com um manifesto, e o manifesto tem dono declarado.**
+`handbooks/<id>/handbook.yaml`, contrato em arquivo, zero TypeScript. O `CODEOWNERS` é
+**derivado** dos manifestos — submeter é também assumir a propriedade.
+
+Três consequências que valem estar escritas, porque cada uma foi uma escolha contra uma
+alternativa mais arrumada:
+
+1. **Os artigos de uma submissão moram onde moram os nossos**
+   (`apps/site/src/content/articles/<id>/`), e não dentro do diretório do autor. A pasta
+   do autor ficaria mais arrumada; o preço seria conteúdo submetido **com guardas mais
+   fracas** que o nosso — fonte citada nas duas direções, degrau de drill-down, catálogo e
+   disco concordando. Arrumação não paga promessa enfraquecida.
+2. **O manifesto não descreve comportamento, e isso fica dito.** Lab que roda é modelo, e
+   modelo é TypeScript. Inventar um formato que descrevesse comportamento pela metade seria
+   pior que recusar: o autor descobriria o limite depois de escrever.
+3. **O `map` é a razão honesta de OTel e CPU seguirem em TypeScript.** Ele é desenho com
+   coordenadas, e o contrato em arquivo não desenha. Escrito, em vez de descoberto por quem
+   tentar migrar.
+
+### A régua nova: compatibilidade é mecanismo, não boa vontade
+
+**A release que introduz uma versão nova do contrato continua lendo a anterior.** A régua
+que isso cria, e que decide discussão futura sobre formato:
+
+> Toda versão suportada tem **exemplar de conformidade**, e o exemplar carrega em cada
+> suíte. Uma versão só sai da lista quando existe migração automática para a seguinte.
+
+O que a régua impede, concretamente: a limpeza silenciosa. "Ninguém mais usa aquele
+formato" é uma frase que alguém diz num refactor, e o custo cai em quem não está na sala.
+Com a régua, apagar o leitor de uma versão listada **derruba a suíte nomeando a versão** — a
+decisão de aposentar passa a ser deliberada, que é o que ela tem de ser.
+
+E a recusa separa as duas direções, que erram diferente: quem escreveu contra uma versão
+**mais nova** está com o site velho e é mandado atualizar a casa (nada no arquivo dele está
+errado); quem escreveu contra uma **aposentada** é mandado migrar. "Versão inválida" manda
+os dois procurarem no lugar errado.
+
+### Por que duas versões já existem hoje
+
+Porque a promessa só vale se for verificável agora, e não sobre um `v2` futuro que ninguém
+pode testar. Os três handbooks originais são objetos TypeScript escritos à mão — essa é,
+literalmente, a versão anterior deste contrato, e ela está na lista **com esse nome**: não é
+"o jeito antigo", é `typescript`, estado `anterior`, com data.
+
+A prova é uma igualdade medida: o `algorithms` migrou para `openlabs/handbook/v1`, e o
+objeto que estava escrito no site ficou congelado em `handbooks.test.ts` como expectativa,
+comparado campo por campo com o que o leitor produz. Cor, fase, href, status: idênticos. É
+o que faz "migrar é mecânico" ser um fato e não uma frase.
+
+### Onde isto poderia mentir em silêncio
+
+Um manifesto válido descreve um handbook que **não ensina nada** — fases bem-numeradas,
+itens todos `coming`, tema bonito. O formato não tem como cobrar currículo, e não deve
+tentar: a régua da §9 e a exigência de fonte primária continuam sendo trabalho de revisão
+humana. O que o formato garante é que nada **desaparece em silêncio**; o que ele não
+garante é que valha a pena ler. Essa distinção precisa estar na cabeça de quem revisa um
+PR de handbook, e é a última seção de `handbooks.md` justamente por isso.
+
+## 11. Um terceiro motor, para o que é coreografia
+
+*Decidido em 2026-11-03.*
+
+A §9 separou dois casos: fluxo com camadas vai para o motor de grafos; o resto vira lab
+PhET-like, enxuto e próprio. Faltava um terceiro, e ele aparece toda vez que o assunto é
+um **protocolo**: atores fixos, mensagens que viajam numa ordem, e uma pergunta que é sobre
+*o que atravessa cada salto*. Propagação de contexto, um handshake, uma reconciliação.
+
+Isso não é fluxo com camadas — não há *dentro* em um header. E também não é um lab de
+estado com botões: o que ensina é ver a coisa **andar**, com a câmera indo aonde ela está.
+Escrever isso à mão em cada lab é o caminho por que o projeto já passou com as cores (§ do
+catálogo): cada um escolhe bem por conta própria até o dia em que não escolhe.
+
+**A decisão:** `@ovh/motion`, um palco animado agnóstico — geometria, linha do tempo pura,
+ferramentas de coreografia e um player com capítulos. Ele vale as mesmas três regras dos
+outros motores:
+
+1. **Fronteira vigiada.** Está em `pnpm boundaries` e em `check-catalogo`: não conhece
+   domínio e não escreve tinta.
+2. **Derivado, não roteirizado.** Um filme é função de um modelo do domínio. O filme do lab
+   de propagação sai de `propagar()`, e o teste interroga o quadro, não o desenho.
+3. **Dado puro.** O `Film` é amostrável em qualquer instante. Voltar, pular e mudar uma
+   opção no meio não perdem a posição nem dão quadros diferentes para o mesmo instante.
+
+**O que ele não é:** substituto do `depth-core`. Um assunto que tem camadas e que se abre
+continua lá. Se um dia um filme precisar descer para dentro de uma peça, o caminho é o palco
+de fluxos, não um zoom de câmera que finge profundidade.
+
+## 12. Ícones são do handbook; rótulos cedem; o roteiro é contrato de conteúdo
+
+**Ícone.** O motor aceita `icon: Glyph` em qualquer peça e não traz desenho
+nenhum. O catálogo de ícones é da identidade do handbook (`ICONES_OTEL`,
+`ICONES_K8S`, `ICONES_CPU`), e um papel tem o mesmo ícone em todos os labs do
+handbook. É o que deixa o leitor reconhecer o Collector de um lab para o outro
+sem ler o rótulo. Um ícone no motor seria um assunto no motor, e a fronteira
+(`check-boundaries`) existe para impedir isso.
+
+**Rótulo que cede.** No isométrico, rótulos que no plano tinham folga se
+empilhavam. Apertar o layout de cada filme para caber no 3D tornava o plano
+pior. A regra fica no palco 3D: o rótulo de prioridade menor some enquanto
+cobriria outro. A prioridade é aceso, depois a peça maior.
+
+**Janela à esquerda, andamento à direita.** Empilhados, a narração caía abaixo
+da dobra e quem assistia o filme não via o que o capítulo dizia. O layout é do
+`MotionPlayer` (container query), não de cada lab.
+
+**Roteiro.** `docs/roteiros/<handbook>.md` diz, por lab, a pergunta, o
+mal-entendido, a mídia, os capítulos, o significado da altura no 3D, os ícones
+e as correlações. É o contrato de conteúdo. O da forma é a skill. Os dois são
+atualizados no PR que muda o lab.
+
+**Verbo antes de byte.** O protobuf teve dois showcases recusados. Um era um
+filme de fichas voando do objeto para um fio de blocos. O outro mostrava um
+buffer em hexa crescendo em etapas. Os dois mostravam a máquina por dentro
+antes de contar a história. O que ficou é o formato do hero antigo,
+modernizado no filme: o span é um papelzinho que pula de app em app (com
+ícone), e uma tela ao lado soma, em verbos curtos, o que cada um fez com ele.
+A profundidade é descer dentro do papel (campos, depois um campo). A
+interatividade são escolhas que refazem o filme (protobuf/JSON, um atributo a
+mais). O hexa e os offsets ficam na simulação, para quem quer cavar. O motor
+de fluxos (`depth-ui`) não é obrigatório, e este lab não o usa.

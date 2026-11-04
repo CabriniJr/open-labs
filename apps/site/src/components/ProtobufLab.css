@@ -1,0 +1,90 @@
+/* O analisador de bytes. Cor só por sentido: o tom de cada jeito de escrever. */
+.pblab { display: grid; gap: var(--space-2); min-width: 0; }
+.pblab [data-tone] { --pb-c: var(--dui-tinta); }
+.pblab [data-tone="conduit"] { --pb-c: var(--dui-conduit); }
+.pblab [data-tone="high"] { --pb-c: var(--dui-alto); }
+.pblab [data-tone="kind-1"] { --pb-c: var(--dui-especie-1); }
+.pblab [data-tone="kind-2"] { --pb-c: var(--dui-especie-2); }
+.pblab [data-tone="kind-4"] { --pb-c: var(--dui-especie-4); }
+.pblab [data-tone="muted"] { --pb-c: var(--ink-faint); }
+
+.pblab__form { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-2); align-items: end; }
+.pblab__form label { display: grid; gap: 4px; font-size: var(--size-step--1); }
+.pblab__form input:not([type="checkbox"]),
+.pblab__form select { padding: 6px 10px; border: 1px solid var(--rule); border-radius: var(--radius-2); background: var(--paper-raised); color: var(--ink); font: inherit; }
+.pblab__check { display: flex !important; gap: 6px; align-items: center; }
+
+.pblab__sizes { display: grid; gap: 6px; }
+.pblab__sizes div { position: relative; display: flex; gap: 8px; align-items: baseline; padding: 4px 10px; font-size: var(--size-step--1); }
+.pblab__sizes span { position: absolute; inset: 0 auto 0 0; width: var(--w); border-radius: var(--radius-2); background: color-mix(in oklab, var(--pb-c) 18%, transparent); transition: width 240ms ease; z-index: -1; }
+.pblab__sizes div { z-index: 0; }
+
+.pblab__panes { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-2); }
+@container (min-width: 50rem) { .pblab__panes { grid-template-columns: auto minmax(0, 1fr); } }
+.pblab { container-type: inline-size; }
+
+.pblab__hex { padding: var(--space-1); border: 1px solid var(--rule); border-radius: var(--radius-3); background: var(--paper-raised); overflow-x: auto; font-size: 0.78rem; }
+.pblab__linha { display: flex; gap: 2px; align-items: center; }
+.pblab__off { width: 4.2ch; margin-right: 8px; color: var(--ink-faint); }
+.pblab__byte {
+  width: 2.6ch;
+  padding: 2px 0;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  background: color-mix(in oklab, var(--pb-c, var(--rule)) 14%, transparent);
+  color: var(--ink);
+  font: inherit;
+  text-align: center;
+  cursor: pointer;
+}
+.pblab__byte[data-head] { color: var(--pb-c); font-weight: 600; }
+.pblab__byte[data-on] { background: color-mix(in oklab, var(--pb-c) 42%, transparent); }
+.pblab__byte[data-key] { border-color: var(--pb-c); }
+.pblab__byte:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+.pblab__tree { max-height: 26rem; margin: 0; padding: var(--space-1); overflow-y: auto; border: 1px solid var(--rule); border-radius: var(--radius-3); background: var(--paper-raised); list-style: none; font-size: var(--size-step--1); }
+.pblab__tree button { display: grid; grid-template-columns: 2.5ch minmax(0, auto) minmax(0, 1fr); gap: 8px; width: 100%; padding: 2px 6px 2px calc(6px + var(--d) * 14px); border: 0; border-left: 2px solid var(--pb-c); border-radius: 0; background: none; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
+.pblab__tree button[aria-pressed="true"] { background: color-mix(in oklab, var(--pb-c) 18%, transparent); }
+.pblab__num { color: var(--pb-c); }
+.pblab__val { overflow: hidden; color: var(--ink-muted); text-overflow: ellipsis; white-space: nowrap; }
+.pblab__leitura { margin: 0; font-size: var(--size-step--1); line-height: 1.5; }
+
+
+/* ── a tela do showcase: o que cada um fez com o span, somado ── */
+.pbtela { display: grid; gap: var(--space-1); }
+.pbtela [data-tone] { --pb-c: var(--dui-tinta); }
+.pbtela [data-tone="conduit"] { --pb-c: var(--dui-conduit); }
+.pbtela [data-tone="processor"] { --pb-c: var(--dui-processor); }
+.pbtela [data-tone="container"] { --pb-c: var(--dui-container); }
+.pbtela [data-tone="high"] { --pb-c: var(--dui-alto); }
+.pbtela [data-tone="kind-1"] { --pb-c: var(--dui-especie-1); }
+.pbtela [data-tone="muted"] { --pb-c: var(--ink-faint); }
+.pbtela__niveis { display: flex; flex-wrap: wrap; gap: 4px; margin: 0; padding: 0; list-style: none; font-size: 0.72rem; }
+.pbtela__niveis li { padding: 2px 8px; border: 1px solid var(--rule); border-radius: 999px; color: var(--ink-muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.pbtela__niveis li[data-on] { border-color: var(--accent); color: var(--ink); background: color-mix(in oklab, var(--accent) 12%, transparent); }
+.pbtela__diario { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; counter-reset: passo; }
+.pbtela__diario li { counter-increment: passo; }
+.pbtela__diario button {
+  display: block;
+  width: 100%;
+  padding: 6px 10px 6px 34px;
+  position: relative;
+  border: 0;
+  border-left: 2px solid var(--pb-c);
+  border-radius: 0 6px 6px 0;
+  background: color-mix(in oklab, var(--pb-c) 7%, transparent);
+  color: var(--ink-muted);
+  font: inherit;
+  font-size: var(--size-step--1);
+  line-height: 1.45;
+  text-align: left;
+  cursor: pointer;
+}
+.pbtela__diario button::before { content: counter(passo, decimal-leading-zero); position: absolute; left: 8px; color: var(--ink-faint); font-family: var(--font-mono); font-size: 0.72rem; }
+.pbtela__diario b { color: var(--ink); }
+.pbtela__verbo { color: var(--pb-c); font-weight: 600; }
+.pbtela__diario .mono { color: var(--ink); overflow-wrap: anywhere; }
+.pbtela__diario li[data-novo] button { background: color-mix(in oklab, var(--pb-c) 16%, transparent); animation: pbtela-entra 480ms ease-out both; }
+.pbtela__diario button:hover { background: color-mix(in oklab, var(--pb-c) 14%, transparent); }
+@keyframes pbtela-entra { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .pbtela__diario li[data-novo] button { animation: none; } }

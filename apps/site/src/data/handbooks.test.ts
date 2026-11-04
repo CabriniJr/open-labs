@@ -1,3 +1,4 @@
+import { existsSync, readdirSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { HANDBOOKS, handbookOf, readyCount, type Handbook } from "./handbooks.js";
 
@@ -115,6 +116,46 @@ describe("o catálogo não promete o que não abre, nem esconde o que abre", () 
     },
   );
 
+  it("todo artigo escrito está na lista, e toda entrada pronta tem arquivo", () => {
+    /*
+      A lista de artigos é escrita à mão — e tem de ser, porque ela carrega a
+      ORDEM de leitura e os nós por escrever, que não existem como arquivo. O
+      que não pode é divergir do disco, e as duas direções erram diferente:
+
+      - artigo escrito e fora da lista some do handbook. O texto existe, a
+        página existe, e nenhum leitor chega nela;
+      - entrada "available" sem arquivo é link morto em produção, que o
+        docblock da lista já nomeia como a coisa que ela existe para evitar.
+
+      Esta é a guarda derivada que faltava. A âncora escrita à mão do teste
+      abaixo continua valendo por outra razão: ela pega os dois lados
+      concordando estando os dois errados.
+    */
+    const raiz = new URL("../content/articles/", import.meta.url);
+    for (const handbook of HANDBOOKS) {
+      const dir = new URL(`${handbook.id}/`, raiz);
+      const noDisco = existsSync(dir)
+        ? readdirSync(dir)
+            .filter((f) => f.endsWith(".md"))
+            .map((f) => f.replace(/\.md$/u, ""))
+            .sort()
+        : [];
+      const naLista = handbook.articles.filter((a) => a.status === "available");
+
+      expect(
+        naLista.map((a) => a.id).sort(),
+        `${handbook.id}: artigo escrito e fora da lista some do handbook; ` +
+          "entrada pronta sem arquivo é link morto",
+      ).toEqual(noDisco);
+
+      // E o href de cada um aponta para o próprio slug: um href trocado entre
+      // dois artigos passaria na checagem de cima.
+      for (const a of naLista) {
+        expect(a.href, a.id).toBe(`handbooks/${handbook.id}/articles/${a.id}`);
+      }
+    }
+  });
+
   it("os labs que existem de verdade estão marcados como prontos", () => {
     // As páginas que o site publica hoje. Escrito à mão de propósito: é a
     // âncora fora do catálogo, e sem ela os dois lados poderiam concordar
@@ -128,5 +169,37 @@ describe("o catálogo não promete o que não abre, nem esconde o que abre", () 
     for (const pagina of NO_AR) {
       expect([...linkados], `${pagina} está no ar e ninguém aponta para ele`).toContain(pagina);
     }
+  });
+});
+
+/**
+ * O handbook submetido entrou no catálogo.
+ *
+ * A **fidelidade** da migração entre versões do contrato não se cobra aqui, e
+ * sim em `packages/handbook-format/src/migracao.test.ts`, contra um par
+ * congelado (o manifesto do dia da migração e o objeto que o catálogo em
+ * TypeScript tinha). A primeira versão desta checagem morava aqui comparando o
+ * manifesto VIVO com a expectativa congelada, e reprovou assim que o primeiro
+ * artigo do handbook ficou pronto: ela misturava "o leitor traduz fielmente"
+ * com "o conteúdo nunca muda".
+ *
+ * O que é desta camada é mais simples e continua valendo: um manifesto que não
+ * carrega derruba o build do site, mas este teste roda sem o build — e é ele
+ * que diz ao autor que o arquivo dele entrou.
+ */
+describe("o handbook submetido está no catálogo", () => {
+  const submetido = handbookOf("algorithms");
+
+  it("existe, e veio do manifesto em handbooks/algorithms/", () => {
+    expect(submetido, "handbooks/algorithms/handbook.yaml não entrou no catálogo").toBeDefined();
+    const comExtras = submetido as unknown as { readonly apiVersion?: string };
+    expect(comExtras.apiVersion).toBe("openlabs/handbook/v1");
+  });
+
+  it("tem dono declarado, que é a promessa do caminho dourado", () => {
+    const comExtras = submetido as unknown as {
+      readonly mantenedores?: readonly { readonly github: string }[];
+    };
+    expect(comExtras.mantenedores?.length ?? 0).toBeGreaterThan(0);
   });
 });

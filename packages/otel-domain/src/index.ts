@@ -58,7 +58,65 @@ export type { Amostrador, Decisao } from "./providers/sampler.js";
 
 // Os exercícios de instrumentação: definição, sem a resposta certa.
 export { EXERCICIOS_DOS_PROVEDORES } from "./exercicios/providers.js";
+export { EXERCICIOS_DA_ANATOMIA } from "./exercicios/anatomia.js";
+export { EXERCICIOS_DOS_PILARES } from "./exercicios/pilares.js";
+export { EXERCICIOS_DO_COLLECTOR } from "./exercicios/collector.js";
+export { EXERCICIOS_DA_AMOSTRAGEM } from "./exercicios/amostragem.js";
 export type { DefinicaoDeExercicio, Distrator } from "./exercicios/tipos.js";
+
+// Cardinalidade e a conta: lab PhET-like, SEM motor (ADR §9). Aritmética sobre
+// um produto cartesiano, e nenhum preço afirmado em lugar nenhum.
+export { calcular, fatorDeEntrada, pontosPorSerie } from "./cardinalidade/modelo.js";
+export type { Atributo, Conta, TipoDeMetrica } from "./cardinalidade/modelo.js";
+export {
+  ATRIBUTOS_DA_CARDINALIDADE,
+  ROTULOS_DA_CARDINALIDADE,
+  MAL_ENTENDIDOS_DA_CARDINALIDADE,
+} from "./cardinalidade/labels.js";
+
+// O lab do Collector: um receiver, duas pipelines, uma cópia para cada.
+export { collectorWorld, PARAMS_DO_COLLECTOR } from "./collector/world.js";
+export type {
+  SpanDoCollector,
+  EstadoDaApp,
+  EstadoDoReceiver,
+  EstadoDoLimiter,
+  EstadoDoLote,
+  EstadoDoFiltro,
+  EstadoDoDestino,
+  EstadoDoDescarte,
+} from "./collector/world.js";
+export { estadoDoCollector, LEITOR_DO_SPAN_DO_COLLECTOR } from "./collector/estado.js";
+export type { EstadoDoCollector } from "./collector/estado.js";
+export { VIEW_COLLECTOR, VIEWS_DO_COLLECTOR } from "./collector/views.js";
+export {
+  ROTULOS_COLLECTOR,
+  ROTAS_DO_COLLECTOR,
+  ROTA_FILTRADA,
+  MAL_ENTENDIDOS_DO_COLLECTOR,
+} from "./collector/labels.js";
+
+// O lab da amostragem: head decide antes de saber; tail precisa do trace inteiro.
+export { amostragemWorld, PARAMS_DA_AMOSTRAGEM, hashDoTrace } from "./amostragem/world.js";
+export type {
+  SpanAmostrado,
+  EstadoDaAppAmostrada,
+  EstadoDoHead,
+  EstadoDoBalanceador,
+  EstadoDoTail,
+  TraceAberto,
+  TraceNoBackend,
+  EstadoDoBackendDeTraces,
+  EstadoDoDescarteDeTraces,
+} from "./amostragem/world.js";
+export { estadoDaAmostragem, LEITOR_DO_SPAN_AMOSTRADO } from "./amostragem/estado.js";
+export type { EstadoDaAmostragem, EstadoDeUmGateway } from "./amostragem/estado.js";
+export { VIEW_AMOSTRAGEM, VIEWS_DA_AMOSTRAGEM } from "./amostragem/views.js";
+export {
+  ROTULOS_AMOSTRAGEM,
+  SERVICOS_DO_TRACE,
+  MAL_ENTENDIDOS_DA_AMOSTRAGEM,
+} from "./amostragem/labels.js";
 
 // O lab dos três pilares: as mesmas requisições, três gravadores.
 export { pilaresWorld, PARAMS_DOS_PILARES, latenciaDe } from "./pilares/world.js";
@@ -91,3 +149,32 @@ export { spanDoHeroi } from "./heroi/carga.js";
 export type { SpanDoHeroi } from "./heroi/carga.js";
 export { ATRIBUTO_DO_COLLECTOR, ROTULOS_HEROI, VALOR_DO_COLLECTOR } from "./heroi/labels.js";
 export { VIEW_HEROI, VIEWS_DO_HEROI } from "./heroi/views.js";
+
+// O lab da propagação de contexto, sobre o palco animado.
+export { formatBaggage, parseBaggage } from "./contexto/baggage.js";
+export type { Baggage } from "./contexto/baggage.js";
+export { CAMINHO, INSTRUMENTADOS, OPCOES_PADRAO, propagar } from "./contexto/propagacao.js";
+export type { Chamada as ChamadaDePropagacao, OpcoesDePropagacao, Propagacao, Servico, SpanGerado } from "./contexto/propagacao.js";
+export { ALTURA, LARGURA, filmeDoContexto, rotuloDoContexto } from "./contexto/filme.js";
+export type { DetalheDoContexto, Foco } from "./contexto/filme.js";
+
+// O lab da implantação do Collector: agent, gateway, e onde um trace fica inteiro.
+export { entregar, MODOS, NOS_DO_CLUSTER, PODS, REPLICAS, SPANS } from "./implantacao/modelo.js";
+export type { Entrega, Modo, OpcoesDeImplantacao } from "./implantacao/modelo.js";
+export { ALTURA_DA_IMPLANTACAO, LARGURA_DA_IMPLANTACAO, filmeDaImplantacao } from "./implantacao/filme.js";
+export type { DetalheDaImplantacao, LinhaDaTabela } from "./implantacao/filme.js";
+
+// A vitrine do Collector: o modo showcase do lab do pipeline.
+export { envelopeDaVitrine, filmeDaVitrineOtel } from "./vitrine/filme.js";
+export type { DetalheDaVitrineOtel } from "./vitrine/filme.js";
+
+// A identidade do handbook: os ícones de cada papel, iguais em todo lab.
+export { ICONES_OTEL } from "./icones/icones.js";
+export type { IconeOtel } from "./icones/icones.js";
+
+// O payload OTLP em protobuf: o codificador e o filme do lab.
+export { bytesEmJson, chave, codificarRequisicao, hex, varint } from "./protobuf/codificar.js";
+export type { CampoCodificado, Codificacao, TipoDoCampo, WireType } from "./protobuf/codificar.js";
+export { envelopeDoProtobuf, SPAN_DO_PROTOBUF, tomDoCampo } from "./protobuf/exemplo.js";
+export { filmeDaViagem, spanDaViagem } from "./protobuf/viagem.js";
+export type { Codificacao as CodificacaoDaViagem, DetalheDaViagem, LinhaDoDiario, OpcoesDaViagem } from "./protobuf/viagem.js";

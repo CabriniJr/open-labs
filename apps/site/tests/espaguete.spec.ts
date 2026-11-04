@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { cruzamentos as cruzamentosDe, meada } from "@ovh/depth-ui";
+import { HANDBOOKS } from "../src/data/handbooks.js";
 
 /**
  * Quanto espaguete cada figura tem, medido no que foi desenhado.
@@ -131,7 +132,45 @@ const TETOS = [
    * embaixo de todos é um leque que converge, e leque que converge cruza.
    */
   { lab: "labs/three-pillars/", nome: "os três gravadores", cruzamentos: 0 },
+  /*
+   * Dois, e eles são o mesmo defeito estrutural do lab do Collector com um
+   * produtor a mais: TRÊS nós jogam fora (o head sampler e os dois gateways) e
+   * o contador de descarte é um só, embaixo. A linha que desce do gateway de
+   * cima até ele atravessa a fileira do gateway de baixo, e a do head atravessa
+   * o caminho do balanceador — leque que converge cruza.
+   *
+   * Dava para zerar dando um contador a cada um, e seria pior pela mesma razão
+   * de lá: ensinaria que a perda de head sampling e a de tail sampling são
+   * contadas em lugares diferentes, quando a pergunta que o lab existe para
+   * responder é justamente qual dos dois jogou fora o trace que faltou.
+   */
+  { lab: "labs/head-vs-tail-sampling/", nome: "head e tail sampling", cruzamentos: 2 },
   { lab: "labs/anatomy-of-a-trace/", nome: "a anatomia de um trace", cruzamentos: 4 },
+  /*
+   * Um, e ele é estrutural: as duas pipelines são fileiras PARALELAS e o
+   * contador de descarte é o único nó que as duas compartilham, embaixo das
+   * duas. A linha que desce da fileira de cima até ele atravessa a de baixo, e
+   * isso é leque que converge — a mesma razão dos quatro da anatomia.
+   *
+   * Dava para zerar movendo o contador para fora, e seria pior: um contador por
+   * fileira deixaria o desenho mais simétrico e ensinaria que a perda de cada
+   * pipeline é contada em lugares diferentes, que não é o que o Collector faz.
+   */
+  { lab: "labs/collector-pipeline/", nome: "a pipeline do collector", cruzamentos: 1 },
+  /*
+   * Zero, e aqui o número é o argumento: a tese do lab é que o parsing
+   * acontece numa estação, e um desenho em linha reta é o que diz isso. As
+   * duas linhas entre o nível do meio e o indexador saem de portas diferentes
+   * e chegam na mesma caixa sem se cruzar, porque elas não são rotas
+   * alternativas — são naturezas diferentes de carga, e só uma viaja por run.
+   * O dia em que este número subir, o desenho deixou de ser uma esteira.
+   */
+  { lab: "labs/splunk-ingest/", nome: "a ingestão do Splunk", cruzamentos: 0 },
+  // Zero, e aqui é mais fácil que no outro: a escada dos baldes é uma corrente
+  // de quatro estados em que cada caixa tem um sucessor só. Um cruzamento aqui
+  // significaria que alguém desenhou um atalho — e atalho entre estados de
+  // balde é justamente o que não existe.
+  { lab: "labs/splunk-buckets/", nome: "a escada dos baldes", cruzamentos: 0 },
   // A landing: o herói roda o mesmo motor e entra na mesma medida. Três caixas
   // em fila não têm por que cruzar — e é justamente por ser óbvio que o teto
   // fica escrito: o dia em que ele subir, subiu por alguma coisa.
@@ -273,5 +312,99 @@ for (const teto of TETOS) {
     for (const [tunel, quantas] of porTunel) {
       expect(quantas % 2, `o túnel de ${tunel} tem ${quantas} bocas`).toBe(0);
     }
+  });
+}
+
+
+/**
+ * A guarda contra a lista de tetos envelhecer.
+ *
+ * `TETOS` é escrita à mão, e tem de ser: o número de cruzamentos de cada
+ * desenho é uma MEDIÇÃO daquele desenho, e não há de onde derivá-la. O que dá
+ * para derivar é a lista de labs — e sem isto um lab novo entra no repositório,
+ * ninguém lembra deste arquivo, e o desenho dele nunca é medido. O verde
+ * continua verde cobrindo os antigos, que é o defeito que este repositório já
+ * pagou em outras guardas.
+ *
+ * A fonte é o **catálogo**, e era o roadmap até 19/10/2026. A troca tem razão
+ * mecânica: o roadmap só existe para os dois handbooks mais antigos — é o `map`
+ * com coordenadas, que é a lacuna declarada do contrato em arquivo. Um handbook
+ * submetido não tem mapa nenhum, então um lab dele passava inteiro por fora
+ * desta varredura, e por fora da de rolagem horizontal. O catálogo tem os labs
+ * dos dois tipos de handbook, e é lá que `status: "available"` significa "tem
+ * página".
+ */
+const PUBLICADOS: readonly string[] = [
+  ...new Set(
+    HANDBOOKS.flatMap((h) => h.labs)
+      .filter((lab) => lab.status === "available" && (lab.href ?? "#") !== "#")
+      .map((lab) => `${(lab.href ?? "").replace(/\/$/u, "")}/`),
+  ),
+].sort();
+
+/**
+ * Labs que **não têm palco**, e por isso não têm desenho para medir.
+ *
+ * Não é isenção: é a ADR §9 aparecendo na suíte. Um lab cujo assunto não é
+ * fluxo com camadas é um lab PhET-like, e a ADR é explícita sobre o que ele não
+ * deve ter — "sem árvore de composição, sem palco, sem `kinds`". Medir
+ * cruzamento de fio num lab sem fio não é uma medida mais fraca, é uma medida
+ * sem objeto.
+ *
+ * E a entrada aqui é VERIFICADA: o teste abaixo cobra que a página destes labs
+ * de fato não tenha `.dui-stage`. No dia em que um deles ganhar palco, ele cai
+ * pedindo um teto — que é o contrário de uma lista que silencia.
+ */
+const SEM_PALCO: ReadonlySet<string> = new Set([
+  "labs/cardinality-and-the-bill/",
+  /*
+    O lab do ciclo de vida do Pod, que chegou pelo main em 19/10/2026 — e ele
+    entrou nesta varredura porque a lista de publicados passou a sair do
+    catálogo em vez do roadmap, no mesmo dia. Foi a primeira coisa que a troca
+    pegou, e pegou um lab de outro handbook submetido, que é exatamente o que
+    ela existe para fazer.
+
+    Ele é declaradamente fora do motor de fluxos: um modelo de estado dirigido
+    por manifesto, sem árvore de composição e sem palco. Medir cruzamento de
+    fio num lab sem fio não é uma medida mais fraca, é uma medida sem objeto —
+    e o teste abaixo CONFIRMA a ausência de palco em vez de acreditar nesta
+    linha.
+  */
+  "labs/pod-lifecycle/",
+  /*
+    O primeiro lab do palco animado (`@ovh/motion`), 03/11/2026. Ele tem palco,
+    mas não o de fluxos: é um diagrama de sequência gerado de um modelo de
+    propagação, com raias fixas e mensagens horizontais — não há roteamento de
+    fio para cruzar. A medida de cruzamentos é do roteador do `depth-ui`, e o
+    teste abaixo confirma que esta página não tem `.dui-stage`.
+  */
+  "labs/hard-context-and-baggage/",
+  // O segundo lab do palco animado, pelo mesmo motivo: filme com vista
+  // isométrica, sem o roteador de fios do `depth-ui`.
+  "labs/agent-or-gateway/",
+  // Filme com vista isométrica e um analisador de bytes em React: os blocos
+  // são campos em ordem de byte, sem fio roteado para cruzar.
+  "labs/reading-an-otlp-payload/",
+]);
+
+test("todo lab publicado COM palco tem teto de cruzamentos medido", () => {
+  const medidos = new Set(TETOS.map((t) => t.lab).filter((l) => l !== ""));
+  const faltando = PUBLICADOS.filter((lab) => !medidos.has(lab) && !SEM_PALCO.has(lab));
+  expect(
+    faltando,
+    "um lab publicado não tem teto de cruzamentos. O desenho dele nunca foi " +
+      "medido: acrescente-o a `TETOS` neste arquivo, com o número que a medição " +
+      "der e a razão dele por escrito. Se ele não tem palco (ADR §9), acrescente-o " +
+      "a `SEM_PALCO`.",
+  ).toEqual([]);
+});
+
+for (const lab of [...SEM_PALCO]) {
+  test(`${lab} está em SEM_PALCO, e a página confirma que não tem palco`, async ({ page }) => {
+    // A afirmação, e não a isenção. Sem isto, `SEM_PALCO` seria um jeito de
+    // tirar um lab da medição escrevendo o nome dele numa lista.
+    await page.goto(lab);
+    await expect(page.locator("main")).toBeVisible();
+    await expect(page.locator(".dui-stage")).toHaveCount(0);
   });
 }

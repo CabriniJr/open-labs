@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { glob } from "node:fs/promises";
 
 /**
@@ -30,14 +30,56 @@ const KINDS_DO_MOTOR = (() => {
 })();
 
 const AGNOSTIC = [
+  "packages/interactive-core/",
   "packages/depth-core/",
   "packages/depth-ui/",
+  /* O palco animado: atores, fichas, câmera e tempo. Serve a qualquer assunto. */
+  "packages/motion/",
+  /* O mesmo filme, de pé: a vista isométrica em three.js. */
+  "packages/stage3d/",
   "packages/model-format/",
   "packages/mermaid-skeleton/",
+  /*
+    `handbook-format` NÃO está aqui, e a ausência é uma decisão de hoje
+    (19/10/2026) em vez de um esquecimento.
+
+    Ele deveria estar: é o contrato em que um handbook de qualquer assunto é
+    escrito, e um formato que soubesse o que é um sourcetype deixaria de servir
+    para o próximo assunto. Experimentei pôr, e a guarda acusou três coisas na
+    hora — duas são strings de fixture nos testes do pacote (um `href` e o nome
+    de uma avaliação, ambos nomeando um domínio sem precisar) e a terceira é
+    **falso positivo**: `delivery.ts` diz "same assembly in the CLI and Studio",
+    que é inglês comum e colide com "assembly" da lista do RISC-V.
+
+    Então entrar aqui hoje custaria reescrever código que chegou ao main há
+    horas e exigiria escopar a lista de palavras por pacote. As duas coisas são
+    uma mudança própria, e quem escreveu aquele código merece vê-la sozinha em
+    vez de embutida num merge de outra entrega.
+  */
 ];
 
-/** Pacotes de domínio que eles não podem importar. */
-const DOMAIN_PACKAGES = ["@ovh/otel-domain", "@ovh/cpu-domain"];
+/**
+ * Pacotes de domínio que eles não podem importar, **derivados do disco**.
+ *
+ * Era uma lista escrita à mão, e ela envelhecia: `algo-domain` ficou de fora
+ * por um tempo, e `splunk-domain` e `kubernetes-domain` nasceram depois. Um
+ * pacote agnóstico importando qualquer um deles passava. Agora a lista nasce
+ * com o pacote — o `kubernetes-domain`, que entrou pelo main no mesmo dia,
+ * já está nela sem ninguém acrescentá-lo.
+ *
+ * A convenção que isto usa já valia: todo pacote de domínio deste repositório
+ * termina em `-domain`.
+ */
+const DOMAIN_PACKAGES = readdirSync("packages", { withFileTypes: true })
+  .filter((e) => e.isDirectory() && e.name.endsWith("-domain"))
+  .map((e) => `@ovh/${e.name}`)
+  .sort();
+
+if (DOMAIN_PACKAGES.length === 0) {
+  console.error("Nenhum pacote de domínio encontrado — a leitura da guarda quebrou.");
+  process.exit(1);
+}
+
 
 /**
  * Termos inequívocos de domínio. `span` e `trace` sozinhos ficam de fora de
@@ -87,12 +129,39 @@ const CPU = [
   "instruction set",
 ];
 
-const DOMAIN_WORDS = [...OTEL, ...CPU];
+/**
+ * O terceiro domínio, e a lista é curta de propósito.
+ *
+ * "bucket", "index" e "event" ficam de fora: são palavras do motor e da web em
+ * qualquer assunto, e proibi-las aqui pararia o repositório sem proteger nada.
+ * O que entra são termos que só significam uma coisa.
+ */
+const SPLUNK = [
+  "splunk",
+  "sourcetype",
+  "props.conf",
+  "indexes.conf",
+  "outputs.conf",
+  "inputs.conf",
+  "universal forwarder",
+  "heavy forwarder",
+  "tsidx",
+  "splunkd",
+];
+
+/** O quarto domínio, que entrou pelo main. Mesma regra: termo sem ambiguidade. */
+const KUBERNETES = ["kubernetes", "kubelet", "kubectl", "replicaset", "crashloopbackoff"];
+
+const DOMAIN_WORDS = [...OTEL, ...CPU, ...SPLUNK, ...KUBERNETES];
 
 export function findViolations(filePath, source) {
   if (!AGNOSTIC.some((prefix) => filePath.startsWith(prefix))) return [];
 
   const violations = [];
+
+  if (filePath.startsWith("packages/interactive-core/") && /["']@ovh\/(?:depth-core|depth-ui|mermaid-skeleton)["']/.test(source)) {
+    violations.push({ filePath, reason: "interactive-core deve ser independente do motor de fluxos e do Mermaid" });
+  }
 
   /*
    * Regra sobre o substantivo, e não sobre uma lista de palavras.

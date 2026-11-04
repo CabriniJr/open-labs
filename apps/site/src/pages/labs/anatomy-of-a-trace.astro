@@ -1,5 +1,8 @@
 ---
+import LabAssessment from "../../components/LabAssessment.astro";
+import { EXERCICIOS_DA_ANATOMIA } from "@ovh/otel-domain";
 import { AnatomiaLab } from "../../components/AnatomiaLab.tsx";
+import { Exercicio } from "../../components/Exercicio.tsx";
 import { Predicao } from "../../components/Predicao.tsx";
 import SiteFooter from "../../components/SiteFooter.astro";
 import SiteNav from "../../components/SiteNav.astro";
@@ -11,6 +14,10 @@ import "../../components/Predicao.css";
 import "../../components/PainelDaCarga.css";
 import "@ovh/depth-ui/src/stage.css";
 import "../../components/Explorer.css";
+import "../../components/Exercicio.css";
+import { montarExercicio } from "../../lib/exercicios";
+
+const exercicios = EXERCICIOS_DA_ANATOMIA.map(montarExercicio);
 ---
 
 <Base
@@ -107,6 +114,25 @@ import "../../components/Explorer.css";
 
     <section class="lab-prosa editorial">
       <div class="prose">
+        <h2>Instrument it</h2>
+        <p>
+          Two decisions from the file that actually runs in
+          <code>labs/anatomy-of-a-trace/</code>. The correct block is not written
+          here — it is lifted out of that file, so it cannot drift from the code
+          that compiles. Both wrong answers produce a panel you have already seen
+          above: one is the uninstrumented hop, the other is the stripped header.
+          Neither raises, logs, or fails a test that counts requests.
+        </p>
+      </div>
+      <div class="lab-exercicios">
+        {exercicios.map((exercicio) => (
+          <Exercicio client:visible exercicio={exercicio} />
+        ))}
+      </div>
+    </section>
+
+    <section class="lab-prosa editorial">
+      <div class="prose">
         <h2>Read the theory</h2>
         <p>
           <a href={url("handbooks/otel/articles/a-trace-is-a-tree-nobody-owns")}
@@ -120,6 +146,7 @@ import "../../components/Explorer.css";
         </p>
       </div>
     </section>
+    <LabAssessment href="labs/anatomy-of-a-trace" />
   </main>
 
   <SiteFooter />

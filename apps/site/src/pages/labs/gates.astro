@@ -1,4 +1,5 @@
 ---
+import LabAssessment from "../../components/LabAssessment.astro";
 import { GatesLab } from "../../components/GatesLab.tsx";
 import SiteFooter from "../../components/SiteFooter.astro";
 import SiteNav from "../../components/SiteNav.astro";
@@ -56,6 +57,7 @@ import "../../components/Explorer.css";
     <section class="lab-stage">
       <GatesLab client:only="react" />
     </section>
+    <LabAssessment href="labs/gates" />
   </main>
 
   <SiteFooter />

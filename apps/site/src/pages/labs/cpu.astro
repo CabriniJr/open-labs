@@ -1,11 +1,16 @@
 ---
-import { CpuLab } from "../../components/CpuLab.tsx";
+import LabAssessment from "../../components/LabAssessment.astro";
+import { CpuModos } from "../../components/CpuModos.tsx";
 import SiteFooter from "../../components/SiteFooter.astro";
 import SiteNav from "../../components/SiteNav.astro";
 import Base from "../../layouts/Base.astro";
 import { url } from "../../lib/urls";
 import "../../styles/docs.css";
 import "../../components/CpuLab.css";
+import "../../components/ModosDoLab.css";
+import "../../components/CpuVitrine.css";
+import "@ovh/motion/src/react/motion.css";
+import "@ovh/stage3d/src/iso.css";
 import "@ovh/depth-ui/src/stage.css";
 import "../../components/Explorer.css";
 ---
@@ -51,8 +56,9 @@ import "../../components/Explorer.css";
     </section>
 
     <section class="lab-stage">
-      <CpuLab client:only="react" />
+      <CpuModos client:only="react" />
     </section>
+    <LabAssessment href="labs/cpu" />
   </main>
 
   <SiteFooter />

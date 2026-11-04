@@ -1,0 +1,5 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": { "composite": false, "incremental": false },
+  "exclude": ["src/**/*.test.ts", "src/conformance"]
+}

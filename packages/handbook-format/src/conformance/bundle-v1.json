@@ -1,0 +1,96 @@
+{
+  "bundleVersion": "openlabs/bundle/v1",
+  "exportedAt": "2026-10-17",
+  "handbook": {
+    "id": "kubernetes",
+    "name": "Kubernetes Visual Handbook",
+    "subject": "Kubernetes",
+    "tagline": "Declare a workload. Watch the system reconcile it.",
+    "blurb": "Edit a native manifest and inspect the difference between desired state, Pod identity, container restarts and node reservations. Interactive state models, with no flow engine required.",
+    "model": "pod-lifecycle · state model",
+    "stage": "building",
+    "phases": [
+      {
+        "number": 1,
+        "title": "A workload becomes real",
+        "line": "The manifest, the owner, the Pod and the node are different things."
+      },
+      {
+        "number": 2,
+        "title": "Keeping the promise",
+        "line": "Updates, availability and the reconciliation decisions still to explore."
+      }
+    ],
+    "articles": [
+      {
+        "id": "a-pod-is-not-its-container",
+        "title": "A Pod is not its container",
+        "status": "available",
+        "phase": 1,
+        "href": "handbooks/kubernetes/articles/a-pod-is-not-its-container"
+      },
+      {
+        "id": "a-rollout-is-not-a-restart",
+        "title": "A rollout is not a restart",
+        "status": "coming",
+        "phase": 2
+      }
+    ],
+    "labs": [
+      {
+        "id": "pod-lifecycle",
+        "title": "A manifest, a Pod, and the controller that replaces it",
+        "status": "available",
+        "phase": 1,
+        "href": "labs/pod-lifecycle"
+      },
+      {
+        "id": "rolling-updates",
+        "title": "What remains available during an update",
+        "status": "coming",
+        "phase": 2
+      }
+    ],
+    "tema": {
+      "claro": {
+        "acento": "#285fce",
+        "fluxo": "#285fce",
+        "descarte": "#b8442a",
+        "ok": "#3f7a52",
+        "mutacao": "#c2410c",
+        "processador": "#285fce",
+        "conduite": "#3f7a52",
+        "especies": [
+          "#285fce",
+          "#0e7490",
+          "#b45309",
+          "#6d28d9"
+        ]
+      },
+      "escuro": {
+        "acento": "#9bbdff",
+        "fluxo": "#9bbdff",
+        "processador": "#9bbdff",
+        "especies": [
+          "#9bbdff",
+          "#22d3ee",
+          "#e3b341",
+          "#c4a7f7"
+        ]
+      }
+    },
+    "mantenedores": [
+      {
+        "name": "Luigi Cabrini",
+        "github": "CabriniJr"
+      }
+    ],
+    "apiVersion": "openlabs/handbook/v1"
+  },
+  "articles": [
+    {
+      "id": "a-pod-is-not-its-container",
+      "markdown": "---\ntitle: \"A Pod is not its container\"\ndek: \"A container can restart without a Pod being replaced. A Pod can be replaced without an application being redeployed. Those two identities explain the resource tree, the restart counter and the controller's job.\"\nhandbook: kubernetes\nphase: 1\nlab: labs/pod-lifecycle\nsources:\n  - id: pod-lifecycle\n    author: \"Kubernetes Authors\"\n    year: \"current\"\n    title: \"Pod Lifecycle\"\n    where: \"Kubernetes documentation\"\n    url: \"https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/\"\n    note: \"The distinction between Pod identity, container restarts, phases and display status.\"\n  - id: resources\n    author: \"Kubernetes Authors\"\n    year: \"current\"\n    title: \"Resource Management for Pods and Containers\"\n    where: \"Kubernetes documentation\"\n    url: \"https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/\"\n    note: \"Requests determine placement; limits constrain resource consumption.\"\n  - id: deployments\n    author: \"Kubernetes Authors\"\n    year: \"current\"\n    title: \"Deployments\"\n    where: \"Kubernetes documentation\"\n    url: \"https://kubernetes.io/docs/concepts/workloads/controllers/deployment/\"\n    note: \"Replica counts, Pod templates and the explicitly selected Recreate strategy.\"\n---\n\nA restart counter goes up while the Pod's UID stays put. Delete that Pod, and its replacement has a different UID. The container and the Pod have different lifetimes. Kubernetes schedules each Pod once; a replacement is another object, even if it does the same job. [Pod lifetime](#src-pod-lifecycle)\n\n## The owner matters\n\nA standalone Pod has no controller responsible for replacing it. A Deployment uses ReplicaSets to maintain a desired replica count. Changing `replicas` changes that count; changing the Pod template starts a rollout. The lab explicitly selects `Recreate`, which removes old Pods before starting the new revision. It does not simulate the default RollingUpdate strategy. [Deployments](#src-deployments)\n\n## Placement is not consumption\n\nRequests reserve schedulable capacity. Limits constrain consumption. A low CPU limit can throttle a container; exceeding a memory limit can lead to an OOM kill. Neither setting itself scales replicas. [Resource management](#src-resources)\n\n## Read the two status fields\n\n`Pending` and `Running` are Pod phases. `ImagePullBackOff`, `CrashLoopBackOff` and `Terminating` are useful display statuses, not additional phases. Read the waiting or termination reason alongside the phase. [Pod status](#src-pod-lifecycle)\n\n> [!deeper] Why can a scheduled Pod still be Pending?\n>\n> Binding chooses a node; it does not prove the container has started. An image-pull failure can leave a bound Pod waiting. In the lab, its node badge and reserved capacity remain while the display reports ImagePullBackOff. The reason explains more than the phase alone. [Container states](#src-pod-lifecycle)\n"
+    }
+  ]
+}

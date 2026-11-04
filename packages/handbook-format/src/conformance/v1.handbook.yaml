@@ -1,0 +1,44 @@
+# Exemplar de conformidade da `openlabs/handbook/v1`.
+#
+# NÃO EDITE para acompanhar mudança de formato. Este arquivo é a prova de que a
+# `v1` continua sendo lida; mudá-lo para passar num leitor novo é apagar
+# justamente o que ele mede. Formato novo ganha exemplar novo.
+apiVersion: openlabs/handbook/v1
+
+id: exemplar
+name: Conformance Example Handbook
+subject: conformance
+tagline: The smallest handbook that is still a handbook.
+blurb: >-
+  One phase, one article, one theme. It exists so that the promise of reading
+  this contract version is a measured fact and not a sentence in a document.
+model: exemplar.model
+stage: planned
+
+maintainers:
+  - name: OpenLabs
+    github: CabriniJr
+
+theme:
+  light:
+    accent: "#425cc7"
+    flow: "#425cc7"
+    dropped: "#b8442a"
+    ok: "#3f7a52"
+    mutation: "#f5a800"
+    processor: "#425cc7"
+    conduit: "#3f7a52"
+    species: ["#7c5cd6", "#3f7a52", "#c2410c", "#0e7490"]
+  dark:
+    accent: "#8fa2ee"
+
+phases:
+  - number: 1
+    title: The only phase
+    line: One phase is enough to prove a contract is readable.
+
+articles:
+  - id: the-only-article
+    title: The only article
+    status: coming
+    phase: 1

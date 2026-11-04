@@ -1,7 +1,6 @@
-import { existsSync, readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { pathToFileURL } from "node:url";
-import type { DefinicaoDeExercicio, Distrator } from "@ovh/otel-domain";
+import { readFileSync } from "node:fs";
+import type { DefinicaoDeExercicio, Distrator } from "@ovh/handbook-format";
+import { raizDoRepoUrl } from "./raiz.js";
 
 /**
  * A extração, e ela roda no **build**.
@@ -11,30 +10,7 @@ import type { DefinicaoDeExercicio, Distrator } from "@ovh/otel-domain";
  * no sistema de arquivos — o que é obrigatório, porque ela roda no navegador.
  */
 
-/**
- * A raiz do repositório, achada subindo até o `pnpm-workspace.yaml`.
- *
- * Contar pastas a partir de `import.meta.url` não serve: no `astro build` este
- * módulo é empacotado em `dist/chunks/`, e a mesma contagem apontava para
- * `apps/labs/` — um caminho que não existe. A âncora tem de ser um arquivo que
- * só existe na raiz, e a busca falha dizendo o que procurava.
- */
-function raizDoRepo(): URL {
-  let dir = process.cwd();
-  for (;;) {
-    if (existsSync(join(dir, "pnpm-workspace.yaml"))) return pathToFileURL(`${dir}/`);
-    const acima = dirname(dir);
-    if (acima === dir) {
-      throw new Error(
-        `não achei a raiz do repositório (pnpm-workspace.yaml) subindo de ${process.cwd()} — ` +
-          "o exercício lê o arquivo que roda a partir dela",
-      );
-    }
-    dir = acima;
-  }
-}
-
-const RAIZ = raizDoRepo();
+const RAIZ = raizDoRepoUrl();
 
 export interface BlocoDeCodigo {
   readonly id: string;
@@ -50,7 +26,15 @@ export interface ExercicioMontado {
   readonly cenario: string;
   readonly pergunta: string;
   readonly arquivo: string;
-  /** A versão do SDK, lida do `pom.xml` do lab. Aparece na tela ao lado do código. */
+  /**
+   * O que executa este arquivo, e em que versão — já com o nome da coisa.
+   *
+   * Carrega o nome junto do número porque o nome é parte do fato: o componente
+   * escrevia "OpenTelemetry Java" fixo, e com a entrada dos exercícios de YAML
+   * a linha de origem de um `collector.yaml` passou a dizer
+   * "OpenTelemetry Java collector 0.160.0" — um número certo com o nome errado
+   * em volta. Quem sabe qual é a coisa é esta função, e não a tela.
+   */
   readonly versao: string;
   /** O código acima da lacuna, já sem os marcadores. */
   readonly antes: string;
@@ -90,19 +74,101 @@ function embaralharPorSemente<T>(itens: readonly T[], semente: string): readonly
   return [...itens.slice(giro), ...itens.slice(0, giro)];
 }
 
-/** A versão do BOM, lida do `pom.xml`: uma fonte só para o número que a tela mostra. */
-function versaoDoBom(): string {
-  const pom = readFileSync(new URL("labs/providers/app/pom.xml", RAIZ), "utf8");
-  const achado =
-    /<artifactId>opentelemetry-bom<\/artifactId>\s*<version>([^<]+)<\/version>/u.exec(pom);
-  const versao = achado?.[1];
-  if (versao === undefined) {
+/**
+ * A versão **da coisa a que o arquivo pertence**, para a tela mostrar ao lado
+ * do código.
+ *
+ * Era fixa em `labs/providers/` enquanto só havia exercício de um lab, e virou
+ * "o `pom.xml` ao lado do arquivo" quando entrou o segundo — porque a tela
+ * mostraria a versão de outro projeto. Agora ela aprende a segunda coisa: nem
+ * todo exercício é sobre Java.
+ *
+ * Um exercício sobre `collector.yaml` não tem `pom.xml` nenhum, e a versão que
+ * importa ali **não é a do SDK** — é a tag da imagem do Collector que o
+ * `compose.yaml` sobe. Dizer "1.65.0" ao lado de uma configuração de Collector
+ * seria um número certo sobre a coisa errada, que é pior que número nenhum.
+ *
+ * As duas leituras são de fonte única: o `pom.xml` e o `compose.yaml` que já
+ * existem no lab.
+ */
+/**
+ * O que executa um arquivo deste lab, e onde a versão disso está escrita.
+ *
+ * Uma tabela, e não uma cadeia de `if`, porque a terceira entrada foi o que
+ * mostrou o defeito da segunda: com a entrada do Splunk, o MESMO `compose.yaml`
+ * sobe duas imagens de produtos diferentes — o forwarder universal e o Splunk
+ * Enterprise — e qual delas executa um arquivo depende da pasta em que ele
+ * está. Uma cadeia de `if` resolveria isso também, e esconderia que a pergunta
+ * tem duas partes: "quem executa este caminho?" e "onde o número dele está?".
+ *
+ * `quando` casa contra o caminho **relativo ao lab**, para a regra não repetir
+ * o slug.
+ */
+const EXECUTORES: readonly {
+  readonly quando: RegExp;
+  /** O que a tela escreve antes do número. */
+  readonly nome: string;
+  /** Onde o número está, relativo ao lab, e como achá-lo lá dentro. */
+  readonly arquivo: string;
+  readonly padrao: RegExp;
+}[] = [
+  {
+    // Java sob `app/`: a versão é a do BOM do OpenTelemetry, e não de imagem.
+    quando: /^app\//u,
+    nome: "OpenTelemetry Java",
+    arquivo: "app/pom.xml",
+    padrao: /<artifactId>opentelemetry-bom<\/artifactId>\s*<version>([^<]+)<\/version>/u,
+  },
+  {
+    quando: /^uf\//u,
+    nome: "Splunk Universal Forwarder",
+    arquivo: "compose.yaml",
+    padrao: /image:\s*splunk\/universalforwarder:([^\s]+)/u,
+  },
+  {
+    quando: /^(idx|hf)\//u,
+    nome: "Splunk Enterprise",
+    arquivo: "compose.yaml",
+    padrao: /image:\s*splunk\/splunk:([^\s]+)/u,
+  },
+  {
+    // O caso mais antigo, e agora o último: configuração de Collector na raiz.
+    quando: /^[^/]+$/u,
+    nome: "OpenTelemetry Collector",
+    arquivo: "compose.yaml",
+    padrao: /image:\s*otel\/opentelemetry-collector-contrib:([^\s]+)/u,
+  },
+];
+
+function versaoDoArquivo(arquivo: string): string {
+  const lab = /^(labs\/[^/]+)\//u.exec(arquivo)?.[1];
+  if (lab === undefined) {
     throw new Error(
-      "não achei a versão do opentelemetry-bom em labs/providers/app/pom.xml — " +
-        "a tela mostra esse número, e ele não pode ser escrito em dois lugares",
+      `exercício aponta para "${arquivo}", que não está em labs/<slug>/ — ` +
+        "a versão que a tela mostra é lida do lab ao lado do arquivo",
     );
   }
-  return versao;
+
+  const relativo = arquivo.slice(lab.length + 1);
+  const executor = EXECUTORES.find((e) => e.quando.test(relativo));
+  if (executor === undefined) {
+    throw new Error(
+      `não sei o que executa "${arquivo}" — acrescente uma entrada em EXECUTORES. ` +
+        "A tela mostra a versão de quem executa o arquivo ao lado do código, e " +
+        "um número certo sobre a coisa errada é pior que número nenhum",
+    );
+  }
+
+  const caminho = `${lab}/${executor.arquivo}`;
+  const achado = executor.padrao.exec(readFileSync(new URL(caminho, RAIZ), "utf8"));
+  if (achado?.[1] === undefined) {
+    throw new Error(
+      `não achei a versão de ${executor.nome} em ${caminho} — ` +
+        `o exercício sobre "${arquivo}" mostra esse número, e ele tem de sair de ` +
+        "onde o lab já o declara, e não de uma segunda cópia",
+    );
+  }
+  return `${executor.nome} ${achado[1]}`;
 }
 
 export function montarExercicio(definicao: DefinicaoDeExercicio): ExercicioMontado {
@@ -154,7 +220,7 @@ export function montarExercicio(definicao: DefinicaoDeExercicio): ExercicioMonta
     cenario: definicao.cenario,
     pergunta: definicao.pergunta,
     arquivo: definicao.arquivo,
-    versao: versaoDoBom(),
+    versao: versaoDoArquivo(definicao.arquivo),
     antes: desindentar(linhas.slice(0, iAbre)),
     depois: desindentar(linhas.slice(iFecha + 1)),
     certo,

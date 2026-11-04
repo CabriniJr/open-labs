@@ -1,0 +1,163 @@
+/*
+  O lab da ingestão do Splunk.
+
+  A gramática é a dos outros labs de fluxo de propósito — mesmo palco largo,
+  mesmo placar entre o palco e os controles, mesmas classes com outro prefixo.
+  Quem veio da página da amostragem não reaprende a usar esta.
+
+  O que esta página tem e as outras não: o **veredito**, uma linha entre a
+  pergunta e os números. Ele existe porque a tese deste lab não é um número, é
+  uma relação entre duas configurações — e uma relação lida melhor como frase
+  que como medidor. Ele é a única coisa da tela que muda de cor por decisão de
+  configuração, e não por acúmulo do run.
+*/
+.splunk-ingest {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.splunk-ingest__palco {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.splunk-ingest__placar {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--space-2);
+  background: var(--surface);
+}
+
+.splunk-ingest__pergunta {
+  margin: 0 0 var(--space-1);
+  font-size: var(--size-step-0);
+}
+
+/*
+  O veredito. `data-vale` sai da MESMA função que os testes do domínio cobram,
+  então a cor aqui não é uma segunda opinião sobre a regra.
+
+  `min-width: 0` nos filhos porque o veredito é uma grade de flex com `<code>`
+  dentro: sem isso, `props.conf` vira o min-content do item e a linha empurra a
+  página no telefone. É o mesmo defeito de `min-width: auto` já medido em
+  Exercicio.css, uma terceira vez.
+*/
+.splunk-ingest__veredito {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem var(--space-1);
+  margin: 0 0 var(--space-2);
+  border-inline-start: 3px solid var(--border);
+  padding: var(--space-1) var(--space-2);
+  background: var(--paper);
+  font-size: var(--size-step--1);
+  line-height: 1.5;
+}
+
+.splunk-ingest__veredito > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.splunk-ingest__veredito[data-vale="sim"] {
+  border-inline-start-color: var(--ok, var(--accent));
+}
+
+/* "Nenhum efeito" é perda, e usa a cor da perda. */
+.splunk-ingest__veredito[data-vale="nao"] {
+  border-inline-start-color: var(--descarte, var(--accent));
+}
+
+.splunk-ingest__respostas {
+  display: grid;
+  gap: var(--space-2);
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+}
+
+.splunk-ingest__resposta {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+  border-inline-start: 3px solid var(--border);
+  padding-inline-start: var(--space-2);
+}
+
+.splunk-ingest__resposta[data-destaque="true"] {
+  border-inline-start-color: var(--accent);
+}
+
+.splunk-ingest__resposta[data-destaque="quebrado"] {
+  border-inline-start-color: var(--descarte, var(--accent));
+}
+
+.splunk-ingest__rotulo {
+  color: var(--muted);
+  font-size: var(--size-step--1);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.splunk-ingest__resposta b {
+  font-size: var(--size-step-2);
+  line-height: 1.1;
+}
+
+.splunk-ingest__nota {
+  color: var(--muted);
+  font-size: var(--size-step--1);
+}
+
+.splunk-ingest__controles {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.splunk-ingest__tick {
+  color: var(--muted);
+}
+
+.splunk-ingest__campo {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 13rem;
+  font-size: var(--size-step--1);
+}
+
+.splunk-ingest__campo input[type="range"] {
+  width: 100%;
+}
+
+.splunk-ingest__switch {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: var(--size-step--1);
+}
+
+/*
+  A escolha de três lugares é um `fieldset` e não um `select` porque as três
+  opções têm de estar visíveis ao mesmo tempo: o leitor precisa ver que existem
+  três máquinas e que só uma delas é a certa agora.
+*/
+.splunk-ingest__escolha {
+  display: grid;
+  gap: 0.2rem;
+  margin: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--space-1) var(--space-2) var(--space-1);
+  font-size: var(--size-step--1);
+}
+
+.splunk-ingest__escolha legend {
+  padding-inline: 0.35rem;
+  color: var(--muted);
+}
+
+.splunk-ingest__escolha label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}

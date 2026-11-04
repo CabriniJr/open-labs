@@ -1,0 +1,65 @@
+# A contraparte real do lab da ingestão.
+#
+# Compare com `packages/splunk-domain/src/ingestao/ingestao.mmd`: as caixas do
+# desenho são estes quatro serviços, nesta ordem. O `hf` fica atrás de um
+# profile porque ele É a decisão de topologia que o lab pede para o leitor
+# tomar — subir o compose sem ele é o regime "parsing no indexador", subir com
+# ele é o regime "parsing no heavy forwarder", e o mesmo `props.conf` muda de
+# eficaz para inerte sem que nenhum arquivo seja editado.
+#
+#   sem heavy forwarder:  docker compose up
+#   com heavy forwarder:  docker compose --profile heavy up
+#
+# As tags são fixas de propósito: `latest` numa imagem de 2 GB é um lab que
+# ensina uma coisa hoje e outra em três meses.
+services:
+  # A aplicação. Não é Splunk nenhum: é o produtor do arquivo, e ele escreve um
+  # stack trace de doze linhas a cada vinte registros — o caso em que a quebra
+  # errada é visível. Nos outros 19 a quebra padrão acerta por acidente, que é
+  # exatamente por que esse defeito entra em produção sem ninguém notar.
+  app:
+    image: busybox:1.37.0
+    command: ["sh", "/app/write-log.sh"]
+    volumes:
+      - ./app:/app:ro
+      - logs:/var/log/app
+
+  # O forwarder universal: ele executa a fase de **input** e nada mais.
+  uf:
+    image: splunk/universalforwarder:10.6.0-rhel9
+    depends_on: [app]
+    environment:
+      SPLUNK_START_ARGS: --accept-license
+      SPLUNK_PASSWORD: openlabs-nao-use-em-producao
+    volumes:
+      - logs:/var/log/app:ro
+      # Um app com os três arquivos. Configuração de Splunk vive em app, e não
+      # em `etc/system/local`, porque é assim que ela é distribuída e revisada.
+      - ./uf:/opt/splunkforwarder/etc/apps/openlabs_uf/local:ro
+
+  # O nível do meio, quando ele existe: um heavy forwarder, que é uma instância
+  # completa com o encaminhamento ligado. Ele parseia.
+  hf:
+    image: splunk/splunk:10.6.0-rhel9
+    profiles: ["heavy"]
+    environment:
+      SPLUNK_START_ARGS: --accept-license
+      SPLUNK_PASSWORD: openlabs-nao-use-em-producao
+    volumes:
+      - ./hf:/opt/splunk/etc/apps/openlabs_hf/local:ro
+
+  # O indexador: ele recebe em 9997, parseia se ninguém parseou antes, e grava.
+  idx:
+    image: splunk/splunk:10.6.0-rhel9
+    environment:
+      SPLUNK_START_ARGS: --accept-license
+      SPLUNK_PASSWORD: openlabs-nao-use-em-producao
+    ports:
+      # A interface, para a busca que confirma o que o lab simula:
+      #   index=main sourcetype=app:json "NullPointerException"
+      - "8000:8000"
+    volumes:
+      - ./idx:/opt/splunk/etc/apps/openlabs_idx/local:ro
+
+volumes:
+  logs:

@@ -1,0 +1,26 @@
+:root { --font-display: system-ui, sans-serif; --font-body: system-ui, sans-serif; --font-mono: ui-monospace, monospace; }
+.runner-header { display: flex; gap: 2rem; align-items: start; justify-content: space-between; padding: 2rem; border-bottom: 1px solid var(--rule); }
+.runner-header small { color: var(--accent); font: .7rem var(--font-mono); letter-spacing: .1em; }
+.runner-header h1 { font-size: clamp(1.7rem, 3vw, 2.8rem); margin: .8rem 0; }
+.runner-header p { color: var(--ink-muted); margin-bottom: 0; }
+.runner-header > div:last-child { display: flex; align-items: center; gap: 1rem; flex-shrink: 0; }
+.runner-release { color: var(--ink-muted); font: .7rem var(--font-mono); }
+.runner-header button, .runner-layout nav button { font: inherit; color: var(--ink); background: var(--paper-raised); border: 1px solid var(--rule); border-radius: var(--radius-1); padding: .6rem; cursor: pointer; }
+.runner-layout { display: grid; grid-template-columns: 250px minmax(0, 1fr); min-height: 70vh; }
+.runner-layout nav { padding: 1rem; border-right: 1px solid var(--rule); }
+.runner-layout nav section { border-bottom: 1px solid var(--rule); padding: .6rem 0 1rem; }
+.runner-phase { font-weight: 600; font-size: .8rem; }
+.runner-layout nav button { display: block; width: 100%; margin: .6rem 0; text-align: left; font-size: .8rem; }
+.runner-layout nav button[aria-current] { border-color: var(--accent); color: var(--accent); }
+.runner-coming { font-size: .75rem; line-height: 1.6; color: var(--ink-muted); }
+.runner-layout main { min-width: 0; padding: 1.5rem; }
+.runner-article { max-width: 72ch; margin: auto; }
+.runner-article > h2 { font-size: 2rem; }
+.runner-dek { color: var(--ink-muted); line-height: 1.8; }
+.runner-lab-title { margin-bottom: 1.5rem; }
+.runner-lab-title h2 { margin: 0 0 .7rem; }
+.runner-lab-title p { color: var(--ink-muted); font: .75rem/1.8 var(--font-mono); }
+.runner-footer { padding: 1.5rem; color: var(--ink-muted); border-top: 1px solid var(--rule); font-size: .75rem; }
+.runner-loading, .runner-error { padding: 2rem; }
+.runner-error pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+@media (max-width: 800px) { .runner-header { display: block; padding: 1.2rem; } .runner-header > div:last-child { margin-top: 1.5rem; flex-wrap: wrap; } .runner-layout { display: block; } .runner-layout nav { border-right: 0; border-bottom: 1px solid var(--rule); } .runner-layout main { padding: .7rem; } }

@@ -219,3 +219,90 @@ flowchart LR
     expect(r.errors.join("\n")).toMatch(/parte de "fantasma"/);
   });
 });
+
+describe("placa (kind static)", () => {
+  /*
+    A placa entrou no catálogo nativo sem sintaxe nova, e a razão é que ela não
+    precisava de nenhuma: o `ObjectSpec` de uma placa é `{ id, kind, label,
+    leaf }` e nada mais — sem `init`, sem `behavior`, porque `indexTree` recusa
+    placa que aja. O desenho já traz os três campos que sobram.
+
+    A recusa anterior falava do conteúdo dela. Isso vale para conteúdo rico (um
+    recurso com atributos, uma tabela de limites) — e esse conteúdo nunca
+    chegou ao motor nem pelo caminho do TS: o `placa()` do lab dos provedores
+    passa o título como `label` e para aí.
+  */
+  const comPlaca = `---
+id: com-placa
+title: Uma fonte, um sumidouro, e uma placa que ninguém atravessa
+---
+flowchart LR
+  gen[gen]:::src
+  out[out]:::snk
+  recurso[Resource]:::nota
+  gen -- "item" --> out
+
+  classDef src  family:processor,kind:source
+  classDef snk  family:processor,kind:sink
+  classDef nota family:plate,kind:static
+`;
+
+  it("compila, e o mundo roda com a placa dentro", () => {
+    const r = compile(comPlaca);
+    expect(r.ok === false ? r.errors : []).toEqual([]);
+    if (!r.ok) throw new Error("não compilou");
+    expect(() => new World(r.world)).not.toThrow();
+  });
+
+  it("a placa é folha, sem init e sem behavior — placa que age não é placa", () => {
+    const r = compile(comPlaca);
+    if (!r.ok) throw new Error(r.errors.join("\n"));
+    const placa = r.world.root.children?.find((c) => c.id === "recurso");
+    expect(placa).toEqual({ id: "recurso", kind: "static", label: "Resource", leaf: true });
+  });
+
+  it("recusa fio que CHEGA na placa, dizendo o que placa é", () => {
+    const r = compile(`---
+id: fio-na-placa
+title: Alguém ligou um fio na placa
+---
+flowchart LR
+  gen[gen]:::src
+  recurso[Resource]:::nota
+  gen -- "item" --> recurso
+
+  classDef src  family:processor,kind:source
+  classDef nota family:plate,kind:static
+`);
+    expect(r.ok).toBe(false);
+    if (r.ok) throw new Error("devia recusar");
+    expect(r.errors.join("\n")).toMatch(/placa "recurso"/u);
+    expect(r.errors.join("\n")).toMatch(/nunca atravessado/u);
+  });
+
+  it("recusa fio que SAI da placa, que é o caso provadamente morto", () => {
+    // Placa nunca tem behavior, então nunca emite: um fio saindo dela não
+    // carregaria nada em nenhum tick. É recusável na compilação, sem run.
+    const r = compile(`---
+id: fio-da-placa
+title: A placa virou fonte
+---
+flowchart LR
+  recurso[Resource]:::nota
+  out[out]:::snk
+  recurso -- "item" --> out
+
+  classDef snk  family:processor,kind:sink
+  classDef nota family:plate,kind:static
+`);
+    expect(r.ok).toBe(false);
+    if (r.ok) throw new Error("devia recusar");
+    expect(r.errors.join("\n")).toMatch(/fio sai da placa "recurso"/u);
+  });
+
+  it("a placa não entra na contagem de fios: ela não é fiada", () => {
+    const r = compile(comPlaca);
+    if (!r.ok) throw new Error(r.errors.join("\n"));
+    expect(r.world.wires.every((w) => w.from !== "recurso" && w.to !== "recurso")).toBe(true);
+  });
+});

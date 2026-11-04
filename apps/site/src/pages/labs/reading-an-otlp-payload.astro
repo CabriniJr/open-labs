@@ -1,0 +1,55 @@
+---
+import { ProtobufModos } from "../../components/ProtobufModos.tsx";
+import { Predicao } from "../../components/Predicao.tsx";
+import SiteFooter from "../../components/SiteFooter.astro";
+import SiteNav from "../../components/SiteNav.astro";
+import Base from "../../layouts/Base.astro";
+import { url } from "../../lib/urls";
+import "../../styles/docs.css";
+import "../../components/ModosDoLab.css";
+import "../../components/ProtobufLab.css";
+import "@ovh/motion/src/react/motion.css";
+import "@ovh/stage3d/src/iso.css";
+import "../../components/ContextoLab.css";
+import "../../components/ImplantacaoLab.css";
+import "../../components/Predicao.css";
+---
+
+<Base
+  domain="otel"
+  title="Reading an OTLP payload — OpenTelemetry Visual Handbook"
+  description="One span encoded as OTLP protobuf, byte by byte: field keys, varints, raw ids, fixed64 timestamps and nested messages — and why the same request is less than half the size of OTLP/JSON."
+>
+  <SiteNav current="labs" />
+  <main id="content">
+    <section class="lab-head editorial">
+      <div class="prose">
+        <p class="lab-head__eyebrow mono"><a href={url("handbooks/otel")}>OpenTelemetry Visual Handbook</a> · phase 02 · lab</p>
+        <h1>The wire never says<br />“name”</h1>
+        <p>An SDK holds a span as an object. To reach the Collector, that object becomes an <code>ExportTraceServiceRequest</code> in protobuf. Field names never travel. Each field goes as a number and a wire type, then its value.</p>
+        <p>The bytes here come from a real encoder that uses the field numbers of <code>opentelemetry-proto</code>. Change the span in the simulation and every byte is recomputed.</p>
+      </div>
+      <aside class="lab-head__note mono"><p>KEY = (FIELD &lt;&lt; 3) | WIRE TYPE</p><p>0 varint · 1 fixed64 · 2 length-delimited</p></aside>
+    </section>
+
+    <section class="lab-palco" aria-label="OTLP protobuf encoding"><ProtobufModos client:visible /></section>
+
+    <section class="lab-prosa editorial">
+      <div class="prose">
+        <h2>Break it, one byte at a time</h2>
+        <ol>
+          <li><b>Set status_code to 127, then 128.</b> 127 fits in one varint byte. 128 needs two. A varint's size depends on the value, not on the type.</li>
+          <li><b>Tick “has a parent span”.</b> Field 4 (<code>parent_span_id</code>) appears, 8 raw bytes plus key and length. A root span simply omits it. Protobuf has no null.</li>
+          <li><b>Add the <code>user.id</code> attribute.</b> Every attribute is a nested <code>KeyValue</code> message, and the key string travels in full every time. This is the byte-level cost of the attribute bill in <a href={url("labs/cardinality-and-the-bill")}>Cardinality and the bill</a>.</li>
+          <li><b>Click the first byte, <code>0a</code>.</b> Field 1, wire type 2: <code>resource_spans</code>. Every message the span sits in starts with a key and a length.</li>
+        </ol>
+        <h2>Where this connects</h2>
+        <p>The 16 bytes of <code>trace_id</code> are the same id that <a href={url("labs/hard-context-and-baggage")}>traceparent</a> carries as 32 hex characters between services. In <a href={url("labs/anatomy-of-a-trace")}>Anatomy of a trace</a>, the backend joins spans into a trace by that id. The <code>otlp</code> receiver in <a href={url("labs/collector-pipeline")}>The Collector pipeline</a> decodes these bytes. The <a href={url("labs/agent-or-gateway")}>Agent or gateway</a> decision is about where they travel, over gRPC connections that stay open. <a href="https://github.com/open-telemetry/opentelemetry-proto/blob/main/opentelemetry/proto/trace/v1/trace.proto">trace.proto →</a> · <a href="https://protobuf.dev/programming-guides/encoding/">protobuf encoding →</a></p>
+        <h2>The boundary of this experiment</h2>
+        <p>One request, one resource, one scope, one span. The encoder writes only the fields used here. Status, events, links, trace state and dropped counts are not written, and neither are the gRPC frame and the HTTP/2 headers around the message. JSON size is the compact <code>JSON.stringify</code> of the same request. A real OTLP/JSON exporter can differ by a few bytes.</p>
+      </div>
+      <div class="lab-predicao"><Predicao client:visible pergunta="The same span is sent as OTLP/JSON and as OTLP protobuf. Roughly how much smaller is the protobuf?" opcoes={["About the same: both carry the same data", "Less than half the size", "Ten times smaller"]} correta={1} revelacao="Field names become one-byte keys, ids go as raw bytes instead of hex, and small numbers take one or two bytes. Attribute keys and string values still travel in full, which is why the gain is about 2–3×, not 10×." /></div>
+    </section>
+  </main>
+  <SiteFooter />
+</Base>

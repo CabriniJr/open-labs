@@ -167,10 +167,29 @@ Regras de tradução para o motor:
 |---|---|
 | Um `id[Rótulo]` | Um nó do `WorldSpec` com `id` e `label` |
 | `classDef X kind:Y,family:Z` + `id:::X` | O `kind`/`family` do nó |
-| `A -- "k" --> B` (linha sólida) | Canal de **dado** com mensagem de `kind` `k` |
-| `A -. "k" .-> B` (linha pontilhada) | Canal de **controle** |
+| `A -- "k" --> B` | Canal de **dado** com mensagem de `kind` `k` |
+| `A -. "k" .-> B` | Canal de **dado** também: o traço é ênfase visual |
+| `A -- "control:k" --> B` | Canal de **controle** — quem decide é o prefixo do rótulo |
 | `subgraph g[Nome] ... end` | Um nó `composite` `g` com os filhos declarados dentro |
 | Direção `LR`/`TB` | `layout.direction` — dagre resolve o resto |
+
+**Sólido contra pontilhado não decide dado contra controle.** Esta tabela dizia o
+contrário até 13/10/2026, e dizia a opção que foi **rejeitada**: a `Nota 1` do
+exemplo em `2026-09-16-mermaid-anatomy-example.md` põe as duas saídas lado a lado
+e recomenda a segunda, que é a que o parser implementa — traço é **ênfase visual**
+(é o fluxo primário ou é a lateral?), e `data`/`control` vem do **prefixo do
+rótulo**. A §4.3 aqui embaixo já usava `control:tick`, então a tabela também
+contradizia a seção seguinte.
+
+Quem depende disso é a `anatomia`: o span **é dado** — o backend o recebe no
+`inbox`, não em `ctx.signals` — e ainda assim sai por linha pontilhada, para
+dizer "sai pelo lado, não pela cadeia". Pela regra antiga ela teria de escolher
+entre o desenho certo e o fio certo. O `stroke` é parseado e guardado no
+`SkeletonEdge`; o compilador não o lê, e um renderizador que queira a ênfase
+encontra o dado ali.
+
+A regra está fixada em teste (`parse.test.ts`, "distingue linha de dado e de
+controle pela semântica do rótulo, não pelo traço"), e não só nesta prosa.
 
 A restrição da §3 aparece aqui: se um `classDef` referencia um `kind` que o motor
 não conhece, o parser recusa, com a mesma mensagem que hoje `compileModelet` usa
@@ -276,8 +295,58 @@ Não implementar antes de aprovar a sintaxe da §4. As fases, quando começarem:
   (`source`, `buffer`, `sink`); daí em diante, cenário novo é `.mmd`, e YAML
   fica reservado para o agregado `.model` da §4 do `model-format.md` (o
   aplicativo, não o cenário).
+
+  **13/10/2026: esse critério foi atingido e passado.** O compilador de Mermaid
+  monta `source`, `buffer`, `sink` e também `static`, que o de modelet recusa.
+  A placa entrou sem sintaxe nova porque não precisava de nenhuma: o
+  `ObjectSpec` de uma é `{ id, kind, label, leaf }` e nada mais — sem `init` e
+  sem `behavior`, porque `indexTree` recusa placa que aja —, e o desenho já traz
+  os três campos que sobram. A recusa antiga dizia "o formato ainda não declara
+  o conteúdo dela", e isso vale para conteúdo **rico**; esse conteúdo nunca
+  chegou ao motor nem pelo caminho do TS, onde `placa()` passa o título como
+  `label` e para aí.
+
+  O que falta — `router`, `switch`, `store`, `sequencer` — **não** é do mesmo
+  tipo. Neles o que falta é **política** (de rota, de retenção), e isso é
+  decisão de linguagem: a §6 manda aprovar a sintaxe antes de implementar, e
+  esta nota não a aprova. Até lá eles existem num cenário por `overrides`, que é
+  como a `anatomia` tem `router` e `store`.
 - **O motor precisa ler dagre.** Adiciona dependência a um pacote que hoje é
   quase sem deps. Aceito, porque a alternativa é reimplementar posicionamento.
+
+---
+
+## 7.1 Limites do formato achados ao escrever o segundo lab
+
+*16/10/2026, construindo `collector-pipeline`, o primeiro lab a nascer em `.mmd`.*
+
+Dois, e os dois são de fato limites — não lacunas de implementação a fechar com mais código.
+
+**1. O `.mmd` não expressa descarte.** No motor, `to: DROP` é "a ausência de destino dita em
+voz alta", e o lab dos provedores usa isso. O parser não tem como escrever `@drop`: o id de
+nó dele é `[A-Za-z_][A-Za-z0-9_-]*`, e `@` não casa. Não há suporte a `DROP` em lugar nenhum
+do `mermaid-skeleton`.
+
+Contornado no `collector-pipeline` por um **nó contador explícito** (`descartes`), e o
+contorno acabou melhor que o original: o Collector de verdade expõe
+`otelcol_processor_refused_spans` — a perda dele é um contador, não um vazio. Uma caixa com
+número ensina melhor que um terminal de descarte, e a caixa recebe das duas pipelines, que é
+o que o Collector faz.
+
+Então a decisão é **não** acrescentar `DROP` ao formato por enquanto: o caso que o pediria é
+um em que o descarte não deva ser contado, e nenhum lab tem esse caso. Se aparecer, a sintaxe
+natural é um id reservado (`drop` como nó implícito), e não um caractere novo.
+
+**2. O `.mmd` declara topologia, então parâmetro não reordena processador.** A tese mais
+óbvia do Collector — `processors:` é lista ordenada, e `memory_limiter` antes de `batch` não
+é estilo — **não cabe num lab de um mmd**, porque trocar a ordem é trocar o desenho. O lab
+ficou com a outra tese (um receiver, duas pipelines, uma cópia para cada), e a da ordem ficou
+registrada na tabela de mal-entendidos sem ser simulada.
+
+A saída, quando alguém quiser simulá-la, é **dois `.mmd`** e um parâmetro que escolhe qual
+esqueleto compila. Isso é novo e não está aprovado: dobra o desenho e a vista, e a §3 do
+`DECISIONS.md` ("só precisa ser simulado o que vai ser apresentado") é o lugar de decidir se
+paga.
 
 ---
 

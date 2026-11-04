@@ -1,0 +1,32 @@
+---
+id: splunk-ingest
+title: Parsing happens once, on the first component that can do it
+seed: 7
+edgeTicks: 1
+params:
+  registros-por-tick: 40
+  linhas-do-registro: 12
+  multilinha-a-cada: 20
+  meio-cozinha: 0
+  props-em: 2
+---
+flowchart LR
+  app([app · writes the log]):::origem
+  uf[universal forwarder]:::encaminhador
+  meio[intermediate tier]:::encaminhador
+  idx[indexer]:::indexador
+  indice[(index · what is searchable)]:::deposito
+
+  app -- "escreve:registro" --> uf
+
+  uf -- "encaminha:bloco" --> meio
+
+  meio -- "cru:bloco"     --> idx
+  meio -- "cozido:evento" --> idx
+
+  idx -- "grava:evento" --> indice
+
+  classDef origem        family:processor,kind:source
+  classDef encaminhador  family:processor,kind:router
+  classDef indexador     family:processor,kind:router
+  classDef deposito      family:processor,kind:store

@@ -1,0 +1,322 @@
+---
+import { EXERCICIOS_DA_INGESTAO, MAL_ENTENDIDOS_DA_INGESTAO } from "@ovh/splunk-domain";
+import { Exercicio } from "../../components/Exercicio.tsx";
+import { Predicao } from "../../components/Predicao.tsx";
+import SiteFooter from "../../components/SiteFooter.astro";
+import SiteNav from "../../components/SiteNav.astro";
+import { SplunkIngestLab } from "../../components/SplunkIngestLab.tsx";
+import Base from "../../layouts/Base.astro";
+import { url } from "../../lib/urls";
+import "../../styles/docs.css";
+import "../../components/SplunkIngestLab.css";
+import "../../components/Predicao.css";
+import "../../components/PainelDaCarga.css";
+import "@ovh/depth-ui/src/stage.css";
+import "../../components/Explorer.css";
+import "../../components/Exercicio.css";
+import { montarExercicio } from "../../lib/exercicios";
+
+const exercicios = EXERCICIOS_DA_INGESTAO.map(montarExercicio);
+---
+
+<Base
+  domain="splunk"
+  title="Where parsing happens — OpenLabs"
+  description="Splunk's parsing phase runs once, on the first component in the deployment capable of it. So a props.conf is correct or inert depending on which machine it sits on — and which machine that is depends on a topology decision usually taken by somebody else."
+>
+  <SiteNav current="labs" />
+
+  <main id="content">
+    <section class="lab-head editorial">
+      <div class="prose">
+        <p class="lab-head__eyebrow mono">
+          <a href={url("handbooks/splunk")}>Splunk Visual Handbook</a> · lab
+        </p>
+        <h1>The file was right. The machine was wrong.</h1>
+        <p>
+          Splunk's own documentation describes the product as four phases —
+          input, parsing, indexing, search — and then states the rule this lab
+          exists to make visible: <b>each configuration belongs on only one
+          component, the first one in the deployment that handles that phase.</b>
+          A universal forwarder handles input. It does not parse. So every
+          line-breaking setting you put on it is valid syntax, deploys cleanly,
+          and does nothing.
+        </p>
+        <p>
+          Below, the application writes a twelve-line stack trace every twentieth
+          record. Move <code>props.conf</code> between the three machines and
+          watch the verdict line change. Then put it on the indexer, where it
+          belongs, and tick <em>the middle tier is a heavy forwarder</em> —
+          nobody touched the file, and the stack trace goes back to being twelve
+          events.
+        </p>
+      </div>
+      <aside class="lab-head__note mono">
+        <p>One tick is one second.</p>
+        <p>The block is 64 KiB, as the input phase cuts it.</p>
+        <p>Nothing here is scripted: every number is the run.</p>
+      </aside>
+    </section>
+
+    <section class="lab-palco">
+      <SplunkIngestLab client:only="react" />
+    </section>
+
+    <section class="lab-prosa editorial">
+      <div class="prose">
+        <h2>Break it</h2>
+        <p>
+          Three moves, and the third one is the one that happens to teams who
+          never touched their configuration at all.
+        </p>
+        <ol>
+          <li>
+            <b><code>props.conf</code> on the universal forwarder.</b> The
+            verdict line says <em>no effect at all</em>, and
+            <em>events per stack trace</em> climbs to twelve. This is the most
+            common version of this mistake, and it is easy to see why: the
+            forwarder is the machine that reads the file, so it feels like the
+            machine that should know how to read it. It reads bytes. Its only
+            phase is input — cut the stream into 64 KiB blocks, annotate each
+            one with host, source and source type, forward. Before the parsing
+            phase runs, there is no such thing as an event yet.
+          </li>
+          <li>
+            <b>Move it to the indexer.</b> The verdict turns, <em>stack traces ·
+            whole</em> starts climbing and the twelve becomes one. Nothing else
+            about the run changed: same records, same blocks, same bytes. The
+            only difference is which machine holds a file.
+          </li>
+          <li>
+            <b>Leave it there, and add a heavy forwarder.</b> Tick the switch.
+            The verdict goes back to <em>no effect at all</em>. Nobody edited
+            the file, nobody touched the application, nobody changed a source
+            type — somebody put a hop in the middle of the path, for a network
+            reason, in a different ticket. The parsing phase moved with it, and
+            the indexer now receives events that are already broken and does not
+            re-parse them. The <code>props.conf</code> on it is still correct and
+            now has nothing left to act on.
+          </li>
+        </ol>
+
+        <h2>The six combinations, and the two that work</h2>
+        <p>
+          Three machines where the file can be installed, two topologies. The
+          table is not a list to memorise: it is one sentence applied six times
+          — <b>the line breaking takes effect only if the file is on the machine
+          that runs the phase</b>.
+        </p>
+      </div>
+      <div class="lab-tabela">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col"><code>props.conf</code> installed on</th>
+              <th scope="col">no heavy forwarder</th>
+              <th scope="col">heavy forwarder in the path</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">universal forwarder</th>
+              <td>no effect</td>
+              <td>no effect</td>
+            </tr>
+            <tr>
+              <th scope="row">intermediate tier</th>
+              <td>no effect — it forwards, it does not parse</td>
+              <td><b>works</b></td>
+            </tr>
+            <tr>
+              <th scope="row">indexer</th>
+              <td><b>works</b></td>
+              <td>no effect — the events arrived parsed</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="prose">
+        <h2>Predict before you look</h2>
+        <p>
+          Answer first, then run it. Predicting and being wrong is what makes the
+          answer stick.
+        </p>
+      </div>
+      <div class="lab-predicao">
+        <Predicao
+          client:visible
+          pergunta="Your stack traces are being indexed one line per event. You have a correct LINE_BREAKER in props.conf on every indexer, pushed by the deployment server, and the data flows through a heavy forwarder that does TLS termination. What fixes it?"
+          opcoes={[
+            "Install the same props.conf on the heavy forwarder — the parsing phase runs there, not on the indexers",
+            "Restart the indexers so they pick up props.conf, and re-index the data",
+            "Add EVENT_BREAKER to the universal forwarders so whole events reach the indexers",
+          ]}
+          correta={0}
+          revelacao="The parsing phase runs once, on the first component in the deployment that can do it — and a heavy forwarder can. The indexers receive events that are already broken and do not re-parse them, so the file on them is correct and inert. Restarting changes nothing for the same reason, and re-indexing would re-ingest the same wrong breaking. EVENT_BREAKER is the other mechanism entirely: it is valid only on universal forwarders, and what it does is cut the chunks leaving over the network at event boundaries so that load balancing switches between events instead of inside one. Note what none of the three options can do: fix the events already on disk. Index-time decisions are kept."
+        />
+      </div>
+    </section>
+
+    <section class="lab-prosa editorial">
+      <div class="prose">
+        <h2>Configure it</h2>
+        <p>
+          Three lines from <code>labs/splunk-ingest/</code>, which is this model
+          as something that boots. The correct block of each one is lifted out of
+          the file that runs, so it cannot drift from the config.
+        </p>
+        <p>
+          Two of them are on the forwarder and one is on the indexer, and that
+          is the point rather than variety: <b>what is valid depends on the
+          machine</b>. The same file name exists on both, holding settings that
+          do nothing on the other — and neither of them complains when it
+          receives the neighbour's.
+        </p>
+      </div>
+      <div class="lab-exercicios">
+        {exercicios.map((exercicio) => (
+          <Exercicio client:visible exercicio={exercicio} />
+        ))}
+      </div>
+    </section>
+
+    <section class="lab-prosa editorial">
+      <div class="prose">
+        <h2>What people get wrong</h2>
+        <p>
+          Every row below is a belief worth naming, because the model above is
+          arranged to take it apart. The right column is the documentation, with
+          the link.
+        </p>
+      </div>
+      <div class="lab-mal-entendidos">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">What people believe</th>
+              <th scope="col">What the docs say</th>
+            </tr>
+          </thead>
+          <tbody>
+            {
+              MAL_ENTENDIDOS_DA_INGESTAO.map((m) => (
+                <tr>
+                  <td>{m.crenca}</td>
+                  <td>
+                    {m.spec}{" "}
+                    <a href={m.fonte} rel="noreferrer noopener" target="_blank">
+                      source
+                    </a>
+                  </td>
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="lab-prosa editorial">
+      <div class="prose">
+        <h2>What this model does not claim</h2>
+        <p>
+          <b>One indexer.</b> The forwarder here sends to a single receiver, and
+          that is a deliberate boundary: the moment there are two, a forwarder
+          that has not broken the stream into events can switch destination in
+          the middle of one — and that is a different defect, with a different
+          setting (<code>EVENT_BREAKER</code>, which is valid only on universal
+          forwarders) and a different phase of this handbook. Teaching it here
+          would blur the one claim this lab makes.
+        </p>
+        <p>
+          <b>The block is bytes, not time.</b> The 64 KiB buffer is modelled at a
+          fixed cost per line, so the block fills on volume alone. A real
+          forwarder also flushes on other conditions, and a monitored file that
+          stops being written to does not keep a block hostage forever. What the
+          buffer is here for is the delay between <em>written</em> and
+          <em>searchable</em>, which is real and which operators meet before they
+          meet the explanation for it.
+        </p>
+        <p>
+          <b>Breaking is all-or-nothing.</b> A record is either one event or one
+          event per line. Real line breaking fails in more interesting ways —
+          a regex that matches too much, a timestamp recognised in the wrong
+          field, a truncated event at <code>TRUNCATE</code>. The lab models the
+          binary case because the question it answers is <em>where</em>, not
+          <em>which regex</em>.
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <SiteFooter />
+</Base>
+
+<style>
+  .lab-head {
+    padding-block: var(--space-4) var(--space-2);
+  }
+
+  .lab-head__eyebrow {
+    margin: 0 0 var(--space-1);
+    color: var(--accent);
+    font-size: var(--size-step--1);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  h1 {
+    margin: 0 0 var(--space-2);
+    font-size: var(--size-step-2);
+    max-width: 24ch;
+  }
+
+  .lab-head__note {
+    align-self: end;
+    color: var(--ink-muted);
+    font-size: var(--size-step--1);
+  }
+
+  .lab-head__note p {
+    margin: 0 0 0.35rem;
+  }
+
+  .lab-palco {
+    margin-block: var(--space-2) var(--space-4);
+  }
+
+  .lab-prosa {
+    padding-block-end: var(--space-4);
+  }
+
+  .lab-predicao {
+    grid-column: 1 / -1;
+    margin-block-start: var(--space-2);
+    max-width: var(--measure);
+  }
+
+  .lab-tabela,
+  .lab-mal-entendidos {
+    grid-column: 1 / -1;
+    margin-block: var(--space-2);
+    overflow-x: auto;
+  }
+
+  .lab-tabela table,
+  .lab-mal-entendidos table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: var(--size-step--1);
+  }
+
+  .lab-tabela th,
+  .lab-tabela td,
+  .lab-mal-entendidos th,
+  .lab-mal-entendidos td {
+    border-block-end: 1px solid var(--border);
+    padding: var(--space-1) var(--space-2);
+    text-align: start;
+    vertical-align: top;
+  }
+</style>

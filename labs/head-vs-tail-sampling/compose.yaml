@@ -1,0 +1,43 @@
+# Head e tail sampling contra o Collector de verdade.
+#
+#   docker compose up --build
+#
+# Para ver a tese 1 (head decide antes de saber), suba com a amostragem do SDK
+# ligada e compare quantos traces com erro aparecem:
+#
+#   HEAD_SAMPLING_RATIO=0.1 docker compose up --build
+#
+# Para ver a tese 3 (o trace quebrado), troque `routing_key` no `gateway.yaml`
+# por `service` e repita: os dois gateways continuam decidindo, e cada um decide
+# sobre um pedaço.
+services:
+  tail-a:
+    image: otel/opentelemetry-collector-contrib:0.160.0
+    command: ["--config=/etc/tail.yaml"]
+    volumes:
+      - ./tail.yaml:/etc/tail.yaml:ro,z
+
+  tail-b:
+    image: otel/opentelemetry-collector-contrib:0.160.0
+    command: ["--config=/etc/tail.yaml"]
+    volumes:
+      - ./tail.yaml:/etc/tail.yaml:ro,z
+
+  gateway:
+    image: otel/opentelemetry-collector-contrib:0.160.0
+    command: ["--config=/etc/gateway.yaml"]
+    depends_on: [tail-a, tail-b]
+    volumes:
+      - ./gateway.yaml:/etc/gateway.yaml:ro,z
+
+  shop:
+    build: ./app
+    depends_on: [gateway]
+    environment:
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://gateway:4317
+      SAMPLING_TRACES: "120"
+      # 1.0 é o recomendado quando o Collector amostra na cauda: dois
+      # amostradores em série se MULTIPLICAM, e o primeiro é o que não sabe
+      # nada ainda.
+      HEAD_SAMPLING_RATIO: "1.0"
+      ERROR_EVERY: "4"

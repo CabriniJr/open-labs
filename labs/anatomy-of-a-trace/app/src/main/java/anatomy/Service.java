@@ -111,11 +111,15 @@ public final class Service {
                         }
                       });
 
+          // <handbook:trecho id="qual-contexto-segue-adiante">
           Span span =
               semInstrumentacao
                   ? null
                   : tracer.spanBuilder("GET /" + nome).setSpanKind(SpanKind.SERVER).setParent(recebido).startSpan();
+          // <handbook:lacuna>
           Context atual = span == null ? recebido : recebido.with(span);
+          // </handbook:lacuna>
+          // </handbook:trecho>
 
           try (var escopo = atual.makeCurrent()) {
             if (!proximo.isBlank()) {
@@ -126,9 +130,13 @@ public final class Service {
                 if (veio != null) pedido.header("traceparent", veio);
               } else if (!derrubaCabecalho) {
                 // 2. INJETAR: o contexto vira cabeçalho de saída.
+                // <handbook:trecho id="o-que-entra-no-cabecalho">
+                // <handbook:lacuna>
                 otel.getPropagators()
                     .getTextMapPropagator()
                     .inject(atual, pedido, (TextMapSetter<HttpRequest.Builder>) (b, k, v) -> b.header(k, v));
+                // </handbook:lacuna>
+                // </handbook:trecho>
               }
               try {
                 cliente.send(pedido.GET().build(), HttpResponse.BodyHandlers.discarding());

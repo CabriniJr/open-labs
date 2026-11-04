@@ -12,6 +12,8 @@
   "dependencies": {
     "@ovh/depth-core": "workspace:*",
     "@ovh/depth-ui": "workspace:*",
-    "@ovh/mermaid-skeleton": "workspace:*"
+    "@ovh/handbook-format": "workspace:*",
+    "@ovh/mermaid-skeleton": "workspace:*",
+    "@ovh/motion": "workspace:*"
   }
 }

@@ -9,10 +9,16 @@ import type { Skeleton, SkeletonEdge, SkeletonNode, SkeletonSubgraph } from "./t
  * A camada de baixo é a mesma do `model-format`: uma tabela `CONTRATOS` que diz
  * quais `kind` o compilador sabe montar e quais portas cada um tem, mais uma
  * tabela `RECUSADOS` que responde por que os outros ainda não passam. Um
- * `.mmd` que só usa `source`/`buffer`/`sink` compila hoje; qualquer outro
- * `kind` é recusado com mensagem, na mesma voz que o `compileModelet` já usa,
- * para que o autor não fique procurando o silêncio de um comportamento que
- * não roda.
+ * `.mmd` que use `source`/`buffer`/`sink`/`static` compila hoje; qualquer
+ * outro `kind` é recusado com mensagem, na mesma voz que o `compileModelet` já
+ * usa, para que o autor não fique procurando o silêncio de um comportamento
+ * que não roda.
+ *
+ * `static` é o único dos quatro que não tem comportamento nenhum, e entrou por
+ * isso: ela não precisava de sintaxe nova. Os que faltam — `router`, `switch`,
+ * `store`, `sequencer` — precisam, porque o que falta neles é **política**
+ * (de rota, de retenção), e declarar política é decisão de linguagem que a §6
+ * do design manda aprovar antes de implementar.
  *
  * A diferença estrutural em relação a um `modelet`: um cenário não tem
  * fronteira (`ports` de contorno). O `root` é um `composite` sem porta
@@ -35,6 +41,22 @@ const CONTRATOS: Readonly<Record<string, Contrato>> = {
   source: { entradas: [], saidas: ["out"] },
   buffer: { entradas: ["in"], saidas: ["out", "drop"] },
   sink: { entradas: ["in"], saidas: [] },
+  /*
+   * Placa: nenhuma entrada, nenhuma saída, e isso não é uma lacuna — é o que
+   * ela é. `docs/kinds.md` §9: dado anexado, consultado e nunca atravessado.
+   *
+   * Ela entrou porque o `.mmd` já declara tudo que uma placa precisa. O
+   * `ObjectSpec` de uma é `{ id, kind, label, leaf }` e nada mais: sem `init`,
+   * sem `behavior` — `indexTree` recusa placa que tenha behavior. O desenho
+   * traz id, kind (pelo `classDef`) e label, então não falta nada para montar.
+   *
+   * A recusa anterior dizia "o formato ainda não declara o conteúdo dela", e
+   * isso vale para conteúdo RICO (uma tabela de limites, um recurso com
+   * atributos). Esse conteúdo nunca chegou ao motor nem pelo caminho do TS: o
+   * `placa()` do lab dos provedores passa o título como `label` e para aí.
+   * Para a estrutura, o rótulo é o conteúdo.
+   */
+  static: { entradas: [], saidas: [] },
 };
 
 /** Mesmo texto do `model-format` — `docs/kinds.md` §3–5 e §9. */
@@ -42,7 +64,6 @@ const RECUSADOS: Readonly<Record<string, string>> = {
   channel: "canal é aresta, não filho: ele É a linha entre dois objetos",
   router:
     "router escolhe uma porta segundo uma política, e o formato ainda não tem como declarar política de rota",
-  static: "placa é dado anexado, consultado e nunca atravessado: o formato ainda não declara o conteúdo dela",
   switch: "switch chega quando router chegar; mesma questão de política",
   sequencer: "sequencer é controlador; nenhum kind de hoje tem porta de controle",
   store: "store guarda carga e o formato ainda não declara política de retenção",
@@ -181,6 +202,9 @@ export function compileSkeleton(sk: Skeleton, opts: CompileOptions = {}): Compil
     if (n.kind === "source") return fonte(n.id, n.label, "item", argOf(n.id, "rate", 1));
     if (n.kind === "buffer") return retencao(n.id, n.label, argOf(n.id, "capacity", 16), argOf(n.id, "drain", 1));
     if (n.kind === "sink") return consumo(n.id, n.label);
+    // Sem `init` e sem `behavior`, de propósito e não por falta: `indexTree`
+    // recusa placa que aja, porque placa que age deixou de ser placa.
+    if (n.kind === "static") return { id: n.id, kind: "static", label: n.label, leaf: true };
     erros.push(`kind "${n.kind}" tem contrato mas não tem builder — bug do compilador`);
     return null;
   };
@@ -309,7 +333,17 @@ function compileEdge(
       if (contrato === undefined) return null; // kind já foi recusado
       const escolhida = e.fromPort ?? (contrato.saidas[0] ?? null);
       if (escolhida === null) {
-        erros.push(`"${fromNode.id}" (kind "${fromNode.kind}") não emite por nenhuma porta`);
+        // Placa ganha a própria frase: o erro de quem liga um fio nela não é
+        // ter errado a porta, é ter lido a placa como peça de fluxo. Dizer
+        // "não emite por nenhuma porta" responde ao sintoma; dizer o que ela é
+        // responde ao que a pessoa achou que estava desenhando.
+        erros.push(
+          fromNode.kind === "static"
+            ? `fio sai da placa "${fromNode.id}": placa é dado anexado, consultado e nunca ` +
+              `atravessado (docs/kinds.md §9) — ela não age, então esse fio nunca carregaria ` +
+              `nada. Consulte a placa pelo lado do leitor, não por fio`
+            : `"${fromNode.id}" (kind "${fromNode.kind}") não emite por nenhuma porta`,
+        );
         return null;
       }
       if (!contrato.saidas.includes(escolhida)) {
@@ -337,7 +371,13 @@ function compileEdge(
       return null;
     }
     if (contrato.entradas.length === 0) {
-      erros.push(`"${toNode.id}" (kind "${toNode.kind}") não recebe por nenhuma porta`);
+      erros.push(
+        toNode.kind === "static"
+          ? `fio chega na placa "${toNode.id}": placa é dado anexado, consultado e nunca ` +
+            `atravessado (docs/kinds.md §9) — a mensagem entregue ali sumiria sem rastro. ` +
+            `É a mesma recusa que \`validateWorld\` faria ao instanciar o mundo`
+          : `"${toNode.id}" (kind "${toNode.kind}") não recebe por nenhuma porta`,
+      );
       return null;
     }
   }

@@ -1,0 +1,1 @@
+{ "extends": "../../tsconfig.base.json", "compilerOptions": { "composite": false, "noEmit": true, "jsxImportSource": "react", "types": ["vite/client", "node"] }, "include": ["src", "serve.ts"] }

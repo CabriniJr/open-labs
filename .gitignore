@@ -5,10 +5,18 @@ tsconfig.tsbuildinfo
 *.tsbuildinfo
 test-results/
 playwright-report/
+apps/site/qa-report/
 .DS_Store
 .vercel
-.claude/
+apps/site/public/delivery-host/
+# Configuração local do Claude Code fica fora; as skills do projeto, não.
+.claude/*
+!.claude/skills/
 
 # Build local do lab Java: o repo guarda a fonte, não o artefato.
 target/
 dependency-reduced-pom.xml
+
+# Config local do Playwright: ela só troca o caminho do binário do Chromium
+# para o do contêiner em que o agente roda. Não é do projeto.
+apps/site/playwright.local.config.ts

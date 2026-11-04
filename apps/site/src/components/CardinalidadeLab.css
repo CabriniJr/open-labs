@@ -1,0 +1,218 @@
+/*
+  Cardinalidade e a conta — lab PhET-like.
+
+  Sem palco, então sem nada do catálogo do `stage.css`: o que esta folha estiliza
+  é formulário e números, que é o que o lab É. A hierarquia visual carrega o
+  argumento: o produto escrito por extenso é o maior elemento da tela, e os
+  totais vêm depois dele — quem lê vê a multiplicação antes de ver o resultado.
+*/
+.cardinalidade {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.cardinalidade__conta {
+  min-width: 0;
+  padding: var(--space-2);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-3);
+  background: var(--paper-raised);
+}
+
+.cardinalidade__pergunta {
+  margin: 0 0 var(--space-2);
+  max-width: var(--measure);
+  font-size: var(--size-step-1);
+}
+
+/*
+  O produto. É a peça central, e por isso ela rola dentro de si mesma em vez de
+  empurrar a página: com seis atributos ligados a linha fica longa, e o defeito
+  de item de grid que crescia até o conteúdo já custou uma rodada neste repo.
+*/
+.cardinalidade__produto {
+  overflow-x: auto;
+  margin: 0 0 var(--space-2);
+  padding: var(--space-1) 0;
+  font-size: var(--size-step-2);
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.cardinalidade__produto[data-vazio="true"] {
+  font-size: var(--size-step-0);
+  color: var(--ink-muted);
+}
+
+.cardinalidade__vezes,
+.cardinalidade__igual {
+  color: var(--ink-muted);
+}
+
+/* O fator grande acende: é ele que explica a ordem de grandeza do total. */
+.cardinalidade__fator[data-grande="true"] {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.cardinalidade__unidade {
+  color: var(--ink-muted);
+  font-size: var(--size-step-0);
+}
+
+.cardinalidade__numeros {
+  display: grid;
+  gap: var(--space-2);
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  margin: 0 0 var(--space-2);
+}
+
+.cardinalidade__numeros dt {
+  color: var(--ink-muted);
+  font-size: var(--size-step--1);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.cardinalidade__numeros dd {
+  margin: 0.1rem 0 0;
+  font-size: var(--size-step-1);
+}
+
+.cardinalidade__tampado {
+  color: var(--accent);
+  font-size: var(--size-step--1);
+}
+
+.cardinalidade__aviso {
+  margin: 0 0 var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  border-inline-start: 3px solid var(--accent);
+  max-width: var(--measure);
+  font-size: var(--size-step--1);
+  line-height: 1.6;
+}
+
+.cardinalidade__preco {
+  display: grid;
+  gap: 0.35rem;
+  max-width: var(--measure);
+  font-size: var(--size-step--1);
+}
+
+.cardinalidade__preco input {
+  max-width: 10rem;
+  padding: 0.3rem 0.5rem;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-1);
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-mono);
+}
+
+.cardinalidade__preco output {
+  color: var(--ink-muted);
+}
+
+.cardinalidade__controles {
+  display: grid;
+  gap: var(--space-2);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+}
+
+.cardinalidade__atributos,
+.cardinalidade__instrumento {
+  min-width: 0;
+  margin: 0;
+  padding: var(--space-2);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-3);
+}
+
+.cardinalidade__atributos legend,
+.cardinalidade__instrumento legend {
+  padding-inline: 0.4rem;
+  color: var(--ink-muted);
+  font-size: var(--size-step--1);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.cardinalidade__atributo {
+  display: grid;
+  gap: 0.3rem;
+  padding-block: var(--space-1);
+  border-block-end: 1px solid var(--rule);
+}
+
+.cardinalidade__atributo:last-child {
+  border-block-end: 0;
+}
+
+/* Desligado fica legível e apagado: o leitor ainda lê por que ele existe. */
+.cardinalidade__atributo[data-ligado="false"] {
+  opacity: 0.6;
+}
+
+.cardinalidade__nome {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.cardinalidade__selo {
+  padding: 0.05rem 0.35rem;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-1);
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+}
+
+.cardinalidade__valores {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  font-size: var(--size-step--1);
+  color: var(--ink-muted);
+}
+
+.cardinalidade__valores input {
+  width: 7rem;
+  padding: 0.2rem 0.4rem;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-1);
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-mono);
+}
+
+.cardinalidade__porque {
+  margin: 0;
+  max-width: var(--measure);
+  color: var(--ink-muted);
+  font-size: var(--size-step--1);
+  line-height: 1.55;
+}
+
+.cardinalidade__campo {
+  display: grid;
+  gap: 0.25rem;
+  margin-block-end: var(--space-2);
+  font-size: var(--size-step--1);
+}
+
+.cardinalidade__campo input[type="range"] {
+  width: 100%;
+}
+
+.cardinalidade__switch {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-block-end: var(--space-2);
+  font-size: var(--size-step--1);
+}

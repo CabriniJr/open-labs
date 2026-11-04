@@ -40,6 +40,32 @@ O que a implementação acrescentou e não estava escrito aqui: **porta órfã e
 são erro**, a direção da porta é conferida no uso, e duas linhas de dado saindo da mesma
 porta são recusadas (replicar carga é o `tee`, da onda 1).
 
+### 0.1 O cenário saiu daqui em 16/09/2026 — ele é escrito em Mermaid
+
+A tabela acima continua valendo, e vale **para o `modelet`** — o que mudou de lugar é para que
+ele serve: `.modelet.yaml` deixou de ser o formato em que um cenário novo se escreve. Quem carrega o
+esqueleto de um cenário agora é um `.mmd` — nós, canais, portas, subgrafos —, e o comportamento
+entra por cima, em TS. A decisão, a sintaxe e o caminho estão em
+`superpowers/specs/2026-09-16-mermaid-como-esqueleto-design.md` §0 e §4; o guia de autoria
+(`authoring.md`) mostra como se escreve um.
+
+**O que isso deixa para o `modelet`:** o agregado `.model` da §4 — o aplicativo, e não o
+cenário. Nada do que está implementado foi removido, e os labs que já compilam por
+`compileModelet` seguem compilando; o que não acontece mais é **cenário novo nascer em YAML**.
+
+**E os dois compiladores já divergem, como o desenho previa.** O de Mermaid monta `static`
+nativamente desde 13/10/2026 — a placa não precisava de sintaxe nova, porque o `ObjectSpec` de
+uma é `{ id, kind, label, leaf }` e nada mais, e o desenho já traz os três. A linha da tabela
+acima que recusa `static` descreve o `compileModelet`, que segue recusando. A tabela de contratos
+de cada compilador é local de propósito: `compile.ts` do `mermaid-skeleton` diz isso no docblock
+desde que nasceu.
+
+O que **não** divergiu, e a razão vale para os dois: `router`, `switch`, `store` e `sequencer`
+continuam recusados nos dois lados. Neles o que falta não é sintaxe, é **política** — de rota, de
+retenção —, e `superpowers/specs/2026-10-13-politica-de-rota-no-mmd-design.md` mediu quanto isso
+renderia hoje e recomendou não desenhar: de 352 nós `router` do repositório, 343 têm no máximo
+uma porta de saída, e nenhum escolhe a porta de saída a partir de um sinal de controle.
+
 ---
 
 ## 1. Três camadas, não duas
@@ -49,6 +75,10 @@ porta são recusadas (replicar carga é o `tee`, da onda 1).
 | **`kind`** | Primitivo do motor. Comportamento em código | `packages/depth-core` | Quem mantém o motor. Dezenove deles (`kinds.md` §7) |
 | **`modelet`** | Composição de `kind` parametrizada | Dentro do `model` que o usa | Autor de conteúdo |
 | **`model`** | Composição de `modelet` que replica **uma aplicação** | Pacote publicável e **independente** | Autor de conteúdo |
+
+Desde 16/09/2026 o **esqueleto de um cenário** entra por uma quarta porta, e não por esta
+tabela: um `.mmd` em Mermaid, compilado por `compileSkeleton`. Ele ocupa o lugar que o `modelet`
+ocupava para o cenário; a camada `modelet` segue existindo para o agregado `.model`. Ver §0.1.
 
 **Corte de escopo de 28/08/2026: cada `model` é ilha — mas ilha com porto.** Sem intercâmbio
 implementado, sem biblioteca compartilhada obrigatória, sem teste de compatibilidade entre

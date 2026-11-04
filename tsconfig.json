@@ -1,12 +1,20 @@
 {
   "files": [],
   "references": [
+    { "path": "packages/handbook-catalog" },
+    { "path": "packages/interactive-core" },
+    { "path": "packages/kubernetes-domain" },
     { "path": "packages/otel-domain" },
     { "path": "packages/cpu-domain" },
     { "path": "packages/algo-domain" },
+    { "path": "packages/splunk-domain" },
     { "path": "packages/depth-core" },
     { "path": "packages/depth-ui" },
+    { "path": "packages/motion" },
+    { "path": "packages/stage3d" },
     { "path": "packages/model-format" },
+    { "path": "packages/mermaid-skeleton" },
+    { "path": "packages/handbook-format" },
     { "path": "apps/site" }
   ]
 }

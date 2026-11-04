@@ -74,7 +74,8 @@
 }
 
 /* Preenche a altura que o palco der, em vez de derivá-la da proporção. */
-.explorer__palco > .dui-stage {
+.explorer__palco > .dui-stage__moldura,
+.explorer__palco > .dui-stage__moldura > .dui-stage {
   block-size: 100%;
 }
 

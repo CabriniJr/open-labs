@@ -1,5 +1,6 @@
 ---
 import { HeroSim } from "../components/HeroSim.tsx";
+import { HeroMundo } from "../components/HeroMundo.tsx";
 import HandbookCard from "../components/HandbookCard.astro";
 import SiteFooter from "../components/SiteFooter.astro";
 import SiteNav from "../components/SiteNav.astro";
@@ -8,6 +9,9 @@ import Base from "../layouts/Base.astro";
 import { url } from "../lib/urls";
 import { HANDBOOKS } from "../data/handbooks";
 import "../components/HeroSim.css";
+import "../components/HeroMundo.css";
+import "@ovh/motion/src/react/motion.css";
+import "@ovh/stage3d/src/iso.css";
 import "../styles/docs.css";
 
 /**
@@ -42,13 +46,13 @@ const GESTOS = [
 
 <Base
   title="OpenLabs"
-  description="Handbooks that run: every subject modelled as a simulation you can take apart, on one engine that does not know what the subject is."
+  description="Handbooks that run: technical subjects taught through interactive models, compositional flows and stateful experiments."
 >
   <SiteNav current="home" />
 
   <main id="content">
-    <section class="hero editorial">
-      <div>
+    <section class="hero hero--mundo">
+      <div class="hero__texto">
         <h1>See how the thing actually works.</h1>
         <p class="hero__lede prose">
           OpenLabs builds handbooks that run. Most material shows you a diagram
@@ -57,22 +61,23 @@ const GESTOS = [
           that produced what you just saw.
         </p>
         <p class="prose">
-          One engine, many subjects. Below is a piece of the OpenTelemetry
-          handbook, running: a span leaving a service, picking up what the
-          collector adds to it, and landing in a backend. Click a different one
-          and you follow that one instead.
+          Different subjects, shared tools: a flow you can open, a cluster that
+          reconciles, a chip you can lift the lid off and follow down to the
+          gates. Each lab has a showcase that walks you through it and a
+          simulation you can break.
         </p>
         <p class="hero__cta">
           <a class="cta cta--primary" href={url("handbooks")}>Browse the handbooks</a>
           <a class="cta" href={url("docs")}>Read the documentation</a>
         </p>
       </div>
-      <aside class="hero__note mono">
-        <p>Live simulation. Not a video.</p>
-      </aside>
+      <div class="hero__mundo" aria-label="Every subject on one floor">
+        <HeroMundo client:load />
+      </div>
     </section>
 
     <section class="hero-stage">
+      <p class="hero-stage__eyebrow mono">Live simulation, not a video · OpenTelemetry · click a span to follow it</p>
       <HeroSim client:visible />
     </section>
 
@@ -80,8 +85,8 @@ const GESTOS = [
       <div class="prose">
         <h2>What a lab is</h2>
         <p>
-          Every lab answers one concrete question, and it answers it at several
-          depths. The outside view shows the parts and what moves between them.
+          Every lab answers one concrete question through interaction. When
+          the subject is a layered flow, the outside view shows the parts and what moves between them.
           Go one level down and you are inside a part. Keep going and you reach
           the thing itself — the bytes on the wire, or the wire that is either
           high or low.
@@ -105,7 +110,7 @@ const GESTOS = [
 
     <section class="levels">
       <p class="levels__intro">
-        Underneath every handbook is one engine: a graph you can go into. It
+        For layered flow scenarios, the compositional engine is a graph you can go into. It
         draws a running flow, and each layer of abstraction opens into the one
         below — not another diagram of the same thing, the same thing seen
         closer.
@@ -131,7 +136,7 @@ const GESTOS = [
       <div class="path__intro">
         <h2>The handbooks</h2>
         <p>
-          Each one is a <code>.model</code> on the same engine, and each one has
+          Each one chooses the interactive models its subject needs, and shares
           the same anatomy: a roadmap, articles, and labs. Open one to see where
           it stands — nothing here claims to be finished when it is not.
         </p>

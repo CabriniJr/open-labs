@@ -8,11 +8,16 @@ válidas no que não conflita.
 Ordenado por **o que destrava o quê**, não por facilidade nem por empolgação. Cada fase
 tem critério de saída verificável; fase sem critério é intenção.
 
-**Onde as fases desembocam (2026-08-29).** O que o leitor vê não é uma fase, é um
-**handbook**: um `.model` sobre o motor, com **roadmap · artigos · labs**. A F4 entrega
+**Onde as fases desembocam (revisto em 19/10/2026).** O que o leitor vê não é uma fase, é um
+**handbook** com **roadmap · artigos · labs**, que pode combinar fluxos,
+estado/reconciliação e manipulação direta. A F4 entrega
 `otel.model`; a F6, `cpu.model`; a F6b, o ATmega dentro do segundo. O catálogo que a
-capa promete vive em `apps/site/src/data/handbooks.ts` — quem acrescenta um handbook
-acrescenta uma entrada lá, e o teste do catálogo cobra as três trilhas.
+capa consome manifestos `handbooks/<id>/handbook.yaml`, além dos legados
+TypeScript em `apps/site/src/data/handbooks.ts`. O Studio edita fontes sem
+alterar motores; a entrega une conteúdo e host compilado por contratos explícitos.
+O capítulo **Runnable handbook deliveries** registra a primeira implementação
+e seus limites. As fases abaixo preservam o roteiro do motor composicional;
+elas não bloqueiam autoria e distribuição independentes.
 
 ---
 

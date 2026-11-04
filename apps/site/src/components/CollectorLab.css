@@ -1,0 +1,97 @@
+/*
+  O lab do Collector.
+  
+  O palco é largo e as duas fileiras precisam caber lado a lado sem rolagem
+  horizontal — é o que o `travessia.spec.ts` cobra de todo lab. O placar fica
+  ENTRE o palco e os controles de propósito: ele é a resposta da pergunta, e a
+  pergunta é a razão de a página existir.
+*/
+.collector-lab {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.collector-lab__palco {
+  display: grid;
+  gap: var(--space-2);
+}
+
+/* O placar: a pergunta, e dois números que a respondem. */
+.collector-lab__placar {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--space-2);
+  background: var(--surface);
+}
+
+.collector-lab__pergunta {
+  margin: 0 0 var(--space-2);
+  font-size: var(--size-step-0);
+}
+
+.collector-lab__respostas {
+  display: grid;
+  gap: var(--space-2);
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+}
+
+.collector-lab__resposta {
+  display: grid;
+  gap: 0.15rem;
+  border-inline-start: 3px solid var(--border);
+  padding-inline-start: var(--space-2);
+}
+
+/*
+  O destaque é do lado que NÃO mudou, e só quando o filtro está ligado: é o
+  número que contradiz a expectativa, e por isso é ele que acende.
+*/
+.collector-lab__resposta[data-destaque="true"] {
+  border-inline-start-color: var(--accent);
+}
+
+.collector-lab__rotulo {
+  color: var(--muted);
+  font-size: var(--size-step--1);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.collector-lab__resposta b {
+  font-size: var(--size-step-2);
+  line-height: 1.1;
+}
+
+.collector-lab__nota {
+  color: var(--muted);
+  font-size: var(--size-step--1);
+}
+
+.collector-lab__controles {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.collector-lab__tick {
+  color: var(--muted);
+}
+
+.collector-lab__campo {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 13rem;
+  font-size: var(--size-step--1);
+}
+
+.collector-lab__campo input[type="range"] {
+  width: 100%;
+}
+
+.collector-lab__switch {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: var(--size-step--1);
+}
