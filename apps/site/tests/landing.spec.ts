@@ -24,7 +24,9 @@ async function aguardarHidratacao(page: Page): Promise<void> {
   // herói começa abaixo da dobra, então rolar até ele faz parte da espera.
   const ilha = page.locator("astro-island:has(.hero-sim)");
   await ilha.scrollIntoViewIfNeeded();
-  await expect(ilha).not.toHaveAttribute("ssr", /.*/);
+  // 20 s, como as outras esperas deste arquivo: no CI não há GPU, e a cena 3D do
+  // topo divide a thread com a hidratação. Com 5 s o teste falhava ao acaso.
+  await expect(ilha).not.toHaveAttribute("ssr", /.*/, { timeout: 20_000 });
 }
 
 test("the landing loads and the hero hydrates", async ({ page }) => {

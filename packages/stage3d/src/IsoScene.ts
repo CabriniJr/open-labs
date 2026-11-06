@@ -194,6 +194,7 @@ export class IsoScene {
   #linhas: Line2NodeMaterial[] = [];
   #retemar: (() => void) | null = null;
   #ambiente: Texture | null = null;
+  #descartada = false;
 
   constructor(host: HTMLElement, options: IsoOptions = {}) {
     this.#host = host;
@@ -265,7 +266,16 @@ export class IsoScene {
       () => {
         if (this.#renderer !== r) return;
         this.#pronto = true;
-        this.#ambientar(r);
+        // Filtrar o ambiente custa caro sem GPU, e a thread é a mesma em que as
+        // ilhas da página hidratam: o primeiro quadro sai antes, e o reflexo
+        // chega quando o navegador estiver ocioso.
+        const ambientar = () => {
+          if (this.#renderer !== r || this.#descartada) return;
+          this.#ambientar(r);
+          this.pedir();
+        };
+        if ("requestIdleCallback" in window) window.requestIdleCallback(ambientar, { timeout: 3000 });
+        else setTimeout(ambientar, 500);
         const webgpu = (r.backend as { isWebGPUBackend?: boolean }).isWebGPUBackend === true;
         this.#host.dataset.backend = webgpu ? "webgpu" : "webgl2";
         this.pedir();
@@ -387,6 +397,7 @@ export class IsoScene {
   }
 
   dispose(): void {
+    this.#descartada = true;
     cancelAnimationFrame(this.#pedido);
     this.#observador?.disconnect();
     this.#resize?.disconnect();
