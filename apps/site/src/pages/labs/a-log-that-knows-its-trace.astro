@@ -1,0 +1,215 @@
+---
+import LabAssessment from "../../components/LabAssessment.astro";
+import { MAL_ENTENDIDOS_DO_LOG } from "@ovh/otel-domain";
+import { LogModos } from "../../components/LogModos.tsx";
+import { Predicao } from "../../components/Predicao.tsx";
+import SiteFooter from "../../components/SiteFooter.astro";
+import SiteNav from "../../components/SiteNav.astro";
+import Base from "../../layouts/Base.astro";
+import { url } from "../../lib/urls";
+import "../../styles/docs.css";
+import "../../components/ModosDoLab.css";
+import "../../components/CpuVitrine.css";
+import "../../components/ContextoLab.css";
+import "../../components/ImplantacaoLab.css";
+import "../../components/MetricaLab.css";
+import "@ovh/motion/src/react/motion.css";
+import "@ovh/stage3d/src/iso.css";
+import "../../components/Predicao.css";
+---
+
+<Base
+  domain="otel"
+  title="A log that knows its trace — OpenLabs"
+  description="A log links to its trace through the TraceId and SpanId fields of the LogRecord, which the log bridge fills from the context active on the calling thread. An id in the message text links nothing, and a log on a thread without context has none to give."
+>
+  <SiteNav current="labs" />
+
+  <main id="content">
+    <section class="lab-head editorial">
+      <div class="prose">
+        <p class="lab-head__eyebrow mono">
+          <a href={url("handbooks/otel")}>OpenTelemetry Visual Handbook</a> · lab
+        </p>
+        <h1>The trace id in the message is not a link</h1>
+        <p>
+          The incident review asks for every log of one slow request. Half of
+          them have <code>trace_id=4bf9…</code> in the text, and the
+          &ldquo;show logs for this trace&rdquo; button finds none of them. The
+          other half came from a worker thread and carry no id at all.
+        </p>
+        <p>
+          A LogRecord has <b>fields</b> for the trace and span ids. The log
+          bridge fills them by reading the context that is active <em>on the
+          thread that called the logger, at that moment</em>. Watch it in the
+          showcase, then be the handler in the simulation.
+        </p>
+      </div>
+      <aside class="lab-head__note mono">
+        <p>Context belongs to a thread.</p>
+        <p>The lab is that sentence, run.</p>
+      </aside>
+    </section>
+
+    <section class="lab-palco">
+      <LogModos client:only="react" />
+    </section>
+
+    <section class="lab-prosa editorial">
+      <div class="prose">
+        <h2>Break it</h2>
+        <ol>
+          <li>
+            <b>Turn the log bridge off, start a span and log.</b> The body gets
+            the id pasted in, the fields stay empty, and the last column says
+            the backend has nothing to link.
+          </li>
+          <li>
+            <b>Start a second span inside the first and log.</b> The record
+            names the inner span. End it and log again: now it names the outer
+            one.
+          </li>
+          <li>
+            <b>Turn off &ldquo;hand the context to new threads&rdquo;, spawn the
+            worker and log from it.</b> The worker has no active context, and
+            neither does its record. Nothing errored.
+          </li>
+          <li>
+            <b>End every span and log.</b> No context, no fields — and that one
+            is correct.
+          </li>
+        </ol>
+
+        <h2>Predict before you look</h2>
+        <p>Answer first, then try it in the simulation.</p>
+      </div>
+      <div class="lab-predicao">
+        <Predicao
+          client:visible
+          pergunta="A request handler, with the OpenTelemetry log bridge installed, hands work to a thread pool without passing the context, and the task logs 'receipt queued'. What does that LogRecord carry?"
+          opcoes={[
+            "No trace_id or span_id — the pool thread had no active context",
+            "The request's trace_id and the root span's span_id",
+            "The trace_id only, since the span belongs to another thread",
+          ]}
+          correta={0}
+          revelacao="The bridge reads the context active on the calling thread when the logger is called. Context does not cross a thread by itself: the code that submits the task has to carry it (in most SDKs, by wrapping the task or the executor). Without that, the pool thread has no active span, and the record goes out with empty trace fields."
+        />
+      </div>
+    </section>
+
+    <section class="lab-prosa editorial">
+      <div class="prose">
+        <h2>What people get wrong</h2>
+        <p>Each row is a belief the simulation is built to take apart. The right column is the specification, with the link.</p>
+      </div>
+      <div class="lab-mal-entendidos">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">What people believe</th>
+              <th scope="col">What the spec says</th>
+            </tr>
+          </thead>
+          <tbody>
+            {
+              MAL_ENTENDIDOS_DO_LOG.map((m) => (
+                <tr>
+                  <td>{m.crenca}</td>
+                  <td>
+                    {m.spec}{" "}
+                    <a href={m.fonte} rel="noreferrer noopener" target="_blank">
+                      source
+                    </a>
+                  </td>
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="lab-prosa editorial">
+      <div class="prose">
+        <h2>Where this connects</h2>
+        <p>
+          <a href={url("labs/hard-context-and-baggage")}>Hard context and
+          baggage</a> is how the context crosses a process boundary; this lab is
+          how it crosses — or fails to cross — a thread inside one.
+          <a href={url("labs/reading-an-otlp-payload")}>Reading an OTLP
+          payload</a> shows the same 16-byte trace id that the LogRecord field
+          carries, and <a href={url("labs/three-pillars")}>Three pillars</a> is
+          the incident this link is for.
+        </p>
+      </div>
+    </section>
+    <LabAssessment href="labs/a-log-that-knows-its-trace" />
+  </main>
+
+  <SiteFooter />
+</Base>
+
+<style>
+  .lab-head {
+    padding-block: var(--space-4) var(--space-2);
+  }
+
+  .lab-head__eyebrow {
+    margin: 0 0 var(--space-1);
+    color: var(--accent);
+    font-size: var(--size-step--1);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  h1 {
+    margin: 0 0 var(--space-2);
+    font-size: var(--size-step-2);
+    max-width: 24ch;
+  }
+
+  .lab-head__note {
+    align-self: end;
+    color: var(--ink-muted);
+    font-size: var(--size-step--1);
+  }
+
+  .lab-head__note p {
+    margin: 0 0 0.35rem;
+  }
+
+  .lab-palco {
+    margin-block: var(--space-2) var(--space-4);
+  }
+
+  .lab-prosa {
+    padding-block-end: var(--space-4);
+  }
+
+  .lab-predicao {
+    grid-column: 1 / -1;
+    margin-block-start: var(--space-2);
+    max-width: var(--measure);
+  }
+
+  .lab-mal-entendidos {
+    grid-column: 1 / -1;
+    margin-block-start: var(--space-2);
+    overflow-x: auto;
+  }
+
+  .lab-mal-entendidos table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: var(--size-step--1);
+  }
+
+  .lab-mal-entendidos th,
+  .lab-mal-entendidos td {
+    border-block-end: 1px solid var(--border);
+    padding: var(--space-1) var(--space-2);
+    text-align: start;
+    vertical-align: top;
+  }
+</style>

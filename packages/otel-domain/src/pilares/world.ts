@@ -1,6 +1,8 @@
-import type { AnyObject, Emission, ObjectSpec, Wire, WorldSpec } from "@ovh/depth-core";
+import type { Emission, ObjectSpec, WorldSpec } from "@ovh/depth-core";
+import { compileSkeleton, parseSkeleton, type NodeOverride } from "@ovh/mermaid-skeleton";
 import { baldeDe, chaveDaSerie, type Requisicao } from "./carga.js";
 import { ROTULOS_PILARES } from "./labels.js";
+import PILARES_MMD from "./three-pillars.mmd?raw";
 
 /**
  * Três gravadores, **as mesmas** requisições.
@@ -107,10 +109,7 @@ export interface EstadoRegistrador {
 /** O quanto cada gravador guarda antes de o lab virar um teste de memória. */
 const TETO = 60;
 
-const fonte: ObjectSpec<{ readonly n: number }> = {
-  id: "requests",
-  kind: "source",
-  label: ROTULOS_PILARES.requests,
+const fonte: NodeOverride = {
   leaf: true,
   init: () => ({ n: 0 }),
   behavior: (state, _inbox, ctx) => {
@@ -149,10 +148,7 @@ const requisicoesDe = (data: Readonly<Record<string, unknown>>): readonly Requis
  * três. A forma do desenho sai daqui: uma entrada, três saídas, e o trapézio
  * abre para o lado em que são muitos.
  */
-const servico: ObjectSpec<EstadoServico> = {
-  id: "service",
-  kind: "router",
-  label: ROTULOS_PILARES.service,
+const servico: NodeOverride = {
   leaf: true,
   init: (): EstadoServico => ({ atendidas: 0 }),
   behavior: (state, inbox, ctx) => {
@@ -170,10 +166,7 @@ const servico: ObjectSpec<EstadoServico> = {
 };
 
 /** O tracer guarda o indivíduo. É o único que ainda sabe quem era quem. */
-const tracer: ObjectSpec<EstadoTracer> = {
-  id: "trace-store",
-  kind: "store",
-  label: ROTULOS_PILARES.trace,
+const tracer: NodeOverride = {
   leaf: true,
   init: (): EstadoTracer => ({ spans: [] }),
   behavior: (state, inbox, ctx) => {
@@ -195,10 +188,7 @@ const tracer: ObjectSpec<EstadoTracer> = {
  * banco cheio não recusa, ele **soma junto** — mesma memória finita da fila do
  * lote, outra mentira.
  */
-const medidor: ObjectSpec<EstadoMedidor> = {
-  id: "metric-store",
-  kind: "store",
-  label: ROTULOS_PILARES.metric,
+const medidor: NodeOverride = {
   leaf: true,
   init: (): EstadoMedidor => ({ baldes: {}, series: {}, colapsadas: 0, total: 0 }),
   behavior: (state, inbox, ctx) => {
@@ -234,10 +224,7 @@ const medidor: ObjectSpec<EstadoMedidor> = {
  * anterior a qualquer configuração: o que o código não disse, ninguém lê depois.
  * O contador de caladas é o que torna esse silêncio **contável**.
  */
-const registrador: ObjectSpec<EstadoRegistrador> = {
-  id: "log-store",
-  kind: "store",
-  label: ROTULOS_PILARES.log,
+const registrador: NodeOverride = {
   leaf: true,
   init: (): EstadoRegistrador => ({ linhas: [], caladas: 0 }),
   behavior: (state, inbox, ctx) => {
@@ -264,34 +251,52 @@ const registrador: ObjectSpec<EstadoRegistrador> = {
   },
 };
 
+/**
+ * Monta o mundo dos três pilares a partir do esqueleto em `three-pillars.mmd`.
+ *
+ * A tese — uma fonte, um serviço, três gravadores lendo a MESMA emissão pelas
+ * três portas do serviço (`trace`, `metric`, `log`) — vive no desenho. Os
+ * behaviors dos cinco atores ficam aqui, injetados como `overrides`.
+ */
 export function pilaresWorld(params: Readonly<Record<string, number>> = {}): WorldSpec {
-  const root: AnyObject = {
-    id: "process",
-    kind: "composite",
-    label: ROTULOS_PILARES.process,
-    entry: "requests",
-    exit: "trace-store",
-    children: [fonte, servico, tracer, medidor, registrador],
-  };
+  const parsed = parseSkeleton(PILARES_MMD);
+  if (!parsed.ok) throw new Error(`three-pillars.mmd inválido: ${parsed.errors.join(" | ")}`);
 
-  /**
-   * As três linhas saem da MESMA porta de dado? Não: de três portas do mesmo
-   * serviço, porque são três chamadas de API diferentes — e é o leque delas que
-   * o desenho mostra.
-   */
-  const wires: readonly Wire[] = [
-    { from: "requests", port: "out", to: "service" },
-    { from: "service", port: "trace", to: "trace-store" },
-    { from: "service", port: "metric", to: "metric-store" },
-    { from: "service", port: "log", to: "log-store" },
-  ];
+  const compiled = compileSkeleton(parsed.value, {
+    overrides: {
+      requests: fonte,
+      service: servico,
+      "trace-store": tracer,
+      "metric-store": medidor,
+      "log-store": registrador,
+    },
+    rootId: "process",
+    rootLabel: ROTULOS_PILARES.process,
+    rootEntry: "requests",
+    rootExit: "trace-store",
+  });
+  if (!compiled.ok) throw new Error(`three-pillars.mmd não compila: ${compiled.errors.join(" | ")}`);
 
+  const world = comLabels(compiled.world);
   return {
-    id: "otel-three-pillars",
-    seed: 7,
-    root,
-    wires,
-    params: { ...PARAMS_DOS_PILARES, ...params },
-    edgeTicks: 1,
+    ...world,
+    params: { ...PARAMS_DOS_PILARES, ...world.params, ...params },
   };
+}
+
+/**
+ * Rótulos longos vêm de `ROTULOS_PILARES`. O mmd carrega os ids curtos, que
+ * casam com o vocabulário do teste e da view.
+ */
+function comLabels(world: WorldSpec): WorldSpec {
+  const rotule = (obj: ObjectSpec): ObjectSpec => {
+    const rotulo = (ROTULOS_PILARES as Readonly<Record<string, string>>)[obj.id];
+    const children = obj.children?.map(rotule);
+    return {
+      ...obj,
+      ...(rotulo === undefined ? {} : { label: rotulo }),
+      ...(children === undefined ? {} : { children }),
+    };
+  };
+  return { ...world, root: rotule(world.root) };
 }

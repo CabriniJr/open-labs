@@ -1,0 +1,176 @@
+---
+import LabAssessment from "../../components/LabAssessment.astro";
+import { RolloutModos } from "../../components/RolloutModos.tsx";
+import { Predicao } from "../../components/Predicao.tsx";
+import SiteFooter from "../../components/SiteFooter.astro";
+import SiteNav from "../../components/SiteNav.astro";
+import Base from "../../layouts/Base.astro";
+import { url } from "../../lib/urls";
+import "../../styles/docs.css";
+import "../../components/ModosDoLab.css";
+import "../../components/CpuVitrine.css";
+import "../../components/ContextoLab.css";
+import "../../components/ImplantacaoLab.css";
+import "../../components/MetricaLab.css";
+import "@ovh/motion/src/react/motion.css";
+import "@ovh/stage3d/src/iso.css";
+import "../../components/Predicao.css";
+---
+
+<Base
+  domain="otel"
+  title="The rollout — OpenLabs"
+  description="Six steps take OpenTelemetry into a company without stopping anything — a Collector in the path, the zero-code agent, propagation across every hop, trace_id on the logs, manual spans and sampling — and each step stands on the ones before it."
+>
+  <SiteNav current="labs" />
+
+  <main id="content">
+    <section class="lab-head editorial">
+      <div class="prose">
+        <p class="lab-head__eyebrow mono">
+          <a href={url("handbooks/otel")}>OpenTelemetry Visual Handbook</a> · lab
+        </p>
+        <h1>The steps are easy. The order is the plan.</h1>
+        <p>
+          Every step of an OpenTelemetry rollout is in this handbook, with a lab
+          of its own. The mistakes are rarely in a step; they are in doing one
+          before what it stands on — manual spans before there is a request
+          span to hang them from, sampling before traces are whole, logs
+          pointing at traces cut in half at the first proxy.
+        </p>
+        <p>
+          Watch the recommended order climb, then switch to starting from code
+          and see where each step lands too early. In the planner, put the
+          steps in your own order: every warning names what was missing and
+          what it costs.
+        </p>
+      </div>
+      <aside class="lab-head__note mono">
+        <p>In 3D the steps are a staircase.</p>
+        <p>Effort is qualitative: no invented numbers about your team.</p>
+      </aside>
+    </section>
+
+    <section class="lab-palco">
+      <RolloutModos client:only="react" />
+    </section>
+
+    <section class="lab-prosa editorial">
+      <div class="prose">
+        <h2>Break it</h2>
+        <ol>
+          <li>
+            <b>Start from code.</b> Read the warnings: each one is rework or a
+            blind spot, with the lab that explains it.
+          </li>
+          <li>
+            <b>Move the Collector to the top.</b> Two warnings disappear at once:
+            the agent and sampling both stood on it.
+          </li>
+          <li>
+            <b>Put sampling before propagation.</b> The tail sampler would be
+            deciding on traces split in two.
+          </li>
+        </ol>
+
+        <h2>Predict before you look</h2>
+        <p>Answer first, then try it in the planner.</p>
+      </div>
+      <div class="lab-predicao">
+        <Predicao
+          client:visible
+          pergunta="A team starts by adding manual spans to its own code, before any agent or Collector. What is the first thing that goes wrong?"
+          opcoes={[
+            "The manual spans have no request span to hang from, and the team hand-writes what an agent gives for free",
+            "Nothing — manual spans are the most precise instrumentation",
+            "The spans are rejected by the backend without a Collector",
+          ]}
+          correta={0}
+          revelacao="Manual spans become children of the active span. Without the agent's server span, each one is a root of its own trace, and the framework, database and HTTP-client spans the team writes by hand are exactly the ones zero-code instrumentation would have added. They are not rejected — they are just the wrong place to start."
+        />
+      </div>
+    </section>
+
+    <section class="lab-prosa editorial">
+      <div class="prose">
+        <h2>Where this connects</h2>
+        <p>
+          Every step links to its lab: <a href={url("labs/agent-or-gateway")}>Agent or gateway</a>,
+          <a href={url("labs/zero-code-instrumentation")}>Zero-code instrumentation</a>,
+          <a href={url("labs/hard-context-and-baggage")}>Hard context and baggage</a>,
+          <a href={url("labs/a-log-that-knows-its-trace")}>A log that knows its trace</a>,
+          <a href={url("labs/manual-spans")}>Manual spans</a> and
+          <a href={url("labs/head-vs-tail-sampling")}>Head vs tail sampling</a>.
+          This is the page that puts them in order.
+        </p>
+      </div>
+    </section>
+    <LabAssessment href="labs/the-rollout" />
+  </main>
+
+  <SiteFooter />
+</Base>
+
+<style>
+  .lab-head {
+    padding-block: var(--space-4) var(--space-2);
+  }
+
+  .lab-head__eyebrow {
+    margin: 0 0 var(--space-1);
+    color: var(--accent);
+    font-size: var(--size-step--1);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  h1 {
+    margin: 0 0 var(--space-2);
+    font-size: var(--size-step-2);
+    max-width: 24ch;
+  }
+
+  .lab-head__note {
+    align-self: end;
+    color: var(--ink-muted);
+    font-size: var(--size-step--1);
+  }
+
+  .lab-head__note p {
+    margin: 0 0 0.35rem;
+  }
+
+  .lab-palco {
+    margin-block: var(--space-2) var(--space-4);
+  }
+
+  .lab-prosa {
+    padding-block-end: var(--space-4);
+  }
+
+  .lab-predicao {
+    grid-column: 1 / -1;
+    margin-block-start: var(--space-2);
+    max-width: var(--measure);
+  }
+
+  .lab-mal-entendidos {
+    grid-column: 1 / -1;
+    margin-block-start: var(--space-2);
+    overflow-x: auto;
+  }
+
+  .lab-mal-entendidos table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: var(--size-step--1);
+  }
+
+  .lab-mal-entendidos th,
+  .lab-mal-entendidos td {
+    border-block-end: 1px solid var(--border);
+    padding: var(--space-1) var(--space-2);
+    text-align: start;
+    vertical-align: top;
+  }
+</style>

@@ -1,0 +1,221 @@
+---
+import LabAssessment from "../../components/LabAssessment.astro";
+import { MAL_ENTENDIDOS_DA_METRICA } from "@ovh/otel-domain";
+import { MetricaModos } from "../../components/MetricaModos.tsx";
+import { Predicao } from "../../components/Predicao.tsx";
+import SiteFooter from "../../components/SiteFooter.astro";
+import SiteNav from "../../components/SiteNav.astro";
+import Base from "../../layouts/Base.astro";
+import { url } from "../../lib/urls";
+import "../../styles/docs.css";
+import "../../components/ModosDoLab.css";
+import "../../components/CpuVitrine.css";
+import "../../components/ContextoLab.css";
+import "../../components/ImplantacaoLab.css";
+import "../../components/MetricaLab.css";
+import "@ovh/motion/src/react/motion.css";
+import "@ovh/stage3d/src/iso.css";
+import "../../components/Predicao.css";
+---
+
+<Base
+  domain="otel"
+  title="The shape of a metric — OpenLabs"
+  description="A metric point is not a number: it is a count with a temporality and a start time. Cumulative and delta put different numbers on the wire for the same requests, a restart resets the cumulative series, and whatever was in memory dies with the process."
+>
+  <SiteNav current="labs" />
+
+  <main id="content">
+    <section class="lab-head editorial">
+      <div class="prose">
+        <p class="lab-head__eyebrow mono">
+          <a href={url("handbooks/otel")}>OpenTelemetry Visual Handbook</a> · lab
+        </p>
+        <h1>A counter is not a number that goes up</h1>
+        <p>
+          Your dashboard shows <b>&minus;9 requests per second</b> for ten
+          seconds after a deploy. Nothing is broken: the service restarted, its
+          cumulative counter started again from zero with a new start time, and
+          the backend subtracted the old point from the new one.
+        </p>
+        <p>
+          The SDK never sends measurements. It folds them into an aggregator in
+          process memory, and a reader pulls one <b>point</b> per interval. Each
+          point says <em>how many since when</em> — and the &ldquo;since
+          when&rdquo; is the part people forget. Watch it in the showcase, then
+          break it in the simulation.
+        </p>
+      </div>
+      <aside class="lab-head__note mono">
+        <p>Not a flow lab, on purpose.</p>
+        <p>The subject is a reducer — measure, collect, restart — so that is what you drive.</p>
+      </aside>
+    </section>
+
+    <section class="lab-palco">
+      <MetricaModos client:only="react" />
+    </section>
+
+    <section class="lab-prosa editorial">
+      <div class="prose">
+        <h2>Break it</h2>
+        <ol>
+          <li>
+            <b>Record a few requests, collect, record more, collect.</b> In
+            cumulative the second point is bigger than the first and keeps the
+            same start time; switch to delta and every point carries its own
+            start time and only its own requests.
+          </li>
+          <li>
+            <b>Now restart the process between two collects.</b> In cumulative
+            the next point is smaller, with a new start time, and the backend
+            reads a negative number. Turn on <em>backend honours start
+            time</em> and the reading is right again — that check is what a
+            correct backend does.
+          </li>
+          <li>
+            <b>Restart with requests not yet collected.</b> They are gone in
+            both temporalities. The verdict line counts them: the aggregator
+            lived in memory, and so did they.
+          </li>
+          <li>
+            <b>Record one fast and one slow request, and read the buckets.</b>
+            The histogram kept two counts and a sum. Which request was slow is
+            not in the point — that is a trace&rsquo;s job.
+          </li>
+        </ol>
+
+        <h2>Predict before you look</h2>
+        <p>Answer first, then try it in the simulation.</p>
+      </div>
+      <div class="lab-predicao">
+        <Predicao
+          client:visible
+          pergunta="A service exports a cumulative request counter every 10 s. The points read 6, then 11. The process restarts, and the next point reads 2. How many requests does a backend that just subtracts consecutive points report for that interval?"
+          opcoes={[
+            "−9 — it subtracts 11 from 2 across the restart",
+            "2 — the counter knows it was reset",
+            "0 — the backend drops points that go down",
+          ]}
+          correta={0}
+          revelacao="The point after the restart has a new start time, and only a backend that compares start times knows the series reset. One that subtracts blindly reports 2 − 11 = −9. A start-time-aware backend reads 2 — still missing whatever was measured before the crash and never collected."
+        />
+      </div>
+    </section>
+
+    <section class="lab-prosa editorial">
+      <div class="prose">
+        <h2>What people get wrong</h2>
+        <p>Each row is a belief the simulation above is built to take apart. The right column is the specification, with the link.</p>
+      </div>
+      <div class="lab-mal-entendidos">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">What people believe</th>
+              <th scope="col">What the spec says</th>
+            </tr>
+          </thead>
+          <tbody>
+            {
+              MAL_ENTENDIDOS_DA_METRICA.map((m) => (
+                <tr>
+                  <td>{m.crenca}</td>
+                  <td>
+                    {m.spec}{" "}
+                    <a href={m.fonte} rel="noreferrer noopener" target="_blank">
+                      source
+                    </a>
+                  </td>
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="lab-prosa editorial">
+      <div class="prose">
+        <h2>Where this connects</h2>
+        <p>
+          <a href={url("labs/three-pillars")}>Three pillars</a> is where a
+          metric first throws the individual request away; this lab is what is
+          left. <a href={url("labs/cardinality-and-the-bill")}>Cardinality and the
+          bill</a> multiplies these points by every attribute set, and
+          <a href={url("labs/reading-an-otlp-payload")}>Reading an OTLP
+          payload</a> is the envelope they travel in — the same resource and
+          scope wrapping as spans, with <code>startTimeUnixNano</code> on every
+          point.
+        </p>
+      </div>
+    </section>
+    <LabAssessment href="labs/the-shape-of-a-metric" />
+  </main>
+
+  <SiteFooter />
+</Base>
+
+<style>
+  .lab-head {
+    padding-block: var(--space-4) var(--space-2);
+  }
+
+  .lab-head__eyebrow {
+    margin: 0 0 var(--space-1);
+    color: var(--accent);
+    font-size: var(--size-step--1);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  h1 {
+    margin: 0 0 var(--space-2);
+    font-size: var(--size-step-2);
+    max-width: 24ch;
+  }
+
+  .lab-head__note {
+    align-self: end;
+    color: var(--ink-muted);
+    font-size: var(--size-step--1);
+  }
+
+  .lab-head__note p {
+    margin: 0 0 0.35rem;
+  }
+
+  .lab-palco {
+    margin-block: var(--space-2) var(--space-4);
+  }
+
+  .lab-prosa {
+    padding-block-end: var(--space-4);
+  }
+
+  .lab-predicao {
+    grid-column: 1 / -1;
+    margin-block-start: var(--space-2);
+    max-width: var(--measure);
+  }
+
+  .lab-mal-entendidos {
+    grid-column: 1 / -1;
+    margin-block-start: var(--space-2);
+    overflow-x: auto;
+  }
+
+  .lab-mal-entendidos table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: var(--size-step--1);
+  }
+
+  .lab-mal-entendidos th,
+  .lab-mal-entendidos td {
+    border-block-end: 1px solid var(--border);
+    padding: var(--space-1) var(--space-2);
+    text-align: start;
+    vertical-align: top;
+  }
+</style>

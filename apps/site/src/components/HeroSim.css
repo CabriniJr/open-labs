@@ -16,6 +16,14 @@
   background: var(--paper-raised);
 }
 
+/*
+  Três caixas numa fileira: a altura de lab (72vh) deixava dois terços do palco
+  vazios. Aqui o palco tem a altura da trilha ao lado, e o canto ainda arrasta.
+*/
+.hero-sim {
+  --explorer-altura: clamp(16rem, 38vh, 24rem);
+}
+
 @media (max-width: 70rem) {
   .hero-sim {
     grid-template-columns: minmax(0, 1fr);

@@ -10,6 +10,9 @@ interface Props {
 const { current, search, lang = "en" } = Astro.props;
 const t = chrome(lang);
 import DocSearch from "./DocSearch.astro";
+// O estilo da barra mora em docs.css; o componente o traz, para nenhuma página
+// que o use sair com a navegação crua (os índices de labs e de handbooks saíam).
+import "../styles/docs.css";
 import { url } from "../lib/urls";
 import { chrome, type Lang } from "../lib/chrome-strings";
 ---

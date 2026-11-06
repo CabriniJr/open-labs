@@ -31,11 +31,13 @@ import {
   BufferGeometry,
   type Material,
   type Object3D,
+  type Texture,
 } from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import { LineGeometry } from "three/examples/jsm/lines/LineGeometry.js";
 import { Line2 } from "three/examples/jsm/lines/webgpu/Line2.js";
-import { Line2NodeMaterial, WebGPURenderer } from "three/webgpu";
+import { Line2NodeMaterial, PMREMGenerator, WebGPURenderer } from "three/webgpu";
+import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import { CSS2DObject, CSS2DRenderer } from "three/examples/jsm/renderers/CSS2DRenderer.js";
 import { ISO_AZIMUTE, ISO_ELEVACAO, meiaAlturaParaCaber, pontoNoAr, pontosDoCaminho, posicaoDaCamera } from "./iso.js";
 import { lerPaleta, type Paleta } from "./tons.js";
@@ -191,6 +193,8 @@ export class IsoScene {
   #elevacao = ISO_ELEVACAO;
   #linhas: Line2NodeMaterial[] = [];
   #retemar: (() => void) | null = null;
+  #ambiente: Texture | null = null;
+  #descartada = false;
 
   constructor(host: HTMLElement, options: IsoOptions = {}) {
     this.#host = host;
@@ -205,7 +209,9 @@ export class IsoScene {
 
     this.#scene.add(this.#ceu, this.#sol, this.#sol.target, this.#mundo);
     this.#sol.castShadow = true;
-    this.#sol.shadow.mapSize.set(1024, 1024);
+    // O mapa cobre o filme inteiro; com 1024 cada texel media duas unidades, e
+    // a sombra de uma peça pequena virava borrão.
+    this.#sol.shadow.mapSize.set(2048, 2048);
     // Sem `normalBias`, faces inclinadas para o sol se sombreavam a si mesmas
     // em listras (shadow acne) — visto na revisão das fotos com a r180.
     this.#sol.shadow.bias = -0.0008;
@@ -260,6 +266,16 @@ export class IsoScene {
       () => {
         if (this.#renderer !== r) return;
         this.#pronto = true;
+        // Filtrar o ambiente custa caro sem GPU, e a thread é a mesma em que as
+        // ilhas da página hidratam: o primeiro quadro sai antes, e o reflexo
+        // chega quando o navegador estiver ocioso.
+        const ambientar = () => {
+          if (this.#renderer !== r || this.#descartada) return;
+          this.#ambientar(r);
+          this.pedir();
+        };
+        if ("requestIdleCallback" in window) window.requestIdleCallback(ambientar, { timeout: 3000 });
+        else setTimeout(ambientar, 500);
         const webgpu = (r.backend as { isWebGPUBackend?: boolean }).isWebGPUBackend === true;
         this.#host.dataset.backend = webgpu ? "webgpu" : "webgl2";
         this.pedir();
@@ -284,6 +300,23 @@ export class IsoScene {
     return r;
   }
 
+  /**
+   * Um ambiente para refletir. Metal e silício são quase só reflexo: sem nada
+   * em volta para espelhar, a tampa de um chip renderizava como uma placa preta.
+   * Uma sala neutra, filtrada uma vez por renderizador — não por quadro — e
+   * fraca (a força vem do tema, em `setFilm`), para a luz do sol continuar
+   * decidindo os três tons do bloco.
+   */
+  #ambientar(r: WebGPURenderer): void {
+    const pmrem = new PMREMGenerator(r);
+    const sala = new RoomEnvironment();
+    this.#ambiente?.dispose();
+    this.#ambiente = pmrem.fromScene(sala, 0.04).texture;
+    sala.dispose();
+    pmrem.dispose();
+    this.#scene.environment = this.#ambiente;
+  }
+
   /** Gira a vista. A elevação fica entre o quase-chão e o quase-topo. */
   orbitar(dAzimute: number, dElevacao: number): void {
     this.#azimute += dAzimute;
@@ -302,11 +335,19 @@ export class IsoScene {
     this.#film = film;
     const p = this.#paleta;
     this.#scene.background = corDe(p.papel, p.tinta);
-    this.#ceu.color = corDe(p.papelElevado, p.tinta);
+    // O céu é luz quase branca, só tingida pelo papel. Era o próprio papel, e
+    // no tema escuro isso é quase preto: as faces que o sol não pega sumiam.
+    this.#ceu.color = new Color(0xffffff).lerp(corDe(p.papelElevado, p.tinta), 0.25);
     this.#ceu.groundColor = corDe(p.regua, p.tinta);
+    // No tema claro o bloco já nasce quase branco (papel com um quinto de tom):
+    // a mesma luz do escuro estourava as faces e o tom sumia.
+    const claro = corDe(p.papel, p.tinta).getHSL({ h: 0, s: 0, l: 0 }).l > 0.5;
+    this.#ceu.intensity = claro ? 0.75 : 1.4;
+    this.#sol.intensity = claro ? 1.25 : 1.6;
+    this.#scene.environmentIntensity = claro ? 0.2 : 0.45;
 
     // O chão: recebe sombra e desenha a malha do papel quadriculado.
-    const chao = new Mesh(new PlaneGeometry(film.width * 3, film.height * 3), new ShadowMaterial({ opacity: 0.13 }));
+    const chao = new Mesh(new PlaneGeometry(film.width * 3, film.height * 3), new ShadowMaterial({ opacity: 0.2 }));
     chao.rotation.x = -Math.PI / 2;
     chao.position.set(film.width / 2, 0, film.height / 2);
     chao.receiveShadow = true;
@@ -320,10 +361,13 @@ export class IsoScene {
       this.#mundo.add(peca.root);
     }
 
-    // Sol de cima e de lado, cobrindo o filme todo.
+    // Sol de cima e do lado +x, cobrindo o filme todo. A câmera olha de +x/+z:
+    // assim uma face lateral visível pega sol e a outra fica na sombra, e o
+    // bloco lê em três tons (topo, lado claro, lado escuro). Com o sol atrás,
+    // as duas faces visíveis tinham o mesmo cinza e o volume sumia.
     const cx = film.width / 2;
     const cz = film.height / 2;
-    this.#sol.position.set(cx - film.width * 0.3, 900, cz - film.height * 0.6);
+    this.#sol.position.set(cx + film.width * 0.45, 900, cz - film.height * 0.25);
     this.#sol.target.position.set(cx, 0, cz);
     const s = this.#sol.shadow.camera;
     const r = Math.max(film.width, film.height) * 0.8;
@@ -353,12 +397,14 @@ export class IsoScene {
   }
 
   dispose(): void {
+    this.#descartada = true;
     cancelAnimationFrame(this.#pedido);
     this.#observador?.disconnect();
     this.#resize?.disconnect();
     this.#temaObs?.disconnect();
     if (this.#retemar !== null) this.#midia?.removeEventListener("change", this.#retemar);
     this.#limparMundo();
+    this.#ambiente?.dispose();
     this.#renderer.dispose();
     this.#renderer.domElement.remove();
     this.#labels.domElement.remove();
@@ -851,6 +897,7 @@ export class IsoScene {
           const head = document.createElement("span");
           head.className = "iso-token__head";
           head.textContent = s.label;
+          if (spec.icon !== undefined) head.prepend(selo(spec.icon));
           el.appendChild(head);
           if (s.sublabel !== "") {
             const sub = document.createElement("span");

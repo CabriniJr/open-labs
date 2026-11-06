@@ -385,6 +385,17 @@ const SEM_PALCO: ReadonlySet<string> = new Set([
   // Filme com vista isométrica e um analisador de bytes em React: os blocos
   // são campos em ordem de byte, sem fio roteado para cruzar.
   "labs/reading-an-otlp-payload/",
+  // Filme + simulação React livre, 04/11/2026: o assunto é um redutor
+  // (agregador com temporalidade; contexto por thread), sem fio roteado.
+  "labs/the-shape-of-a-metric/",
+  "labs/a-log-that-knows-its-trace/",
+  "labs/propagating-through-a-queue/",
+  "labs/manual-spans/",
+  "labs/backpressure-and-drops/",
+  "labs/zero-code-instrumentation/",
+  "labs/host-and-kubernetes-signals/",
+  "labs/disconnected-signals/",
+  "labs/the-rollout/",
 ]);
 
 test("todo lab publicado COM palco tem teto de cruzamentos medido", () => {

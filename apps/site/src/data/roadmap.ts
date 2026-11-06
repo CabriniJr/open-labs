@@ -96,7 +96,7 @@ export const phases: readonly RoadmapPhase[] = [
  */
 export const labs: readonly RoadmapLab[] = [
   { id: "three-pillars", title: "Three pillars, one blind spot", href: "labs/three-pillars", status: "available", side: "left", y: 110, phase: 1 },
-  { id: "disconnected-signals", title: "The cost of disconnected signals", href: "#", status: "coming", side: "right", y: 110, phase: 1 },
+  { id: "disconnected-signals", title: "The cost of disconnected signals", href: "labs/disconnected-signals", status: "available", side: "right", y: 110, phase: 1 },
 
   // "available" com href "#": o nó abria como link e não levava a lugar nenhum.
   // A Entrega 2 mudou de rumo e este lab nunca foi construído — então ele é
@@ -108,8 +108,8 @@ export const labs: readonly RoadmapLab[] = [
   // de trace, zero de métrica, zero de log. A promessa da fase 1 é que os três
   // soltos não são observabilidade, e um currículo que só modela trace repete o
   // erro que o handbook existe para desfazer.
-  { id: "the-shape-of-a-metric", title: "The shape of a metric", href: "#", status: "coming", side: "right", y: 300, phase: 2 },
-  { id: "a-log-that-knows-its-trace", title: "A log that knows its trace", href: "#", status: "coming", side: "left", y: 356, phase: 2 },
+  { id: "the-shape-of-a-metric", title: "The shape of a metric", href: "labs/the-shape-of-a-metric", status: "available", side: "right", y: 300, phase: 2 },
+  { id: "a-log-that-knows-its-trace", title: "A log that knows its trace", href: "labs/a-log-that-knows-its-trace", status: "available", side: "left", y: 356, phase: 2 },
 
   // `providers` sozinho na primeira fileira: é pré-requisito dos dois abaixo.
   // Quem não sabe o que um provider decide não tem como avaliar o que um
@@ -118,20 +118,20 @@ export const labs: readonly RoadmapLab[] = [
   { id: "collector-pipeline", title: "The Collector pipeline", href: "labs/collector-pipeline", status: "available", side: "left", y: 546, phase: 3 },
   { id: "agent-or-gateway", title: "Agent or gateway", href: "labs/agent-or-gateway", status: "available", side: "right", y: 546, phase: 3 },
 
-  { id: "manual-spans", title: "Manual spans", href: "#", status: "coming", side: "left", y: 680, phase: 4 },
-  { id: "zero-code-instrumentation", title: "Zero-code instrumentation", href: "#", status: "coming", side: "right", y: 680, phase: 4 },
+  { id: "manual-spans", title: "Manual spans", href: "labs/manual-spans", status: "available", side: "left", y: 680, phase: 4 },
+  { id: "zero-code-instrumentation", title: "Zero-code instrumentation", href: "labs/zero-code-instrumentation", status: "available", side: "right", y: 680, phase: 4 },
   // Contexto não atravessa fila sozinho, e é a lacuna que mais aparece em
   // produção: o trace morre no `send` e reaparece órfão no `consume`.
-  { id: "propagating-through-a-queue", title: "Propagating through a queue", href: "#", status: "coming", side: "left", y: 736, phase: 4 },
-  { id: "host-and-kubernetes-signals", title: "Host and Kubernetes signals", href: "#", status: "coming", side: "right", y: 736, phase: 4 },
+  { id: "propagating-through-a-queue", title: "Propagating through a queue", href: "labs/propagating-through-a-queue", status: "available", side: "left", y: 736, phase: 4 },
+  { id: "host-and-kubernetes-signals", title: "Host and Kubernetes signals", href: "labs/host-and-kubernetes-signals", status: "available", side: "right", y: 736, phase: 4 },
 
   { id: "head-vs-tail-sampling", title: "Head vs tail sampling", href: "labs/head-vs-tail-sampling", status: "available", side: "left", y: 870, phase: 5 },
-  { id: "backpressure-and-drops", title: "Backpressure and drops", href: "#", status: "coming", side: "right", y: 870, phase: 5 },
+  { id: "backpressure-and-drops", title: "Backpressure and drops", href: "labs/backpressure-and-drops", status: "available", side: "right", y: 870, phase: 5 },
   // A fase 5 fala de custo desde a spec do handbook §3 e não tinha nó para ele.
   // Cardinalidade é onde o custo mora, e é decisão de atributo — coisa que se
   // toma na instrumentação e se paga na fatura, meses depois.
   { id: "cardinality-and-the-bill", title: "Cardinality and the bill", href: "labs/cardinality-and-the-bill", status: "available", side: "left", y: 926, phase: 5 },
-  { id: "the-rollout", title: "The rollout", href: "#", status: "coming", side: "right", y: 926, phase: 5 },
+  { id: "the-rollout", title: "The rollout", href: "labs/the-rollout", status: "available", side: "right", y: 926, phase: 5 },
 ];
 
 /**

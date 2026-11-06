@@ -1,0 +1,207 @@
+---
+import LabAssessment from "../../components/LabAssessment.astro";
+import { MAL_ENTENDIDOS_ZERO_CODE } from "@ovh/otel-domain";
+import { ZeroCodeModos } from "../../components/ZeroCodeModos.tsx";
+import { Predicao } from "../../components/Predicao.tsx";
+import SiteFooter from "../../components/SiteFooter.astro";
+import SiteNav from "../../components/SiteNav.astro";
+import Base from "../../layouts/Base.astro";
+import { url } from "../../lib/urls";
+import "../../styles/docs.css";
+import "../../components/ModosDoLab.css";
+import "../../components/CpuVitrine.css";
+import "../../components/ContextoLab.css";
+import "../../components/ImplantacaoLab.css";
+import "../../components/MetricaLab.css";
+import "@ovh/motion/src/react/motion.css";
+import "@ovh/stage3d/src/iso.css";
+import "../../components/Predicao.css";
+---
+
+<Base
+  domain="otel"
+  title="Zero-code instrumentation — OpenLabs"
+  description="An auto-instrumentation agent hooks the libraries a service uses — the HTTP framework, the database driver, the HTTP client — and records their spans. The business code between them produces none, and shows up only as the root span's unexplained time."
+>
+  <SiteNav current="labs" />
+
+  <main id="content">
+    <section class="lab-head editorial">
+      <div class="prose">
+        <p class="lab-head__eyebrow mono">
+          <a href={url("handbooks/otel")}>OpenTelemetry Visual Handbook</a> · lab
+        </p>
+        <h1>The agent sees the edges. Your code is the dark middle.</h1>
+        <p>
+          You added the agent, restarted, and the traces arrived: the request,
+          the SQL query, the call to payments, all with the right attributes.
+          The checkout takes 240 ms, and the trace explains 90 of them. The
+          other 150 ms are in code the agent has never heard of.
+        </p>
+        <p>
+          Zero-code instrumentation hooks <b>libraries</b>. It does not know
+          what your functions are doing between two library calls, so that
+          time sits in the root span with no child to say where it went. A few
+          manual spans, placed where the time is, finish the picture.
+        </p>
+      </div>
+      <aside class="lab-head__note mono">
+        <p>In 3D the stack stands up.</p>
+        <p>Framework on top, your code in the middle, libraries below.</p>
+      </aside>
+    </section>
+
+    <section class="lab-palco">
+      <ZeroCodeModos client:only="react" />
+    </section>
+
+    <section class="lab-prosa editorial">
+      <div class="prose">
+        <h2>Break it</h2>
+        <ol>
+          <li>
+            <b>Read the trace with nothing wrapped.</b> Three spans, and a red
+            track where the root span has no child: 150 ms that the breakdown
+            does not explain.
+          </li>
+          <li>
+            <b>Wrap the discount rules.</b> One manual span lights 70 ms; it
+            becomes a child of the request the agent already traced.
+          </li>
+          <li>
+            <b>Wrap the cache lookup instead.</b> 10 ms of light. Manual spans
+            are cheap to add and expensive to read — put them where the time
+            is, not everywhere.
+          </li>
+        </ol>
+
+        <h2>Predict before you look</h2>
+        <p>Answer first, then try it in the simulation.</p>
+      </div>
+      <div class="lab-predicao">
+        <Predicao
+          client:visible
+          pergunta="A service runs with the auto-instrumentation agent. A request takes 240 ms; the trace shows the HTTP server span, a 40 ms database span and a 50 ms outgoing HTTP span. Where are the other 150 ms?"
+          opcoes={[
+            "In the server span's own time — code between library calls that no span covers",
+            "Lost: the agent drops spans shorter than its threshold",
+            "In network latency outside the service",
+          ]}
+          correta={0}
+          revelacao="The server span lasts the whole 240 ms; its children cover 90. The rest is the server span's self time: your business logic, running between the library calls the agent knows how to hook. The agent did not drop anything — it never had a span to record there."
+        />
+      </div>
+    </section>
+
+    <section class="lab-prosa editorial">
+      <div class="prose">
+        <h2>What people get wrong</h2>
+        <p>Each row is a belief the simulation is built to take apart. The right column is the documentation, with the link.</p>
+      </div>
+      <div class="lab-mal-entendidos">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">What people believe</th>
+              <th scope="col">What the docs say</th>
+            </tr>
+          </thead>
+          <tbody>
+            {
+              MAL_ENTENDIDOS_ZERO_CODE.map((m) => (
+                <tr>
+                  <td>{m.crenca}</td>
+                  <td>
+                    {m.spec}{" "}
+                    <a href={m.fonte} rel="noreferrer noopener" target="_blank">
+                      source
+                    </a>
+                  </td>
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="lab-prosa editorial">
+      <div class="prose">
+        <h2>Where this connects</h2>
+        <p>
+          <a href={url("labs/manual-spans")}>Manual spans</a> is how to write
+          the spans this lab asks for, and what goes wrong when you do.
+          <a href={url("labs/providers")}>The three providers</a> is what the
+          agent installs behind the API.
+        </p>
+      </div>
+    </section>
+    <LabAssessment href="labs/zero-code-instrumentation" />
+  </main>
+
+  <SiteFooter />
+</Base>
+
+<style>
+  .lab-head {
+    padding-block: var(--space-4) var(--space-2);
+  }
+
+  .lab-head__eyebrow {
+    margin: 0 0 var(--space-1);
+    color: var(--accent);
+    font-size: var(--size-step--1);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  h1 {
+    margin: 0 0 var(--space-2);
+    font-size: var(--size-step-2);
+    max-width: 24ch;
+  }
+
+  .lab-head__note {
+    align-self: end;
+    color: var(--ink-muted);
+    font-size: var(--size-step--1);
+  }
+
+  .lab-head__note p {
+    margin: 0 0 0.35rem;
+  }
+
+  .lab-palco {
+    margin-block: var(--space-2) var(--space-4);
+  }
+
+  .lab-prosa {
+    padding-block-end: var(--space-4);
+  }
+
+  .lab-predicao {
+    grid-column: 1 / -1;
+    margin-block-start: var(--space-2);
+    max-width: var(--measure);
+  }
+
+  .lab-mal-entendidos {
+    grid-column: 1 / -1;
+    margin-block-start: var(--space-2);
+    overflow-x: auto;
+  }
+
+  .lab-mal-entendidos table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: var(--size-step--1);
+  }
+
+  .lab-mal-entendidos th,
+  .lab-mal-entendidos td {
+    border-block-end: 1px solid var(--border);
+    padding: var(--space-1) var(--space-2);
+    text-align: start;
+    vertical-align: top;
+  }
+</style>

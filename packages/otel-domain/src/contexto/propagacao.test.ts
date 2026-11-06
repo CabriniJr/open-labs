@@ -4,6 +4,7 @@ import { parseTraceparent } from "../traceparent.js";
 import { formatBaggage, parseBaggage } from "./baggage.js";
 import { filmeDoContexto } from "./filme.js";
 import { OPCOES_PADRAO, propagar } from "./propagacao.js";
+import { ICONES_OTEL } from "../icones/icones.js";
 
 describe("baggage", () => {
   it("round-trips encoded values and ignores properties and broken members", () => {
@@ -93,5 +94,17 @@ describe("the two layouts tell the same story", () => {
       );
       expect(b.entities.map((e) => e.id).sort()).toEqual(a.entities.map((e) => e.id).sort());
     }
+  });
+});
+
+describe("the header token says what it carries", () => {
+  it("baggage on the hops that carry it, no icon where the proxy dropped the headers", () => {
+    const { filme } = filmeDoContexto({ ...OPCOES_PADRAO, proxyRepassa: false });
+    const p = propagar({ ...OPCOES_PADRAO, proxyRepassa: false });
+    p.chamadas.forEach((c, i) => {
+      const spec = filme.entities.find((e) => e.id === `ctx:${i}`)!;
+      const esperado = c.headers.traceparent === undefined ? undefined : c.headers.baggage !== undefined ? ICONES_OTEL.baggage : ICONES_OTEL.context;
+      expect(spec.icon).toBe(esperado);
+    });
   });
 });

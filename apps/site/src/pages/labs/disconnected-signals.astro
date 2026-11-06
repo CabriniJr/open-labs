@@ -1,0 +1,207 @@
+---
+import LabAssessment from "../../components/LabAssessment.astro";
+import { MAL_ENTENDIDOS_DO_INCIDENTE } from "@ovh/otel-domain";
+import { IncidenteModos } from "../../components/IncidenteModos.tsx";
+import { Predicao } from "../../components/Predicao.tsx";
+import SiteFooter from "../../components/SiteFooter.astro";
+import SiteNav from "../../components/SiteNav.astro";
+import Base from "../../layouts/Base.astro";
+import { url } from "../../lib/urls";
+import "../../styles/docs.css";
+import "../../components/ModosDoLab.css";
+import "../../components/CpuVitrine.css";
+import "../../components/ContextoLab.css";
+import "../../components/ImplantacaoLab.css";
+import "../../components/MetricaLab.css";
+import "@ovh/motion/src/react/motion.css";
+import "@ovh/stage3d/src/iso.css";
+import "../../components/Predicao.css";
+---
+
+<Base
+  domain="otel"
+  title="The cost of disconnected signals — OpenLabs"
+  description="An error log with only a timestamp points at every request active in that second — dozens at ordinary traffic, more as load grows. A trace_id on the same line points at one. The difference is the time it takes to find the cause."
+>
+  <SiteNav current="labs" />
+
+  <main id="content">
+    <section class="lab-head editorial">
+      <div class="prose">
+        <p class="lab-head__eyebrow mono">
+          <a href={url("handbooks/otel")}>OpenTelemetry Visual Handbook</a> · lab
+        </p>
+        <h1>A timestamp is not a link</h1>
+        <p>
+          The alert fires. The error line says <code>12:00:02 payment
+          declined</code>. You have traces, and you have logs — and the only
+          thing they share is the clock. In that second, thirty-two requests
+          were running. One of them is the one you want.
+        </p>
+        <p>
+          Joining by time feels good enough until you count. The number of
+          candidates is the number of requests in flight, so it grows with
+          traffic and not with how bad the error is. A <code>trace_id</code> on
+          the log line makes it one, at any load.
+        </p>
+      </div>
+      <aside class="lab-head__note mono">
+        <p>The MTTR clock is a model.</p>
+        <p>Its assumptions are on screen; use your own numbers.</p>
+      </aside>
+    </section>
+
+    <section class="lab-palco">
+      <IncidenteModos client:only="react" />
+    </section>
+
+    <section class="lab-prosa editorial">
+      <div class="prose">
+        <h2>Break it</h2>
+        <ol>
+          <li>
+            <b>Search by time at 20 req/s.</b> Count the candidates the second
+            returns, and read the clock.
+          </li>
+          <li>
+            <b>Go to 80 req/s.</b> Same error, same second — several times the
+            candidates and the minutes.
+          </li>
+          <li>
+            <b>Turn on trace_id on the log line.</b> One candidate, at any
+            traffic. The cost stops depending on load.
+          </li>
+        </ol>
+
+        <h2>Predict before you look</h2>
+        <p>Answer first, then try it in the simulation.</p>
+      </div>
+      <div class="lab-predicao">
+        <Predicao
+          client:visible
+          pergunta="A service handles 80 requests a second, each lasting up to a second. An error log has a timestamp to the second and no trace_id. Roughly how many traces could it belong to?"
+          opcoes={[
+            "Around a hundred — every request active in that second",
+            "One — the log was written by exactly one request",
+            "Around eighty — the requests that started in that second",
+          ]}
+          correta={0}
+          revelacao="Requests overlap. The candidates are all requests running at any moment in that second: those that started in it, plus those still running from the second before. At 80 req/s with durations up to a second, that is over a hundred. Only an identifier carried by both the log and the trace narrows it to one."
+        />
+      </div>
+    </section>
+
+    <section class="lab-prosa editorial">
+      <div class="prose">
+        <h2>What people get wrong</h2>
+        <p>Each row is a belief the simulation is built to take apart. The right column is the specification, with the link.</p>
+      </div>
+      <div class="lab-mal-entendidos">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">What people believe</th>
+              <th scope="col">What the spec says</th>
+            </tr>
+          </thead>
+          <tbody>
+            {
+              MAL_ENTENDIDOS_DO_INCIDENTE.map((m) => (
+                <tr>
+                  <td>{m.crenca}</td>
+                  <td>
+                    {m.spec}{" "}
+                    <a href={m.fonte} rel="noreferrer noopener" target="_blank">
+                      source
+                    </a>
+                  </td>
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="lab-prosa editorial">
+      <div class="prose">
+        <h2>Where this connects</h2>
+        <p>
+          <a href={url("labs/three-pillars")}>Three pillars</a> is the same blind
+          spot on one incident; this lab is what it costs as traffic grows.
+          <a href={url("labs/hard-context-and-baggage")}>Hard context and
+          baggage</a> is how the id gets there, and
+          <a href={url("labs/a-log-that-knows-its-trace")}>A log that knows its
+          trace</a> is how it gets onto the log line.
+        </p>
+      </div>
+    </section>
+    <LabAssessment href="labs/disconnected-signals" />
+  </main>
+
+  <SiteFooter />
+</Base>
+
+<style>
+  .lab-head {
+    padding-block: var(--space-4) var(--space-2);
+  }
+
+  .lab-head__eyebrow {
+    margin: 0 0 var(--space-1);
+    color: var(--accent);
+    font-size: var(--size-step--1);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  h1 {
+    margin: 0 0 var(--space-2);
+    font-size: var(--size-step-2);
+    max-width: 24ch;
+  }
+
+  .lab-head__note {
+    align-self: end;
+    color: var(--ink-muted);
+    font-size: var(--size-step--1);
+  }
+
+  .lab-head__note p {
+    margin: 0 0 0.35rem;
+  }
+
+  .lab-palco {
+    margin-block: var(--space-2) var(--space-4);
+  }
+
+  .lab-prosa {
+    padding-block-end: var(--space-4);
+  }
+
+  .lab-predicao {
+    grid-column: 1 / -1;
+    margin-block-start: var(--space-2);
+    max-width: var(--measure);
+  }
+
+  .lab-mal-entendidos {
+    grid-column: 1 / -1;
+    margin-block-start: var(--space-2);
+    overflow-x: auto;
+  }
+
+  .lab-mal-entendidos table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: var(--size-step--1);
+  }
+
+  .lab-mal-entendidos th,
+  .lab-mal-entendidos td {
+    border-block-end: 1px solid var(--border);
+    padding: var(--space-1) var(--space-2);
+    text-align: start;
+    vertical-align: top;
+  }
+</style>

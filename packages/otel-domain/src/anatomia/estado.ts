@@ -61,8 +61,11 @@ const nodo = <T>(state: WorldState, id: string): T | undefined => state.nodes[id
  */
 const ESPERA = 2;
 
-/** Monta a árvore de um trace a partir dos spans que chegaram. */
-function montar(spans: readonly SpanExportado[]): readonly NoDaArvore[] {
+/**
+ * Monta a árvore de um trace a partir dos spans que chegaram. Exportada porque
+ * o showcase monta a mesma árvore: uma regra só para o que o backend conclui.
+ */
+export function montar(spans: readonly SpanExportado[]): readonly NoDaArvore[] {
   const porId = new Map(spans.map((s) => [s.spanId, s]));
   const filhosDe = new Map<string, SpanExportado[]>();
   const raizes: SpanExportado[] = [];

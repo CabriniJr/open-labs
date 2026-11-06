@@ -216,9 +216,18 @@ function Token({ spec, state }: { spec: TokenSpec; state: Readonly<Animatable> }
   const label = state.label;
   const sub = state.sublabel;
   const k = spec.textScale ?? 1;
-  // Etiqueta de pacote: cabeçalho cheio na cor do tipo, conteúdo embaixo.
-  const width = Math.max(28, Math.max(label.length * 6.4, sub.length * 5.6) + 16) * k;
+  // Etiqueta de pacote: cabeçalho cheio na cor do tipo, conteúdo embaixo. Com
+  // ícone, ele abre o cabeçalho e o texto anda para a direita na mesma medida.
+  const icone = spec.icon;
+  const lado = (icone === undefined ? 0 : 11) * k;
+  const folga = (icone === undefined ? 0 : 3) * k;
+  const larguraDoTexto = label.length * 6.4 * k;
+  const width = Math.max(28 * k, Math.max(larguraDoTexto + lado + folga, sub.length * 5.6 * k) + 16 * k);
   const alto = (sub === "" ? 20 : 34) * k;
+  const yDoCabecalho = sub === "" ? 0 : -alto / 2 + 8 * k;
+  // O par ícone + texto fica centrado: o texto anda meio ícone para a direita.
+  const xDoTexto = (lado + folga) / 2;
+  const xDoIcone = xDoTexto - larguraDoTexto / 2 - folga - lado;
   return (
     <g className="mo-token" data-tone={state.tone} style={{ opacity: o }} transform={`translate(${f(state.dx)} ${f(state.dy)})`}>
       {ghosts}
@@ -228,7 +237,21 @@ function Token({ spec, state }: { spec: TokenSpec; state: Readonly<Animatable> }
         <g transform={`translate(${f(pose.x)} ${f(pose.y - r - 8 * k - alto / 2)})`}>
           <rect className="mo-token__tag" x={-width / 2} y={-alto / 2} width={width} height={alto} rx={4 * k} />
           {sub !== "" ? <rect className="mo-token__head" x={-width / 2} y={-alto / 2} width={width} height={16 * k} rx={4 * k} /> : null}
-          <text className={sub === "" ? "mo-token__text" : "mo-token__text mo-token__text--head"} y={sub === "" ? 0 : -alto / 2 + 8 * k} textAnchor="middle" dominantBaseline="central">
+          {icone !== undefined ? (
+            <g
+              className={sub === "" ? "mo-token__icon mo-token__icon--solto" : "mo-token__icon"}
+              transform={`translate(${f(xDoIcone)} ${f(yDoCabecalho - lado / 2)}) scale(${f(lado / 24)})`}
+              aria-hidden="true"
+            >
+              {icone.paths.map((d, i) => (
+                <path key={`s${i}`} d={d} />
+              ))}
+              {icone.fill?.map((d, i) => (
+                <path key={`f${i}`} d={d} className="mo-icon__fill" />
+              ))}
+            </g>
+          ) : null}
+          <text className={sub === "" ? "mo-token__text" : "mo-token__text mo-token__text--head"} x={f(xDoTexto)} y={yDoCabecalho} textAnchor="middle" dominantBaseline="central">
             {label}
           </text>
           {sub !== "" ? (

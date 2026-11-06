@@ -1,7 +1,7 @@
 ---
 import LabAssessment from "../../components/LabAssessment.astro";
 import { EXERCICIOS_DA_ANATOMIA } from "@ovh/otel-domain";
-import { AnatomiaLab } from "../../components/AnatomiaLab.tsx";
+import { AnatomiaModos } from "../../components/AnatomiaModos.tsx";
 import { Exercicio } from "../../components/Exercicio.tsx";
 import { Predicao } from "../../components/Predicao.tsx";
 import SiteFooter from "../../components/SiteFooter.astro";
@@ -10,6 +10,11 @@ import Base from "../../layouts/Base.astro";
 import { url } from "../../lib/urls";
 import "../../styles/docs.css";
 import "../../components/AnatomiaLab.css";
+import "../../components/ModosDoLab.css";
+import "../../components/CpuVitrine.css";
+import "../../components/ContextoLab.css";
+import "@ovh/motion/src/react/motion.css";
+import "@ovh/stage3d/src/iso.css";
 import "../../components/Predicao.css";
 import "../../components/PainelDaCarga.css";
 import "@ovh/depth-ui/src/stage.css";
@@ -63,7 +68,7 @@ const exercicios = EXERCICIOS_DA_ANATOMIA.map(montarExercicio);
     </section>
 
     <section class="lab-palco">
-      <AnatomiaLab client:only="react" />
+      <AnatomiaModos client:only="react" />
     </section>
 
     <section class="lab-prosa editorial">

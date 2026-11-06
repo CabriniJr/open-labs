@@ -58,8 +58,8 @@ do roteiro deve mudar o roteiro primeiro, com o motivo.
 | `queue` | fila / broker | *a aplicar* em propagação por fila |
 | `host`, `pod` | infraestrutura | implantação, *a aplicar* em host signals |
 | `trace`, `metric`, `log` | os três sinais | *a aplicar* em pilares e anatomia |
-| `bytes` | payload no fio | *a aplicar* onde um filme mostrar o envelope saindo (vitrine do Collector) |
-| `context`, `baggage` | propagação | *a aplicar* em contexto |
+| `bytes` | payload no fio | vitrine do Collector (a requisição exportada) |
+| `context`, `baggage` | propagação | contexto (a ficha do header: `baggage` quando ele viaja, `context` só com `traceparent`, nada quando o proxy descarta) |
 | `sampler` | decisão de amostragem | *a aplicar* em amostragem |
 
 ## A espinha: fases e labs
@@ -71,30 +71,30 @@ própria (formulário, analisador, editor).
 
 ### Fase 1 — o problema
 
-#### three-pillars — *Three pillars, one blind spot* · disponível (fluxo)
+#### three-pillars — *Three pillars, one blind spot* · disponível (fluxo + filme + 3D)
 - **Pergunta.** Logs, métricas e traces do mesmo incidente bastam para achar a causa?
 - **Mal-entendido.** "Ter os três sinais é ter observabilidade."
 - **Mídia.** Fluxo: o leitor segue a mesma requisição pelos três sinais e vê onde a correlação se perde.
-- **Showcase (a fazer).** 1) a requisição falha; 2) o log tem a mensagem e não tem o trace; 3) a métrica tem o pico e não tem a requisição; 4) o trace tem o caminho; 5) com `trace_id` no log e exemplar na métrica, os três se ligam. **3D:** três planos empilhados, um por sinal, e a requisição como uma coluna que os atravessa. A altura é o sinal.
+- **Showcase.** Feito (`pilares/vitrine.ts`, com o modelo `incidente`): seis requisições, a última falha; o log tem a frase e o segundo (e quatro requisições naquele segundo); o balde mais lento tem duas requisições e nenhuma identidade; o trace tem o caminho; com `trace_id` no log e exemplar no balde, os três apontam para o mesmo trace. **3D:** um plano por sinal (log 0, métrica 28, trace 56), e a requisição que falha ocupa a mesma coluna nos três — a linha que os atravessa é sólida com `trace_id` e tracejada quando só o relógio liga. **Interativo:** a correlação refaz o filme.
 - **Simulação.** Ligar e desligar a correlação (trace_id no log, exemplar) e ver qual pergunta deixa de ter resposta.
 - **Ícones.** `trace`, `metric`, `log`, `service`.
 - **Correlações.** → anatomy-of-a-trace (o que é um span), → a-log-that-knows-its-trace, → the-shape-of-a-metric.
 - **Pronto quando.** Ganhar o showcase, e o `qa:labs` passar nos dois modos.
 
-#### disconnected-signals — *The cost of disconnected signals* · a construir (filme + livre)
+#### disconnected-signals — *The cost of disconnected signals* · disponível (filme + livre + 3D)
 - **Pergunta.** Quanto tempo de incidente custa um sinal sem contexto?
-- **Mal-entendido.** "Correlacionar é luxo; dá para cruzar por horário."
-- **Mídia.** Filme de um incidente em tempo real, com relógio de MTTR. A versão livre é uma busca por horário que devolve dezenas de candidatos, contra uma busca por `trace_id` que devolve um.
-- **Modelo.** Gerador de tráfego com N requisições concorrentes (domínio novo: `otel-domain/incidente`).
-- **3D.** Linha do tempo como eixo de profundidade; cada requisição concorrente é uma faixa. Sem contexto, as faixas se sobrepõem.
-- **Correlações.** ← three-pillars, → hard-context-and-baggage.
+- **Mal-entendido.** "Correlacionar é luxo; dá para cruzar por horário" / "timestamps mais finos resolvem".
+- **Modelo.** `otel-domain/incidente/modelo.ts`: um gerador de tráfego determinístico (`rps`, durações de 40 a 900 ms) com uma falha; `investigar` devolve os candidatos — todos os ativos no segundo do log (por horário) ou um (por `trace_id`) — e o MTTR de um modelo com a premissa escrita na tela (4 min para detectar + 1,5 min por candidato). 5 / 20 / 80 req/s dão 7 / 32 / 118 candidatos.
+- **Showcase.** Feito (`incidente/filme.ts`): o tráfego em raias de concorrência; a falha e o log com o segundo; a busca acende cada candidato enquanto o relógio sobe; o custo. **3D:** a linha do tempo de pé, uma raia por requisição concorrente. **Interativo:** "trace_id no log" refaz o filme.
+- **Simulação (livre).** `IncidenteLab`: a busca — tráfego 5/20/80 e o `trace_id` no log; a lista de candidatos e o relógio.
+- **Correlações.** ← three-pillars, → hard-context-and-baggage, → a-log-that-knows-its-trace.
 
 ### Fase 2 — o modelo
 
-#### anatomy-of-a-trace — *Anatomy of a Trace* · disponível (fluxo)
+#### anatomy-of-a-trace — *Anatomy of a Trace* · disponível (fluxo + filme + 3D)
 - **Pergunta.** O que é um trace, se nenhum serviço o possui inteiro?
 - **Mal-entendido.** "O trace é um objeto que um serviço cria e envia."
-- **Showcase (a fazer).** Os spans nascem em serviços diferentes, cada um com `trace_id` e `parent_span_id`, e o backend monta a árvore depois. **3D:** profundidade na árvore = altura. O waterfall vira escada.
+- **Showcase.** Feito (`anatomia/vitrine.ts`): a requisição cruza os quatro serviços com o `traceparent` (ícone `context`), cada span só sabe o pai, os spans saem quando terminam (o ledger chega primeiro) e o backend monta o waterfall com a mesma `montar` da simulação. **3D:** profundidade na árvore = altura, 14 por degrau, e o waterfall vira escada. **Interativo:** "um proxy derruba o header antes do payments" (duas árvores, outro tom) e "payments sem SDK" (o ledger se pendura no checkout, sem buraco) refazem o filme.
 - **Simulação.** Perder um span intermediário e ver a árvore órfã.
 - **Ícones.** `service`, `trace`, `backend`.
 - **Correlações.** → hard-context-and-baggage (como o id viaja), → reading-an-otlp-payload (o id em bytes).
@@ -103,7 +103,7 @@ própria (formulário, analisador, editor).
 - **Pergunta.** Como o `trace_id` atravessa processos, e o que o baggage carrega?
 - **Mal-entendido.** "Baggage é atributo de span" / "o proxy propaga sozinho".
 - **Showcase.** Já existe (nascimento, injeção, extração, fan-out, proxy, export). Ícones aplicados por serviço.
-- **Lacuna.** Ícones `context` e `baggage` nos tokens de cabeçalho. Correlação explícita com o protobuf (traceparent em hex → 16 bytes).
+- **Lacuna.** Correlação explícita com o protobuf (traceparent em hex → 16 bytes). Os ícones `context` e `baggage` já estão nas fichas do header.
 - **Correlações.** ← anatomy-of-a-trace, → reading-an-otlp-payload, → propagating-through-a-queue.
 
 #### reading-an-otlp-payload — *Reading an OTLP payload* · disponível (filme + 3D + livre)
@@ -116,29 +116,29 @@ própria (formulário, analisador, editor).
 - **Correlações.** ← hard-context (traceparent hex ↔ 16 bytes), ← anatomy (o id que monta a árvore), → collector-pipeline (o receiver `otlp` decodifica isto), → agent-or-gateway (gRPC e conexões), → cardinality-and-the-bill (o custo em bytes de cada atributo).
 - **Próximo passo.** Mostrar o quadro gRPC (5 bytes de prefixo) e os headers HTTP/2 em volta. Anexo `grpc-http2`.
 
-#### the-shape-of-a-metric — *The shape of a metric* · a construir (filme + estado + 3D)
-- **Pergunta.** O que é uma métrica no OTLP: um número, ou uma série com temporalidade?
-- **Mal-entendido.** "Counter é um número que sobe" (cumulativo vs delta, histograma com buckets).
-- **Modelo.** Agregador de instrumentos (Counter, UpDownCounter, Histogram) com temporalidade cumulativa e delta. O domínio `providers/metrics.ts` já tem a base.
-- **Showcase.** As medições chegam, o agregador soma por atributo, o exportador lê a cada intervalo, e o delta zera enquanto o cumulativo não. **3D:** histograma como barras em profundidade, bucket × tempo.
-- **Simulação.** Trocar a temporalidade e reiniciar o processo (o cumulativo "volta a zero" e o backend precisa saber).
-- **Ícones.** `metric`, `sdk`, `exporter`, `backend`.
+#### the-shape-of-a-metric — *The shape of a metric* · disponível (filme + livre + 3D)
+- **Pergunta.** O que é uma métrica no OTLP: um número, ou um ponto com temporalidade e início?
+- **Mal-entendido.** "Counter é um número que sobe" / "a série cumulativa só sobe" / "delta não perde nada".
+- **Modelo.** `otel-domain/metrica/modelo.ts`: um redutor puro (`registrar`, `coletar`, `reiniciar`) com Sum + Histogram de baldes explícitos (limite de cima inclusivo), e `lerNoBackend` com e sem respeito ao `inicio`. Sem atributos, de propósito: atributo é o assunto da cardinalidade.
+- **Showcase.** Feito (`metrica/filme.ts`, derivado de `rodar(roteiro)`): as medições entram no agregador e ficam no processo; o PeriodicReader puxa e um ponto sai; intervalo a intervalo a série cresce (cumulative) ou recomeça (delta); com o reinício, `inicio` muda, 2 medições morrem na memória e o backend ingênuo lê −9. **3D:** o histograma como balde × intervalo, e a altura é a contagem. **Interativo:** cumulative/delta e "o processo reinicia" refazem o filme.
+- **Simulação (livre).** `MetricaLab`: o leitor registra requisições rápidas/lentas, coleta quando quer, derruba o processo e liga "backend honours start time"; a tabela é `PontoExportado` e a leitura é `lerNoBackend`.
+- **Ícones.** `metric`, `service`, `exporter`, `backend`.
 - **Correlações.** ← three-pillars, → cardinality-and-the-bill, → reading-an-otlp-payload (o envelope de métricas tem a mesma forma de resource/scope).
 
-#### a-log-that-knows-its-trace — *A log that knows its trace* · a construir (filme + livre)
+#### a-log-that-knows-its-trace — *A log that knows its trace* · disponível (filme + livre)
 - **Pergunta.** Como um log ganha `trace_id` e `span_id` sem o desenvolvedor escrever isso?
-- **Mal-entendido.** "Basta logar o trace_id na mensagem."
-- **Modelo.** A ponte do log (log bridge) lendo o contexto ativo. `LogRecord` com `trace_id` e `span_id` como campos, não como texto.
-- **Showcase.** O logger existente, a ponte, o contexto ativo, o LogRecord no envelope e o backend pulando do log para o trace.
-- **Simulação.** Logar fora do span ativo (o contexto some) e logar em thread nova sem propagação.
-- **Ícones.** `log`, `context`, `trace`.
-- **Correlações.** ← hard-context-and-baggage, ← reading-an-otlp-payload (LogRecord.trace_id é o mesmo campo de 16 bytes).
+- **Mal-entendido.** "Basta logar o trace_id na mensagem" / "todo log da requisição tem o trace" / "o log pendura no span raiz".
+- **Modelo.** `otel-domain/log/modelo.ts`: um redutor com pilha de contexto **por thread** (`abrirSpan`, `fecharSpan`, `logar`, `criarThread` com ou sem levar o contexto) e `juntar`, que liga log a span só pelo campo. Sem ponte, o id vai para o texto.
+- **Showcase.** Feito (`log/filme.ts`, derivado de `rodarLog`): o span fica ativo na thread e o log sai com os campos; o span filho ganha; o worker nasce vazio (ou com o contexto, se alguém levou); depois do fim do span não há contexto; e o backend liga por campo, com o motivo escrito em quem não liga. **Interativo:** ponte e propagação para o worker refazem o filme. **3D:** a vista Iso existe pelo player, mas a altura não carrega sentido aqui; o lab não depende dela.
+- **Simulação (livre).** `LogLab`: o leitor é o handler — escolhe a thread, abre e fecha spans, loga, cria o worker — e a tabela é `juntar`.
+- **Ícones.** `log`, `context`, `trace`, `sdk` (a ponte), `backend`.
+- **Correlações.** ← hard-context-and-baggage (o contexto entre processos; aqui, entre threads), ← reading-an-otlp-payload (LogRecord.trace_id é o mesmo campo de 16 bytes), ← three-pillars.
 
 ### Fase 3 — a arquitetura
 
-#### providers — *The three providers* · disponível (fluxo)
+#### providers — *The three providers* · disponível (fluxo + filme + 3D)
 - **Pergunta.** Quem decide o que sai do processo: o Tracer, o Meter, o Logger, ou os providers?
-- **Showcase (a fazer).** TracerProvider → SpanProcessor → Exporter, com sampler e batch. **3D:** o processo como uma caixa com três andares, um por provider.
+- **Showcase.** Feito (`providers/vitrine.ts`, modelo `rodarProviders`): o código só fala com a API; o TracerProvider amostra, junta e **empurra**; o MeterProvider agrega e é **puxado** pelo PeriodicReader (um ponto, não quatro medições); o LoggerProvider junta e empurra, sem sampler. **3D:** o processo em três andares, um por provider. **Interativo:** "SDK instalado" (sem ele, a API é no-op e nada sai) e a taxa do sampler refazem o filme.
 - **Ícones.** `sdk`, `sampler`, `batch`, `exporter`.
 - **Correlações.** → collector-pipeline (o que o SDK faz e o Collector refaz), → head-vs-tail-sampling.
 
@@ -156,46 +156,62 @@ própria (formulário, analisador, editor).
 
 ### Fase 4 — instrumentação
 
-#### manual-spans — *Manual spans* · a construir (livre + filme)
+#### manual-spans — *Manual spans* · disponível (livre + filme)
 - **Pergunta.** Quando criar um span à mão, e o que ele precisa ter?
-- **Mídia.** Um editor de código fictício com três botões (`startSpan`, `setAttribute`, `end`) e o trace montando ao lado. O filme mostra o span esquecido aberto (sem `end`).
-- **Ícones.** `service`, `trace`. **Correlações.** → semantic-conventions (anexo), → cardinality-and-the-bill.
+- **Mal-entendido.** "O span sai quando começa" / "dá para pôr atributo depois do end" / "o id do pedido vai no nome do span".
+- **Modelo.** `otel-domain/manual/modelo.ts`: um tracer em miniatura (`iniciar`, `atribuir`, `terminar`) com três regras — só sai o que terminou, nada gruda depois do `end()`, o filho cita o pai — e o aviso de nome de alta cardinalidade. O programa do handler é uma lista de instruções, e cada linha pode ser comentada.
+- **Showcase.** Feito (`manual/filme.ts`, derivado de `rodarManual`): o código à esquerda acende linha a linha, a memória do SDK mostra os spans abertos e encerrados, o filho sai antes do pai, e o atributo depois do `end()` é descartado. **Interativo:** "comentar `span.end()`" (o pai nunca chega, o filho chega órfão) e "id no nome" refazem o filme.
+- **Simulação (livre).** `ManualLab`: o editor — clicar no número da linha comenta; rodar linha a linha ou até o fim; ao lado, a memória do SDK e o que o backend recebeu.
+- **Ícones.** `trace`, `backend`. **Correlações.** ← anatomy-of-a-trace (o órfão), → cardinality-and-the-bill (o id no nome), → a-log-that-knows-its-trace (o span ativo), → semantic-conventions (anexo).
 
-#### zero-code-instrumentation — *Zero-code instrumentation* · a construir (filme + 3D)
+#### zero-code-instrumentation — *Zero-code instrumentation* · disponível (filme + livre + 3D)
 - **Pergunta.** O que o agente automático instrumenta, e o que ele não consegue ver?
-- **3D.** A pilha da aplicação em andares (framework HTTP, cliente de banco, código de negócio). O auto cobre as bordas, e o miolo fica escuro.
-- **Correlações.** ← manual-spans, ← providers.
+- **Mal-entendido.** "O auto instrumenta a aplicação inteira" / "sem span, não levou tempo" / "manual e automático são alternativas".
+- **Modelo.** `otel-domain/zerocode/modelo.ts`: os passos de um POST /checkout com tempo; o agente cria span só para framework, driver do banco e cliente HTTP; `traceDaRequisicao(manuais)` devolve os spans e os trechos do raiz sem filho (o tempo escuro).
+- **Showcase.** Feito (`zerocode/filme.ts`): o agente acende as bibliotecas; a requisição desce a pilha; o waterfall no mesmo eixo de tempo, com o trecho escuro marcado (150 de 240 ms). **3D:** a pilha em andares — framework em cima, o seu código no meio, bibliotecas embaixo. **Interativo:** "um span manual nas regras de desconto" refaz o filme.
+- **Simulação (livre).** `ZeroCodeLab`: uma chave por passo do seu código, e o waterfall com o tempo escuro.
+- **Ícones.** `sdk`, `service`. **Correlações.** ← manual-spans, ← providers.
 
-#### propagating-through-a-queue — *Propagating through a queue* · a construir (filme + estado + 3D)
+#### propagating-through-a-queue — *Propagating through a queue* · disponível (filme + livre + 3D)
 - **Pergunta.** Por que o trace morre no `send` e reaparece órfão no `consume`?
-- **Modelo.** Mensagem com headers, produtor e consumidor, link de span contra pai.
-- **Showcase.** O produtor injeta `traceparent` no header da mensagem, a fila guarda, e o consumidor extrai e cria um span com *link* (lote) ou com *pai* (uma mensagem). **3D:** a fila como um silo, com a altura sendo o tempo de espera.
-- **Ícones.** `queue`, `service`, `context`. **Correlações.** ← hard-context-and-baggage.
+- **Modelo.** `otel-domain/fila/modelo.ts`: um redutor (`publicar`, `esperar`, `consumirUm`, `consumirLote`) em que o produtor injeta o `traceparent` do span de publish nos headers da mensagem, e `tracesDaFila` monta o que o backend vê (pai, links, órfão).
+- **Showcase.** Feito (`fila/filme.ts`, derivado de `rodarFila`): três pedidos, três traces; a fila guarda corpo e headers; o consumidor extrai e o span de process é **filho** do publish (uma por vez) ou um trace novo com **três links** (lote); sem injeção, o trace termina no publish e o consumidor nasce órfão. **3D:** a fila é um silo, e a altura de cada mensagem é o tempo que ela esperou. **Interativo:** "uma por vez / em lote" e "injetar" refazem o filme.
+- **Simulação (livre).** `FilaLab`: o leitor publica, espera, consome uma ou o lote, e liga a injeção; a tabela é `tracesDaFila`.
+- **Ícones.** `queue`, `service`, `context`, `trace`, `backend`. **Correlações.** ← hard-context-and-baggage (o mesmo inject/extract, com a mensagem como portador), ← anatomy-of-a-trace (o órfão parece completo).
 
-#### host-and-kubernetes-signals — *Host and Kubernetes signals* · a construir (filme + 3D)
+#### host-and-kubernetes-signals — *Host and Kubernetes signals* · disponível (filme + livre + 3D)
 - **Pergunta.** De onde vêm `k8s.pod.name` e as métricas do nó, e quem as anexa?
-- **Showcase.** `kubeletstats`, `hostmetrics` e `k8sattributes` pelo IP de origem. Liga com o handbook de Kubernetes **por link**, sem importar o domínio dele (handbooks são independentes).
-- **Ícones.** `host`, `pod`, `agent`. **Correlações.** ← agent-or-gateway (o IP de origem).
+- **Mal-entendido.** "O k8sattributes sabe de que Pod veio o dado" / "métrica de Pod e trace de Pod sempre se casam" / "enriqueça no gateway, que vê tudo".
+- **Modelo.** `otel-domain/nos/modelo.ts`: um cluster mínimo escrito aqui (dois nós, três Pods, IPs), sem importar o domínio do Kubernetes; `enriquecer({ onde, associacao })` diz o IP que o `k8sattributes` perguntou e o que o API server respondeu; `metricasDosNos` é o que `hostmetrics` e `kubeletstats` trazem sem associação.
+- **Showcase.** Feito (`nos/filme.ts`): um agent por nó colhe host e kubelet; os spans chegam por IP ao agent e ao gateway; o `k8sattributes` pergunta ao API server — no agent acha o Pod, no gateway pergunta pelo IP do agent e não acha ninguém; o backend mostra o que dá para agrupar. **3D:** os Pods e o agent de pé sobre o nó (a altura é a camada de implantação). **Interativo:** onde o `k8sattributes` roda refaz o filme.
+- **Simulação (livre).** `NosLab`: onde roda (agent / gateway / nenhum) e a associação (IP da conexão / `k8s.pod.ip`); a tabela é `enriquecer`.
+- **Ícones.** `host`, `pod`, `agent`, `gateway`, `backend`. **Correlações.** ← agent-or-gateway (o IP de origem muda entre os dois), → three-pillars; o handbook de Kubernetes **por link**.
 
 ### Fase 5 — operar em escala
 
-#### head-vs-tail-sampling — *Head vs tail sampling* · disponível (fluxo)
-- **Showcase (a fazer).** O head decide no primeiro span, sem saber do erro. O tail espera o trace inteiro e precisa dele num só Collector. **3D:** a janela de decisão do tail como volume (tempo × spans retidos).
+#### head-vs-tail-sampling — *Head vs tail sampling* · disponível (fluxo + filme + 3D)
+- **Showcase.** Feito (`amostragem/vitrine.ts`, modelo `amostrar`): oito traces, um falha no payments; a mesma taxa pelo mesmo hash nos três modos. **Head** decide na raiz e perde o erro; **tail roteado por trace** guarda o erro inteiro; **tail espalhado** (round-robin por span) guarda só a metade que viu o erro, órfã no backend. **3D:** a janela de decisão é um volume — a altura é quantos spans cada gateway segura. **Interativo:** o modo refaz o filme.
 - **Ícones.** `sampler`, `collector`. **Correlações.** ← agent-or-gateway (roteamento por trace ID), ← providers.
 
-#### backpressure-and-drops — *Backpressure and drops* · a construir (filme + estado + 3D)
+#### backpressure-and-drops — *Backpressure and drops* · disponível (filme + livre + 3D)
 - **Pergunta.** Quando o backend cai, onde os spans esperam e onde eles morrem?
-- **Modelo.** `memory_limiter`, `sending_queue` e retry com backoff. Contadores de descarte.
-- **3D.** A fila do exporter como uma coluna que enche. A altura é a ocupação, e o vermelho é o limite.
-- **Ícones.** `queue`, `limiter`, `exporter`, `backend`. **Correlações.** ← collector-pipeline.
+- **Mal-entendido.** "Fila maior não perde nada" / "o retry tenta até o backend voltar" / "se o Collector descarta, a aplicação vê erro".
+- **Modelo.** `otel-domain/pressao/modelo.ts`: um redutor por tick — o `memory_limiter` antes da fila, a `sending_queue` em lotes, retry com backoff 1, 2, 4… até `max_elapsed_time`, e o teto de memória do processo. Quatro contadores de descarte (recusado na borda, fila cheia, retry esgotado, perdido no crash) e todo lote termina em exatamente um.
+- **Showcase.** Feito (`pressao/filme.ts`, derivado de `rodarPressao`): saudável; o backend cai e a fila sobe com o backoff; o terceiro capítulo é o que de fato aconteceu (fila cheia / o limiter recusa na borda / sem limiter, o processo morre e leva a fila); o backend volta e a fila drena no ritmo do exporter; e os contadores. **3D:** a fila é uma coluna, a altura é a ocupação e o vermelho é o que passou de um limite. **Interativo:** `queue_size` 4/15 e o limiter refazem o filme.
+- **Simulação (livre).** `PressaoLab`: o leitor segura o interruptor do backend e avança tick a tick.
+- **Ícones.** `queue`, `limiter`, `exporter`, `backend`, `service`. **Correlações.** ← collector-pipeline (a ordem dos processadores), ← agent-or-gateway (onde a fila mora).
 
-#### cardinality-and-the-bill — *Cardinality and the bill* · disponível (estado)
-- **Showcase (a fazer).** Cada valor novo de atributo vira uma série. **3D:** o cubo de séries (atributo × valor × tempo) crescendo. Correlação em bytes com o protobuf: a chave do atributo viaja inteira em todo ponto.
+#### cardinality-and-the-bill — *Cardinality and the bill* · disponível (estado + filme + 3D)
+- **Showcase.** Feito (`cardinalidade/vitrine.ts`, cada passo é `calcular` com um atributo a mais): 1 série; a rota vira fileira (12); o status, grade (72); o método, altura — no 3D cada célula ganha 4 andares (288); o `enduser.id` repete o cubo uma vez por cliente (2 304 000). No fim, o ponto no fio: os bytes só das chaves (UTF-8 dos nomes) em todo ponto, vezes os pontos por minuto. **Interativo:** "adicionar enduser.id" refaz o filme.
 - **Correlações.** ← reading-an-otlp-payload, ← the-shape-of-a-metric.
 
-#### the-rollout — *The rollout* · a construir (filme)
+#### the-rollout — *The rollout* · disponível (filme + livre + 3D)
 - **Pergunta.** Em que ordem levar OTel para uma empresa sem parar nada?
-- **Mídia.** Filme em etapas (Collector primeiro, depois auto, depois manual e sampling), com custo e risco em cada etapa. É o capítulo que costura o handbook: cada etapa cita o lab que a explica.
+- **Mal-entendido.** "Começa pelo código" — os passos certos na ordem errada.
+- **Modelo.** `otel-domain/rollout/modelo.ts`: seis etapas, cada uma com o lab que a explica, o esforço (qualitativo, sem número inventado), as perguntas que destrava e do que depende; `planejar(ordem)` diz, etapa a etapa, o que faltava antes e a consequência.
+- **Showcase.** Feito (`rollout/filme.ts`): as etapas sobem a escada, cada uma acende as perguntas que passam a ter resposta; fora de ordem, a etapa fica vermelha com o aviso. **3D:** a escada — a altura é a maturidade. **Interativo:** "ordem recomendada / começar pelo código" refaz o filme.
+- **Simulação (livre).** `RolloutLab`: o planejador — subir e descer etapas, com os avisos e o link para cada lab.
+- **Correlações.** Costura o handbook: agent-or-gateway, zero-code-instrumentation, hard-context-and-baggage, a-log-that-knows-its-trace, manual-spans, head-vs-tail-sampling.
 
 ## Anexos (referência, não etapa)
 
@@ -205,10 +221,10 @@ O codificador do protobuf já serve o anexo `protobuf-encoding`. O próximo é
 
 ## Fila (ordem de construção)
 
-1. Ícones que faltam em contexto (`context`/`baggage` nos tokens) e o ícone `bytes` no envelope da vitrine do Collector.
-2. Showcase de `anatomy-of-a-trace` (árvore em escada no 3D).
-3. `the-shape-of-a-metric` (o handbook só modela trace no showcase).
-4. `a-log-that-knows-its-trace`.
-5. `propagating-through-a-queue`.
-6. Showcases de `three-pillars`, `providers`, `head-vs-tail-sampling` e `cardinality-and-the-bill`.
-7. `backpressure-and-drops`, `manual-spans`, `zero-code-instrumentation`, `host-and-kubernetes-signals` e `the-rollout`.
+1. ~~Ícones que faltam em contexto e o ícone `bytes` no envelope da vitrine.~~ Feito: a ficha do palco (plano e iso) desenha o ícone no cabeçalho.
+2. ~~Showcase de `anatomy-of-a-trace` (árvore em escada no 3D).~~ Feito.
+3. ~~`the-shape-of-a-metric`~~ Feito.
+4. ~~`a-log-that-knows-its-trace`~~ Feito.
+5. ~~`propagating-through-a-queue`~~ Feito.
+6. ~~Showcases de `three-pillars`, `providers`, `head-vs-tail-sampling` e `cardinality-and-the-bill`.~~ Feitos.
+7. ~~`backpressure-and-drops`, `manual-spans`, `zero-code-instrumentation`, `host-and-kubernetes-signals`, `disconnected-signals` e `the-rollout`.~~ Feitos. Todo lab do handbook está publicado com showcase e simulação.

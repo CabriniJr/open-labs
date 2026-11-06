@@ -1,0 +1,30 @@
+---
+id: otel-three-pillars
+title: Três gravadores, as mesmas requisições
+seed: 7
+edgeTicks: 1
+params:
+  requisicoes-por-tick: 3
+  erro-a-cada: 7
+  registrar-tudo: 0
+  atributo-por-usuario: 0
+  limite-de-series: 12
+  pergunta-acima-de: 250
+---
+flowchart LR
+  requests([requests]):::fonte
+  service[service]:::servico
+
+  trace-store[(trace-store)]:::gravador
+  metric-store[(metric-store)]:::gravador
+  log-store[(log-store)]:::gravador
+
+  requests -- "request" --> service
+
+  service -- "trace:span"        --> trace-store
+  service -- "metric:measurement" --> metric-store
+  service -- "log:record"        --> log-store
+
+  classDef fonte    family:processor,kind:source
+  classDef servico  family:processor,kind:router
+  classDef gravador family:processor,kind:store

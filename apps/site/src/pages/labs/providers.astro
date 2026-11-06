@@ -3,12 +3,18 @@ import LabAssessment from "../../components/LabAssessment.astro";
 import { EXERCICIOS_DOS_PROVEDORES, MAL_ENTENDIDOS } from "@ovh/otel-domain";
 import { Exercicio } from "../../components/Exercicio.tsx";
 import { Predicao } from "../../components/Predicao.tsx";
-import { ProvidersLab } from "../../components/ProvidersLab.tsx";
+import { ProvidersModos } from "../../components/ProvidersModos.tsx";
 import SiteFooter from "../../components/SiteFooter.astro";
 import SiteNav from "../../components/SiteNav.astro";
 import Base from "../../layouts/Base.astro";
 import { montarExercicio } from "../../lib/exercicios";
 import { url } from "../../lib/urls";
+import "../../components/ModosDoLab.css";
+import "../../components/CpuVitrine.css";
+import "../../components/ContextoLab.css";
+import "../../components/ImplantacaoLab.css";
+import "@ovh/motion/src/react/motion.css";
+import "@ovh/stage3d/src/iso.css";
 import "../../styles/docs.css";
 import "../../components/ProvidersLab.css";
 import "../../components/Predicao.css";
@@ -60,7 +66,7 @@ const exercicios = EXERCICIOS_DOS_PROVEDORES.map(montarExercicio);
     </section>
 
     <section class="lab-stage">
-      <ProvidersLab client:only="react" />
+      <ProvidersModos client:only="react" />
     </section>
 
     <section class="lab-prosa editorial">

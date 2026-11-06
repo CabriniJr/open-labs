@@ -178,3 +178,85 @@ export type { CampoCodificado, Codificacao, TipoDoCampo, WireType } from "./prot
 export { envelopeDoProtobuf, SPAN_DO_PROTOBUF, tomDoCampo } from "./protobuf/exemplo.js";
 export { filmeDaViagem, spanDaViagem } from "./protobuf/viagem.js";
 export type { Codificacao as CodificacaoDaViagem, DetalheDaViagem, LinhaDoDiario, OpcoesDaViagem } from "./protobuf/viagem.js";
+
+// O showcase da anatomia: uma requisição, e a árvore que o backend monta depois.
+export { ALTURA_DA_ANATOMIA, LARGURA_DA_ANATOMIA, OPCOES_DA_VITRINE_DA_ANATOMIA, filmeDaVitrineDaAnatomia, umaRequisicao } from "./anatomia/vitrine.js";
+export type { ChamadaDaVitrine, DetalheDaVitrineDaAnatomia, LinhaDoWaterfall, OpcoesDaVitrineDaAnatomia, RequisicaoDaVitrine, SpanDaVitrine } from "./anatomia/vitrine.js";
+
+// A forma de uma métrica: o agregador, a temporalidade e o que o backend conclui.
+export { baldeDe as baldeDoHistograma, coletar, INTERVALO_MS, lerNoBackend, LIMITES_DOS_BALDES, novoAgregador, OPCOES_DA_METRICA, registrar, reiniciar, roteiro, rodar, ROTULOS_DOS_BALDES } from "./metrica/modelo.js";
+export type { Agregador, Corrida, Evento, OpcoesDaMetrica, Passo, PontoExportado, Temporalidade } from "./metrica/modelo.js";
+export { ALTURA_DA_METRICA, LARGURA_DA_METRICA, filmeDaMetrica } from "./metrica/filme.js";
+export type { DetalheDaMetrica } from "./metrica/filme.js";
+export { MAL_ENTENDIDOS_DA_METRICA } from "./metrica/labels.js";
+
+// Um log que sabe o trace dele: o contexto ativo por thread e a ponte que o lê.
+export { abrirSpan, aplicar, contextoAtivo, criarThread, fecharSpan, juntar, logar, novoProcesso, OPCOES_DO_LOG, ROTEIRO_DO_LOG, rodarLog } from "./log/modelo.js";
+export type { Contexto, EstadoDoLog, Juncao, OpcoesDoLog, PassoDoLog, RegistroDeLog, SpanDoLog } from "./log/modelo.js";
+export { ALTURA_DO_LOG, LARGURA_DO_LOG, filmeDoLog } from "./log/filme.js";
+export type { DetalheDoLog } from "./log/filme.js";
+export { MAL_ENTENDIDOS_DO_LOG } from "./log/labels.js";
+
+// Propagar por uma fila: o contexto dentro da mensagem, e pai ou link do outro lado.
+export { consumirLote, consumirUm, esperar as esperarNaFila, novaFila, OPCOES_DA_FILA, publicar, rodarFila, roteiroDaFila, tracesDaFila } from "./fila/modelo.js";
+export type { Consumo, EstadoDaFila, Mensagem, OpcoesDaFila, PassoDaFila, SpanDaFila, TipoDoSpan, TraceDaFila } from "./fila/modelo.js";
+export { ALTURA_DA_FILA, LARGURA_DA_FILA, filmeDaFila } from "./fila/filme.js";
+export type { DetalheDaFila } from "./fila/filme.js";
+export { MAL_ENTENDIDOS_DA_FILA } from "./fila/labels.js";
+
+// Spans à mão: o tracer em miniatura, o programa do editor e o que o backend recebe.
+export { executar as executarInstrucao, noBackend, nomeDeAltaCardinalidade, novoTracer, OPCOES_MANUAIS, programa as programaManual, rodarManual } from "./manual/modelo.js";
+export type { EstadoManual, Instrucao, NoBackend, OpcoesManuais, SpanManual } from "./manual/modelo.js";
+export { ALTURA_MANUAL, LARGURA_MANUAL, filmeManual } from "./manual/filme.js";
+export type { DetalheManual } from "./manual/filme.js";
+export { MAL_ENTENDIDOS_MANUAIS } from "./manual/labels.js";
+
+// O showcase dos três pilares: um incidente, três gravadores, e o que os liga.
+export { ALTURA_DOS_PILARES, filmeDosPilares, incidente, LARGURA_DOS_PILARES, OPCOES_DOS_PILARES } from "./pilares/vitrine.js";
+export type { BaldeDoIncidente, DetalheDosPilares, Incidente, LinhaDeLog, OpcoesDosPilares, TraceDoIncidente } from "./pilares/vitrine.js";
+
+// O showcase da amostragem: quando se decide, e com quanto do trace.
+export { ALTURA_DA_AMOSTRAGEM, amostrar, filmeDaVitrineDaAmostragem, LARGURA_DA_AMOSTRAGEM, OPCOES_DA_VITRINE_DA_AMOSTRAGEM, TAXA_DA_VITRINE, traceQueFalha } from "./amostragem/vitrine.js";
+export type { Amostragem, DecisaoDeTrace, DetalheDaVitrineDaAmostragem, ModoDaAmostragem, OpcoesDaVitrineDaAmostragem, SpanDaVitrineDeAmostragem } from "./amostragem/vitrine.js";
+
+// O showcase da cardinalidade: o cubo de séries, um atributo de cada vez.
+export { ALTURA_DA_CARDINALIDADE, BALDES_DA_VITRINE, bytesDasChaves, etapasDoCubo, EXPORTACOES_DA_VITRINE, filmeDaVitrineDaCardinalidade, LARGURA_DA_CARDINALIDADE, OPCOES_DA_VITRINE_DA_CARDINALIDADE } from "./cardinalidade/vitrine.js";
+export type { DetalheDaVitrineDaCardinalidade, EtapaDoCubo, OpcoesDaVitrineDaCardinalidade } from "./cardinalidade/vitrine.js";
+
+// O showcase dos providers: o processo em três andares, e quem decide o que sai.
+export { ALTURA_DOS_PROVIDERS, filmeDaVitrineDosProviders, LARGURA_DOS_PROVIDERS, LOTE_DA_VITRINE, OPCOES_DA_VITRINE_DOS_PROVIDERS, REQUISICOES_DA_VITRINE, rodarProviders } from "./providers/vitrine.js";
+export type { DetalheDaVitrineDosProviders, OpcoesDaVitrineDosProviders, ProcessoInstrumentado } from "./providers/vitrine.js";
+
+// Backpressure e descartes: limiter, fila, retry e o crash sem limiter.
+export { backendNoAr, LIMITE_DO_LIMITER, MEMORIA_MAXIMA, novaPressao, OPCOES_DA_PRESSAO, QUEDA as QUEDA_DA_PRESSAO, rodarPressao, SPANS_POR_LOTE, TEMPO_MAXIMO_DE_RETRY, tick as tickDaPressao, totalDeLotes, VAZAO as VAZAO_DO_EXPORTER } from "./pressao/modelo.js";
+export type { Contadores, EstadoDaPressao, LoteNaFila, OpcoesDaPressao } from "./pressao/modelo.js";
+export { ALTURA_DA_PRESSAO, filmeDaPressao, LARGURA_DA_PRESSAO } from "./pressao/filme.js";
+export type { DetalheDaPressao } from "./pressao/filme.js";
+export { MAL_ENTENDIDOS_DA_PRESSAO } from "./pressao/labels.js";
+
+// Instrumentação sem código: as bordas que o agente vê, e o miolo escuro.
+export { DURACAO_DA_REQUISICAO, PASSOS as PASSOS_ZERO_CODE, PASSOS_PROPRIOS, SPAN_RAIZ, traceDaRequisicao } from "./zerocode/modelo.js";
+export type { Camada, Passo as PassoZeroCode, SpanZeroCode, TraceZeroCode } from "./zerocode/modelo.js";
+export { ALTURA_ZERO_CODE, filmeZeroCode, LARGURA_ZERO_CODE, OPCOES_ZERO_CODE } from "./zerocode/filme.js";
+export type { DetalheZeroCode, OpcoesZeroCode } from "./zerocode/filme.js";
+export { MAL_ENTENDIDOS_ZERO_CODE } from "./zerocode/labels.js";
+
+// Sinais do host e do Kubernetes: os receivers do agent e o k8sattributes pelo IP.
+export { enriquecer, ipDoAgent, metricasDosNos, NOS as NOS_DO_HOST, OPCOES_DOS_NOS, PODS_DO_CLUSTER, podComIp } from "./nos/modelo.js";
+export type { Associacao, Atributos as AtributosDoNo, MetricaDoNo, NoDoCluster, OndeEnriquece, OpcoesDosNos, PodDoCluster, SpanEnriquecido } from "./nos/modelo.js";
+export { ALTURA_DOS_NOS, filmeDosNos, LARGURA_DOS_NOS } from "./nos/filme.js";
+export type { DetalheDosNos, OpcoesDoFilmeDosNos } from "./nos/filme.js";
+export { MAL_ENTENDIDOS_DOS_NOS } from "./nos/labels.js";
+
+// O custo de sinais desconectados: busca por horário contra busca por trace_id.
+export { ativasNoSegundo, investigar, JANELA_S, MINUTOS_PARA_DETECTAR, MINUTOS_POR_CANDIDATO, OPCOES_DO_INCIDENTE, SEGUNDO_DO_ERRO, trafego } from "./incidente/modelo.js";
+export type { Busca, Incidente as IncidenteDesconectado, OpcoesDoIncidente, RequisicaoDoIncidente } from "./incidente/modelo.js";
+export { ALTURA_DO_INCIDENTE, filmeDoIncidente, LARGURA_DO_INCIDENTE, raias } from "./incidente/filme.js";
+export type { DetalheDoIncidente } from "./incidente/filme.js";
+export { MAL_ENTENDIDOS_DO_INCIDENTE } from "./incidente/labels.js";
+
+// O rollout: a ordem das etapas, e o que cada uma pede antes.
+export { ETAPAS as ETAPAS_DO_ROLLOUT, ORDEM_CODIGO_PRIMEIRO, ORDEM_RECOMENDADA, planejar, riscos as riscosDoPlano } from "./rollout/modelo.js";
+export type { Etapa as EtapaDoRollout, IdDaEtapa, PassoDoPlano } from "./rollout/modelo.js";
+export { ALTURA_DO_ROLLOUT, filmeDoRollout, LARGURA_DO_ROLLOUT, OPCOES_DO_ROLLOUT } from "./rollout/filme.js";
+export type { DetalheDoRollout, OpcoesDoRollout } from "./rollout/filme.js";

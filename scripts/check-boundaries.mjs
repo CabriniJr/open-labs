@@ -258,7 +258,9 @@ async function main() {
     // fronteira que vigia meia linguagem vigia meia fronteira.
     for await (const file of glob(`${prefix}src/**/*.{ts,tsx,css}`)) {
       scanned += 1;
-      all.push(...findViolations(file, readFileSync(file, "utf8")));
+      // No Windows o glob devolve `\`; os prefixos são escritos com `/`, e sem
+      // normalizar a guarda não reconhecia arquivo nenhum como agnóstico.
+      all.push(...findViolations(file.replaceAll("\\", "/"), readFileSync(file, "utf8")));
     }
   }
 

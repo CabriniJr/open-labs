@@ -11,7 +11,10 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 export const templateDir = join(root, "apps/site/public/delivery-host");
 
 export async function buildDeliveryHost() {
-  execFileSync(join(root, "node_modules/.bin/tsc"), ["-b", join(root, "packages/handbook-format")], { stdio: "inherit" });
+  // O tsc pelo próprio Node: o shim de `.bin` é `tsc.cmd` no Windows, e
+  // `execFileSync` sem shell não o acha.
+  const tsc = createRequire(join(root, "package.json")).resolve("typescript/bin/tsc");
+  execFileSync(process.execPath, [tsc, "-b", join(root, "packages/handbook-format")], { stdio: "inherit" });
   const sdk = await import(pathToFileURL(join(root, "packages/handbook-format/dist/contract.js")));
   const raw = JSON.parse(readFileSync(join(root, "packages/handbook-catalog/src/catalog.json"), "utf8"));
   const catalog = { STATIC_HOST: sdk.HostCapabilitiesSchema.parse(raw.host), STATIC_LABS: raw.labs.map((l) => sdk.LabDescriptorSchema.parse(l)) };

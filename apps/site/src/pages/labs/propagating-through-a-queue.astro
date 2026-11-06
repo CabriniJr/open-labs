@@ -1,0 +1,213 @@
+---
+import LabAssessment from "../../components/LabAssessment.astro";
+import { MAL_ENTENDIDOS_DA_FILA } from "@ovh/otel-domain";
+import { FilaModos } from "../../components/FilaModos.tsx";
+import { Predicao } from "../../components/Predicao.tsx";
+import SiteFooter from "../../components/SiteFooter.astro";
+import SiteNav from "../../components/SiteNav.astro";
+import Base from "../../layouts/Base.astro";
+import { url } from "../../lib/urls";
+import "../../styles/docs.css";
+import "../../components/ModosDoLab.css";
+import "../../components/CpuVitrine.css";
+import "../../components/ContextoLab.css";
+import "../../components/ImplantacaoLab.css";
+import "../../components/MetricaLab.css";
+import "@ovh/motion/src/react/motion.css";
+import "@ovh/stage3d/src/iso.css";
+import "../../components/Predicao.css";
+---
+
+<Base
+  domain="otel"
+  title="Propagating through a queue — OpenLabs"
+  description="Context crosses a queue only inside the message: the producer injects traceparent into the headers, and the consumer extracts it — as a parent for one message, or as links for a batch from several traces. Without injection, the trace ends at publish and the consumer starts an orphan."
+>
+  <SiteNav current="labs" />
+
+  <main id="content">
+    <section class="lab-head editorial">
+      <div class="prose">
+        <p class="lab-head__eyebrow mono">
+          <a href={url("handbooks/otel")}>OpenTelemetry Visual Handbook</a> · lab
+        </p>
+        <h1>The trace dies at send and comes back an orphan</h1>
+        <p>
+          The checkout trace ends at <code>orders publish</code>. A few seconds
+          later, a trace appears in fulfillment that starts from nothing. Both
+          look complete. Nothing errored, and nothing joins them.
+        </p>
+        <p>
+          A queue is not a call. The context only crosses it if the producer
+          writes the <code>traceparent</code> into the <b>message headers</b>,
+          and the consumer reads it back. Then it has a second decision: one
+          message gets a <b>parent</b>; a batch from three traces cannot have
+          three parents, so it gets <b>links</b>.
+        </p>
+      </div>
+      <aside class="lab-head__note mono">
+        <p>In 3D the queue is a silo.</p>
+        <p>Height is how long each message waited.</p>
+      </aside>
+    </section>
+
+    <section class="lab-palco">
+      <FilaModos client:only="react" />
+    </section>
+
+    <section class="lab-prosa editorial">
+      <div class="prose">
+        <h2>Break it</h2>
+        <ol>
+          <li>
+            <b>Turn off injection, publish two orders and consume them.</b>
+            Four traces for two orders: two that stop at publish and two
+            orphans that start from nowhere.
+          </li>
+          <li>
+            <b>Turn it back on and consume one at a time.</b> Each process span
+            names its publish span as parent, and the trace runs through the
+            queue.
+          </li>
+          <li>
+            <b>Publish three, then consume the batch.</b> One new trace, with a
+            link to each of the three. Following a link is how you get from the
+            batch back to the request that produced the message.
+          </li>
+          <li>
+            <b>Publish, wait five seconds, consume.</b> The wait is real time in
+            the trace: the gap between publish and process is the queue.
+          </li>
+        </ol>
+
+        <h2>Predict before you look</h2>
+        <p>Answer first, then try it in the simulation.</p>
+      </div>
+      <div class="lab-predicao">
+        <Predicao
+          client:visible
+          pergunta="A consumer reads a batch of 10 messages, published by 10 different requests, and processes them in one span. Every producer injected traceparent. What does that span carry?"
+          opcoes={[
+            "It starts its own trace and holds 10 links, one per message's context",
+            "It becomes a child of the first message's publish span",
+            "It is a child of all 10 publish spans",
+          ]}
+          correta={0}
+          revelacao="A span has at most one parent, and these messages belong to ten traces. The messaging conventions record the relationship as links from the process span to each message's context, and the batch span roots its own trace. Picking the first message as parent would put nine unrelated messages inside one request's trace."
+        />
+      </div>
+    </section>
+
+    <section class="lab-prosa editorial">
+      <div class="prose">
+        <h2>What people get wrong</h2>
+        <p>Each row is a belief the simulation is built to take apart. The right column is the specification, with the link.</p>
+      </div>
+      <div class="lab-mal-entendidos">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">What people believe</th>
+              <th scope="col">What the spec says</th>
+            </tr>
+          </thead>
+          <tbody>
+            {
+              MAL_ENTENDIDOS_DA_FILA.map((m) => (
+                <tr>
+                  <td>{m.crenca}</td>
+                  <td>
+                    {m.spec}{" "}
+                    <a href={m.fonte} rel="noreferrer noopener" target="_blank">
+                      source
+                    </a>
+                  </td>
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="lab-prosa editorial">
+      <div class="prose">
+        <h2>Where this connects</h2>
+        <p>
+          <a href={url("labs/hard-context-and-baggage")}>Hard context and
+          baggage</a> is the same injection and extraction over HTTP headers; a
+          queue moves the carrier into the message. <a href={url("labs/anatomy-of-a-trace")}>Anatomy
+          of a trace</a> is why the orphan looks complete: the backend builds a
+          tree from whatever arrived.
+        </p>
+      </div>
+    </section>
+    <LabAssessment href="labs/propagating-through-a-queue" />
+  </main>
+
+  <SiteFooter />
+</Base>
+
+<style>
+  .lab-head {
+    padding-block: var(--space-4) var(--space-2);
+  }
+
+  .lab-head__eyebrow {
+    margin: 0 0 var(--space-1);
+    color: var(--accent);
+    font-size: var(--size-step--1);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  h1 {
+    margin: 0 0 var(--space-2);
+    font-size: var(--size-step-2);
+    max-width: 24ch;
+  }
+
+  .lab-head__note {
+    align-self: end;
+    color: var(--ink-muted);
+    font-size: var(--size-step--1);
+  }
+
+  .lab-head__note p {
+    margin: 0 0 0.35rem;
+  }
+
+  .lab-palco {
+    margin-block: var(--space-2) var(--space-4);
+  }
+
+  .lab-prosa {
+    padding-block-end: var(--space-4);
+  }
+
+  .lab-predicao {
+    grid-column: 1 / -1;
+    margin-block-start: var(--space-2);
+    max-width: var(--measure);
+  }
+
+  .lab-mal-entendidos {
+    grid-column: 1 / -1;
+    margin-block-start: var(--space-2);
+    overflow-x: auto;
+  }
+
+  .lab-mal-entendidos table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: var(--size-step--1);
+  }
+
+  .lab-mal-entendidos th,
+  .lab-mal-entendidos td {
+    border-block-end: 1px solid var(--border);
+    padding: var(--space-1) var(--space-2);
+    text-align: start;
+    vertical-align: top;
+  }
+</style>

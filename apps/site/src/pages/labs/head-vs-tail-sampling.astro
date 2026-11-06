@@ -1,13 +1,19 @@
 ---
 import LabAssessment from "../../components/LabAssessment.astro";
 import { EXERCICIOS_DA_AMOSTRAGEM, MAL_ENTENDIDOS_DA_AMOSTRAGEM } from "@ovh/otel-domain";
-import { AmostragemLab } from "../../components/AmostragemLab.tsx";
+import { AmostragemModos } from "../../components/AmostragemModos.tsx";
 import { Exercicio } from "../../components/Exercicio.tsx";
 import { Predicao } from "../../components/Predicao.tsx";
 import SiteFooter from "../../components/SiteFooter.astro";
 import SiteNav from "../../components/SiteNav.astro";
 import Base from "../../layouts/Base.astro";
 import { url } from "../../lib/urls";
+import "../../components/ModosDoLab.css";
+import "../../components/CpuVitrine.css";
+import "../../components/ContextoLab.css";
+import "../../components/ImplantacaoLab.css";
+import "@ovh/motion/src/react/motion.css";
+import "@ovh/stage3d/src/iso.css";
 import "../../styles/docs.css";
 import "../../components/AmostragemLab.css";
 import "../../components/Predicao.css";
@@ -59,7 +65,7 @@ const exercicios = EXERCICIOS_DA_AMOSTRAGEM.map(montarExercicio);
     </section>
 
     <section class="lab-palco">
-      <AmostragemLab client:only="react" />
+      <AmostragemModos client:only="react" />
     </section>
 
     <section class="lab-prosa editorial">

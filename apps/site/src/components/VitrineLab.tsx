@@ -1,6 +1,6 @@
 import type { Film, Tone } from "@ovh/motion";
 import { MotionPlayer, type MotionView } from "@ovh/motion/react";
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, type ReactNode } from "react";
 
 const IsoStage = lazy(() => import("@ovh/stage3d").then((m) => ({ default: m.IsoStage })));
 
@@ -14,7 +14,7 @@ interface DetalheDeNivel {
  * isométrica e um painel que diz em que nível a câmera está. O filme é do
  * domínio; aqui só se escolhe como ele é tocado.
  */
-export function VitrineLab<D extends DetalheDeNivel>({ film, niveis, label, legenda, testId, tituloDosPacotes }: { film: Film<D>; niveis: readonly string[]; label: string; legenda: readonly { label: string; tone: Tone }[]; testId: string; tituloDosPacotes: string }) {
+export function VitrineLab<D extends DetalheDeNivel>({ film, niveis, label, legenda, testId, tituloDosPacotes, controles }: { film: Film<D>; niveis: readonly string[]; label: string; legenda: readonly { label: string; tone: Tone }[]; testId: string; tituloDosPacotes: string; /** Escolhas do leitor que refazem o filme. */ controles?: ReactNode }) {
   const vistas: readonly MotionView<D>[] = [
     {
       id: "iso",
@@ -34,6 +34,7 @@ export function VitrineLab<D extends DetalheDeNivel>({ film, niveis, label, lege
         label={label}
         packetsTitle={tituloDosPacotes}
         packetLegend={legenda}
+        controls={controles}
         renderDetail={(frame) => {
           const d = frame.detail;
           if (d === undefined) return null;
