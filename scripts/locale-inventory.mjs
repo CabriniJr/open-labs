@@ -51,8 +51,11 @@ for (const path of walk(join(root, "apps/site/dist"), (name) => name.endsWith(".
 const paths = ["apps/site/src", "apps/runner/src", "packages/handbook-format/src", "packages/interactive-core/src", "packages/depth-core/src", "packages/depth-ui/src", "packages/otel-domain/src", "packages/cpu-domain/src", "packages/algo-domain/src", "packages/kubernetes-domain/src", "packages/splunk-domain/src", "packages/network-domain/src", "packages/motion/src", "packages/stage3d/src"];
 for (const prefix of paths) for (const path of walk(join(root, prefix), (name) => /\.(?:tsx?|astro)$/u.test(name) && !/\.test\./u.test(name))) {
   // Translation values are outputs, never new source messages to translate back.
-  if (path.includes(`${join("src", "locales")}/`)) continue;
+  // Either separator: on Windows the path arrives with backslashes.
+  if (/[\\/]src[\\/]locales[\\/]/u.test(path)) continue;
   const file = relative(root, path), source = readFileSync(path, "utf8");
+  // A page written in one language on purpose (a delivery document) opts out.
+  if (source.includes("locale: skip-file")) continue;
   const parsed = ts.createSourceFile(file.replace(/\.astro$/u, ".tsx"), source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
   function visit(node) {
     if (ts.isJsxText(node)) add(node.text, file);

@@ -8,6 +8,9 @@
  * Abra no navegador e salve em PDF (Ctrl+P → Salvar como PDF), ou rode
  * `node labs/telecentro-network/entrega/gerar-pdf.mjs` com o site no ar.
  * O que só a equipe pode escrever está marcado em amarelo.
+ *
+ * locale: skip-file — é um documento em português para o professor; o seletor
+ * de idioma não o traduz (`translate="no"` abaixo) e o inventário o ignora.
  */
 import {
   ajustesGraficos,
@@ -78,7 +81,7 @@ const nomeDe = (id: DispId) => t.dispositivos[id].nome;
 
 <Base domain="networks" lang="pt-BR" title="Network Architect Solutions — entrega GS 2026.2" description="Documento de entrega da rede do telecentro: ficha, topologia, endereçamento, configuração e testes.">
   <script is:inline>document.documentElement.dataset.theme = "light";</script>
-  <main class="doc">
+  <main class="doc" translate="no">
     <section class="capa">
       <p class="sobre">FIAP · Global Solution 2026.2 · CitizenTech · Engenharia de Software</p>
       <h1>Network Architect Solutions</h1>
