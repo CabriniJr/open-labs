@@ -1,0 +1,58 @@
+---
+import AlgoPagina from "../../components/AlgoPagina.astro";
+import SiteFooter from "../../components/SiteFooter.astro";
+import SiteNav from "../../components/SiteNav.astro";
+import Base from "../../layouts/Base.astro";
+import { GrafoModos } from "../../components/GrafoLab.tsx";
+import { Predicao } from "../../components/Predicao.tsx";
+---
+
+<Base domain="algorithms" title="What a graph is: two points and a line — OpenLabs" description="Start with two points and one edge, then add a weight, a direction and a third point. Build any graph by clicking and watch its adjacency list and matrix change with the drawing.">
+<SiteNav current="labs" />
+<AlgoPagina
+  titulo="What a graph is: two points and a line"
+  href="labs/what-is-a-graph"
+  nota={["A graph is points and the lines between them.", "A map, a social network and the internet are all one.", "The list and the matrix are the same graph, stored two ways."]}
+  quebre={[
+    { b: "Turn Directed on with Two points loaded.", texto: "The line becomes an arrow, and the matrix stops being symmetric: A → B is 5, B → A is empty. A one-way street is a directed edge." },
+    { b: "Load Triangle and compare A–B with A–C–B.", texto: "The direct edge costs 7; the detour costs 3 + 3 = 6. The cheapest path is not the one with fewest edges — that is the whole reason Dijkstra exists." },
+    { b: "Erase one edge from Tree.", texto: "The tree splits into two pieces. A tree with V points has exactly V − 1 edges; one less and it falls apart, one more and it has a cycle." },
+    { b: "Add points until you have 16.", texto: "The matrix grows by a row and a column each time — V² cells — while the list only grows by the edges you draw." },
+  ]}
+  erros={[
+    { crenca: "A graph is a chart, like a bar graph.", verdade: "In algorithms, a graph is a set of points (vertices) and the links between them (edges). Nothing to do with axes." },
+    { crenca: "Where the points are drawn matters.", verdade: "Only who is linked to whom matters. Put the same points somewhere else on the page and the list and the matrix do not change — position is for people, not for the algorithm." },
+    { crenca: "The shortest path has the fewest edges.", verdade: "Only if every edge costs the same. With weights, a longer detour can be cheaper — the Triangle example shows it in three points." },
+    { crenca: "The matrix is how programs store graphs.", verdade: "Programs usually keep the adjacency list: a road map with a million corners has a few million streets, not a trillion matrix cells." },
+  ]}
+  fronteira="The editor allows up to 16 points, positive weights only, and no edge from a point to itself (a self-loop) or two parallel edges between the same pair — all real things, deliberately left out to keep the two representations readable. Trees, cycles and pieces are recognised; bipartite graphs, planarity and colouring are not covered."
+  ligacoes={[
+    { href: "labs/shortest-path", texto: "Four ways across a city map — searching a weighted graph" },
+    { href: "labs/how-work-grows", texto: "Six ways to grow — why V² cells is a problem" },
+  ]}
+>
+  <p>
+    A <b>graph</b> is points and the lines between them. That is the entire definition.
+    The points are called vertices (or nodes); the lines are edges. A street map is a
+    graph of corners and streets; a social network is a graph of people and friendships;
+    the internet is a graph of routers and cables.
+  </p>
+  <p>
+    Everything else is one more property on the same structure. Put a number on an edge
+    and it has a <b>weight</b> — minutes, metres, money. Put an arrow on it and it has a
+    <b>direction</b>. Chain edges and you have <b>a path</b>, whose cost is the sum of
+    its weights. The showcase builds that up one step at a time; the simulation lets you
+    draw your own and watch the two ways a program stores it.
+  </p>
+  <GrafoModos slot="palco" client:only="react" />
+  <Predicao
+    slot="predicao"
+    client:visible
+    pergunta="A graph has 5 points and is a tree (connected, no cycles). How many edges does it have?"
+    opcoes={["4", "5", "10"]}
+    correta={0}
+    revelacao="Every tree with V points has exactly V − 1 edges: start with one point and each new point needs exactly one edge to join without making a cycle. Ten would be the complete graph — every pair linked — which is full of cycles."
+  />
+</AlgoPagina>
+<SiteFooter />
+</Base>

@@ -1,0 +1,61 @@
+---
+import AlgoPagina from "../../components/AlgoPagina.astro";
+import SiteFooter from "../../components/SiteFooter.astro";
+import SiteNav from "../../components/SiteNav.astro";
+import Base from "../../layouts/Base.astro";
+import { CaminhoModos } from "../../components/CaminhoLab.tsx";
+import { Predicao } from "../../components/Predicao.tsx";
+---
+
+<Base domain="algorithms" title="Shortest paths on the real streets of São Paulo — OpenLabs" description="Dijkstra, A*, bidirectional Dijkstra, greedy best-first, weighted A* and BFS race across the real street map of central São Paulo, from MASP to the Mercadão. Watch each one paint the city, hear it, and compare work, route time and Big-O on the same map.">
+<SiteNav current="labs" />
+<AlgoPagina
+  titulo="Shortest paths on the real streets of São Paulo"
+  href="labs/shortest-path"
+  nota={["1 964 real intersections, every one-way street respected.", "Same loop, different idea of “best”.", "The colour is the time it took to get there; the pitch rises with it."]}
+  quebre={[
+    { b: "Race the Exact class from Sírio-Libanês to Estação da Luz.", texto: "Three searches, one route, to the decisecond. Dijkstra settles about 940 intersections; A* about 120. A guess that never overestimates is a free lunch." },
+    { b: "Race the Fast class on the same trip.", texto: "Greedy finishes after a few dozen intersections — with a route of 8 min 30 s against 4 min 41 s. Weighted A* looks at even less than A* and, on this trip, still finds the best route; its promise is only “at most twice”." },
+    { b: "Click the map to put the start and the goal close together.", texto: "On a short trip every search is cheap and they barely differ. Big-O is about what happens as the distance grows — look at the chart under the race." },
+    { b: "Race Blind to time from Mackenzie to the Catedral da Sé.", texto: "BFS finds a route with fewer intersections and still loses 14 seconds: it counts corners, not minutes." },
+    { b: "Pick Bixiga → Mosteiro de São Bento with the Exact class.", texto: "Here the two-ended search settles about 660 intersections against 1 300 for A*: when the goal sits behind a maze of one-way streets, the straight-line guess helps less, and growing from both ends wins." },
+  ]}
+  erros={[
+    { crenca: "Dijkstra searches towards the goal.", verdade: "It settles intersections strictly in order of travel time, in every direction. It only stops because the goal was reached — that is why its paint is a disc." },
+    { crenca: "A* is an approximation.", verdade: "With a heuristic that never overestimates — here, the straight line at the top speed of any street — A* returns exactly Dijkstra's answer, usually after far fewer visits." },
+    { crenca: "The fastest algorithm finds the fastest route.", verdade: "Greedy best-first finishes first almost every time and is the only one in the lab that routinely returns a slower route. Speed of the search and quality of the answer are different numbers." },
+    { crenca: "Navigation apps run Dijkstra over the whole country.", verdade: "They precompute shortcuts over a hierarchy of roads and run A*-like searches on that. Plain Dijkstra over a country would settle millions of intersections per request." },
+  ]}
+  fronteira="The map is a fixed snapshot of OpenStreetMap: about 4 × 4.4 km from Avenida Paulista to the Centro, drivable streets only, with travel time from a typical speed per kind of street — no traffic, turn costs or traffic lights. The priority queue is a binary heap with lazy deletion. Searches start and end at the intersection nearest each point of interest."
+  ligacoes={[
+    { href: "labs/what-is-a-graph", texto: "What a graph is — points, edges, weights" },
+    { href: "labs/greedy-change", texto: "Greedy, and the case it misses — the same lesson with coins" },
+    { href: "labs/how-work-grows", texto: "Six ways to grow — what the cost classes mean" },
+  ]}
+>
+  <p>
+    This is the street map of central São Paulo — Paulista, Consolação, the Centro,
+    Liberdade — taken from OpenStreetMap: every intersection is a vertex, every
+    stretch of street between two intersections is a directed edge, and its weight
+    is the time it takes to drive it.
+  </p>
+  <p>
+    Six searches race on it. They are all <b>the same loop</b>: take the best
+    intersection out of the frontier, look at its streets, put the neighbours in.
+    What changes is the meaning of “best” — time so far (Dijkstra), time plus a
+    guess of the time left (A*), the guess alone (greedy), the number of corners
+    (BFS) — and whether you search from one end or both. Watch them paint the city,
+    listen to them, and compare the work each one did for its answer.
+  </p>
+  <CaminhoModos slot="palco" client:only="react" />
+  <Predicao
+    slot="predicao"
+    client:visible
+    pergunta="Dijkstra and A* race from the MASP to the Mercadão (about 4.4 km). Which statement is true when both finish?"
+    opcoes={["Same route and same time; A* settled roughly half as many intersections", "A* found a faster route because it aims at the goal", "Dijkstra finished first because it does less work per intersection"]}
+    correta={0}
+    revelacao="Both are exact: with an admissible heuristic A* cannot return a slower route than Dijkstra. What the guess buys is focus — on this trip A* settles about 865 intersections against about 1 800 for Dijkstra."
+  />
+</AlgoPagina>
+<SiteFooter />
+</Base>

@@ -157,6 +157,9 @@ importers:
       '@ovh/depth-ui':
         specifier: workspace:*
         version: link:../depth-ui
+      '@ovh/motion':
+        specifier: workspace:*
+        version: link:../motion
 
   packages/cpu-domain:
     dependencies:

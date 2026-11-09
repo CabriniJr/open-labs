@@ -11,11 +11,12 @@ apiVersion: openlabs/handbook/v1
 id: algorithms
 name: Algorithms Visual Handbook
 subject: algorithms
-tagline: An algorithm is a system of parts. Watch the items move.
+tagline: Logic and algorithms as a course you can run — every claim measured, every cost counted.
 blurb: >-
-  A stack is a box with things in it; a queue is a belt with a policy; a sort is
-  a load changing places. Every model here runs, and the answer comes out of
-  parts moving — never out of a script.
+  A stack is a box; a sort is a load changing places; a map is a graph. Five
+  sorting algorithms race on one clock, six complexity classes are counted as n
+  doubles, and BFS, greedy, Dijkstra and A* cross the same city. Every model here
+  runs, and the answer comes out of it — never out of a script.
 model: algo.model
 stage: building
 
@@ -42,8 +43,10 @@ theme:
     processor: "#c4a7f7"
     species: ["#c4a7f7", "#22d3ee", "#e3b341", "#3fb950"]
 
-# As fases sobem pela mesma escada de sempre: primeiro a estrutura que guarda,
-# depois o algoritmo que a usa, depois o algoritmo que decide.
+# As fases são a grade de uma matéria de lógica e algoritmos: a estrutura que
+# guarda, o custo de usá-la, a ordenação como a primeira corrida entre classes,
+# o grafo como a estrutura que modela o mundo, os caminhos nele, e as duas
+# formas de decidir — a gulosa e a que lembra. Cada lab mede o que afirma.
 phases:
   - number: 1
     title: What holds the data
@@ -52,12 +55,21 @@ phases:
     title: One pass at a time
     line: Evaluation and traversal, as items travelling between parts.
   - number: 3
-    title: Sorting
-    line: The same load, changing places — and what each swap costs.
+    title: How work grows
+    line: "O(1) to O(2ⁿ), counted by real algorithms — and the doubling test that names the class."
   - number: 4
+    title: Sorting
+    line: Scattered bars, eight algorithms, three classes racing on one clock — with sound.
+  - number: 5
+    title: Graphs
+    line: Points and the lines between them, and the two ways a program stores them.
+  - number: 6
+    title: Paths through a graph
+    line: Six searches race across the real streets of São Paulo — same loop, different “best”.
+  - number: 7
     title: Greedy
     line: Deciding with what is in front of you, and when that is enough.
-  - number: 5
+  - number: 8
     title: Dynamic programming
     line: A table that remembers, so the same work is never done twice.
 
@@ -75,18 +87,30 @@ articles:
     title: Postfix needs no parentheses
     status: coming
     phase: 2
+  - id: big-o-is-a-doubling
+    title: Big-O is what happens when n doubles
+    status: coming
+    phase: 3
   - id: what-a-swap-costs
     title: What a swap costs
     status: coming
-    phase: 3
+    phase: 4
+  - id: a-map-is-a-graph
+    title: A map is a graph
+    status: coming
+    phase: 5
+  - id: dijkstra-is-greedy
+    title: Dijkstra is greedy, on the right thing
+    status: coming
+    phase: 6
   - id: when-greedy-is-right
     title: When greedy is right
     status: coming
-    phase: 4
+    phase: 7
   - id: the-table-that-remembers
     title: The table that remembers
     status: coming
-    phase: 5
+    phase: 8
 
 labs:
   - id: rpn
@@ -98,15 +122,32 @@ labs:
     title: A queue, and what fills it
     status: coming
     phase: 1
-  - id: sorting
-    title: Sorting, swap by swap
-    status: coming
+  - id: how-work-grows
+    title: "Six ways to grow: O(1) to O(2ⁿ), measured"
+    status: available
     phase: 3
+    href: labs/how-work-grows
+  - id: sorting
+    title: "Sorting, swap by swap: eight algorithms, three classes"
+    status: available
+    phase: 4
+    href: labs/sorting-race
+  - id: what-is-a-graph
+    title: "What a graph is: two points and a line"
+    status: available
+    phase: 5
+    href: labs/what-is-a-graph
+  - id: shortest-path
+    title: Shortest paths on the real streets of São Paulo
+    status: available
+    phase: 6
+    href: labs/shortest-path
   - id: greedy
     title: Greedy, and the case it misses
-    status: coming
-    phase: 4
+    status: available
+    phase: 7
+    href: labs/greedy-change
   - id: dynamic
     title: The table that remembers
     status: coming
-    phase: 5
+    phase: 8
