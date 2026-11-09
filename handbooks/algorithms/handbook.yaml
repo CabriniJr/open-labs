@@ -59,13 +59,13 @@ phases:
     line: "O(1) to O(2ⁿ), counted by real algorithms — and the doubling test that names the class."
   - number: 4
     title: Sorting
-    line: The same load, changing places — five algorithms racing on one clock.
+    line: Scattered bars, eight algorithms, three classes racing on one clock — with sound.
   - number: 5
     title: Graphs
     line: Points and the lines between them, and the two ways a program stores them.
   - number: 6
     title: Paths through a graph
-    line: BFS, greedy, Dijkstra and A* on the same city map — same loop, different “best”.
+    line: Six searches race across the real streets of São Paulo — same loop, different “best”.
   - number: 7
     title: Greedy
     line: Deciding with what is in front of you, and when that is enough.
@@ -128,7 +128,7 @@ labs:
     phase: 3
     href: labs/how-work-grows
   - id: sorting
-    title: Sorting, swap by swap
+    title: "Sorting, swap by swap: eight algorithms, three classes"
     status: available
     phase: 4
     href: labs/sorting-race
@@ -138,7 +138,7 @@ labs:
     phase: 5
     href: labs/what-is-a-graph
   - id: shortest-path
-    title: "Four ways across a city: BFS, greedy, Dijkstra and A*"
+    title: Shortest paths on the real streets of São Paulo
     status: available
     phase: 6
     href: labs/shortest-path

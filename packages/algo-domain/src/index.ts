@@ -17,10 +17,8 @@ export { ROTULOS } from "./labels.js";
 // O curso: custo, ordenação, grafos, caminhos e o guloso contra a tabela.
 export { embaralhado, gerador, inteiroEntre } from "./semente.js";
 export { ICONES_ALGO } from "./icones.js";
-export { ALGORITMOS, custo, entrada, ErroDeVetor, FICHAS, FORMATO_ROTULO, FORMATOS, instante, lerVetor, MAIOR_MEDIDO, MAIOR_NA_TELA, ordenar, podio } from "./ordenacao/ordenacao.js";
-export type { Algoritmo, Colocacao, Fase, FichaDoAlgoritmo, Formato, Instante, Operacao, Traco } from "./ordenacao/ordenacao.js";
-export { ALTURA_DA_ORDENACAO, filmeDaOrdenacao, FORMATOS_DO_FILME, LARGURA_DA_ORDENACAO, N_DO_FILME } from "./ordenacao/filme.js";
-export type { DetalheDaOrdenacao } from "./ordenacao/filme.js";
+export { ALGORITMOS, aplicar as aplicarOperacao, CLASSES_DE_ORDENACAO, curvaDeOrdenacao, custo, entrada, ErroDeVetor, FICHAS, FORMATO_ROTULO, FORMATOS, instante, lerVetor, MAIOR_MEDIDO, MAIOR_NA_TELA, ordenar, podio } from "./ordenacao/ordenacao.js";
+export type { Algoritmo, ClasseDeOrdenacao, Colocacao, Fase, FichaDoAlgoritmo, Formato, Instante, Operacao, Traco } from "./ordenacao/ordenacao.js";
 export { buscaBinaria, buscaLinear, CLASSES, curva, duracao, FICHAS_DAS_CLASSES, lerPosicao, medir, somaDeSubconjunto, TAMANHOS, tempoEstimado } from "./crescimento/crescimento.js";
 export type { Classe, FichaDaClasse, Medida } from "./crescimento/crescimento.js";
 export { filmeDoCrescimento, linhasEm, NS_DO_FILME, TOM_DA_CLASSE } from "./crescimento/filme.js";
@@ -50,11 +48,19 @@ export {
 export type { Aresta, Grafo, Graus, No, Vizinho } from "./grafo/grafo.js";
 export { filmeDoGrafo } from "./grafo/filme.js";
 export type { DetalheDoGrafo } from "./grafo/filme.js";
-export { buscar, buscarNoMapa, BUSCAS, chaveDaRua, ErroDeBusca, FICHAS_DAS_BUSCAS, fotoDaBusca, LUGARES, mapaDaCidade, reta, ruaEntre, velocidadeDe } from "./caminho/caminho.js";
-export type { Busca, Evento, FichaDaBusca, FotoDaBusca, ItemDaFronteira, Lugar, Mapa, Resultado, Rua } from "./caminho/caminho.js";
-export { ALTURA_DO_MAPA, filmeDaBusca, LARGURA_DO_MAPA, placarDe } from "./caminho/filme.js";
-export type { DetalheDaBusca, LinhaDoPlacar } from "./caminho/filme.js";
+// O mapa de verdade: São Paulo, do OpenStreetMap. Os dados (260 KB) ficam em
+// `mapa-real/dados.ts`, importado à parte para o site carregar só quando o lab abre.
+export { cidadeDe, linhaReta, maisPerto, tempoEmTexto, tracado } from "./mapa-real/cidade.js";
+export type { Cidade, DadosDaCidade, PontoDeInteresse } from "./mapa-real/cidade.js";
+export { buscarNaCidade, BUSCAS_REAIS, CLASSES_DE_BUSCA, FICHAS_REAIS, trabalhoPorDistancia } from "./mapa-real/buscas.js";
+export type { BuscaReal, ClasseDeBusca, FichaDaBuscaReal, PassoDaBusca, ResultadoReal } from "./mapa-real/buscas.js";
 export { ErroDeTroco, guloso, lerMoedas, MAIOR_VALOR, MAIS_MOEDAS, menorContraexemplo, otimo, SISTEMAS, tabela } from "./troco/troco.js";
 export type { PassoGuloso, SistemaDeMoedas, Tabela, Troco } from "./troco/troco.js";
 export { filmeDoTroco, VALOR_DO_SISTEMA } from "./troco/filme.js";
 export type { DetalheDoTroco } from "./troco/filme.js";
+
+/** Carrega o mapa de São Paulo à parte (o site só baixa os 260 KB quando o lab abre). */
+export async function carregarSaoPaulo(): Promise<import("./mapa-real/cidade.js").Cidade> {
+  const m = await import("./mapa-real/dados.js");
+  return m.saoPaulo();
+}

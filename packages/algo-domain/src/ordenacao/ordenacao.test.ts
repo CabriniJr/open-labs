@@ -1,6 +1,6 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
-import { ALGORITMOS, custo, entrada, ErroDeVetor, FORMATOS, instante, lerVetor, ordenar, podio } from "./ordenacao.js";
+import { ALGORITMOS, aplicar, CLASSES_DE_ORDENACAO, curvaDeOrdenacao, custo, entrada, ErroDeVetor, FICHAS, FORMATOS, instante, lerVetor, ordenar, podio } from "./ordenacao.js";
 
 describe("ordenação", () => {
   it("cada algoritmo ordena igual ao sort da linguagem, em todo formato", () => {
@@ -29,7 +29,7 @@ describe("ordenação", () => {
     fc.assert(
       fc.property(fc.array(fc.integer({ min: 0, max: 9 }), { minLength: 1, maxLength: 16 }), fc.nat(), (v, k) => {
         const ordenada = [...v].sort((a, b) => a - b);
-        for (const a of ["bubble", "insertion", "selection", "quick"] as const) {
+        for (const a of ["bubble", "insertion", "selection", "quick", "heap"] as const) {
           const t = ordenar(a, v);
           const passo = t.ops.length === 0 ? 0 : k % (t.ops.length + 1);
           expect([...instante(t, passo).v].sort((x, y) => x - y)).toEqual(ordenada);
@@ -43,7 +43,7 @@ describe("ordenação", () => {
       const t = ordenar(a, entrada("random", 24, 5));
       const fim = instante(t, t.ops.length);
       expect(fim.v).toEqual(t.saida);
-      expect([fim.comparacoes, fim.trocas, fim.escritas]).toEqual([t.comparacoes, t.trocas, t.escritas]);
+      expect([fim.comparacoes, fim.trocas, fim.escritas, fim.leituras]).toEqual([t.comparacoes, t.trocas, t.escritas, t.leituras]);
       expect(fim.terminou).toBe(true);
     }
   });
@@ -81,9 +81,10 @@ describe("ordenação", () => {
   });
 
   it("no aleatório, os O(n log n) vencem os O(n²); no ordenado, bolha e inserção vencem", () => {
-    const aleatorio = podio(ALGORITMOS.map((a) => ordenar(a, entrada("random", 64, 7))));
-    expect(aleatorio.slice(0, 2).map((c) => c.algoritmo).sort()).toEqual(["merge", "quick"]);
-    const ordenado = podio(ALGORITMOS.map((a) => ordenar(a, entrada("sorted", 64))));
+    const comparativos = ALGORITMOS.filter((a) => FICHAS[a].classe !== "linear");
+    const aleatorio = podio(comparativos.map((a) => ordenar(a, entrada("random", 64, 7))));
+    expect(aleatorio.slice(0, 3).map((c) => c.algoritmo).sort()).toEqual(["heap", "merge", "quick"]);
+    const ordenado = podio(comparativos.map((a) => ordenar(a, entrada("sorted", 64))));
     expect(ordenado.slice(0, 2).map((c) => c.algoritmo).sort()).toEqual(["bubble", "insertion"]);
     expect(ordenado.at(-1)!.algoritmo === "quick" || ordenado.at(-1)!.algoritmo === "selection").toBe(true);
   });
@@ -107,8 +108,61 @@ describe("ordenação", () => {
     expect(() => lerVetor("  ")).toThrow(ErroDeVetor);
     expect(() => lerVetor("4 x 2")).toThrow(/item 2/);
     expect(() => lerVetor("1.5")).toThrow(/item 1/);
-    expect(() => lerVetor(Array.from({ length: 65 }, () => "1").join(" "))).toThrow(/at most 64/);
+    expect(() => lerVetor(Array.from({ length: 257 }, () => "1").join(" "))).toThrow(/at most 256/);
     expect(() => entrada("random", 0)).toThrow(ErroDeVetor);
     expect(() => entrada("random", 5000)).toThrow(/4096/);
+  });
+
+  it("a classe O(n) não compara nada: só lê e escreve, e cresce linear", () => {
+    for (const a of CLASSES_DE_ORDENACAO.linear.algoritmos) {
+      const t = ordenar(a, entrada("random", 200, 3));
+      expect(t.comparacoes).toBe(0);
+      expect(t.trocas).toBe(0);
+      expect(t.leituras).toBeGreaterThan(0);
+      // Mesmo número de dígitos nos dois tamanhos (150 e 300): o radix é O(d·n),
+      // e d cresce com o maior valor — de 512 para 1024 ele passa de 3 a 4 dígitos.
+      const [p, q] = curvaDeOrdenacao(a, "random", [150, 300]);
+      expect(q!.custo / p!.custo).toBeCloseTo(2, 1);
+    }
+    const [r3, r4] = curvaDeOrdenacao("radix", "random", [512, 1024]);
+    expect(r4!.custo / r3!.custo).toBeCloseTo((2 * 4) / 3, 1);
+    // Counting: duas leituras e uma escrita por item.
+    const t = ordenar("counting", entrada("random", 100, 1));
+    expect([t.leituras, t.escritas]).toEqual([200, 100]);
+  });
+
+  it("as classes: a quadrática quadruplica, a n log n passa pouco do dobro", () => {
+    for (const a of CLASSES_DE_ORDENACAO.quadratic.algoritmos) {
+      const [p, q] = curvaDeOrdenacao(a, "random", [512, 1024]);
+      expect(q!.custo / p!.custo, a).toBeGreaterThan(3.5);
+    }
+    for (const a of CLASSES_DE_ORDENACAO.linearithmic.algoritmos) {
+      const [p, q] = curvaDeOrdenacao(a, "random", [512, 1024]);
+      expect(q!.custo / p!.custo, a).toBeLessThan(2.4);
+    }
+  });
+
+  it("toda operação aponta para uma linha que existe no pseudocódigo do algoritmo", () => {
+    for (const a of ALGORITMOS) {
+      const t = ordenar(a, entrada("random", 40, 2));
+      const ultima = FICHAS[a].pseudo.length;
+      for (const op of t.ops) {
+        expect(op.linha, a).toBeGreaterThanOrEqual(1);
+        const existe = FICHAS[a].pseudo.some((l) => l.trimStart().startsWith(`${op.linha} `));
+        expect(existe, `${a} linha ${op.linha} de ${ultima}`).toBe(true);
+      }
+    }
+  });
+
+  it("aplicar uma operação por vez dá o mesmo que repetir a fita", () => {
+    const t = ordenar("radix", entrada("random", 50, 4));
+    const v = [...t.entrada];
+    for (const op of t.ops) aplicar(v, op);
+    expect(v).toEqual(t.saida);
+  });
+
+  it("negativos e repetidos também: counting e radix deslocam a faixa", () => {
+    const v = [5, -3, 0, -3, 12, 7, -10];
+    for (const a of ALGORITMOS) expect(ordenar(a, v).saida, a).toEqual([...v].sort((x, y) => x - y));
   });
 });

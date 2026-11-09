@@ -7,17 +7,18 @@ import { CorridaModos } from "../../components/CorridaLab.tsx";
 import { Predicao } from "../../components/Predicao.tsx";
 ---
 
-<Base domain="algorithms" title="Sorting, swap by swap: five algorithms race on the same input — OpenLabs" description="Bubble, insertion, selection, merge and quicksort race on the same array with the same clock: one step per comparison, swap or write. Change the input shape and the podium changes. Then time them for real on your device.">
+<Base domain="algorithms" title="Sorting, swap by swap: eight algorithms, three classes — OpenLabs" description="Eight sorting algorithms in three classes — O(n²), O(n log n) and the non-comparison O(n) sorts — race on the same scattered bars with the same clock. Hear every comparison, follow the pseudocode line by line, and watch the Big-O curves grow underneath.">
 <SiteNav current="labs" />
 <AlgoPagina
-  titulo="Sorting, swap by swap: five algorithms race on the same input"
+  titulo="Sorting, swap by swap: eight algorithms, three classes"
   href="labs/sorting-race"
-  nota={["Same array. Same clock.", "One step = one comparison, swap or write.", "The input decides the podium."]}
+  nota={["Same array. Same clock.", "Race inside a class to see constants; across classes to see exponents.", "The pitch is the value being touched."]}
   quebre={[
     { b: "Set the input to “already sorted”.", texto: "Bubble and insertion finish almost instantly — one pass, no swaps — while quicksort, with its last-item pivot, does the full n(n−1)/2 comparisons. The fastest algorithm on random data is the slowest here." },
     { b: "Set it to “reversed”.", texto: "Insertion now swaps every pair: n(n−1)/2 swaps. Selection does exactly the same number of comparisons as on any other input — it never looks at what it has already learned." },
     { b: "Type 3 3 3 3 3 3 3 3.", texto: "Nothing to do, and you can see who knows it: bubble stops after one pass; selection still scans everything." },
-    { b: "Measure 4 000 items on this device.", texto: "The step counts become milliseconds. Merge sort pays for its speed with an auxiliary array as big as the input — the only lane whose extra memory is not zero." },
+    { b: "Race the O(n + k) class against quicksort at 256 items.", texto: "Counting and radix sort never compare two items — the compare counter stays at zero. They beat the n log n barrier because the values are small whole numbers; that barrier only binds sorts that compare." },
+    { b: "Pick “nearly sorted” and race insertion against heapsort.", texto: "Insertion sort only pays for what is out of place and finishes far ahead; heapsort does its full n log n whatever the input." },
   ]}
   erros={[
     { crenca: "Quicksort is always the fastest.", verdade: "On average it is O(n log n) with small constants. With a naive pivot on sorted input it is O(n²) — the race shows it finishing last." },
@@ -25,16 +26,18 @@ import { Predicao } from "../../components/Predicao.tsx";
     { crenca: "Fewer comparisons always means faster.", verdade: "Merge sort makes few comparisons but writes every item at every level, and needs n extra slots. The table counts swaps and writes separately so you can see the trade." },
     { crenca: "The algorithm decides the cost on its own.", verdade: "The input decides it as much. Every row of the podium can change by switching from random to sorted to reversed." },
   ]}
-  fronteira="Every step costs the same here, which real hardware does not do: a write can cost more than a comparison, and memory access patterns (cache) matter. The quicksort uses the last item as pivot on purpose, to show its worst case; production quicksorts choose pivots more carefully and switch to insertion sort for small runs. Stability, heapsort, radix sort and parallel sorts are out of scope."
+  fronteira="Every step costs the same here, which real hardware does not do: a write can cost more than a comparison, and memory access patterns (cache) matter. The quicksort uses the last item as pivot on purpose, to show its worst case; production quicksorts choose pivots more carefully and switch to insertion sort for small runs. Radix sort works on the decimal digits of small whole numbers; stability and parallel sorts are out of scope."
   ligacoes={[
     { href: "labs/how-work-grows", texto: "Six ways to grow — where O(n²) and O(n log n) come from" },
     { href: "labs/rpn", texto: "A stack machine — the stack that quicksort's recursion hides" },
   ]}
 >
   <p>
-    Five algorithms, one array, one clock. Every comparison, every swap and every write
-    costs one step, and all lanes advance together — so the lane that finishes first is
-    the one that did the least work on <i>this</i> input.
+    Eight algorithms in three classes, one array, one clock. Every comparison, swap,
+    write or read costs one step, and all lanes advance together — so the lane that
+    finishes first is the one that did the least work on <i>this</i> input. Race
+    algorithms of the same class and the difference is a constant; race across classes
+    and it is the exponent, and it grows with every item you add.
   </p>
   <p>
     What separates them is not the operation. They all compare and move items. It is

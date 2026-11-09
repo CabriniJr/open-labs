@@ -40,16 +40,17 @@ lado a lado, e cinco palcos do `depth-ui` no mesmo relógio não cabem na tela.
 5. **Recusa onde a violação aparece**, com a posição e o porquê (vetor com item
    não numérico, aresta de um ponto nele mesmo, rua negativa no Dijkstra, moeda
    repetida).
-6. **A altura no 3D é tempo de caminho** (lab do mapa). Nos outros labs não há
-   3D: barras e grafos planos não ganham nada com profundidade.
+6. **Som tem sentido ou não existe.** Na ordenação o tom é o valor tocado; no
+   mapa, a distância já percorrida. Nada toca antes de um gesto do leitor, e o
+   botão de som lembra a escolha (`lib/som.ts`).
+7. **Competição é entre classes.** Toda corrida oferece as classes prontas: dentro
+   de uma, a disputa é de constantes; entre classes, de expoente.
 
 ## Ícones do handbook (`ICONES_ALGO`, `packages/algo-domain/src/icones.ts`)
 
 | ícone | papel | onde aparece |
 |---|---|---|
-| `casa` | origem da busca | mapa |
-| `porto` | destino da busca | mapa |
-| `lugar` | um lugar qualquer do mapa | mapa |
+| `casa`, `porto`, `lugar` | origem, destino e lugar | *sem uso* desde que o mapa virou canvas real (as pontas são discos coloridos) |
 | `auxiliar` | memória extra (a fita do merge) | corrida |
 | `contador` | a conta de operações | crescimento |
 | `moeda`, `tabela` | a bandeja de moedas, a tabela da PD | troco |
@@ -85,15 +86,21 @@ recusa como parâmetro, ocupação por `Message.weight`.
 
 ### Fase 4 — Sorting
 
-#### sorting — *Sorting, swap by swap* (`labs/sorting-race`) · disponível (filme + livre)
-- **Pergunta:** o que separa dois algoritmos de ordenação?
-- **Tese:** não é a operação, é quem decide o próximo par.
-- **Showcase:** oito barras, um capítulo por fase da fita (passada, intercalação,
-  partição); comparar acende, trocar cruza, o merge desce para a fita auxiliar.
-- **Simulação:** cinco pistas no mesmo relógio (um passo = uma comparação, troca
-  ou escrita), formato da entrada, lista própria, pódio, e medição de tempo real
-  com n até 4 000.
-- **Quebre:** vetor ordenado põe o quicksort (pivô no último) em último lugar.
+#### sorting — *Sorting, swap by swap: eight algorithms, three classes* (`labs/sorting-race`) · disponível (canvas + som + livre)
+- **Pergunta:** o que separa dois algoritmos de ordenação — e duas classes?
+- **Classes que competem:** O(n²) (bubble, insertion, selection), O(n log n)
+  (merge, quick, heap) e O(n + k), que não compara (counting, radix).
+- **Mídia:** barras em canvas, cor = valor (rampa das espécies), a operação de
+  agora acesa (clara ao comparar, viva ao trocar/escrever, alta ao ler), onda de
+  conferência no fim. **Som:** o tom é o VALOR tocado (escala subindo quando
+  ordena), pan por pista, arpejo para o vencedor (`lib/som.ts`).
+- **Showcase:** seis capítulos narrados com corrida automática — as três classes,
+  "o expoente vence a constante", entrada ordenada, quase ordenada, sem comparação.
+- **Simulação:** até 4 pistas no mesmo relógio, classe pronta ou escolha livre,
+  n até 256, formato, lista própria, pseudocódigo com a linha acesa, gráfico ao
+  vivo (% no lugar final) e Big-O log–log com as fórmulas tracejadas.
+- **Por que canvas e não o motor de filme:** 256 barras × 4 pistas × 60 quadros;
+  o filme em SVG é para dezenas de peças, não milhares de retângulos por segundo.
 
 ### Fase 5 — Graphs
 
@@ -107,16 +114,30 @@ recusa como parâmetro, ocupação por `Message.weight`.
 
 ### Fase 6 — Paths through a graph
 
-#### shortest-path — *Four ways across a city: BFS, greedy, Dijkstra and A** · disponível (filme + 3D + livre)
-- **Pergunta:** por que "o mais perto" e "o com menos ruas" não são o mais rápido?
-- **Tese:** as quatro buscas são o mesmo laço; só muda o que "melhor" quer dizer.
-- **Mapa:** 12 lugares, 20 ruas. Duas armadilhas desenhadas: o centro
-  congestionado + a balsa lenta (pegam o guloso: 68 min) e a via expressa
-  congestionada com poucas ruas (pega a BFS: 3 ruas, 55 min). Dijkstra e A*:
-  26 min; A* examina 6 lugares contra 11.
-- **3D:** a altura de um lugar resolvido é o tempo para chegar nele.
-- **Simulação:** origem, destino, congestionar rua por clique, balsa mágica
-  negativa (Dijkstra e A* recusam e citam Bellman-Ford), passo a passo, placar.
+#### shortest-path — *Shortest paths on the real streets of São Paulo* · disponível (canvas + som + livre)
+- **Pergunta:** por que "o mais perto" e "o com menos esquinas" não são o mais rápido?
+- **O mapa é real:** OpenStreetMap, Paulista ao Centro (≈ 4 × 4,4 km), 1 964
+  cruzamentos, 3 689 arestas dirigidas com mão única. Extraído por
+  `scripts/osm-mapa-cidade.py` (pela API oficial do OSM, uma vez) para
+  `packages/algo-domain/src/mapa-real/sao-paulo.json`; o site carrega sob demanda
+  (`carregarSaoPaulo()`). Crédito ODbL na página. **Google Maps não serve**: os
+  termos proíbem extrair a malha viária.
+- **Classes que competem:** exatos (Dijkstra, A*, Dijkstra bidirecional), rápidos
+  sem garantia (guloso, A* ponderado ε = 2), cego para o tempo (BFS).
+- **Mídia:** três canvas empilhados por pista (base, pintura incremental,
+  sobreposição); a cor é o tempo até chegar, a bidirecional pinta a onda do
+  destino em tom frio; rastro luminoso, pulso no cruzamento atual, rota animada.
+  **Som:** tom = distância já percorrida, pan por pista, arpejo na chegada.
+- **Showcase:** seis capítulos com pares reais — MASP → Mercadão, Sírio-Libanês →
+  Luz (A* 119 × Dijkstra 941), Bixiga → São Bento (bidirecional vence o A*),
+  guloso errando por 3 min 49 s, A* com pressa, BFS contando esquinas.
+- **Simulação:** origem/destino por ponto de interesse ou clique no mapa, até 4
+  pistas, pseudocódigo aceso, gráfico ao vivo ("% do caminho alcançado") e Big-O
+  do mapa (resolvidos × distância em 48 viagens: o Dijkstra cresce com a área).
+- **Desempenho conhecido:** 60 fps com CPU normal; com CPU 4× mais lenta no
+  Chromium sem tela (pintura por software), ~26 fps na simulação com 3 pistas
+  largas e ~49 fps no showcase. O gargalo medido é a rasterização dos canvas
+  (sem as pistas: 60 fps). Em aparelho com GPU a pintura é acelerada.
 
 ### Fase 7 — Greedy
 

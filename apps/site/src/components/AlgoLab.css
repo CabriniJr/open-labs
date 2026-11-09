@@ -132,3 +132,90 @@
 .algo-cartao h3 { margin: 0; font-size: 1rem; }
 .algo .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .algo-grafo[data-ferramenta="point"] { cursor: crosshair; }
+
+/* ================================================================ as corridas (mapa real e barras) */
+
+/* Barra de progresso viva: a cor anda da espécie fria à viva conforme enche,
+   listras correm por dentro enquanto anda, e um pulso marca a chegada. Só
+   transform, opacity e background-position se animam — nenhum filtro. */
+.pv { --p: 0; position: relative; height: 1.15rem; border-radius: 999px; overflow: hidden; background: color-mix(in oklab, var(--ink) 9%, var(--paper)); border: 1px solid var(--rule); }
+.pv__barra {
+  position: absolute; inset: 0 auto 0 0; width: calc(var(--p) * 100%);
+  background-color: color-mix(in oklab, var(--dui-especie-4) calc((1 - var(--p)) * 100%), var(--dui-viva));
+  background-image: linear-gradient(115deg, transparent 0 30%, color-mix(in oklab, var(--paper) 35%, transparent) 30% 50%, transparent 50% 80%, color-mix(in oklab, var(--paper) 35%, transparent) 80%);
+  background-size: 2.2rem 100%;
+  animation: pv-listras 0.9s linear infinite;
+  transition: width 0.12s linear;
+}
+.pv[data-fim] .pv__barra { width: 100%; background-color: var(--sig-ok); background-image: none; animation: none; }
+.pv[data-fim]::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background: var(--sig-ok); opacity: 0; animation: pv-chegada 0.7s ease-out 1; }
+.pv__texto { position: relative; z-index: 1; display: block; padding-inline: 0.6rem; font-size: 0.72rem; line-height: 1.1rem; color: var(--ink); text-shadow: 0 0 3px var(--paper); }
+@keyframes pv-listras { to { background-position: 2.2rem 0; } }
+@keyframes pv-chegada { 0% { opacity: 0.7; transform: scaleY(1); } 100% { opacity: 0; transform: scaleY(1.8); } }
+@media (prefers-reduced-motion: reduce) { .pv__barra { animation: none; transition: none; } .pv[data-fim]::after { animation: none; } }
+
+/* O pseudocódigo, no estilo dos livros-texto, com a linha que roda acesa. */
+.pseudo { margin: 0; }
+.pseudo__linhas { margin: 0; padding: 10px 0; list-style: none; border: 1px solid var(--rule); border-radius: 8px; background: color-mix(in oklab, var(--ink) 4%, var(--paper)); font-size: 0.78rem; line-height: 1.6; overflow-x: auto; }
+.pseudo__linhas li { position: relative; padding: 0 12px; white-space: pre; color: var(--ink-muted); }
+.pseudo__linhas li[data-cabeca] { color: var(--ink); font-weight: 700; }
+.pseudo__linhas li::before { content: ""; position: absolute; inset: 0; background: color-mix(in oklab, var(--accent) 22%, transparent); border-left: 3px solid var(--accent); transform: scaleX(0); transform-origin: left; transition: transform 0.12s ease-out; }
+.pseudo__linhas li[data-acesa] { color: var(--ink); font-weight: 700; }
+.pseudo__linhas li[data-acesa]::before { transform: scaleX(1); }
+.pseudo__linhas li > * { position: relative; }
+
+/* O gráfico que cresce. */
+.gv { margin: 0 0 var(--space-2); }
+.gv__legenda { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 6px 0 0; padding: 0; list-style: none; font-size: 0.78rem; color: var(--ink-muted); }
+
+/* O narrador do showcase: palco à esquerda, capítulos à direita. */
+.narrador { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-2); container-type: inline-size; }
+@container (min-width: 60rem) { .narrador { grid-template-columns: minmax(0, 2.3fr) minmax(16rem, 1fr); } }
+.narrador__palco { display: grid; gap: var(--space-2); min-width: 0; }
+.narrador__lado { display: grid; gap: var(--space-2); align-content: start; min-width: 0; }
+.narrador__caps { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.narrador__caps button { width: 100%; padding: 7px 10px; border: 1px solid var(--rule); border-radius: 8px; background: var(--paper); color: var(--ink-muted); font: inherit; font-size: 0.85rem; text-align: start; cursor: pointer; transition: background-color 0.15s, color 0.15s; }
+.narrador__caps button[aria-current="step"] { border-color: var(--accent); background: color-mix(in oklab, var(--accent) 14%, var(--paper)); color: var(--ink); font-weight: 600; }
+.narrador__caps button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.narrador__caps .mono { color: var(--accent); margin-right: 6px; }
+.narrador__texto { padding: 12px 14px; border: 1px solid var(--rule); border-radius: 10px; background: var(--paper); }
+.narrador__texto h3 { margin: 0 0 6px; font-size: 1.05rem; }
+.narrador__texto p { margin: 0 0 8px; font-size: 0.92rem; }
+.narrador__texto ul { margin: 0; padding-left: 1.1rem; font-size: 0.84rem; color: var(--ink-muted); }
+.algo-btn--grande { padding: 9px 20px; font-size: 0.95rem; font-weight: 600; background: var(--accent); color: var(--paper); }
+.algo-btn--grande:hover { background: color-mix(in oklab, var(--accent) 85%, var(--ink)); }
+.algo-som { white-space: nowrap; }
+
+/* As pistas do mapa. */
+.mapa-pistas, .barras-pistas { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); }
+@container (min-width: 44rem) { .mapa-pistas[data-n="2"], .mapa-pistas[data-n="3"], .mapa-pistas[data-n="4"], .barras-pistas[data-n="2"], .barras-pistas[data-n="4"] { grid-template-columns: repeat(2, minmax(0, 1fr)); } .barras-pistas[data-n="3"] { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.algo { container-type: inline-size; }
+.mapa-cartao, .barras-cartao { display: grid; gap: 8px; padding: 10px; border: 1px solid var(--rule); border-top: 4px solid var(--algo-c); border-radius: 10px; background: var(--paper); min-width: 0; transition: border-color 0.3s; }
+.mapa-cartao[data-fim], .barras-cartao[data-fim] { border-color: color-mix(in oklab, var(--sig-ok) 55%, var(--rule)); border-top-color: var(--algo-c); }
+.mapa-cartao header, .barras-cartao header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 4px 8px; }
+.mapa-cartao header b, .barras-cartao header b { font-family: var(--font-display, var(--font-body)); color: color-mix(in oklab, var(--algo-c) 55%, var(--ink)); }
+.mapa-cartao header small, .barras-cartao header small { color: var(--ink-muted); }
+.mapa-pista, .barras-pista { width: 100%; min-width: 0; }
+.mapa-tela, .barras-tela { display: block; width: 100%; border-radius: 6px; }
+.mapa-tela[data-clicavel] { cursor: crosshair; touch-action: manipulation; }
+.mapa-numeros { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px 12px; margin: 0; font-size: 0.76rem; }
+.mapa-numeros div { display: flex; justify-content: space-between; gap: 6px; border-bottom: 1px solid color-mix(in oklab, var(--rule) 60%, transparent); }
+.mapa-numeros dt { color: var(--ink-muted); }
+.mapa-numeros dd { margin: 0; font-variant-numeric: tabular-nums; }
+.mapa-numeros dd[data-ruim] { color: var(--sig-drop); font-weight: 700; }
+.mapa-baixo { display: grid; gap: var(--space-2); grid-template-columns: minmax(0, 1fr); }
+@container (min-width: 56rem) { .mapa-baixo { grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); } }
+.mapa-baixo > div { display: grid; gap: 10px; align-content: start; min-width: 0; }
+.barras-pistas, .mapa-pistas { align-items: start; }
+.barras-cartao, .mapa-cartao { align-content: start; }
+.algo-cont { display: flex; flex-wrap: wrap; gap: 2px 12px; margin: 0; font-size: 0.78rem; color: var(--ink-muted); font-variant-numeric: tabular-nums; }
+.narrador__lado .pseudo { min-width: 0; }
+.narrador__lado .pseudo__linhas { max-width: 100%; }
+/* O pseudocódigo é texto pré-formatado: sem isto, a linha mais longa estica a coluna inteira
+   e a página rola de lado no celular. A rolagem fica dentro do bloco do código. */
+.mapa-baixo > div, .narrador__lado { grid-template-columns: minmax(0, 1fr); }
+.pseudo, .gv { min-width: 0; }
+.narrador__palco { align-content: start; }
+/* As três camadas do mapa, empilhadas: base, pintura e sobreposição. A base leva o fundo. */
+.mapa-pista { position: relative; }
+.mapa-pista .mapa-tela { position: absolute; inset: 0; }
