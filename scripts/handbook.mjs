@@ -155,7 +155,7 @@ function cmdNew() {
   if (lido.problemas.length > 0) {
     falhar(
       "o molde que acabei de escrever não passa no check — isto é defeito da ferramenta",
-      formato.relatoDeProblemas(join("handbooks", id), lido.problemas),
+      formato.relatoDeProblemas(`handbooks/${id}`, lido.problemas),
     );
   }
 }
@@ -174,7 +174,8 @@ function cmdCheck() {
     const lido = formato.lerSubmissao(dir, { raizDosArtigos: ARTIGOS });
     const extras = lido.handbook === undefined ? [] : conferirNoRepo(lido.handbook);
     const todos = [...lido.problemas, ...extras];
-    console.log(formato.relatoDeProblemas(join("handbooks", id), todos));
+    // O rótulo é para quem lê, igual em qualquer sistema: sempre com barra normal.
+    console.log(formato.relatoDeProblemas(`handbooks/${id}`, todos));
     problemas += todos.length;
   }
 
@@ -233,7 +234,7 @@ function cmdExport() {
   if (lido.handbook === undefined || lido.problemas.length > 0) {
     falhar(
       `não exporto um handbook que não passa no check`,
-      formato.relatoDeProblemas(join("handbooks", id), lido.problemas),
+      formato.relatoDeProblemas(`handbooks/${id}`, lido.problemas),
     );
   }
 

@@ -19,11 +19,11 @@ model: telecentre network · packet model
 stage: building
 
 # Quem mantém. É daqui que sai o CODEOWNERS deste diretório.
-# TODO(Rogerio): troque pelo seu usuário do GitHub e rode
+# Regerar o CODEOWNERS depois de mudar quem mantém:
 #   node scripts/handbook.mjs codeowners --write
 maintainers:
   - name: Rogerio
-    github: SEU-USUARIO-GITHUB
+    github: Rogerio-Arroyo
 
 theme:
   light:
