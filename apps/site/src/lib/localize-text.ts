@@ -15,14 +15,22 @@ function patterns(messages: Messages): Pattern[] {
   compiled.set(messages, result); return result;
 }
 
-/** Text only. No keys, HTML, code, URLs or author input are evaluated/rewritten. */
-export function localizeText(value: string, messages: Messages): string {
+/**
+ * Text only. No keys, HTML, code, URLs or author input are evaluated/rewritten.
+ *
+ * A pattern's slots are translated too: a model composes sentences out of
+ * sentences ("R1 drops it at {0}: {1}", where `{1}` is the rule's reason), and
+ * translating only the frame left half the sentence in the source language.
+ * The depth limit keeps a slot from being re-read as the frame it came from.
+ */
+export function localizeText(value: string, messages: Messages, depth = 0): string {
   const source = normalizeMessage(value); if (!source || !/[\p{L}]/u.test(source)) return value;
   let translated = messages[source];
   if (translated === undefined) for (const pattern of patterns(messages)) {
     if (!source.startsWith(pattern.prefix)) continue;
     const found = pattern.match.exec(source); if (!found) continue;
-    const values = new Map(pattern.slots.map((slot, index) => [slot, found[index + 1]!]));
+    const slot = (text: string) => (depth < 3 ? localizeText(text, messages, depth + 1) : text);
+    const values = new Map(pattern.slots.map((n, index) => [n, slot(found[index + 1]!)]));
     translated = pattern.target.replace(/\{(\d+)\}/gu, (_, slot: string) => values.get(Number(slot)) ?? `{${slot}}`); break;
   }
   if (translated === undefined || translated === source) return value;
