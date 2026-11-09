@@ -54,7 +54,9 @@ function garantirCompilado() {
   const atual = existsSync(saida) && statSync(saida).mtimeMs >= maisNova;
   if (atual) return saida;
 
-  const tsc = join(RAIZ, "node_modules", ".bin", "tsc");
+  // O compilador pelo próprio node, e não por `.bin/tsc`: no Windows o atalho é
+  // `tsc.cmd`, que `execFileSync` não executa, e o script quebrava fora do Linux.
+  const tsc = join(RAIZ, "node_modules", "typescript", "bin", "tsc");
   if (!existsSync(tsc)) {
     falhar(
       "o formato não está compilado e não achei o tsc",
@@ -62,7 +64,7 @@ function garantirCompilado() {
     );
   }
   try {
-    execFileSync(tsc, ["-b", PACOTE], { stdio: ["ignore", "pipe", "pipe"] });
+    execFileSync(process.execPath, [tsc, "-b", PACOTE], { stdio: ["ignore", "pipe", "pipe"] });
   } catch (erro) {
     const detalhe = [erro.stdout?.toString(), erro.stderr?.toString()].filter(Boolean).join("\n");
     falhar("não consegui compilar @ovh/handbook-format", detalhe.trim() || String(erro));
