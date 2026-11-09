@@ -12,6 +12,8 @@ import { cidr, ip, texto, vlsm, type Ipv4, type PedidoDeSubrede, type SetorId, t
  *
  * `X` é o número da equipe: a faixa é 192.168.X.0/24. Ele vive numa constante
  * só, e tudo — o plano, os comandos e o filme — é recalculado a partir dela.
+ * Não houve numeração oficial das equipes na GS 2026.2; 10 foi a escolha da
+ * equipe (08/11/2026), e é o mesmo número no .pkt e no PDF de entrega.
  */
 export const EQUIPE_PADRAO = 10;
 

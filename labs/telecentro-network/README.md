@@ -10,7 +10,9 @@ plan · R1 config · SW1 config · ISP config · Server, AP and hosts), gerados 
 `packages/network-domain`. Se o número da equipe mudar, mude `EQUIPE_PADRAO` em
 `packages/network-domain/src/telecentro/topologia.ts` e copie de novo.
 
-> Número da equipe provisório: **X = 10** → faixa `192.168.10.0/24`.
+> Número da equipe: **X = 10** → faixa `192.168.10.0/24`. Não houve numeração
+> oficial das equipes; o número foi escolhido pela equipe e é o mesmo no `.pkt`,
+> no PDF e no lab.
 
 ## 1. Requisitos do enunciado → onde estão
 
