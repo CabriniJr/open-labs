@@ -8,7 +8,7 @@ import { expect, test } from "@playwright/test";
 test("an article opens from the handbook and carries its phase", async ({ page }) => {
   await page.goto("handbooks/cpu/");
 
-  await page.getByRole("link", { name: "From transistor to adder" }).click();
+  await page.locator("main").getByRole("link", { name: "From transistor to adder" }).click();
 
   await expect(page.getByRole("heading", { level: 1 })).toContainText("From transistor to adder");
   await expect(page.locator(".article__eyebrow")).toContainText("phase 2");
