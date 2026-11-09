@@ -3,7 +3,7 @@ import { MotionPlayer, type MotionView } from "@ovh/motion/react";
 import { lazy, Suspense, useMemo, useState } from "react";
 import { url } from "../lib/urls";
 import { ModosDoLab } from "./ModosDoLab";
-import { RedeLab } from "./RedeLab";
+import { BotaoCopiar, RedeLab } from "./RedeLab";
 import { OQueE, VistaRede, VistaSequencia } from "./RedeVistas";
 
 const IsoStage = lazy(() => import("@ovh/stage3d").then((m) => ({ default: m.IsoStage })));
@@ -30,7 +30,10 @@ function PainelPacketTracer({ d, capitulo }: { d: DetalheDaRede; capitulo: Capit
       <h3 className="redelab-h">In Cisco Packet Tracer · {d.packetTracer.onde}</h3>
       <details className="redelab-cli">
         <summary>Commands ({d.packetTracer.comandos.length} lines)</summary>
-        <pre className="mono">{d.packetTracer.comandos.join("\n")}</pre>
+        <div className="redelab-config">
+          <BotaoCopiar texto={d.packetTracer.comandos.join("\n")} rotulo="Copy the commands of this step" />
+          <pre className="mono">{d.packetTracer.comandos.join("\n")}</pre>
+        </div>
       </details>
       <p className="redelab-h">Expected output</p>
       <pre className="mono redelab-saida">{d.packetTracer.saida.join("\n")}</pre>

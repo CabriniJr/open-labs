@@ -105,3 +105,9 @@
 .rv-oque p { margin: 4px 0 0; font-size: 0.84rem; color: var(--ink-muted); }
 .rv-oque .rv-aqui { color: var(--ink); }
 .rv-mini { width: 100%; height: auto; }
+
+/* Copiar um bloco de comandos inteiro para o CLI do Packet Tracer. */
+.redelab-config { position: relative; display: grid; gap: 6px; }
+.redelab-copiar { justify-self: end; padding: 5px 12px; border: 1px solid var(--accent); border-radius: 999px; background: color-mix(in oklab, var(--accent) 10%, var(--paper)); color: var(--ink); font: inherit; font-size: 0.78rem; cursor: pointer; }
+.redelab-copiar:hover { background: color-mix(in oklab, var(--accent) 22%, var(--paper)); }
+.redelab-copiar:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }

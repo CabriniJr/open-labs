@@ -42,15 +42,101 @@ plan · R1 config · SW1 config · ISP config · Server, AP and hosts), gerados 
 
 Todos os cabos são **Copper Straight-Through**.
 
-## 3. Ordem de montagem
+## 3. Montagem, clique por clique
 
-1. Coloque os aparelhos e ligue os cabos da tabela.
-2. **SW1**: cole a aba *SW1 config* no CLI.
-3. **R1**: cole a aba *R1 config*. O `crypto key generate rsa` pode pedir o tamanho: responda `1024`.
-4. **ISP**: cole a aba *ISP config*.
-5. **SRV-OPENLABS, WEB-INTERNET, AP, laptop e PC**: preencha os campos da aba *Server, AP and hosts*.
-   - No HTTP do servidor, edite o `index.html` com a **Ficha da CitizenTech**.
-6. No laptop e no PC, *Desktop → IP Configuration → DHCP*.
+Tempo estimado: 30 a 40 minutos. Os comandos estão no lab, aba **Simulação**,
+nas abas *R1 config*, *SW1 config* e *ISP config*. Cada uma tem o botão
+**Copiar comandos**. Os nomes de menu abaixo são os do Packet Tracer 8, em
+inglês.
+
+### 3.1 Colocar os aparelhos
+
+A barra de aparelhos fica no canto inferior esquerdo: primeiro a categoria, depois o modelo.
+
+| Aparelho | Categoria → modelo | Depois de soltar |
+|---|---|---|
+| R1 e ISP | *Network Devices → Routers → 2911* (dois) | clique no nome embaixo do ícone e renomeie para `R1` e `ISP` |
+| SW1 | *Network Devices → Switches → 2960* | renomeie para `SW1` |
+| AP-TELECENTRO | *Network Devices → Wireless Devices → AccessPoint-PT* | renomeie |
+| PC-MONITOR | *End Devices → PC* | renomeie |
+| LAPTOP-CIDADAO | *End Devices → Laptop* | renomeie, e troque a placa (3.3) |
+| SRV-OPENLABS e WEB-INTERNET | *End Devices → Server* (dois) | renomeie |
+
+Uma dica de organização: deixe WEB-INTERNET e ISP de um lado ("a internet") e o resto do outro, como na topologia do PDF.
+
+### 3.2 Ligar os cabos
+
+*Connections* (ícone do raio) → **Copper Straight-Through** (a linha preta
+contínua). Clique no aparelho de origem, escolha a porta na lista, clique no
+de destino, escolha a porta. As portas exatas estão na tabela da seção 2:
+
+1. PC-MONITOR **FastEthernet0** → SW1 **FastEthernet0/1**
+2. AP-TELECENTRO **Port 0** → SW1 **FastEthernet0/2**
+3. SRV-OPENLABS **FastEthernet0** → SW1 **FastEthernet0/3**
+4. SW1 **GigabitEthernet0/1** → R1 **GigabitEthernet0/0**
+5. R1 **GigabitEthernet0/1** → ISP **GigabitEthernet0/0**
+6. ISP **GigabitEthernet0/1** → WEB-INTERNET **FastEthernet0**
+
+Os pontos dos cabos ficam vermelhos no começo: é normal. Eles ficam verdes depois do `no shutdown` (passos 3.4 e 3.5) e depois do tempo de convergência do switch, de até 30 segundos.
+
+### 3.3 Trocar a placa do notebook para Wi-Fi
+
+LAPTOP-CIDADAO → aba **Physical**:
+
+1. Desligue o notebook no botão de energia da imagem.
+2. Arraste a placa de rede que está na lateral (*PT-LAPTOP-NM-1CFE*) para a lista de módulos à esquerda.
+3. Arraste **WPC300N** da lista para o encaixe vazio.
+4. Ligue de novo.
+
+### 3.4 SW1
+
+SW1 → aba **CLI** → aperte Enter → cole os comandos de *SW1 config*. O switch
+já sai salvo (`write memory` é a última linha).
+
+### 3.5 R1
+
+R1 → aba **CLI**. Na pergunta *"Would you like to enter the initial
+configuration dialog? [yes/no]"*, digite `no` e Enter. Depois cole os
+comandos de *R1 config*.
+
+- O `crypto key generate rsa` demora alguns segundos. Se o CLI perguntar o tamanho da chave, responda `1024`.
+- Se alguma linha der `% Invalid input`, cole de novo só o bloco daquela parte. O CLI do Packet Tracer às vezes perde linhas quando recebe muitas de uma vez. Colar em duas metades evita isso.
+
+### 3.6 ISP
+
+ISP → aba **CLI** → `no` na pergunta inicial → cole *ISP config*.
+
+### 3.7 Servidores, ponto de acesso e hosts
+
+Os valores estão na aba *Server, AP and hosts* do lab.
+
+- **SRV-OPENLABS**
+  1. *Desktop → IP Configuration → Static*: IP `192.168.10.162`, máscara `255.255.255.240`, gateway `192.168.10.161`, DNS `192.168.10.162`.
+  2. *Services → DNS*: ligue (On). Acrescente os dois registros, Name + Address + *Add*:
+     - `openlabs.telecentro` → `192.168.10.162`
+     - `www.internet.example` → `203.0.113.10`
+  3. *Services → HTTP*: deixe ligado e edite o `index.html` com a **Ficha da CitizenTech**.
+- **WEB-INTERNET:** *Desktop → IP Configuration → Static*: IP `203.0.113.10`, máscara `255.255.255.0`, gateway `203.0.113.1`.
+- **AP-TELECENTRO:** *Config → Port 1*: SSID `TELECENTRO-LIVRE`, *WPA2-PSK*, *PSK Pass Phrase* `AprenderLivre2026`, *Encryption Type* AES.
+- **LAPTOP-CIDADAO**
+  1. *Config → Wireless0*: SSID `TELECENTRO-LIVRE`, *WPA2-PSK*, a mesma senha.
+  2. *Desktop → IP Configuration → DHCP*. Deve aparecer `192.168.10.2` em poucos segundos; se aparecer *"DHCP failed"*, clique em DHCP de novo.
+- **PC-MONITOR:** *Desktop → IP Configuration → DHCP*. Deve aparecer `192.168.10.130`.
+
+### 3.8 Salvar
+
+*File → Save As* → `telecentro-equipe-10.pkt`. Esse é o arquivo da entrega.
+
+### 3.9 Se algo não funcionar
+
+Rode no CLI do aparelho e mande a saída para conferência:
+
+- `show ip interface brief`: todas as interfaces usadas devem estar *up/up*.
+- `show vlan brief` (no SW1)
+- `show running-config`
+- `ipconfig` (no notebook ou no PC)
+
+O lab mostra o que cada um deve exibir. Uma diferença ali aponta direto para o passo que faltou.
 
 ## 4. Testes que vão no PDF (um print cada)
 

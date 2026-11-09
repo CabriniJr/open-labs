@@ -55,6 +55,37 @@ const VEREDITO: Record<Resultado["veredito"], string> = {
 
 type Aba = "plan" | "r1" | "sw1" | "isp" | "gui";
 
+/**
+ * Copia um bloco de comandos inteiro para colar no CLI do Packet Tracer. Sem a
+ * área de transferência (página sem HTTPS, permissão negada), seleciona o texto
+ * do bloco para o Ctrl+C manual e avisa.
+ */
+export function BotaoCopiar({ texto, rotulo }: { texto: string; rotulo: string }) {
+  const [estado, setEstado] = useState<"pronto" | "copiado" | "falhou">("pronto");
+  const copiar = async (e: { currentTarget: HTMLButtonElement }) => {
+    const pre = e.currentTarget.parentElement?.querySelector("pre");
+    try {
+      await navigator.clipboard.writeText(texto);
+      setEstado("copiado");
+    } catch {
+      if (pre) {
+        const r = document.createRange();
+        r.selectNodeContents(pre);
+        const sel = window.getSelection();
+        sel?.removeAllRanges();
+        sel?.addRange(r);
+      }
+      setEstado("falhou");
+    }
+    window.setTimeout(() => setEstado("pronto"), 2500);
+  };
+  return (
+    <button type="button" className="redelab-copiar" aria-label={rotulo} onClick={(e) => void copiar(e)}>
+      {estado === "copiado" ? "Copied" : estado === "falhou" ? "Selected — press Ctrl+C" : "Copy commands"}
+    </button>
+  );
+}
+
 export function RedeLab() {
   const t = useMemo(() => telecentro(), []);
   const [origem, setOrigem] = useState<"laptop" | "pc" | "srv">("laptop");
@@ -224,9 +255,12 @@ export function RedeLab() {
             ))}
           </dl>
         ) : (
-          <pre className="mono redelab-saida" aria-label={`${aba.toUpperCase()} configuration`}>
-            {configs[aba].join("\n")}
-          </pre>
+          <div className="redelab-config">
+            <BotaoCopiar texto={configs[aba].join("\n")} rotulo={`Copy the ${aba.toUpperCase()} commands`} />
+            <pre className="mono redelab-saida" aria-label={`${aba.toUpperCase()} configuration`}>
+              {configs[aba].join("\n")}
+            </pre>
+          </div>
         )}
       </div>
     </div>

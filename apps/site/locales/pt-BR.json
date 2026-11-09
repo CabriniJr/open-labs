@@ -7782,5 +7782,10 @@
   "Your stack traces are being indexed one line per event. You have a correct LINE_BREAKER in props.conf on every indexer, pushed by the deployment server, and the data flows through a heavy forwarder that does TLS termination. What fixes it?": "Os seus stack traces estão sendo indexados uma linha por evento. Você tem um LINE_BREAKER correto no props.conf de cada indexer, enviado pelo deployment server, e os dados passam por um heavy forwarder que termina o TLS. O que resolve?",
   "Zero-code instrumentation — OpenLabs": "Instrumentação sem código — OpenLabs",
   "Zero-code instrumentation hooks": "A instrumentação sem código se engancha",
-  "Zero-code instrumentation hooks the libraries your service already uses — the HTTP framework, the database driver, the HTTP client — and gives each a span with the semantic conventions filled in. No line of your code changed.": "A instrumentação sem código se engancha nas bibliotecas que o seu serviço já usa — o framework HTTP, o driver do banco, o cliente HTTP — e dá a cada uma um span com as convenções semânticas preenchidas. Nenhuma linha do seu código mudou."
+  "Zero-code instrumentation hooks the libraries your service already uses — the HTTP framework, the database driver, the HTTP client — and gives each a span with the semantic conventions filled in. No line of your code changed.": "A instrumentação sem código se engancha nas bibliotecas que o seu serviço já usa — o framework HTTP, o driver do banco, o cliente HTTP — e dá a cada uma um span com as convenções semânticas preenchidas. Nenhuma linha do seu código mudou.",
+  "Copy commands": "Copiar comandos",
+  "Copied": "Copiado",
+  "Selected — press Ctrl+C": "Selecionado — aperte Ctrl+C",
+  "Copy the {0} commands": "Copiar os comandos do {0}",
+  "Copy the commands of this step": "Copiar os comandos deste passo"
 }
