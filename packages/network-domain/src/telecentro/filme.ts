@@ -2,7 +2,7 @@ import { center, connect, film, pt, through, type Box, type Director, type Film,
 import { ICONES_REDE as I } from "../icones/icones.js";
 import { texto } from "./enderecamento.js";
 import { ajustesGraficos, configR1, configSw1, ipconfig, saidaDoCliente, showAccessLists, showNat, showVlanBrief } from "./ios.js";
-import { concessao, dora, linhaIos, NOME_DA_ACL, OPCOES_DA_REDE, percorrer, regrasDoCidadao, type OpcoesDaRede, type Quadro, type Resultado, type Salto } from "./protocolos.js";
+import { comandoIos, concessao, dora, linhaIos, NOME_DA_ACL, OPCOES_DA_REDE, percorrer, regrasDoCidadao, type OpcoesDaRede, type Quadro, type Resultado, type Salto } from "./protocolos.js";
 import { EQUIPE_PADRAO, NOME_DA_FICHA, NOME_DA_INTERNET, planoDeEnderecamento, telecentro, type DispId, type Telecentro } from "./topologia.js";
 
 /**
@@ -44,20 +44,20 @@ export const CAMADAS: readonly Camada[] = ["application", "transport", "network"
 const B = (x: number, y: number, w: number, h: number): Box => ({ x, y, w, h });
 
 export const CAIXAS: Readonly<Record<DispId, Box>> = {
-  web: B(1060, 40, 180, 84),
-  isp: B(1060, 200, 180, 84),
+  web: B(1060, 120, 180, 84),
+  isp: B(1060, 275, 180, 84),
   r1: B(690, 200, 200, 84),
-  sw1: B(690, 365, 200, 72),
-  pc: B(110, 575, 190, 84),
-  ap: B(445, 575, 165, 84),
-  laptop: B(650, 575, 165, 84),
-  srv: B(960, 575, 210, 84),
+  sw1: B(690, 340, 200, 72),
+  pc: B(110, 535, 190, 84),
+  ap: B(445, 535, 165, 84),
+  laptop: B(650, 535, 165, 84),
+  srv: B(960, 535, 210, 84),
 };
 
 const REGIOES = {
-  equipe: B(40, 510, 330, 180),
-  cidadao: B(420, 510, 420, 180),
-  servidores: B(890, 510, 350, 180),
+  equipe: B(40, 465, 330, 190),
+  cidadao: B(420, 465, 420, 190),
+  servidores: B(890, 465, 350, 190),
 } as const;
 
 /** A altura no 3D: o andar da rede em que o aparelho decide. */
@@ -93,17 +93,19 @@ export function filmeDaRede(opcoes: OpcoesDaRede = OPCOES_DA_REDE, x: number = E
   regiao("equipe", equipe);
   regiao("cidadao", cidadao);
   regiao("servidores", servidores);
-  f.add({ type: "region", id: "internet", box: B(1030, 20, 240, 290), label: "the internet (simulated)", tone: "muted" });
+  f.add({ type: "region", id: "internet", box: B(1030, 70, 240, 340), label: "the internet (simulated)", tone: "muted" });
 
   const sub: Record<DispId, string> = {
-    web: `${texto(t.internet.web)} · HTTP`,
-    isp: `${texto(t.wan.isp)} · no route to 192.168`,
-    r1: `G0/0.${equipe.vlan} .${servidores.vlan} .${cidadao.vlan} · G0/1 ${texto(t.wan.r1)}`,
-    sw1: "VLANs 10 · 20 · 30 · trunk G0/1",
-    pc: `DHCP · ${texto(concessao(t, "pc"))}`,
-    ap: `SSID ${t.ssid} · WPA2`,
+    // O endereço primeiro e curto: é o que se procura num diagrama de rede.
+    web: texto(t.internet.web),
+    isp: texto(t.wan.isp),
+    // Um gateway por sala: o mesmo prefixo, só o último octeto muda.
+    r1: `gw .${cidadao.gateway & 255} · .${equipe.gateway & 255} · .${servidores.gateway & 255}`,
+    sw1: `VLANs ${equipe.vlan} · ${cidadao.vlan} · ${servidores.vlan}`,
+    pc: texto(concessao(t, "pc")),
+    ap: `SSID ${t.ssid}`,
     laptop: "no address yet",
-    srv: `${texto(t.dispositivos.srv.ip!)} · DNS + HTTP`,
+    srv: texto(t.dispositivos.srv.ip!),
   };
   const forma = (id: DispId): Shape => (id === "isp" ? "pill" : id === "srv" || id === "web" || id === "r1" || id === "sw1" ? "stack" : "box");
   const tom = (id: DispId): Tone => (id === "r1" || id === "isp" ? "controller" : id === "sw1" || id === "ap" ? "conduit" : id === "srv" || id === "web" ? "container" : "processor");
@@ -120,7 +122,7 @@ export function filmeDaRede(opcoes: OpcoesDaRede = OPCOES_DA_REDE, x: number = E
   fio("r1", "isp", `${texto(t.wan.rede)}/30`);
   fio("isp", "web", "203.0.113.0/24");
   f.add({ type: "note", id: "nota:r1", at: pt(790, 182), label: "", tone: "controller", align: "middle", width: 360, hidden: true });
-  f.add({ type: "note", id: "nota:isp", at: pt(1150, 310), label: "", tone: "live", align: "middle", width: 220, hidden: true });
+  f.add({ type: "note", id: "nota:isp", at: pt(1150, 395), label: "", tone: "live", align: "middle", width: 220, hidden: true });
 
   // ------------------------------------------------------------ as viagens
   let n = 0;
@@ -184,7 +186,7 @@ export function filmeDaRede(opcoes: OpcoesDaRede = OPCOES_DA_REDE, x: number = E
       detail: { camada: "application", linhas: mensagens[0]!.campos, packetTracer: ptDhcp },
     },
     (d) => {
-      d.camera({ focus: ["laptop", "ap", "sw1", "r1"] });
+      d.camera({ pad: 90, focus: ["laptop", "ap", "sw1", "r1"] });
       mensagens.forEach((msg, i) => {
         const ida = msg.de === "laptop";
         d.beat({ title: `DHCP${msg.tipo}`, body: msg.resumo, detail: { camada: "application", linhas: [["from", `${msg.ipOrigem} (${msg.macOrigem})`], ["to", `${msg.ipDestino} (${msg.macDestino})`], ...msg.campos], packetTracer: ptDhcp } });
@@ -201,7 +203,7 @@ export function filmeDaRede(opcoes: OpcoesDaRede = OPCOES_DA_REDE, x: number = E
         }
         registrar(d, msg.tipo, TOM_DO_PROTOCOLO.dhcp, msg.de, msg.para, "DHCP", msg.resumo);
       });
-      d.set("laptop", { sublabel: `${texto(concessao(t, "laptop"))}/${cidadao.prefixo} · gw ${texto(cidadao.gateway)}` }).ping("laptop").glow("laptop", 1, { wait: false }).wait(900);
+      d.set("laptop", { sublabel: `${texto(concessao(t, "laptop"))}/${cidadao.prefixo}` }).ping("laptop").glow("laptop", 1, { wait: false }).wait(900);
       d.glow("laptop", 0, { wait: false });
     },
   );
@@ -217,7 +219,7 @@ export function filmeDaRede(opcoes: OpcoesDaRede = OPCOES_DA_REDE, x: number = E
       detail: { camada: "application", linhas: [["question", `A ${NOME_DA_FICHA}?`], ["asked to", texto(dns.pacote.destino)]], packetTracer: ptDns },
     },
     (d) => {
-      d.camera({ focus: ["laptop", "sw1", "r1", "srv"] });
+      d.camera({ pad: 90, focus: ["laptop", "sw1", "r1", "srv"] });
       viagem(d, dns, "DNS QUERY", "DNS A", TOM_DO_PROTOCOLO.dns, ptDns, true);
       registrar(d, "DNS", TOM_DO_PROTOCOLO.dns, "laptop", "srv", "DNS", `A ${NOME_DA_FICHA}? → ${texto(dns.pacote.destino)}`);
     },
@@ -234,7 +236,7 @@ export function filmeDaRede(opcoes: OpcoesDaRede = OPCOES_DA_REDE, x: number = E
       detail: { camada: "application", linhas: [["request", `GET / HTTP/1.1 · Host: ${NOME_DA_FICHA}`], ["ACL", http.decisao?.regra === undefined ? "not consulted" : linhaIos(http.decisao.regra)]], packetTracer: ptHttp },
     },
     (d) => {
-      d.camera({ focus: ["laptop", "sw1", "r1", "srv"] });
+      d.camera({ pad: 90, focus: ["laptop", "sw1", "r1", "srv"] });
       if (http.veredito !== "entregue") {
         viagem(d, http, "SYN", "", TOM_DO_PROTOCOLO.http, ptHttp, false);
         return;
@@ -261,7 +263,7 @@ export function filmeDaRede(opcoes: OpcoesDaRede = OPCOES_DA_REDE, x: number = E
       detail: { camada: "network", linhas: internet.traducao === undefined ? [["NAT", "off"]] : [["inside local", internet.traducao.insideLocal], ["inside global", internet.traducao.insideGlobal], ["outside", internet.traducao.outsideGlobal]], packetTracer: ptNat },
     },
     (d) => {
-      d.camera({ focus: ["laptop", "r1", "isp", "web"] });
+      d.camera({ pad: 90, focus: ["laptop", "r1", "isp", "web"] });
       if (internet.traducao !== undefined) d.set("nota:r1", { label: `NAT ${internet.traducao.insideLocal} ↔ ${internet.traducao.insideGlobal}` });
       viagem(d, internet, "GET /", "200 OK", TOM_DO_PROTOCOLO.http, ptNat, true, (s) => (s.de === "r1" && internet.traducao !== undefined ? () => d.show("nota:r1", { dur: 300 }).ping("r1") : undefined));
       registrar(d, "HTTP", internet.veredito === "entregue" ? TOM_DO_PROTOCOLO.http : TOM_DO_PROTOCOLO.perdido, "laptop", "web", internet.traducao === undefined ? "HTTP" : "HTTP + NAT", internet.porque);
@@ -274,7 +276,7 @@ export function filmeDaRede(opcoes: OpcoesDaRede = OPCOES_DA_REDE, x: number = E
   const listas = showAccessLists(t, [dns, http, internet, acl]);
   const ptAcl: PassoNoPacketTracer = {
     onde: "R1 · CLI, then LAPTOP · Command Prompt",
-    comandos: [`ip access-list extended ${NOME_DA_ACL}`, ...regrasDoCidadao(t).map((r) => ` ${linhaIos(r)}`), " exit", `interface GigabitEthernet0/0.${cidadao.vlan}`, ` ip access-group ${NOME_DA_ACL} in`],
+    comandos: [`ip access-list extended ${NOME_DA_ACL}`, ...regrasDoCidadao(t).map((r) => ` ${comandoIos(r)}`), " exit", `interface GigabitEthernet0/0.${cidadao.vlan}`, ` ip access-group ${NOME_DA_ACL} in`],
     saida: [...saidaDoCliente(t, acl), "", ...listas],
   };
   f.chapter(
@@ -285,7 +287,7 @@ export function filmeDaRede(opcoes: OpcoesDaRede = OPCOES_DA_REDE, x: number = E
       detail: { camada: "network", linhas: acl.decisao === undefined ? [["ACL", "not applied"]] : [["matched", acl.decisao.regra === undefined ? "implicit deny" : linhaIos(acl.decisao.regra)], ["why", acl.decisao.regra?.motivo ?? "nothing permitted it"]], packetTracer: ptAcl },
     },
     (d) => {
-      d.camera({ focus: ["laptop", "sw1", "r1", "pc"] });
+      d.camera({ pad: 90, focus: ["laptop", "sw1", "r1", "pc"] });
       viagem(d, acl, "ECHO", "REPLY", TOM_DO_PROTOCOLO.icmp, ptAcl, true);
       registrar(d, "ICMP", acl.veredito === "entregue" ? TOM_DO_PROTOCOLO.icmp : TOM_DO_PROTOCOLO.perdido, "laptop", "pc", "ICMP", acl.porque);
     },
@@ -299,11 +301,13 @@ export function filmeDaRede(opcoes: OpcoesDaRede = OPCOES_DA_REDE, x: number = E
     {
       id: "ssh",
       title: "SSH: only the staff configures the router",
-      body: `${sshEquipe.porque} ${sshWifi.porque}`,
+      // Rótulos fixos entre as duas frases: o tradutor do site separa o molde
+      // por eles; duas frases coladas só por espaço ele não sabe onde cortar.
+      body: `Staff PC: ${sshEquipe.porque} Wi-Fi laptop: ${sshWifi.porque}`,
       detail: { camada: "application", linhas: [["from PC-MONITOR", sshEquipe.veredito === "entregue" ? "login prompt" : sshEquipe.veredito], ["from the Wi-Fi", sshWifi.veredito === "entregue" ? "login prompt" : "connection refused"]], packetTracer: ptSsh },
     },
     (d) => {
-      d.camera({ focus: ["pc", "laptop", "sw1", "r1"] });
+      d.camera({ pad: 90, focus: ["pc", "laptop", "sw1", "r1"] });
       viagem(d, sshEquipe, "SSH", "LOGIN", TOM_DO_PROTOCOLO.ssh, ptSsh, false);
       registrar(d, "SSH", TOM_DO_PROTOCOLO.ssh, "pc", "r1", "SSH", sshEquipe.porque);
       viagem(d, sshWifi, "SSH", "REFUSED", TOM_DO_PROTOCOLO.ssh, ptSsh, false);

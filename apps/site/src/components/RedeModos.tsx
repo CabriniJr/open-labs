@@ -4,6 +4,7 @@ import { lazy, Suspense, useMemo, useState } from "react";
 import { url } from "../lib/urls";
 import { ModosDoLab } from "./ModosDoLab";
 import { RedeLab } from "./RedeLab";
+import { OQueE, VistaRede, VistaSequencia } from "./RedeVistas";
 
 const IsoStage = lazy(() => import("@ovh/stage3d").then((m) => ({ default: m.IsoStage })));
 
@@ -46,10 +47,14 @@ function Vitrine() {
   const [acl, setAcl] = useState(true);
   const [nat, setNat] = useState(true);
   const filme = useMemo(() => filmeDaRede({ acl, nat }), [acl, nat]);
+  // "Network" abre primeiro: cada aparelho com a cara que ele tem. A sequência
+  // mostra as mesmas mensagens no tempo; o 3D continua para quem quer a altura.
   const vistas: readonly MotionView<DetalheDaRede>[] = [
+    { id: "rede", label: "Network", render: ({ film: f, frame, label }) => <VistaRede film={f} frame={frame} label={label} /> },
+    { id: "sequencia", label: "Sequence", render: ({ film: f, frame, label }) => <VistaSequencia film={f} frame={frame} label={label} /> },
     {
       id: "iso",
-      label: "Iso",
+      label: "3D",
       render: ({ film: f, t, frame, label }) => (
         <Suspense fallback={<div className="iso-stage" aria-busy="true" />}>
           <IsoStage film={f} t={t} frame={frame} label={label} />
@@ -62,7 +67,8 @@ function Vitrine() {
       <MotionPlayer
         film={filme}
         views={vistas}
-        initialView="iso"
+        initialView="rede"
+        flatLabel="Blocks"
         label="A community telecentre network: a learner's laptop joins the public Wi-Fi, gets an address by DHCP, resolves a name, opens the OpenLabs page, reaches the internet through NAT, and is stopped by an ACL at the staff network."
         packetsTitle="Packets"
         packetLegend={[
@@ -121,5 +127,10 @@ function Vitrine() {
 }
 
 export function RedeModos() {
-  return <ModosDoLab showcase={() => <Vitrine />} simulation={() => <RedeLab />} inicial="showcase" />;
+  return (
+    <>
+      <ModosDoLab showcase={() => <Vitrine />} simulation={() => <RedeLab />} inicial="showcase" />
+      <OQueE />
+    </>
+  );
 }

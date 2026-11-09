@@ -38,3 +38,70 @@
 .redelab-material { display: grid; gap: var(--space-1); }
 .redelab-gui { display: grid; gap: 10px; margin: 0; font-size: 0.82rem; }
 .redelab-gui dd { margin: 0 0 0 1rem; }
+
+/* ---------------------------------------------------------------- as vistas Rede e Sequência
+   Aparelhos em traço isométrico. A cor de cada peça é o tom dela (`data-tone`),
+   traduzido para o catálogo como no palco do motion; fora do player (o painel
+   "O que é o quê") a mesma tradução vale pelo `.rv`. */
+.rv { --mo-c: var(--dui-tinta); }
+.rv [data-tone="muted"] { --mo-c: var(--ink-faint); }
+.rv [data-tone="live"] { --mo-c: var(--dui-viva); }
+.rv [data-tone="processor"] { --mo-c: var(--dui-processor); }
+.rv [data-tone="container"] { --mo-c: var(--dui-container); }
+.rv [data-tone="controller"] { --mo-c: var(--dui-controller); }
+.rv [data-tone="conduit"] { --mo-c: var(--dui-conduit); }
+.rv [data-tone="kind-1"] { --mo-c: var(--dui-especie-1); }
+.rv [data-tone="kind-2"] { --mo-c: var(--dui-especie-2); }
+.rv [data-tone="kind-3"] { --mo-c: var(--dui-especie-3); }
+.rv [data-tone="kind-4"] { --mo-c: var(--dui-especie-4); }
+.rv [data-tone="kind-5"] { --mo-c: var(--dui-especie-5); }
+
+.rv-stage { display: block; width: 100%; height: auto; aspect-ratio: var(--mo-aspect, 16 / 9); background: var(--paper); }
+.rv-grade { fill: none; stroke: color-mix(in oklab, var(--ink) 7%, transparent); stroke-width: 1; }
+
+.rv-regiao rect { fill: color-mix(in oklab, var(--mo-c) 5%, transparent); stroke: color-mix(in oklab, var(--mo-c) 50%, transparent); stroke-width: 1.5; stroke-dasharray: 7 6; }
+.rv-regiao text { font: 600 13px var(--font-mono); letter-spacing: 0.05em; fill: color-mix(in oklab, var(--mo-c) 70%, var(--ink)); }
+
+.rv-cabo line { stroke: color-mix(in oklab, var(--ink) 38%, transparent); stroke-width: 2; }
+.rv-cabo[data-sem-fio] line { stroke-dasharray: 6 6; }
+.rv-cabo text { font: 11px var(--font-mono); fill: var(--ink-muted); text-anchor: middle; paint-order: stroke; stroke: var(--paper); stroke-width: 5px; stroke-linejoin: round; }
+
+.rv polygon, .rv .rv-traco, .rv .rv-nuvem, .rv .rv-selo { stroke: var(--mo-c); stroke-width: 1.6; stroke-linejoin: round; }
+.rv .rv-topo { fill: color-mix(in oklab, var(--mo-c) 24%, var(--paper)); }
+.rv .rv-lado { fill: color-mix(in oklab, var(--mo-c) 36%, var(--paper)); }
+.rv .rv-frente { fill: color-mix(in oklab, var(--mo-c) 14%, var(--paper)); }
+.rv .rv-tela { fill: color-mix(in oklab, var(--mo-c) 32%, var(--paper)); }
+.rv .rv-tela-moldura { fill: color-mix(in oklab, var(--mo-c) 10%, var(--paper)); }
+.rv .rv-detalhe { fill: var(--paper); stroke-width: 1.1; }
+.rv .rv-traco { fill: none; stroke-linecap: round; }
+.rv .rv-led { fill: var(--mo-c); }
+.rv .rv-selo, .rv .rv-nuvem { fill: color-mix(in oklab, var(--mo-c) 10%, var(--paper)); }
+.rv-aparelho[data-aceso] polygon, .rv-aparelho[data-aceso] .rv-traco { stroke-width: 2.8; }
+.rv-aparelho[data-aceso] .rv-topo { fill: color-mix(in oklab, var(--mo-c) 45%, var(--paper)); }
+.rv-ping { fill: none; stroke: var(--mo-c); stroke-width: 2; }
+.rv-papel { font: 600 14px var(--font-body); fill: var(--ink); text-anchor: middle; paint-order: stroke; stroke: var(--paper); stroke-width: 5px; stroke-linejoin: round; }
+.rv-nome { font: 12px var(--font-mono); fill: var(--ink-muted); text-anchor: middle; paint-order: stroke; stroke: var(--paper); stroke-width: 5px; stroke-linejoin: round; }
+
+.rv-pacote rect { fill: var(--mo-c); }
+.rv-pacote text { font: 700 11px var(--font-mono); fill: var(--paper); text-anchor: middle; }
+.rv-pacote .rv-pacote-sub { font-weight: 500; fill: var(--ink); paint-order: stroke; stroke: var(--paper); stroke-width: 4px; }
+.rv-nota text { font: 700 13px var(--font-mono); fill: var(--mo-c); text-anchor: middle; paint-order: stroke; stroke: var(--paper); stroke-width: 5px; stroke-linejoin: round; }
+
+.rv-vida { stroke: var(--mo-c); stroke-width: 1.5; stroke-dasharray: 4 6; opacity: 0.6; }
+.rv-seq .rv-papel { font-size: 22px; }
+.rv-seq .rv-nome { font-size: 16px; }
+.rv-msg line { stroke: var(--mo-c); stroke-width: 3; }
+.rv-msg path { fill: var(--mo-c); }
+.rv-msg text { font: 17px var(--font-mono); fill: var(--ink); text-anchor: middle; paint-order: stroke; stroke: var(--paper); stroke-width: 5px; stroke-linejoin: round; }
+.rv-msg[data-estado="futuro"] { opacity: 0.18; }
+.rv-msg[data-estado="agora"] line { stroke-width: 5; }
+.rv-msg[data-estado="agora"] text { font-weight: 700; }
+
+/* O que é o quê */
+.rv-oque { margin-top: var(--space-3); }
+.rv-oque ul { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr)); gap: 12px; margin: 0; padding: 0; list-style: none; }
+.rv-oque li { display: grid; grid-template-columns: 6.5rem minmax(0, 1fr); gap: 12px; align-items: start; padding: 12px; border: 1px solid var(--rule); border-radius: 10px; background: var(--paper); }
+.rv-oque b { font-family: var(--font-display, var(--font-body)); }
+.rv-oque p { margin: 4px 0 0; font-size: 0.84rem; color: var(--ink-muted); }
+.rv-oque .rv-aqui { color: var(--ink); }
+.rv-mini { width: 100%; height: auto; }

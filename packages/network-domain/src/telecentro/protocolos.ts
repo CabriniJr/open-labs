@@ -100,14 +100,19 @@ export function regrasDoCidadao(t: Telecentro): RegraAcl[] {
   const { cidadao, equipe, servidores } = t.subredes;
   const wifi: Alvo = { tipo: "rede", rede: cidadao.rede, prefixo: cidadao.prefixo };
   const srv: Alvo = { tipo: "host", ip: t.dispositivos.srv.ip! };
-  return [
-    { seq: 5, acao: "permit", proto: "udp", origem: { tipo: "any" }, destino: { tipo: "any" }, portaDestino: 67, motivo: "a laptop with no address yet (0.0.0.0) must still reach the DHCP server" },
-    { seq: 10, acao: "deny", proto: "ip", origem: wifi, destino: { tipo: "rede", rede: equipe.rede, prefixo: equipe.prefixo }, motivo: "the public Wi-Fi never reaches the staff network" },
-    { seq: 20, acao: "permit", proto: "udp", origem: wifi, destino: srv, portaDestino: PORTA.dns, motivo: "learners may ask the server for names (DNS)" },
-    { seq: 30, acao: "permit", proto: "tcp", origem: wifi, destino: srv, portaDestino: PORTA.http, motivo: "learners may open the OpenLabs page (HTTP)" },
-    { seq: 40, acao: "deny", proto: "ip", origem: wifi, destino: { tipo: "rede", rede: servidores.rede, prefixo: servidores.prefixo }, motivo: "nothing else on the server network is open to the public" },
-    { seq: 50, acao: "permit", proto: "ip", origem: wifi, destino: { tipo: "any" }, motivo: "everything else is the internet, and it is allowed" },
+  // De 10 em 10, na ordem: é a numeração que o IOS dá sozinho quando as linhas
+  // entram sem número. Assim o "linha 20" do lab é o mesmo "20" que o
+  // `show access-lists` do Packet Tracer imprime, sem depender de o simulador
+  // aceitar número de sequência digitado.
+  const linhas: Omit<RegraAcl, "seq">[] = [
+    { acao: "permit", proto: "udp", origem: { tipo: "any" }, destino: { tipo: "any" }, portaDestino: 67, motivo: "a laptop with no address yet (0.0.0.0) must still reach the DHCP server" },
+    { acao: "deny", proto: "ip", origem: wifi, destino: { tipo: "rede", rede: equipe.rede, prefixo: equipe.prefixo }, motivo: "the public Wi-Fi never reaches the staff network" },
+    { acao: "permit", proto: "udp", origem: wifi, destino: srv, portaDestino: PORTA.dns, motivo: "learners may ask the server for names (DNS)" },
+    { acao: "permit", proto: "tcp", origem: wifi, destino: srv, portaDestino: PORTA.http, motivo: "learners may open the OpenLabs page (HTTP)" },
+    { acao: "deny", proto: "ip", origem: wifi, destino: { tipo: "rede", rede: servidores.rede, prefixo: servidores.prefixo }, motivo: "nothing else on the server network is open to the public" },
+    { acao: "permit", proto: "ip", origem: wifi, destino: { tipo: "any" }, motivo: "everything else is the internet, and it is allowed" },
   ];
+  return linhas.map((r, i) => ({ ...r, seq: (i + 1) * 10 }));
 }
 
 const casaAlvo = (a: Alvo, endereco: Ipv4) => a.tipo === "any" || (a.tipo === "host" ? a.ip === endereco : naRede(endereco, a.rede, a.prefixo));
@@ -136,9 +141,15 @@ export function alvoIos(a: Alvo): string {
   return `${texto(a.rede)} ${texto(curinga(a.prefixo))}`;
 }
 
+/** A linha como o `show access-lists` a imprime: com o número na frente. */
 export function linhaIos(r: RegraAcl): string {
+  return `${r.seq} ${comandoIos(r)}`;
+}
+
+/** A linha como se digita no modo `ip access-list`: sem número, o IOS numera de 10 em 10. */
+export function comandoIos(r: RegraAcl): string {
   const porta = r.portaDestino === undefined ? "" : ` eq ${NOME_DA_PORTA[r.portaDestino] ?? r.portaDestino}`;
-  return `${r.seq} ${r.acao} ${r.proto} ${alvoIos(r.origem)} ${alvoIos(r.destino)}${porta}`;
+  return `${r.acao} ${r.proto} ${alvoIos(r.origem)} ${alvoIos(r.destino)}${porta}`;
 }
 
 // ---------------------------------------------------------------- o caminho
@@ -338,7 +349,13 @@ export function percorrer(t: Telecentro, origem: DispId, alvo: DispId, servico: 
     if (decisaoVolta !== undefined && !decisaoVolta.permitido) {
       return { ...base, ida, volta, veredito: "acl-volta", decisao: decisaoVolta, traducao: undefined, roteadoresNaVolta: 1, porque: `The request arrives, but the reply enters R1 on the Wi-Fi subinterface and ${NOME_DA_ACL} line ${decisaoVolta.regra?.seq ?? "(implicit)"} drops it: the isolation works in both directions.` };
     }
-    return { ...base, ida, volta, veredito: "entregue", decisao: decisaoIda, traducao: undefined, roteadoresNaVolta: 1, porque: `Inter-VLAN routing: up the trunk as VLAN ${sa.vlan}, down as VLAN ${sb.vlan}${decisaoIda?.regra === undefined ? "" : `, permitted by ${NOME_DA_ACL} line ${decisaoIda.regra.seq}`}.` };
+    return { ...base, ida, volta, veredito: "entregue", decisao: decisaoIda, traducao: undefined, roteadoresNaVolta: 1, porque:
+        // Duas frases inteiras em vez de um pedaço opcional colado: o tradutor
+        // do site lê cada uma como um molde, e lacunas vizinhas o confundem.
+        decisaoIda?.regra === undefined
+          ? `Inter-VLAN routing: up the trunk as VLAN ${sa.vlan}, down as VLAN ${sb.vlan}.`
+          : `Inter-VLAN routing: up the trunk as VLAN ${sa.vlan}, down as VLAN ${sb.vlan}, permitted by ${NOME_DA_ACL} line ${decisaoIda.regra.seq}.`,
+    };
   }
 
   // 4. A internet: pelo provedor, com ou sem NAT.
@@ -372,7 +389,11 @@ export function percorrer(t: Telecentro, origem: DispId, alvo: DispId, servico: 
     { caminho: ["web", "isp", "r1"], macOrigem: webMac, macDestino: ispOut, ttl: TTL_INICIAL, ipOrigem: b, ipDestino: global, vlan: undefined, nota: (de) => (de === "web" ? "the reply goes to R1's public address" : "the ISP knows that address: it is on the link to R1") },
     { caminho: ["r1", ...[...subida(origem)].reverse()], macOrigem: r1In, macDestino: macA, ttl: TTL_INICIAL - 2, ipOrigem: b, ipDestino: a, vlan: sa.vlan, nota: (de) => (de === "r1" ? `R1 finds the entry in its NAT table and puts ${texto(a)} back` : "the reply arrives") },
   ]);
-  return { ...base, ida, volta, veredito: "entregue", decisao: decisaoIda, traducao, roteadoresNaVolta: 2, porque: `R1 translated ${texto(a)} to ${texto(t.wan.r1)} on the way out and back on the way in${decisaoIda?.regra === undefined ? "" : `; ${NOME_DA_ACL} line ${decisaoIda.regra.seq} let it through`}.` };
+  return { ...base, ida, volta, veredito: "entregue", decisao: decisaoIda, traducao, roteadoresNaVolta: 2, porque:
+      decisaoIda?.regra === undefined
+        ? `R1 translated ${texto(a)} to ${texto(t.wan.r1)} on the way out and back on the way in.`
+        : `R1 translated ${texto(a)} to ${texto(t.wan.r1)} on the way out and back on the way in; ${NOME_DA_ACL} line ${decisaoIda.regra.seq} let it through.`,
+  };
 }
 
 // ---------------------------------------------------------------- DHCP e DNS

@@ -25,6 +25,31 @@ export type DispId = "laptop" | "ap" | "pc" | "srv" | "sw1" | "r1" | "isp" | "we
 
 export type Papel = "host" | "access-point" | "switch" | "router" | "server";
 
+/**
+ * O que é cada aparelho, para quem nunca viu um: o nome do papel, o que ele faz
+ * em uma frase e onde ele aparece na história. É o texto do painel "O que é o
+ * quê" e da etiqueta de cada desenho na vista Rede.
+ */
+export interface Explicacao {
+  /** O papel, em duas ou três palavras. */
+  readonly papel: string;
+  /** O que ele faz, em uma frase, sem jargão que não esteja explicado. */
+  readonly faz: string;
+  /** O que ele faz no telecentro, em particular. */
+  readonly aqui: string;
+}
+
+export const O_QUE_E: Readonly<Record<DispId, Explicacao>> = {
+  laptop: { papel: "Learner's laptop", faz: "The computer of someone who came to learn. It has no network address until DHCP lends one.", aqui: "Joins the public Wi-Fi and opens the OpenLabs page." },
+  ap: { papel: "Wi-Fi access point", faz: "Turns radio into cable: it lets wireless devices join the wired network, protected by a WPA2 password.", aqui: "Publishes the TELECENTRO-LIVRE network, which belongs to the learners' VLAN." },
+  pc: { papel: "Staff computer", faz: "A desktop on the private staff network. The public Wi-Fi must never reach it.", aqui: "Where the instructors work, and the only place allowed to manage the router." },
+  srv: { papel: "OpenLabs server", faz: "A machine that answers requests: it tells names (DNS) and serves web pages (HTTP).", aqui: "Hosts the course and the CitizenTech card, so learning works even without internet." },
+  sw1: { papel: "Switch", faz: "Connects the cables of one building and keeps each VLAN apart, like separate rooms on the same corridor.", aqui: "Sends traffic between rooms up the trunk to the router, tagged with the room's number." },
+  r1: { papel: "Router", faz: "Decides the path between different networks. It is the gateway of every room, and it checks the ACL.", aqui: "Joins the three VLANs, lends addresses (DHCP), translates to the public address (NAT) and guards the rooms (ACL)." },
+  isp: { papel: "Internet provider", faz: "The company that connects the building to the internet. It only routes public addresses.", aqui: "Receives everything with R1's public address — and drops what still has a private one." },
+  web: { papel: "Website on the internet", faz: "Any site outside the building, reached through the provider.", aqui: "The page a learner opens to test the way out through NAT." },
+};
+
 export interface Dispositivo {
   readonly id: DispId;
   /** O nome no Packet Tracer (hostname do IOS, ou o nome do aparelho). */

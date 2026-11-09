@@ -1,5 +1,5 @@
 import { curinga, mascara, texto } from "./enderecamento.js";
-import { concessao, dora, excluidos, linhaIos, NOME_DA_ACL, NOME_DA_ACL_VTY, regrasDoCidadao, TTL_INICIAL, type Resultado, type TraducaoNat } from "./protocolos.js";
+import { comandoIos, concessao, dora, excluidos, linhaIos, NOME_DA_ACL, NOME_DA_ACL_VTY, regrasDoCidadao, TTL_INICIAL, type Resultado, type TraducaoNat } from "./protocolos.js";
 import type { DispId, Telecentro } from "./topologia.js";
 
 /**
@@ -88,7 +88,7 @@ export function configR1(t: Telecentro): string[] {
     "!",
     `! --- ACL: what the public Wi-Fi may reach (applied on G0/0.${cidadao.vlan} in)`,
     `ip access-list extended ${NOME_DA_ACL}`,
-    ...regrasDoCidadao(t).map((r) => ` ${linhaIos(r)}`),
+    ...regrasDoCidadao(t).map((r) => ` ${comandoIos(r)}`),
     " exit",
     "!",
     "! --- management only by SSH, and only from the staff VLAN",

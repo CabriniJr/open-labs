@@ -87,7 +87,7 @@ import "../../components/Predicao.css";
       <div class="lab-predicao">
         <Predicao
           client:visible
-          pergunta="The learner's laptop pings the staff PC. The ACL on the Wi-Fi subinterface starts with “deny ip <Wi-Fi> <staff network>”. Where does the ping stop, and what does the laptop see?"
+          pergunta="The learner's laptop pings the staff PC. Right after the line that lets DHCP through, the ACL on the Wi-Fi subinterface says “deny ip <Wi-Fi> <staff network>”. Where does the ping stop, and what does the laptop see?"
           opcoes={[
             "At R1, on the way in; the laptop sees “Destination host unreachable” from its gateway",
             "At the switch, because the two ports are on different VLANs; the laptop sees “Request timed out”",

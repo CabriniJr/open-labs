@@ -64,10 +64,10 @@ describe("the ACL is read top to bottom", () => {
   const laptop = ip("192.168.10.2");
 
   it("first match wins", () => {
-    expect(avaliarAcl(regras, { proto: "tcp", origem: laptop, destino: ip("192.168.10.162"), portaOrigem: 1025, portaDestino: 80 }).regra?.seq).toBe(30);
-    expect(avaliarAcl(regras, { proto: "tcp", origem: laptop, destino: ip("192.168.10.162"), portaOrigem: 1025, portaDestino: 22 }).regra?.seq).toBe(40);
-    expect(avaliarAcl(regras, { proto: "icmp", origem: laptop, destino: ip("192.168.10.130") }).regra?.seq).toBe(10);
-    expect(avaliarAcl(regras, { proto: "tcp", origem: laptop, destino: ip("203.0.113.10"), portaOrigem: 1025, portaDestino: 80 }).regra?.seq).toBe(50);
+    expect(avaliarAcl(regras, { proto: "tcp", origem: laptop, destino: ip("192.168.10.162"), portaOrigem: 1025, portaDestino: 80 }).regra?.seq).toBe(40);
+    expect(avaliarAcl(regras, { proto: "tcp", origem: laptop, destino: ip("192.168.10.162"), portaOrigem: 1025, portaDestino: 22 }).regra?.seq).toBe(50);
+    expect(avaliarAcl(regras, { proto: "icmp", origem: laptop, destino: ip("192.168.10.130") }).regra?.seq).toBe(20);
+    expect(avaliarAcl(regras, { proto: "tcp", origem: laptop, destino: ip("203.0.113.10"), portaOrigem: 1025, portaDestino: 80 }).regra?.seq).toBe(60);
   });
 
   it("what matches no line falls into the implicit deny", () => {
@@ -75,7 +75,7 @@ describe("the ACL is read top to bottom", () => {
     expect(d).toEqual({ permitido: false, regra: undefined });
   });
 
-  it("DHCP from 0.0.0.0 passes, because line 5 exists", () => {
+  it("DHCP from 0.0.0.0 passes, because line 10 exists", () => {
     expect(avaliarAcl(regras, { proto: "udp", origem: 0, destino: 0xffffffff, portaOrigem: 68, portaDestino: 67 }).permitido).toBe(true);
   });
 });
@@ -136,8 +136,10 @@ describe("Packet Tracer commands and outputs come from the same model", () => {
   it("the subinterface of the Wi-Fi carries the ACL, and the trunk allows the three VLANs", () => {
     const r1 = configR1(t).join("\n");
     expect(r1).toContain("interface GigabitEthernet0/0.20\n description VLAN 20 CIDADAO\n encapsulation dot1Q 20\n ip address 192.168.10.1 255.255.255.128\n ip nat inside\n ip access-group CIDADAO-IN in");
-    expect(r1).toContain(" 10 deny ip 192.168.10.0 0.0.0.127 192.168.10.128 0.0.0.31");
-    expect(r1).toContain(" 30 permit tcp 192.168.10.0 0.0.0.127 host 192.168.10.162 eq www");
+    // Digitadas sem número: o IOS numera de 10 em 10, que é o que o lab mostra.
+    expect(r1).toContain("\n deny ip 192.168.10.0 0.0.0.127 192.168.10.128 0.0.0.31\n");
+    expect(r1).toContain("\n permit tcp 192.168.10.0 0.0.0.127 host 192.168.10.162 eq www\n");
+    expect(regrasDoCidadao(t).map((r) => r.seq)).toEqual([10, 20, 30, 40, 50, 60]);
     expect(r1).toContain("ip dhcp excluded-address 192.168.10.161 192.168.10.162");
     expect(configSw1(t)).toContain(" switchport trunk allowed vlan 10,20,30");
   });
