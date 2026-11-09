@@ -43,6 +43,20 @@ verify explanations against their primary sources when reviewing translations.
 Use `apps/site/src/locales/overrides.ts` for editorial corrections; a changed
 source phrase needs a new catalog entry and cannot silently reuse stale wording.
 
+## Templates with slots
+
+A catalog entry with slots (`"{0} of {1}"` → `"{0} de {1}"`) also translates
+text the model composes at runtime, and a slot is itself translated when the
+catalog knows it. A template whose fixed text is a single word (`"{0} in"`,
+`"only {0}"`, `"{0} of {1}"`) is weak: on its own it matches ordinary prose,
+and used to turn "Zoom in" into "Zoom em" and "span payments" into
+"span pág.ayments". At the top level, a weak template applies only when every
+slot is a value — a number, id, file, acronym or measure (`13.3 KiB`) — or a
+phrase the catalog already holds; otherwise the text stays in its original
+language. Inside another template the context is already established and the
+rule is relaxed. Text left untranslated is a missing catalog entry, which is
+fixable; a half-translated sentence is a defect the reader cannot see past.
+
 Normal builds consume committed catalogs and perform no translation requests.
 To refresh the inventory after building:
 

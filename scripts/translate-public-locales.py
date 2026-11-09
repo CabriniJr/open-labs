@@ -2,6 +2,12 @@
 
 Normal builds and deployed applications never invoke this script or a translator.
 Only run this helper for source text already published by its author.
+
+It calls the unofficial, unauthenticated Google Translate web endpoint
+(`translate.googleapis.com`, `client=gtx`): no SLA, it may rate-limit or change
+without notice, and it is not a licensed API. Treat it as a one-off bootstrap
+for the catalogs, never as a CI step. Its output is raw: run
+`node scripts/repair-locales.mjs` and review before committing.
 """
 import concurrent.futures
 import json
