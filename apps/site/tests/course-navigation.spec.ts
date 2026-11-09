@@ -1,7 +1,9 @@
 import { expect, test } from "@playwright/test";
 
 test.beforeEach(async ({ page }) => {
-  await page.addInitScript(() => localStorage.setItem("openlabs-language-v1", "en"));
+  await page.addInitScript(() => {
+    if (!localStorage.getItem("openlabs-language-v1")) localStorage.setItem("openlabs-language-v1", "en");
+  });
 });
 
 async function openTrail(page: import("@playwright/test").Page) {
