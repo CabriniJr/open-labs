@@ -15,11 +15,9 @@ import type { Page } from "@playwright/test";
  * finge trocar o tema.
  */
 export async function noTema(page: Page, tema: "light" | "dark") {
-  const botao = page.locator("[data-theme-toggle]").first();
-  for (let tentativa = 0; tentativa < 3; tentativa += 1) {
-    const atual = await page.evaluate(() => document.documentElement.dataset.theme);
-    if (atual === tema) return;
-    await botao.click();
-  }
-  throw new Error(`o botão de tema não chegou em ${tema}`);
+  await page.getByRole("button", { name: /Open settings|Abrir configurações/ }).click();
+  await page.getByRole("combobox", { name: /Appearance|Aparência/ }).selectOption(tema);
+  await page.getByRole("button", { name: /Close settings|Fechar configurações/ }).click();
+  const atual = await page.evaluate(() => document.documentElement.dataset.theme);
+  if (atual !== tema) throw new Error(`o menu de configurações não chegou em ${tema}`);
 }

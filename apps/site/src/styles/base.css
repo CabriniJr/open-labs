@@ -77,3 +77,16 @@ a {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/*
+  O palco do lab respeita a mesma margem e a mesma largura máxima do texto.
+  Sem isto as abas, os controles e o palco encostavam na borda da janela
+  enquanto o título, logo acima, tinha margem. Três labs já resolviam isso com
+  uma regra própria na página (`.ctxlab-page .lab-palco`…); ela é mais
+  específica e continua valendo.
+*/
+.lab-palco {
+  max-width: 92rem;
+  margin-inline: auto;
+  padding-inline: var(--space-3);
+}

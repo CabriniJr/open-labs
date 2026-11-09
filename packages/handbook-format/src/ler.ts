@@ -37,7 +37,9 @@ export function lerSubmissao(
   opcoes: { readonly raizDosArtigos?: string } = {},
 ): LeituraDeSubmissao {
   const caminho = `${dir}/${NOME_DO_MANIFESTO}`;
-  const esperado = dir.replace(/\/+$/u, "").split("/").pop() ?? dir;
+  // `\` também separa: no Windows o caminho chega com barra invertida, e o nome
+  // da pasta era o caminho inteiro — todo handbook reprovava fora do Linux.
+  const esperado = dir.replace(/[\\/]+$/u, "").split(/[\\/]/u).pop() ?? dir;
 
   if (!existsSync(caminho)) {
     return {

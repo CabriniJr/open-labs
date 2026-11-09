@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "astro dev",
-    "build": "node ../../scripts/build-delivery-host.mjs && astro build",
+    "build": "node ../../scripts/build-delivery-host.mjs && astro build && node ../../scripts/build-locale-search.mjs",
     "preview": "astro preview",
     "test:e2e": "playwright test",
     "qa:labs": "node qa/labs.mjs"
@@ -22,6 +22,7 @@
     "@ovh/interactive-core": "workspace:*",
     "@ovh/kubernetes-domain": "workspace:*",
     "@ovh/motion": "workspace:*",
+    "@ovh/network-domain": "workspace:*",
     "@ovh/otel-domain": "workspace:*",
     "@ovh/splunk-domain": "workspace:*",
     "@ovh/stage3d": "workspace:*",

@@ -27,9 +27,9 @@ const editar = `https://github.com/CabriniJr/open-labs/edit/main/docs/${chapter.
 <Base
   title={`${chapter.title} — OTel Visual Handbook`}
   description={tema?.blurb ?? chapter.title}
-  lang="pt-BR"
+  lang={chapter.language ?? "pt-BR"}
 >
-  <SiteNav current="docs" search lang="pt-BR" />
+  <SiteNav current="docs" search lang={chapter.language ?? "pt-BR"} />
   <div class="doc">
     <aside class="doc__aside" data-pagefind-ignore>
       <!-- Em tela estreita o índice inteiro vem antes do texto e empurra o

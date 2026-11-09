@@ -51,6 +51,16 @@ test("o Studio entrega um ZIP que roda conteúdo e Pod lifecycle fora do reposit
   await assessment.getByRole("button", { name: "Submit with 6 incomplete", exact: true }).click();
   await expect(assessment.getByRole("region", { name: "Assessment result", exact: true })).toContainText("Grade 0.71 / 10");
   await expect(assessment.locator(".assessment-resolution")).toHaveCount(7);
+  const code = await assessment.locator(".assessment-code code").first().textContent();
+  await runner.getByRole("button", { name: "Open settings", exact: true }).click();
+  await runner.getByRole("combobox", { name: "Language", exact: true }).selectOption("pt-BR");
+  await runner.getByRole("button", { name: "Fechar configurações", exact: true }).click();
+  await expect(assessment.getByRole("region", { name: "Resultado da avaliação", exact: true })).toContainText("Nota 0,71 / 10");
+  expect(await assessment.locator(".assessment-code code").first().textContent()).toBe(code);
+  await runner.reload();
+  await expect(runner.locator("html")).toHaveAttribute("lang", "pt-BR");
+  await runner.getByRole("navigation", { name: "Currículo do handbook", exact: true }).getByRole("button", { name: /Simulado do handbook de Kubernetes/ }).click();
+  await expect(assessment.locator(".assessment-result h3")).toHaveText("Nota 0,71 / 10");
   expect(await runner.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
 });
 
