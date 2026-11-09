@@ -7788,5 +7788,10 @@
   "Selected — press Ctrl+C": "Selecionado — aperte Ctrl+C",
   "Copy the {0} commands": "Copiar os comandos do {0}",
   "Copy the commands of this step": "Copiar os comandos deste passo",
-  "copiado": "copiado"
+  "copiado": "copiado",
+  "Templates with slots": "Moldes com lacunas",
+  "A catalog entry with slots (": "Uma entrada do catálogo com lacunas (",
+  ") also translates text the model composes at runtime, and a slot is itself translated when the catalog knows it. A template whose fixed text is a single word (": ") também traduz o texto que o modelo compõe em tempo de execução, e uma lacuna é traduzida também quando o catálogo a conhece. Um molde cujo texto fixo é uma palavra só (",
+  ") is weak: on its own it matches ordinary prose, and used to turn “Zoom in” into “Zoom em” and “span payments” into “span pág.ayments”. At the top level, a weak template applies only when every slot is a value — a number, id, file, acronym or measure (": ") é fraco: sozinho, ele casa com prosa comum, e transformava “Zoom in” em “Zoom em” e “span payments” em “span pág.ayments”. No nível de fora, um molde fraco só vale quando cada lacuna é um valor — número, id, arquivo, sigla ou medida (",
+  ") — or a phrase the catalog already holds; otherwise the text stays in its original language. Inside another template the context is already established and the rule is relaxed. Text left untranslated is a missing catalog entry, which is fixable; a half-translated sentence is a defect the reader cannot see past.": ") — ou uma frase que o catálogo já tem; senão, o texto fica no idioma original. Dentro de outro molde o contexto já está dado e a regra relaxa. Texto sem tradução é uma entrada que falta no catálogo, e tem conserto; frase traduzida pela metade é um defeito que o leitor não consegue contornar."
 }
