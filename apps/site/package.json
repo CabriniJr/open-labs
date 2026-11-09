@@ -22,6 +22,7 @@
     "@ovh/interactive-core": "workspace:*",
     "@ovh/kubernetes-domain": "workspace:*",
     "@ovh/motion": "workspace:*",
+    "@ovh/network-domain": "workspace:*",
     "@ovh/otel-domain": "workspace:*",
     "@ovh/splunk-domain": "workspace:*",
     "@ovh/stage3d": "workspace:*",

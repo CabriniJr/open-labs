@@ -1,0 +1,86 @@
+# O handbook de redes. Nasceu da Global Solution 2026.2 (FIAP · CitizenTech):
+# acesso gratuito à educação tecnológica, com a rede de um telecentro
+# comunitário como cenário. O lugar é o pretexto; o assunto é como os
+# protocolos funcionam, e cada lab mostra o mesmo passo no Cisco Packet Tracer.
+#
+# O caminho dourado inteiro está em docs/handbooks.md.
+apiVersion: openlabs/handbook/v1
+
+id: networks
+name: Networks Visual Handbook
+subject: networks
+tagline: One Wi-Fi, three rooms. Watch every protocol do its part, packet by packet.
+blurb: >-
+  A community telecentre lends its Wi-Fi to anyone who wants to learn. Follow a
+  learner's laptop from no address to the internet — DHCP, DNS, HTTP, VLANs over
+  an 802.1Q trunk, NAT and ACLs — in 3D, with the same step in Cisco Packet Tracer
+  beside it.
+model: telecentre network · packet model
+stage: building
+
+# Quem mantém. É daqui que sai o CODEOWNERS deste diretório.
+# TODO(Rogerio): troque pelo seu usuário do GitHub e rode
+#   node scripts/handbook.mjs codeowners --write
+maintainers:
+  - name: Rogerio
+    github: SEU-USUARIO-GITHUB
+
+theme:
+  light:
+    accent: "#0e7490"
+    flow: "#0e7490"
+    dropped: "#b8442a"
+    ok: "#3f7a52"
+    mutation: "#c2410c"
+    processor: "#0e7490"
+    conduit: "#3f7a52"
+    species: ["#0e7490", "#6d28d9", "#b45309", "#285fce"]
+  dark:
+    accent: "#22d3ee"
+    flow: "#22d3ee"
+    processor: "#22d3ee"
+    species: ["#22d3ee", "#c4a7f7", "#e3b341", "#9bbdff"]
+
+phases:
+  - number: 1
+    title: A network you can walk through
+    line: Addresses, VLANs, the trunk and the router that joins them.
+  - number: 2
+    title: Leaving the building
+    line: NAT, routes, and why a private address cannot answer from the internet.
+  - number: 3
+    title: Who may talk to whom
+    line: ACLs, management by SSH, and Wi-Fi security.
+
+articles:
+  - id: a-vlan-is-a-separate-room
+    title: A VLAN is a separate room, not a label
+    status: coming
+    phase: 1
+  - id: nat-is-a-notebook
+    title: NAT is a notebook the router keeps
+    status: coming
+    phase: 2
+  - id: the-first-line-that-matches
+    title: An ACL stops at the first line that matches
+    status: coming
+    phase: 3
+
+labs:
+  - id: telecentro-network
+    title: What happens when a learner joins the telecentre Wi-Fi
+    status: available
+    phase: 1
+    href: labs/telecentro-network
+  - id: subnetting-by-need
+    title: Splitting a /24 by how many people need it
+    status: coming
+    phase: 1
+  - id: nat-table
+    title: One public address, many conversations
+    status: coming
+    phase: 2
+  - id: acl-order
+    title: Move one ACL line and watch what breaks
+    status: coming
+    phase: 3

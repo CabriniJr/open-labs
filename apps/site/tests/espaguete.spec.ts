@@ -396,6 +396,10 @@ const SEM_PALCO: ReadonlySet<string> = new Set([
   "labs/host-and-kubernetes-signals/",
   "labs/disconnected-signals/",
   "labs/the-rollout/",
+  // A rede do telecentro (handbook de redes, 08/11/2026): filme com vista
+  // isométrica e simulação React; os fios são cabos fixos de uma topologia
+  // pequena, sem roteador de fios do `depth-ui`.
+  "labs/telecentro-network/",
 ]);
 
 test("todo lab publicado COM palco tem teto de cruzamentos medido", () => {

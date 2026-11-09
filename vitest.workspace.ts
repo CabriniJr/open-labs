@@ -15,6 +15,7 @@ export default defineWorkspace([
         "packages/cpu-domain/src/**/*.test.ts",
         "packages/algo-domain/src/**/*.test.ts",
         "packages/splunk-domain/src/**/*.test.ts",
+        "packages/network-domain/src/**/*.test.ts",
         "packages/model-format/src/**/*.test.ts",
         "packages/mermaid-skeleton/src/**/*.test.ts",
         "packages/handbook-format/src/**/*.test.ts",

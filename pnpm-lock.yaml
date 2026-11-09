@@ -99,6 +99,9 @@ importers:
       '@ovh/motion':
         specifier: workspace:*
         version: link:../../packages/motion
+      '@ovh/network-domain':
+        specifier: workspace:*
+        version: link:../../packages/network-domain
       '@ovh/otel-domain':
         specifier: workspace:*
         version: link:../../packages/otel-domain
@@ -279,6 +282,12 @@ importers:
       jsdom:
         specifier: ^25.0.1
         version: 25.0.1
+
+  packages/network-domain:
+    dependencies:
+      '@ovh/motion':
+        specifier: workspace:*
+        version: link:../motion
 
   packages/otel-domain:
     dependencies:
