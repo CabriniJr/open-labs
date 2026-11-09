@@ -7787,5 +7787,6 @@
   "Copied": "Copiado",
   "Selected — press Ctrl+C": "Selecionado — aperte Ctrl+C",
   "Copy the {0} commands": "Copiar os comandos do {0}",
-  "Copy the commands of this step": "Copiar os comandos deste passo"
+  "Copy the commands of this step": "Copiar os comandos deste passo",
+  "copiado": "copiado"
 }

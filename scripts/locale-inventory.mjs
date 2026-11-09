@@ -40,7 +40,12 @@ function add(value, file, hint = "en", scope = "ui") {
   if (old) { if (scope === "ui") old.scope = "ui"; if (!old.files.includes(file)) old.files.push(file); return; }
   messages.set(source, { source, language: language(source, hint), scope, files: [file] });
 }
-function walk(dir, accept) { return readdirSync(dir, { recursive: true, withFileTypes: true }).filter((e) => e.isFile() && accept(e.name)).map((e) => join(e.parentPath, e.name)).sort(); }
+// Sorted by the "/" form of the path on every OS. The first file a message is
+// found in supplies its language hint, so the order must not depend on the
+// separator: with "\" Windows sorted differently and classified some short
+// strings differently from CI.
+const posix = (p) => p.replaceAll("\\", "/");
+function walk(dir, accept) { return readdirSync(dir, { recursive: true, withFileTypes: true }).filter((e) => e.isFile() && accept(e.name)).map((e) => join(e.parentPath, e.name)).sort((a, b) => (posix(a) < posix(b) ? -1 : posix(a) > posix(b) ? 1 : 0)); }
 for (const path of walk(join(root, "apps/site/dist"), (name) => name.endsWith(".html"))) {
   const file = relative(root, path), doc = new JSDOM(readFileSync(path, "utf8")).window.document;
   const scope = file.includes("/docs/") ? "reference" : "ui";
