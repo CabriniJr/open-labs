@@ -1,0 +1,58 @@
+---
+import AlgoPagina from "../../components/AlgoPagina.astro";
+import SiteFooter from "../../components/SiteFooter.astro";
+import SiteNav from "../../components/SiteNav.astro";
+import Base from "../../layouts/Base.astro";
+import { CrescimentoModos } from "../../components/CrescimentoLab.tsx";
+import { Predicao } from "../../components/Predicao.tsx";
+---
+
+<Base domain="algorithms" title="Six ways to grow: O(1) to O(2ⁿ), measured — OpenLabs" description="Six real algorithms count their own work as n doubles — reading an array slot, binary search, linear search, merge sort, selection sort and brute-force subsets — and the doubling test names each class. Then time them on your own device.">
+<SiteNav current="labs" />
+<AlgoPagina
+  titulo="Six ways to grow: O(1) to O(2ⁿ), measured"
+  href="labs/how-work-grows"
+  nota={["Big-O is not a formula you memorise.", "It is what happens when n doubles.", "Run it twice, divide, and you know."]}
+  quebre={[
+    { b: "Pick n = 4096 and read the exponential row.", texto: "It was not run. The table shows the formula and how long it would take: longer than the universe has existed, at a billion operations per second." },
+    { b: "Change ops/s to a trillion.", texto: "A machine a thousand times faster moves the quadratic from milliseconds to microseconds — and leaves the exponential exactly as hopeless. Better hardware does not change the class." },
+    { b: "Time it on this device, then switch to Measured time.", texto: "The lines keep the same slopes, but the small sizes wobble: the timer, the JIT and the cache are louder than the algorithm until n is big enough." },
+    { b: "Turn the formula off and look at merge sort.", texto: "Its counted line sits below n·log₂n — the formula is the worst case, a random array is cheaper — but its doubling ratio still settles just above 2." },
+  ]}
+  erros={[
+    { crenca: "O(n) means it takes n seconds (or n steps).", verdade: "It means the work grows in proportion to n. Linear search here does exactly n comparisons, but O(n) would still be the class if it did 3n + 40." },
+    { crenca: "A faster computer fixes a slow algorithm.", verdade: "It divides every row by the same factor. The quadratic stays four times worse per doubling, and the exponential still doubles per item." },
+    { crenca: "O(log n) is about as slow as O(n), just a bit better.", verdade: "From n = 2 to n = 4096 binary search went from 2 to 13 comparisons. Linear search went from 2 to 4096." },
+    { crenca: "Big-O tells you which code is faster for your input.", verdade: "It tells you how cost grows. For n = 8 the measured times of all six are within noise of each other; the class decides only once n is large." },
+  ]}
+  fronteira="Each class is represented by one algorithm on one kind of input (the worst case for the searches, a seeded random array for the sorts). Counted work is exact and identical on every machine; measured time depends on your device, browser and what else is running. Space complexity, amortised analysis and average-case proofs are out of scope here."
+  ligacoes={[
+    { href: "labs/sorting-race", texto: "Sorting, swap by swap — the race where O(n²) and O(n log n) meet on the same input" },
+    { href: "labs/shortest-path", texto: "Four ways across a city map — what O((V + E) log V) looks like" },
+    { href: "labs/greedy-change", texto: "Greedy, and the case it misses — when the cheap O(k) answer is wrong" },
+  ]}
+>
+  <p>
+    Every algorithm has a bill, and the bill depends on the size of the input. This lab
+    does not tell you the bill: it runs six algorithms and lets them count it — memory
+    reads, comparisons, subsets tried — while <i>n</i> doubles from 2 to 4096.
+  </p>
+  <p>
+    The trick that turns counts into a class is the <b>doubling test</b>. Double the
+    input and divide the new count by the old one. A ratio of 1 is constant; a ratio that
+    falls towards 1 is logarithmic; 2 is linear; a little over 2 is <i>n log n</i>; 4 is
+    quadratic. The exponential does not settle at all — and stops being measurable
+    before <i>n</i> = 32.
+  </p>
+  <CrescimentoModos slot="palco" client:only="react" />
+  <Predicao
+    slot="predicao"
+    client:visible
+    pergunta="An algorithm took 1 second for 10 000 items and 4 seconds for 20 000. Roughly how long will 40 000 take, and what class is it?"
+    opcoes={["16 seconds — quadratic: each doubling multiplies the time by 4", "8 seconds — linear: double the items, double the time", "6 seconds — n log n: a bit more than double each time"]}
+    correta={0}
+    revelacao="Doubling n multiplied the time by 4, so the cost grows with n². Doubling again multiplies by 4 again: 16 seconds. That is the doubling test, and it is the same ratio the selection sort row shows in the table."
+  />
+</AlgoPagina>
+<SiteFooter />
+</Base>

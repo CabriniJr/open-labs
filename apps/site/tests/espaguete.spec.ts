@@ -400,6 +400,14 @@ const SEM_PALCO: ReadonlySet<string> = new Set([
   // isométrica e simulação React; os fios são cabos fixos de uma topologia
   // pequena, sem roteador de fios do `depth-ui`.
   "labs/telecentro-network/",
+  // O curso de algoritmos (09/11/2026): filmes do `@ovh/motion` (o mapa com
+  // vista isométrica) e simulações React em SVG livre — barras, gráfico log-log,
+  // editor de grafo, mapa e moedas. Nenhum fio roteado pelo `depth-ui`.
+  "labs/how-work-grows/",
+  "labs/sorting-race/",
+  "labs/what-is-a-graph/",
+  "labs/shortest-path/",
+  "labs/greedy-change/",
 ]);
 
 test("todo lab publicado COM palco tem teto de cruzamentos medido", () => {

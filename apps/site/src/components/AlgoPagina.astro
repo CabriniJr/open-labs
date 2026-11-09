@@ -1,0 +1,180 @@
+---
+/**
+ * A página de um lab do handbook de algoritmos. A anatomia é a de todo lab do
+ * projeto (cabeça editorial, palco, "Break it", previsão, o que as pessoas
+ * erram, a fronteira do experimento); este componente só evita copiar o mesmo
+ * esqueleto cinco vezes. O palco e a previsão chegam por slot, porque são ilhas
+ * React com hidratação própria. `Base`, `SiteNav` e o rodapé ficam na página:
+ * toda página de lab se marca como lab ela mesma (`labs-alcancaveis.test.ts`).
+ */
+import LabAssessment from "./LabAssessment.astro";
+import { url } from "../lib/urls";
+import "../styles/docs.css";
+import "./ModosDoLab.css";
+import "./CpuVitrine.css";
+import "./ContextoLab.css";
+import "./AlgoLab.css";
+import "./Predicao.css";
+import "@ovh/motion/src/react/motion.css";
+
+interface Props {
+  titulo: string;
+  /** `labs/<slug>`, como no handbook.yaml. */
+  href: string;
+  nota: readonly string[];
+  quebre: readonly { b: string; texto: string }[];
+  erros: readonly { crenca: string; verdade: string }[];
+  fronteira: string;
+  /** Tópicos de onde este lab vem e para onde ele vai. */
+  ligacoes: readonly { href: string; texto: string }[];
+}
+const { titulo, href, nota, quebre, erros, fronteira, ligacoes } = Astro.props;
+---
+
+<main id="content">
+    <section class="lab-head editorial">
+      <div class="prose">
+        <p class="lab-head__eyebrow mono">
+          <a href={url("handbooks/algorithms")}>Algorithms Visual Handbook</a> · lab
+        </p>
+        <h1>{titulo}</h1>
+        <slot />
+      </div>
+      <aside class="lab-head__note mono">
+        {nota.map((n) => <p>{n}</p>)}
+      </aside>
+    </section>
+
+    <section class="lab-palco">
+      <slot name="palco" />
+    </section>
+
+    <section class="lab-prosa editorial">
+      <div class="prose">
+        <h2>Break it</h2>
+        <ol>
+          {
+            quebre.map((q) => (
+              <li>
+                <b>{q.b}</b> {q.texto}
+              </li>
+            ))
+          }
+        </ol>
+
+        <h2>Predict before you look</h2>
+        <p>Answer first, then try it in the simulation.</p>
+      </div>
+      <div class="lab-predicao">
+        <slot name="predicao" />
+      </div>
+    </section>
+
+    <section class="lab-prosa editorial">
+      <div class="prose">
+        <h2>What people get wrong</h2>
+      </div>
+      <div class="lab-mal-entendidos">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">What people believe</th>
+              <th scope="col">What actually happens</th>
+            </tr>
+          </thead>
+          <tbody>
+            {
+              erros.map((m) => (
+                <tr>
+                  <td>{m.crenca}</td>
+                  <td>{m.verdade}</td>
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="lab-prosa editorial">
+      <div class="prose">
+        <h2>Where this experiment stops</h2>
+        <p>{fronteira}</p>
+        <h2>Connected labs</h2>
+        <ul>
+          {
+            ligacoes.map((l) => (
+              <li>
+                <a href={url(l.href)}>{l.texto}</a>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </section>
+    <LabAssessment href={href} />
+  </main>
+
+<style>
+  .lab-head {
+    padding-block: var(--space-4) var(--space-2);
+  }
+
+  .lab-head__eyebrow {
+    margin: 0 0 var(--space-1);
+    color: var(--accent);
+    font-size: var(--size-step--1);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  h1 {
+    margin: 0 0 var(--space-2);
+    font-size: var(--size-step-2);
+    max-width: 24ch;
+  }
+
+  .lab-head__note {
+    align-self: end;
+    color: var(--ink-muted);
+    font-size: var(--size-step--1);
+  }
+
+  .lab-head__note p {
+    margin: 0 0 0.35rem;
+  }
+
+  .lab-palco {
+    margin-block: var(--space-2) var(--space-4);
+  }
+
+  .lab-prosa {
+    padding-block-end: var(--space-4);
+  }
+
+  .lab-predicao {
+    grid-column: 1 / -1;
+    margin-block-start: var(--space-2);
+    max-width: var(--measure);
+  }
+
+  .lab-mal-entendidos {
+    grid-column: 1 / -1;
+    margin-block-start: var(--space-2);
+    overflow-x: auto;
+  }
+
+  .lab-mal-entendidos table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: var(--size-step--1);
+  }
+
+  .lab-mal-entendidos th,
+  .lab-mal-entendidos td {
+    border-block-end: 1px solid var(--border);
+    padding: var(--space-1) var(--space-2);
+    text-align: start;
+    vertical-align: top;
+  }
+</style>

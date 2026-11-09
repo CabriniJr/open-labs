@@ -1,0 +1,57 @@
+---
+import AlgoPagina from "../../components/AlgoPagina.astro";
+import SiteFooter from "../../components/SiteFooter.astro";
+import SiteNav from "../../components/SiteNav.astro";
+import Base from "../../layouts/Base.astro";
+import { CorridaModos } from "../../components/CorridaLab.tsx";
+import { Predicao } from "../../components/Predicao.tsx";
+---
+
+<Base domain="algorithms" title="Sorting, swap by swap: five algorithms race on the same input — OpenLabs" description="Bubble, insertion, selection, merge and quicksort race on the same array with the same clock: one step per comparison, swap or write. Change the input shape and the podium changes. Then time them for real on your device.">
+<SiteNav current="labs" />
+<AlgoPagina
+  titulo="Sorting, swap by swap: five algorithms race on the same input"
+  href="labs/sorting-race"
+  nota={["Same array. Same clock.", "One step = one comparison, swap or write.", "The input decides the podium."]}
+  quebre={[
+    { b: "Set the input to “already sorted”.", texto: "Bubble and insertion finish almost instantly — one pass, no swaps — while quicksort, with its last-item pivot, does the full n(n−1)/2 comparisons. The fastest algorithm on random data is the slowest here." },
+    { b: "Set it to “reversed”.", texto: "Insertion now swaps every pair: n(n−1)/2 swaps. Selection does exactly the same number of comparisons as on any other input — it never looks at what it has already learned." },
+    { b: "Type 3 3 3 3 3 3 3 3.", texto: "Nothing to do, and you can see who knows it: bubble stops after one pass; selection still scans everything." },
+    { b: "Measure 4 000 items on this device.", texto: "The step counts become milliseconds. Merge sort pays for its speed with an auxiliary array as big as the input — the only lane whose extra memory is not zero." },
+  ]}
+  erros={[
+    { crenca: "Quicksort is always the fastest.", verdade: "On average it is O(n log n) with small constants. With a naive pivot on sorted input it is O(n²) — the race shows it finishing last." },
+    { crenca: "Bubble sort is useless.", verdade: "It is O(n²) on average, but on an almost-sorted array it is one pass: O(n). Insertion sort shares that, and real libraries use it for small or nearly sorted runs." },
+    { crenca: "Fewer comparisons always means faster.", verdade: "Merge sort makes few comparisons but writes every item at every level, and needs n extra slots. The table counts swaps and writes separately so you can see the trade." },
+    { crenca: "The algorithm decides the cost on its own.", verdade: "The input decides it as much. Every row of the podium can change by switching from random to sorted to reversed." },
+  ]}
+  fronteira="Every step costs the same here, which real hardware does not do: a write can cost more than a comparison, and memory access patterns (cache) matter. The quicksort uses the last item as pivot on purpose, to show its worst case; production quicksorts choose pivots more carefully and switch to insertion sort for small runs. Stability, heapsort, radix sort and parallel sorts are out of scope."
+  ligacoes={[
+    { href: "labs/how-work-grows", texto: "Six ways to grow — where O(n²) and O(n log n) come from" },
+    { href: "labs/rpn", texto: "A stack machine — the stack that quicksort's recursion hides" },
+  ]}
+>
+  <p>
+    Five algorithms, one array, one clock. Every comparison, every swap and every write
+    costs one step, and all lanes advance together — so the lane that finishes first is
+    the one that did the least work on <i>this</i> input.
+  </p>
+  <p>
+    What separates them is not the operation. They all compare and move items. It is
+    <b>who decides which pair to look at next</b>: the bubble always looks at the next
+    neighbour; insertion slides one item left; selection scans for the minimum; merge
+    takes the smaller head of two sorted halves; quicksort throws everything to one side
+    of a pivot. Change that one rule and the cost goes from <i>n</i>² to <i>n</i> log <i>n</i>.
+  </p>
+  <CorridaModos slot="palco" client:only="react" />
+  <Predicao
+    slot="predicao"
+    client:visible
+    pergunta="The array is already sorted, 64 items. Which algorithm finishes LAST in the race?"
+    opcoes={["Quicksort (last item as pivot)", "Bubble sort", "Merge sort"]}
+    correta={0}
+    revelacao="With the last item as pivot, every partition of a sorted array is as unbalanced as possible: one side empty, the other with everything else. That is 63 + 62 + … + 1 = 2 016 comparisons — the worst case. Bubble sort does one pass of 63 comparisons and stops."
+  />
+</AlgoPagina>
+<SiteFooter />
+</Base>

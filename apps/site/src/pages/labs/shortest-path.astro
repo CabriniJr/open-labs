@@ -1,0 +1,61 @@
+---
+import AlgoPagina from "../../components/AlgoPagina.astro";
+import SiteFooter from "../../components/SiteFooter.astro";
+import SiteNav from "../../components/SiteNav.astro";
+import Base from "../../layouts/Base.astro";
+import { CaminhoModos } from "../../components/CaminhoLab.tsx";
+import { Predicao } from "../../components/Predicao.tsx";
+import "@ovh/stage3d/src/iso.css";
+---
+
+<Base domain="algorithms" title="Four ways across a city: BFS, greedy, Dijkstra and A* — OpenLabs" description="The same city map, the same trip from Home to the Harbor, four search rules. Breadth-first counts roads, greedy trusts how close things look, Dijkstra trusts the time already spent, and A* combines both. Jam roads and watch the scoreboard change.">
+<SiteNav current="labs" />
+<AlgoPagina
+  titulo="Four ways across a city: BFS, greedy, Dijkstra and A*"
+  href="labs/shortest-path"
+  nota={["Every search here is the same loop.", "Only the meaning of “best” changes.", "In 3D, height is the minutes it took to get there."]}
+  quebre={[
+    { b: "Run Greedy best-first from Home to the Harbor.", texto: "It heads straight for the water, reaches the Pier — which looks almost there — and takes the slow ferry: 68 minutes. Looking close is not being close." },
+    { b: "Run BFS.", texto: "It finds a route with only three roads, through the jammed Ring Expressway: 55 minutes. Fewest roads is the right answer only when every road costs the same." },
+    { b: "Compare Dijkstra with A*.", texto: "Same 26-minute route. Dijkstra examined 11 places; A* examined 6, because its guess (the straight line to the goal) never lets it wander away from the Harbor." },
+    { b: "Turn on the magic ferry (−10 minutes).", texto: "Dijkstra and A* refuse the map and say why: once a place is settled its time is final, and a negative road could still make it cheaper. Bellman-Ford is the algorithm for that." },
+    { b: "Jam Coast Rd (Museum–Harbor).", texto: "The fastest route changes, and every search reruns on the new map. Dijkstra and A* still agree with each other; greedy may not even notice." },
+  ]}
+  erros={[
+    { crenca: "Dijkstra and greedy are opposites.", verdade: "Dijkstra is greedy too: it always takes the cheapest place in the frontier. It is greedy on the right thing — time already paid — which is why it is optimal with non-negative weights." },
+    { crenca: "A* is just Dijkstra with a shortcut that might be wrong.", verdade: "With a heuristic that never overestimates (here, the straight line at the fastest road speed) A* returns exactly Dijkstra's answer, usually after fewer visits." },
+    { crenca: "BFS finds the shortest path.", verdade: "It finds the path with fewest edges. On a map where roads take different times that is often not the fastest one." },
+    { crenca: "GPS apps run Dijkstra on the whole country.", verdade: "They precompute and use A*-like searches on hierarchies of roads, because examining every corner within the distance of the trip would be far too slow." },
+  ]}
+  fronteira="The map has twelve places and twenty two-way roads with travel times in whole minutes; there are no one-way streets, turn costs or traffic that changes during the trip. The frontier is a simple sorted list so the panel can show all of it; real implementations use a binary heap. The heuristic for A* is the straight-line distance divided by the fastest road speed on the map, which keeps it admissible."
+  ligacoes={[
+    { href: "labs/what-is-a-graph", texto: "What a graph is — points, edges, weights" },
+    { href: "labs/greedy-change", texto: "Greedy, and the case it misses — the same lesson with coins" },
+    { href: "labs/how-work-grows", texto: "Six ways to grow — what the cost classes mean" },
+  ]}
+>
+  <p>
+    A city map is a graph: places are the points, roads are the edges, and the minutes
+    each road takes are its weights. Finding the fastest way from Home to the Harbor is
+    finding the cheapest path in that graph.
+  </p>
+  <p>
+    The four searches here are <b>the same loop</b>: take the best place out of the
+    frontier, look at its roads, put its neighbours in. The only thing that changes is
+    what “best” means. Breadth-first search takes the one reached with the fewest roads.
+    Greedy best-first takes the one that looks closest to the goal. Dijkstra takes the
+    one reached in the least time. A* adds the two: time so far plus a guess of the time
+    left. Watch where each one goes — and which ones are right.
+  </p>
+  <CaminhoModos slot="palco" client:only="react" />
+  <Predicao
+    slot="predicao"
+    client:visible
+    pergunta="Dijkstra has just settled the Park at 12 minutes. Can a later step find a faster way to the Park?"
+    opcoes={["No — with no negative roads, everything still in the frontier is at least 12 minutes away, so any detour through it is slower", "Yes — a place examined later might have a shortcut to the Park", "Only if the Park is not on the final route"]}
+    correta={0}
+    revelacao="Dijkstra settles places in order of time. Everything left in the frontier costs at least 12 minutes to reach, and roads only add time, so no path through them can reach the Park in under 12. That is the promise — and the reason a single negative road breaks it."
+  />
+</AlgoPagina>
+<SiteFooter />
+</Base>

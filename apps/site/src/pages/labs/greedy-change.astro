@@ -1,0 +1,56 @@
+---
+import AlgoPagina from "../../components/AlgoPagina.astro";
+import SiteFooter from "../../components/SiteFooter.astro";
+import SiteNav from "../../components/SiteNav.astro";
+import Base from "../../layouts/Base.astro";
+import { TrocoModos } from "../../components/TrocoLab.tsx";
+import { Predicao } from "../../components/Predicao.tsx";
+---
+
+<Base domain="algorithms" title="Greedy, and the case it misses: making change — OpenLabs" description="Pay an amount with the fewest coins. Greedy takes the biggest coin that fits; dynamic programming fills a table of every smaller amount. With Brazilian coins they agree; with the coins Britain used before 1971 they do not.">
+<SiteNav current="labs" />
+<AlgoPagina
+  titulo="Greedy, and the case it misses: making change"
+  href="labs/greedy-change"
+  nota={["Greedy: decide now, never look back.", "The table: solve every smaller case first.", "Same question, two prices, one of them always right."]}
+  quebre={[
+    { b: "Pick Toy coins {1, 3, 4} and pay 6.", texto: "Greedy takes 4, then 1, then 1: three coins. The table finds 3 + 3: two. Taking the biggest coin first locked greedy out of the better answer." },
+    { b: "Pick Britain before 1971 and pay 48 pence.", texto: "Greedy pays 30 + 12 + 6. The optimum is 24 + 24. Real coin systems were not always greedy-friendly — the modern ones are designed to be." },
+    { b: "Pick the Brazilian real and slide the amount.", texto: "Greedy and the table agree everywhere up to 500. The system is canonical: for these coins, the cheap rule is also the right one." },
+    { b: "Type 5 7 and pay 10.", texto: "Greedy grabs 7 and is stuck with 3. The table pays 5 + 5. Some amounts — 1, 2, 3 — cannot be paid at all, and the table marks them." },
+  ]}
+  erros={[
+    { crenca: "Greedy algorithms are approximations.", verdade: "Some are exact: Dijkstra, Kruskal's and Prim's minimum spanning trees, and coin change with canonical systems. Being greedy is only wrong when an early choice can block a better later one." },
+    { crenca: "Dynamic programming is a kind of recursion.", verdade: "It is recursion that remembers. Each amount is solved once and stored; the table here fills from 0 upward and never solves the same amount twice." },
+    { crenca: "The optimal answer is always much more expensive.", verdade: "The table costs amount × coins steps — 18 for {1, 3, 4} and 6 — against greedy's 3. More work, but polynomial, not exponential like trying every combination." },
+  ]}
+  fronteira="Amounts go up to 500 and systems up to 8 coin values, with an unlimited supply of each coin. The table answers the fewest-coins question; counting the number of different ways to make change is a different dynamic programme. The canonical check only looks up to 500, which the lab says rather than claiming a proof."
+  ligacoes={[
+    { href: "labs/shortest-path", texto: "Four ways across a city — Dijkstra, the greedy algorithm that is right" },
+    { href: "labs/how-work-grows", texto: "Six ways to grow — why the table beats trying every subset" },
+  ]}
+>
+  <p>
+    Pay an amount using as few coins as possible. The obvious rule is <b>greedy</b>:
+    take the biggest coin that fits, subtract, repeat. It looks at each coin value once
+    and never reconsiders.
+  </p>
+  <p>
+    Sometimes that is exactly right, and sometimes it is quietly wrong. The other way is
+    <b>dynamic programming</b>: solve every smaller amount first — 1, 2, 3, … — each one
+    from answers already in the table, and read the answer for the amount you want. It
+    is more work, but it never misses. This lab puts both side by side and finds, for
+    any coin system you type, the smallest amount where greedy loses.
+  </p>
+  <TrocoModos slot="palco" client:only="react" />
+  <Predicao
+    slot="predicao"
+    client:visible
+    pergunta="Coins are 1, 3 and 4. What is the smallest amount where greedy uses more coins than necessary?"
+    opcoes={["6", "5", "7"]}
+    correta={0}
+    revelacao="Up to 5 greedy is fine (5 = 4 + 1, two coins, and no single coin is 5). At 6 greedy takes 4 + 1 + 1 while 3 + 3 uses two coins. The lab finds this automatically for any system: try it."
+  />
+</AlgoPagina>
+<SiteFooter />
+</Base>
