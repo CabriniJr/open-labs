@@ -157,5 +157,30 @@
     "file": "File:Confluence of Indus and Zanskar rivers.jpg",
     "alt": "The confluence of the Indus and Zanskar rivers in Ladakh: two differently colored streams entering one channel",
     "altPt": "O encontro dos rios Indo e Zanskar, em Ladakh: duas águas de cores diferentes entrando no mesmo leito"
+  },
+  "splunk/phase-2": {
+    "file": "File:Seismogram at Weston Observatory.JPG",
+    "alt": "A drum seismograph recording a continuous trace, with the moments of ground motion standing out as events",
+    "altPt": "Um sismógrafo de tambor registrando um traço contínuo, em que os momentos de movimento do solo se destacam como eventos"
+  },
+  "splunk/phase-3": {
+    "file": "File:Interior of StorageTek tape library at NERSC (2).jpg",
+    "alt": "Inside a robotic tape library: walls of tape cartridges where data goes once it has aged",
+    "altPt": "O interior de uma biblioteca robótica de fitas: paredes de cartuchos para onde o dado vai depois de envelhecer"
+  },
+  "splunk/phase-4": {
+    "file": "File:Magnifying glass2.jpg",
+    "alt": "A magnifying glass held over a stamp collection, bringing one stamp into sharp focus",
+    "altPt": "Uma lupa sobre uma coleção de selos, pondo um selo em foco nítido"
+  },
+  "splunk/phase-5": {
+    "file": "File:Oak Ridge - Kraken (Cray XT5).JPG",
+    "alt": "The Kraken supercomputer: a long row of cabinets working as one machine",
+    "altPt": "O supercomputador Kraken: uma longa fileira de gabinetes trabalhando como uma só máquina"
+  },
+  "splunk/phase-6": {
+    "file": "File:Porto Museu STCP Control Panel.JPG",
+    "alt": "An old tram-network control panel with switches, dials and indicator lamps",
+    "altPt": "Um antigo painel de controle de uma rede de bondes, com chaves, mostradores e lâmpadas de sinalização"
   }
 }

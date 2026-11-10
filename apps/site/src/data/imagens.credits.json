@@ -245,5 +245,43 @@
     "license": "CC BY-SA 4.0",
     "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
     "source": "https://commons.wikimedia.org/wiki/File:Confluence_of_Indus_and_Zanskar_rivers.jpg"
+  },
+  "splunk/phase-2": {
+    "file": "File:Seismogram at Weston Observatory.JPG",
+    "alt": "A drum seismograph recording a continuous trace, with the moments of ground motion standing out as events",
+    "author": "Z22",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Seismogram_at_Weston_Observatory.JPG"
+  },
+  "splunk/phase-3": {
+    "file": "File:Interior of StorageTek tape library at NERSC (2).jpg",
+    "alt": "Inside a robotic tape library: walls of tape cartridges where data goes once it has aged",
+    "author": "Derrick Coetzee from Berkeley, CA, USA",
+    "license": "CC0",
+    "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "source": "https://commons.wikimedia.org/wiki/File:Interior_of_StorageTek_tape_library_at_NERSC_(2).jpg"
+  },
+  "splunk/phase-4": {
+    "file": "File:Magnifying glass2.jpg",
+    "alt": "A magnifying glass held over a stamp collection, bringing one stamp into sharp focus",
+    "author": "Heptagon",
+    "license": "Public domain",
+    "source": "https://commons.wikimedia.org/wiki/File:Magnifying_glass2.jpg"
+  },
+  "splunk/phase-5": {
+    "file": "File:Oak Ridge - Kraken (Cray XT5).JPG",
+    "alt": "The Kraken supercomputer: a long row of cabinets working as one machine",
+    "author": "Daderot",
+    "license": "Public domain",
+    "source": "https://commons.wikimedia.org/wiki/File:Oak_Ridge_-_Kraken_(Cray_XT5).JPG"
+  },
+  "splunk/phase-6": {
+    "file": "File:Porto Museu STCP Control Panel.JPG",
+    "alt": "An old tram-network control panel with switches, dials and indicator lamps",
+    "author": "TeWeBs",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Porto_Museu_STCP_Control_Panel.JPG"
   }
 }
