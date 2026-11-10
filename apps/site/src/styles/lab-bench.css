@@ -1,0 +1,127 @@
+/*
+ * A bancada do lab (LabBench.astro + lib/lab-bench-client.ts).
+ *
+ * Fora do foco, só um botão discreto acima do palco. Em foco, o palco vira uma
+ * grade que ocupa a tela: barra no topo, o lab na área "stage" e o guia ao
+ * lado ou embaixo, com uma divisória que se arrasta. O lab em si não muda de
+ * lugar no DOM — só ganha espaço.
+ */
+.lab-bench { position: relative; }
+.bench-bar {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: .4rem;
+  margin: 0 0 .6rem;
+}
+.bench-bar[hidden] { display: none; }
+.bench-bar__layout { display: inline-flex; padding: 2px; border: 1px solid var(--rule); border-radius: 999px; background: var(--paper-raised); }
+.bench-btn {
+  display: inline-flex; align-items: center; gap: .4rem; min-height: 2.25rem; padding: .3rem .8rem;
+  border: 1px solid var(--rule); border-radius: 999px; background: var(--paper-raised); color: var(--ink);
+  font: inherit; font-size: .8rem; font-weight: 600; cursor: pointer;
+  transition: border-color .15s, background .15s, color .15s;
+}
+.bench-btn svg { width: 1rem; height: 1rem; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+.bench-btn:hover { border-color: var(--accent); }
+.bench-bar__layout .bench-btn { border-color: transparent; min-height: 1.95rem; }
+.bench-btn[aria-checked="true"], .bench-btn[aria-pressed="true"] { background: color-mix(in srgb, var(--accent) 14%, var(--paper-raised)); color: var(--accent); border-color: transparent; }
+.bench-btn--focus { border-color: color-mix(in srgb, var(--accent) 45%, var(--rule)); color: var(--accent); }
+
+/* Fora do foco, o arranjo não tem o que arranjar. */
+.lab-bench:not([data-focus="true"]) .bench-bar__layout,
+.lab-bench:not([data-focus="true"]) [data-bench-swap],
+.lab-bench:not([data-focus="true"]) .bench-split,
+.lab-bench:not([data-focus="true"]) .bench-guide { display: none; }
+.lab-bench[data-no-guide="true"] .bench-bar__layout,
+.lab-bench[data-no-guide="true"] [data-bench-swap] { display: none; }
+
+/* ── foco: a tela é do lab ─────────────────────────────────────────────── */
+:root.bench-open { overflow: hidden; }
+.lab-bench[data-focus="true"] {
+  --bench-pad: clamp(.5rem, 1.5vw, 1rem);
+  position: fixed; inset: 0; z-index: 1000;
+  max-width: none; margin: 0; padding: var(--bench-pad);
+  display: grid; gap: 0; background: var(--paper); overflow: hidden;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-areas: "bar" "stage";
+}
+.lab-bench[data-focus="true"]:fullscreen { padding: var(--bench-pad); }
+.lab-bench[data-focus="true"] > .bench-bar { grid-area: bar; justify-content: space-between; margin-bottom: var(--bench-pad); }
+.lab-bench[data-focus="true"] > astro-island { grid-area: stage; display: block; min-width: 0; min-height: 0; overflow: auto; overscroll-behavior: contain; }
+.lab-bench[data-focus="true"] > .bench-split { grid-area: split; }
+.lab-bench[data-focus="true"] > .bench-guide { grid-area: guide; }
+
+/* Lado a lado: o guia ocupa a fração escolhida da largura. */
+.lab-bench[data-focus="true"][data-layout="side"] {
+  grid-template-columns: minmax(0, 1fr) .9rem minmax(13rem, calc(var(--bench-guide, .32) * 100%));
+  grid-template-areas: "bar bar bar" "stage split guide";
+}
+.lab-bench[data-focus="true"][data-layout="side"][data-side="start"] {
+  grid-template-columns: minmax(13rem, calc(var(--bench-guide, .32) * 100%)) .9rem minmax(0, 1fr);
+  grid-template-areas: "bar bar bar" "guide split stage";
+}
+/* Empilhado: o guia ocupa a fração escolhida da altura. */
+.lab-bench[data-focus="true"][data-layout="stack"] {
+  grid-template-rows: auto minmax(0, 1fr) .9rem minmax(6rem, calc(var(--bench-guide, .32) * 100%));
+  grid-template-areas: "bar" "stage" "split" "guide";
+}
+.lab-bench[data-focus="true"][data-layout="stack"][data-side="start"] {
+  grid-template-rows: auto minmax(6rem, calc(var(--bench-guide, .32) * 100%)) .9rem minmax(0, 1fr);
+  grid-template-areas: "bar" "guide" "split" "stage";
+}
+.lab-bench[data-focus="true"][data-layout="stage"] > .bench-split,
+.lab-bench[data-focus="true"][data-layout="stage"] > .bench-guide { display: none; }
+
+/* A divisória: uma alça que se vê, num alvo que se acerta com o dedo. */
+.bench-split { position: relative; cursor: col-resize; touch-action: none; }
+.lab-bench[data-layout="stack"] .bench-split { cursor: row-resize; }
+.bench-split::after {
+  content: ""; position: absolute; inset: 50% auto auto 50%; translate: -50% -50%;
+  width: 4px; height: 3rem; border-radius: 999px; background: var(--rule); transition: background .15s;
+}
+.lab-bench[data-layout="stack"] .bench-split::after { width: 3rem; height: 4px; }
+.bench-split:hover::after, .bench-split:focus-visible::after { background: var(--accent); }
+.bench-split:focus-visible { outline: none; }
+
+.bench-guide {
+  min-width: 0; min-height: 0; overflow: auto; overscroll-behavior: contain;
+  padding: 1rem 1.15rem; border: 1px solid var(--rule); border-radius: var(--radius-3);
+  background: var(--paper-raised); font-size: .92rem; line-height: 1.55;
+}
+.bench-guide h2 { margin: 0 0 .5rem; font-size: 1.15rem; }
+.bench-guide ol, .bench-guide ul { padding-left: 1.2rem; }
+.bench-guide li { margin-bottom: .6rem; }
+
+/* O lab ganha a altura que sobra. O palco do motor de fluxos tem altura
+   própria (--explorer-altura); o filme deriva a altura da largura e precisa de
+   um teto para caber em paisagem. */
+.lab-bench[data-focus="true"] .explorer { --explorer-altura: calc(100dvh - 11rem); }
+.lab-bench[data-focus="true"][data-layout="stack"] .explorer { --explorer-altura: calc((100dvh - 8rem) * (1 - var(--bench-guide, .32)) - 5rem); }
+.lab-bench[data-focus="true"] .mo-stage { max-height: calc(100dvh - 12rem); }
+.lab-bench[data-focus="true"][data-layout="stack"] .mo-stage { max-height: calc((100dvh - 8rem) * (1 - var(--bench-guide, .32)) - 4rem); }
+
+/* Em foco, o lab já está em tela cheia: o botão de tela cheia do próprio palco sobra. */
+.lab-bench[data-focus="true"] .explorer__cheia { display: none; }
+/* As abas Showcase / Simulation ficam compactas: a altura é do desenho. */
+.lab-bench[data-focus="true"] .modos__aba small { display: none; }
+.lab-bench[data-focus="true"] .modos__aba { padding-block: .45rem; }
+
+/* Tela baixa (celular deitado, notebook pequeno): barra só de ícones, menos respiro. */
+@media (max-height: 32rem) {
+  .lab-bench[data-focus="true"] { --bench-pad: .4rem; }
+  .lab-bench[data-focus="true"] .bench-btn span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .lab-bench[data-focus="true"] .bench-btn { min-height: 2rem; padding: .2rem .55rem; }
+  .lab-bench[data-focus="true"] .modos__barra { margin-bottom: .25rem; }
+  .lab-bench[data-focus="true"] .explorer { --explorer-altura: calc(100dvh - 7.5rem); }
+  .lab-bench[data-focus="true"] .mo-stage { max-height: calc(100dvh - 7rem); }
+}
+
+/* Tela estreita: só ícones na barra; o nome fica no title e no leitor de tela. */
+@media (max-width: 40rem) {
+  .lab-bench[data-focus="true"] .bench-bar__layout .bench-btn span,
+  .lab-bench[data-focus="true"] [data-bench-swap] span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .lab-bench[data-focus="true"] .bench-bar__layout .bench-btn { padding-inline: .55rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bench-btn, .bench-split::after { transition: none; }
+}

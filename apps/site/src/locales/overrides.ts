@@ -71,6 +71,10 @@ export const OVERRIDES: Record<Language, Messages> = {
     "Complete and continue": "Concluir e continuar",
     "Previous": "Anterior", "Next": "Próximo", "Activity": "Atividade",
     "End of the path": "Fim da trilha",
+    "Focus mode": "Modo foco", "Exit focus mode": "Sair do modo foco", "Focus mode (F)": "Modo foco (F)",
+    "Auto": "Auto", "Side by side": "Lado a lado", "Stacked": "Empilhado", "Stage only": "Só o palco", "Swap sides": "Trocar de lado",
+    "Layout": "Arranjo", "Guide": "Guia", "Resize the guide": "Redimensionar o guia",
+    "Follows the screen: side by side in landscape, stacked in portrait": "Segue a tela: lado a lado na horizontal, empilhado na vertical",
     "See the path": "Ver a trilha", "Open lab →": "Abrir lab →",
     // O catálogo gerado traduziu o id do handbook como palavra ("hotel").
     "otel": "otel", "Phases": "Fases", "Model": "Modelo",

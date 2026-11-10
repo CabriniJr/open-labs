@@ -54,6 +54,12 @@ mesmo relógio (veja `ContextoLab.tsx`). Se nada serve, **escreva o componente**
    página em `apps/site/src/pages/labs/<slug>.astro` (copie a estrutura de
    `hard-context-and-baggage.astro`: cabeça editorial, palco, "Break it",
    fronteira do experimento, `Predicao`).
+   O palco mora em `<section class="lab-palco">` com **uma** ilha dentro, e a
+   `<section class="lab-prosa">` logo depois dele abre com o "Break it": a
+   bancada (`LabBench.astro`) leva esse primeiro bloco como guia ao modo foco
+   (tela cheia, lado a lado no 16:9, embaixo no celular em pé). Em tela cheia
+   o lab ganha a altura toda — meça o próprio tamanho no `resize`, não só na
+   montagem.
 4. **Publicar**: status/href no roadmap do handbook (`data/roadmap.ts` ou o
    `handbook.yaml`). Lab sem `.dui-stage` entra em `SEM_PALCO`
    (`tests/espaguete.spec.ts`).

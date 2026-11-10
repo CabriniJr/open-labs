@@ -1,6 +1,8 @@
 ---
 import CourseTrail from "../components/CourseTrail.astro";
 import { courseAt, pageOf } from "../lib/course-at";
+import LabBench from "../components/LabBench.astro";
+import { url } from "../lib/urls";
 import "../styles/tokens.css";
 import "../styles/base.css";
 import "@ovh/depth-ui/src/depth-ui.css";
@@ -20,6 +22,8 @@ import { cssDosTemas } from "../lib/tema";
 const temas = cssDosTemas(HANDBOOKS);
 const current = pageOf(Astro.url.pathname);
 const course = courseAt(current);
+// Toda página de lab (e só elas) ganha a bancada: modo foco, guia e layout.
+const isLab = current.startsWith(url("labs/")) && current !== url("labs/");
 
 interface Props {
   title: string;
@@ -70,6 +74,7 @@ const { title, description, lang = "en", domain = "otel" } = Astro.props;
     </script>
   </head>
   <body>
+    {isLab && <LabBench />}
     {course ? <div class="learning-layout">
       <CourseTrail handbook={course} current={current} />
       <div class="learning-content"><slot /></div>

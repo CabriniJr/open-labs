@@ -1,0 +1,40 @@
+---
+/**
+ * A bancada do lab: modo foco (tela cheia), guia ao lado e layout que o leitor
+ * reorganiza. Vale para todo lab sem tocar em nenhum: o script acha o palco
+ * (`.lab-palco` / `.lab-stage`) e o "Break it" logo depois dele.
+ *
+ * A barra é HTML de servidor, escondida, que o script põe no palco: assim o
+ * inventário de idiomas enxerga cada rótulo e a tradução vale nela também.
+ */
+import "../styles/lab-bench.css";
+---
+<div class="bench-bar" data-bench-bar hidden>
+  <button type="button" class="bench-btn bench-btn--focus" data-bench-focus aria-pressed="false" title="Focus mode (F)">
+    <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4" /></svg>
+    <span data-bench-focus-label>Focus mode</span>
+  </button>
+  <div class="bench-bar__layout" role="radiogroup" aria-label="Layout" data-bench-layouts>
+    <button type="button" role="radio" class="bench-btn" data-layout="auto" aria-checked="true" title="Follows the screen: side by side in landscape, stacked in portrait">
+      <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M3 3h10v10H3z" /><path d="M8 5.5 10.5 8 8 10.5 5.5 8z" /></svg>
+      <span>Auto</span>
+    </button>
+    <button type="button" role="radio" class="bench-btn" data-layout="side" aria-checked="false">
+      <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M2 3h12v10H2zM10 3v10" /></svg>
+      <span>Side by side</span>
+    </button>
+    <button type="button" role="radio" class="bench-btn" data-layout="stack" aria-checked="false">
+      <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M2 3h12v10H2zM2 10h12" /></svg>
+      <span>Stacked</span>
+    </button>
+    <button type="button" role="radio" class="bench-btn" data-layout="stage" aria-checked="false">
+      <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M2 3h12v10H2z" /></svg>
+      <span>Stage only</span>
+    </button>
+  </div>
+  <button type="button" class="bench-btn" data-bench-swap title="Swap sides">
+    <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M2 5.5h11M10 2.5l3 3-3 3M14 10.5H3M6 7.5l-3 3 3 3" /></svg>
+    <span>Swap sides</span>
+  </button>
+</div>
+<script src="../lib/lab-bench-client.ts"></script>
