@@ -2,6 +2,7 @@
 -- OpenLabs no Telecentro — Script DQL (Oracle)
 -- Global Solution 2026.2 · Database Design
 --
+-- Gerado por database/gerar.mjs a partir de packages/database-domain.
 -- Três consultas, cada uma respondendo uma pergunta real de quem opera
 -- um telecentro. Rodar depois de 01-ddl.sql e 02-dml.sql.
 -- =====================================================================

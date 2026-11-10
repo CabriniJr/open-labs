@@ -1,38 +1,25 @@
 #!/usr/bin/env node
-// Gera, a partir de esquema.mjs:
+// Gera, a partir do pacote packages/database-domain (esquema.ts, dados.ts e
+// consultas.ts — a mesma fonte que o lab do site usa):
 //   01-ddl.sql             — o script DDL (create table + alter table) para o Oracle
+//   02-dml.sql             — os INSERTs dos dados de exemplo
+//   03-dql.sql             — as três consultas
 //   MODELO.md              — o diagrama entidade-relacionamento, para conferir no GitHub
 //   entrega/documento.html — o documento de entrega (itens 1 e 2 da disciplina)
 //   entrega/GS-Database-Design.pdf — o mesmo documento em PDF (com --pdf)
 //
-// Uso: node database/gerar.mjs [--pdf]
-// 02-dml.sql e 03-dql.sql são escritos à mão: dados e perguntas não se geram.
+// Uso: node database/gerar.mjs [--pdf | --check]
+// --check não escreve nada: falha se algum script estiver diferente do que seria gerado.
+// O Node 24 lê os .ts direto (remove os tipos sem compilar).
 import { createRequire } from "node:module";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { nomeDaConstraint, TABELAS } from "./esquema.mjs";
+import { constraintsDe as constraints, semPrefixo, TABELAS } from "../packages/database-domain/src/telecentro/esquema.ts";
+import { DADOS } from "../packages/database-domain/src/telecentro/dados.ts";
+import { CONSULTAS } from "../packages/database-domain/src/telecentro/consultas.ts";
 
 const AQUI = dirname(fileURLToPath(import.meta.url));
-const semPrefixo = (coluna) => coluna.replace(/^(id|nm|ds|dt|nr|st|vl|cd|sg|tp|pc)_/u, "");
-
-// ------------------------------------------------------------------ constraints
-
-function constraints(t) {
-  const lista = [{ nome: nomeDaConstraint("PK", t.nome), sql: `PRIMARY KEY (${t.pk})`, tipo: "PK" }];
-  for (const c of t.colunas) {
-    if (c.unico) lista.push({ nome: nomeDaConstraint("UK", t.nome, semPrefixo(c.nome)), sql: `UNIQUE (${c.nome})`, tipo: "UK" });
-    if (c.check) lista.push({ nome: nomeDaConstraint("CK", t.nome, semPrefixo(c.nome)), sql: `CHECK (${c.check})`, tipo: "CK" });
-  }
-  for (const u of t.unicos ?? []) {
-    const juntos = u.map(semPrefixo).join("_");
-    const nome = `UK_${t.nome.replace(/^T_/u, "")}_${juntos}`.length <= 30 ? nomeDaConstraint("UK", t.nome, juntos) : nomeDaConstraint("UK", t.nome, semPrefixo(u.at(-1)));
-    lista.push({ nome, sql: `UNIQUE (${u.join(", ")})`, tipo: "UK" });
-  }
-  for (const k of t.checks ?? []) lista.push({ nome: k.nome, sql: `CHECK (${k.expressao})`, tipo: "CK" });
-  for (const f of t.fks ?? []) lista.push({ nome: nomeDaConstraint("FK", t.nome, f.tabela.replace(/^T_/u, "")), sql: `FOREIGN KEY (${f.coluna}) REFERENCES ${f.tabela} (${TABELAS.find((x) => x.nome === f.tabela).pk})`, tipo: "FK" });
-  return lista;
-}
 
 // ------------------------------------------------------------------ 01-ddl.sql
 
@@ -42,7 +29,7 @@ function ddl() {
     "-- OpenLabs no Telecentro — Script DDL (Oracle)",
     "-- Global Solution 2026.2 · Database Design",
     "--",
-    "-- Gerado por database/gerar.mjs a partir de database/esquema.mjs.",
+    "-- Gerado por database/gerar.mjs a partir de packages/database-domain.",
     "-- Ordem de execução: 01-ddl.sql → 02-dml.sql → 03-dql.sql.",
     "-- =====================================================================",
     "",
@@ -90,6 +77,78 @@ function ddl() {
   return linhas.join("\n") + "\n";
 }
 
+// ------------------------------------------------------------------ 02-dml.sql e 03-dql.sql
+
+const SEP = "-- ---------------------------------------------------------------------";
+
+/** Quebra um comentário em linhas de até 70 caracteres, cada uma com "-- ". */
+function comentar(texto, largura = 70) {
+  const linhas = [];
+  let atual = "";
+  for (const palavra of texto.split(/\s+/u)) {
+    if (atual && (atual + " " + palavra).length > largura) {
+      linhas.push(`-- ${atual}`);
+      atual = palavra;
+    } else atual = atual ? `${atual} ${palavra}` : palavra;
+  }
+  if (atual) linhas.push(`-- ${atual}`);
+  return linhas;
+}
+
+/** Um valor como literal do Oracle, pelo tipo da coluna. */
+function literal(coluna, v) {
+  if (v === null) return "NULL";
+  if (coluna.tipo === "DATE") return `DATE '${v}'`;
+  const numero = /^NUMBER\((\d+)(?:,(\d+))?\)$/u.exec(coluna.tipo);
+  if (numero) return numero[2] ? Number(v).toFixed(Number(numero[2])) : String(v);
+  return `'${String(v).replaceAll("'", "''")}'`;
+}
+
+function dml() {
+  const linhas = [
+    "-- =====================================================================",
+    "-- OpenLabs no Telecentro — Script DML (Oracle)",
+    "-- Global Solution 2026.2 · Database Design",
+    "--",
+    "-- Gerado por database/gerar.mjs a partir de packages/database-domain.",
+    "--",
+    "-- Dados de exemplo: pelo menos cinco linhas em cada tabela.",
+    "-- Handbooks, fases e labs são o catálogo real do OpenLabs.",
+    "-- Telecentros, monitores, alunos, computadores, progresso e notas são",
+    "-- SIMULADOS: nomes fictícios e e-mails no domínio reservado example.com.",
+    "-- Nenhum dado pessoal real foi usado.",
+    "--",
+    "-- Rodar depois de 01-ddl.sql. A ordem dos INSERTs respeita as chaves",
+    "-- estrangeiras: primeiro quem é referenciado, depois quem referencia.",
+    "-- =====================================================================",
+  ];
+  for (const t of TABELAS) {
+    const dados = DADOS[t.nome];
+    const colunas = t.colunas.map((c) => c.nome).join(", ");
+    linhas.push("", SEP, ...comentar(`${t.nome} (${dados.linhas.length}) — ${dados.nota}`), SEP);
+    for (const valores of dados.linhas) {
+      linhas.push(`INSERT INTO ${t.nome} (${colunas}) VALUES (${t.colunas.map((c, i) => literal(c, valores[i] ?? null)).join(", ")});`);
+    }
+  }
+  linhas.push("", "COMMIT;");
+  return linhas.join("\n") + "\n";
+}
+
+function dql() {
+  const linhas = [
+    "-- =====================================================================",
+    "-- OpenLabs no Telecentro — Script DQL (Oracle)",
+    "-- Global Solution 2026.2 · Database Design",
+    "--",
+    "-- Gerado por database/gerar.mjs a partir de packages/database-domain.",
+    "-- Três consultas, cada uma respondendo uma pergunta real de quem opera",
+    "-- um telecentro. Rodar depois de 01-ddl.sql e 02-dml.sql.",
+    "-- =====================================================================",
+  ];
+  for (const q of CONSULTAS) linhas.push("", SEP, `-- ${q.titulo}`, ...q.comentario.map((l) => `-- ${l}`), SEP, q.sql);
+  return linhas.join("\n") + "\n";
+}
+
 // ------------------------------------------------------------------ MODELO.md
 
 function modelo() {
@@ -106,7 +165,7 @@ function modelo() {
   return [
     "# Modelo do banco do OpenLabs no Telecentro",
     "",
-    "Gerado por `database/gerar.mjs` a partir de `database/esquema.mjs`. É um diagrama de",
+    "Gerado por `database/gerar.mjs` a partir de `packages/database-domain`. É um diagrama de",
     "**conferência**: o diagrama entregue na disciplina é o do Oracle Data Modeler (veja",
     "`README.md`, seção 2). Os dois têm de mostrar as mesmas tabelas e ligações.",
     "",
@@ -203,6 +262,7 @@ ${extras.length ? `<p class="extra">Regras da tabela: ${extras.map((c) => `<code
 <p><b>Cardinalidade.</b> Diz quantas linhas de uma tabela se ligam a quantas da outra. Um telecentro tem muitos alunos e cada aluno é de um telecentro só: <b>1 para N</b>. Já um aluno faz muitos labs e um lab é feito por muitos alunos: <b>N para N</b>. O modelo relacional não guarda N para N diretamente; ele cria uma <b>tabela associativa</b> no meio. No OpenLabs são duas: <code>T_PROGRESSO</code> (aluno × lab, com as datas de início e de conclusão) e <code>T_TENTATIVA</code> (aluno × avaliação, com a nota).</p>
 <p><b>Restrições (constraints).</b> Além das chaves, o banco recusa dados que não fazem sentido: nota fora de 0 a 10 (<code>CHECK</code>), VLAN diferente de 10, 20 ou 30, data de conclusão anterior à de início, o mesmo aluno com dois registros de progresso para o mesmo lab (<code>UNIQUE</code>), e-mail repetido.</p>
 <p><b>Normalização.</b> Cada informação mora num lugar só: o nome do telecentro está em <code>T_TELECENTRO</code>, não repetido em cada aluno; o nome do lab está em <code>T_LAB</code>, não em cada progresso. Assim, corrigir um nome é mudar uma linha. As tabelas estão na terceira forma normal: toda coluna depende da chave da sua tabela, e só dela.</p>
+<p><b>O banco explicado dentro do próprio OpenLabs.</b> A solução ensina o próprio banco: o handbook <i>Databases</i> do OpenLabs tem o lab <code>labs/telecentro-database</code>, que mostra estas mesmas tabelas em diagrama e em 3D. Nele, uma aluna se cadastra e a linha dela passa por NOT NULL, chave primária, CHECK e chave estrangeira; uma escrita errada é recusada com o código de erro do Oracle; e as três consultas deste documento rodam sobre os mesmos dados. Esquema, dados e consultas têm uma única fonte no repositório, de onde saem tanto o lab quanto os scripts entregues.</p>
 <p><b>As três linguagens do SQL usadas aqui.</b> O <b>DDL</b> (<code>CREATE TABLE</code>, <code>ALTER TABLE</code>) cria a estrutura; o <b>DML</b> (<code>INSERT</code>) põe os dados; o <b>DQL</b> (<code>SELECT</code>) faz as perguntas — por exemplo, quantos alunos ativos cada telecentro tem.</p>
 </section>
 
@@ -236,19 +296,31 @@ ${dicionario}
 
 // ------------------------------------------------------------------ escrever
 
-writeFileSync(join(AQUI, "01-ddl.sql"), ddl());
-// A mesma estrutura sem o bloco PL/SQL de limpeza: é o arquivo que se importa no
-// Oracle Data Modeler (File → Import → DDL File), que só precisa das tabelas.
+const SCRIPTS = {
+  "01-ddl.sql": ddl(),
+  "02-dml.sql": dml(),
+  "03-dql.sql": dql(),
+  // A mesma estrutura sem o bloco PL/SQL de limpeza: é o arquivo que se importa no
+  // Oracle Data Modeler (File → Import → DDL File), que só precisa das tabelas.
+  "entrega/ddl-para-o-data-modeler.sql": ddl().replace(/-- Apaga as tabelas[\s\S]*?^\/\n/mu, "-- Cópia de 01-ddl.sql sem o bloco de limpeza, para importar no Oracle Data Modeler.\n"),
+  "MODELO.md": modelo(),
+};
+
+if (process.argv.includes("--check")) {
+  const diferentes = Object.entries(SCRIPTS).filter(([arq, txt]) => !existsSync(join(AQUI, arq)) || readFileSync(join(AQUI, arq), "utf8").replaceAll("\r\n", "\n") !== txt);
+  if (diferentes.length > 0) {
+    console.error(`✗ desatualizado: ${diferentes.map(([a]) => a).join(", ")} — rode node database/gerar.mjs`);
+    process.exit(1);
+  }
+  console.log("✓ scripts em dia com packages/database-domain");
+  process.exit(0);
+}
+
 mkdirSync(join(AQUI, "entrega"), { recursive: true });
-writeFileSync(
-  join(AQUI, "entrega", "ddl-para-o-data-modeler.sql"),
-  ddl().replace(/-- Apaga as tabelas[\s\S]*?^\/\n/mu, "-- Cópia de 01-ddl.sql sem o bloco de limpeza, para importar no Oracle Data Modeler.\n"),
-);
-writeFileSync(join(AQUI, "MODELO.md"), modelo());
-mkdirSync(join(AQUI, "entrega"), { recursive: true });
+for (const [arq, txt] of Object.entries(SCRIPTS)) writeFileSync(join(AQUI, arq), txt);
 const html = join(AQUI, "entrega", "documento.html");
 writeFileSync(html, documento());
-console.log("✓ 01-ddl.sql, MODELO.md e entrega/documento.html gerados");
+console.log(`✓ ${Object.keys(SCRIPTS).join(", ")} e entrega/documento.html gerados`);
 
 if (process.argv.includes("--pdf")) {
   const require = createRequire(join(AQUI, "..", "apps", "site", "package.json"));

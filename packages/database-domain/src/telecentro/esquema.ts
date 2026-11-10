@@ -1,26 +1,68 @@
+// locale: skip-file — esquema, dados, SQL e mensagens do Oracle: identificadores e saída do banco, que não se traduzem.
 // O banco de dados do OpenLabs num telecentro, descrito uma vez só.
 //
 // O site do OpenLabs é estático: até aqui, o pouco que ele lembra (idioma,
 // tentativas de avaliação) fica no navegador de cada pessoa. Num telecentro
 // isso não basta — é preciso saber quais telecentros existem, quem são os
 // alunos e os monitores, que labs cada aluno fez e como foi nas avaliações.
-// Este arquivo é a fonte de verdade desse banco: o DDL (01-ddl.sql), o
-// dicionário de dados do documento de entrega e o diagrama de conferência
-// (MODELO.md) são gerados daqui por `gerar.mjs`. Mudar uma coluna aqui muda os três.
+//
+// Este arquivo é a fonte de verdade desse banco. Daqui saem o DDL
+// (database/01-ddl.sql), o dicionário de dados do documento de entrega, o
+// diagrama de conferência (database/MODELO.md) e o lab do site, que roda o
+// mesmo esquema no navegador. Mudar uma coluna aqui muda todos.
+//
+// Sem imports de propósito: `database/gerar.mjs` importa este arquivo direto
+// com o Node (que entende TypeScript sem compilar), sem passar pelo bundler.
 //
 // Convenção de nomes (a das aulas de Database Design): tabelas T_<NOME>;
 // colunas com prefixo de tipo — id_ (identificador), nm_ (nome), ds_
 // (descrição), dt_ (data), nr_ (número), st_ (situação), vl_ (valor),
 // cd_ (código), sg_ (sigla), tp_ (tipo), pc_ (percentual).
 
-/**
- * @typedef {{ nome: string, tipo: string, nulo?: boolean, padrao?: string, check?: string, unico?: boolean, descricao: string }} Coluna
- * @typedef {{ coluna: string, tabela: string, cardinalidade: string }} Estrangeira
- * @typedef {{ nome: string, descricao: string, pk: string, colunas: Coluna[], fks?: Estrangeira[], unicos?: string[][], checks?: { nome: string, expressao: string }[] }} Tabela
- */
+export interface Coluna {
+  readonly nome: string;
+  /** Tipo do Oracle: NUMBER(p[,s]), VARCHAR2(n), CHAR(n) ou DATE. */
+  readonly tipo: string;
+  /** Aceita NULL. Sem isto a coluna é NOT NULL. */
+  readonly nulo?: boolean;
+  /** Valor padrão, em SQL (`'S'`). */
+  readonly padrao?: string;
+  /** Regra de CHECK sobre esta coluna, em SQL. */
+  readonly check?: string;
+  readonly unico?: boolean;
+  readonly descricao: string;
+}
 
-/** @type {Tabela[]} — na ordem de criação: quem é referenciado vem antes. */
-export const TABELAS = [
+export interface Estrangeira {
+  readonly coluna: string;
+  readonly tabela: NomeDaTabela;
+  readonly cardinalidade: string;
+}
+
+export interface Tabela {
+  readonly nome: NomeDaTabela;
+  readonly descricao: string;
+  readonly pk: string;
+  readonly colunas: readonly Coluna[];
+  readonly fks?: readonly Estrangeira[];
+  readonly unicos?: readonly (readonly string[])[];
+  readonly checks?: readonly { readonly nome: string; readonly expressao: string }[];
+}
+
+export type NomeDaTabela =
+  | "T_TELECENTRO"
+  | "T_MONITOR"
+  | "T_ALUNO"
+  | "T_COMPUTADOR"
+  | "T_HANDBOOK"
+  | "T_FASE"
+  | "T_LAB"
+  | "T_AVALIACAO"
+  | "T_PROGRESSO"
+  | "T_TENTATIVA";
+
+/** Na ordem de criação: quem é referenciado vem antes. */
+export const TABELAS: readonly Tabela[] = [
   {
     nome: "T_TELECENTRO",
     descricao: "Espaço comunitário e gratuito onde o OpenLabs roda, com computadores e Wi-Fi público.",
@@ -169,8 +211,61 @@ export const TABELAS = [
 ];
 
 /** Nome de constraint: o Oracle aceita até 128 caracteres, mas 30 é o limite das versões antigas e o hábito das aulas. */
-export function nomeDaConstraint(prefixo, tabela, sufixo = "") {
+export function nomeDaConstraint(prefixo: string, tabela: string, sufixo = ""): string {
   const base = `${prefixo}_${tabela.replace(/^T_/u, "")}${sufixo ? `_${sufixo}` : ""}`.toUpperCase();
   if (base.length > 30) throw new Error(`constraint ${base} passa de 30 caracteres`);
   return base;
+}
+
+/** A coluna sem o prefixo de tipo: `id_telecentro` → `telecentro`. */
+export const semPrefixo = (coluna: string): string => coluna.replace(/^(id|nm|ds|dt|nr|st|vl|cd|sg|tp|pc)_/u, "");
+
+export type TipoDeConstraint = "PK" | "UK" | "CK" | "FK";
+
+export interface Constraint {
+  readonly nome: string;
+  readonly tipo: TipoDeConstraint;
+  /** A cláusula SQL: `PRIMARY KEY (id_aluno)`, `CHECK (vl_nota BETWEEN 0 AND 10)`… */
+  readonly sql: string;
+  readonly colunas: readonly string[];
+  /** CHECK: a expressão. */
+  readonly expressao?: string;
+  /** FK: a tabela e a coluna referenciadas. */
+  readonly referencia?: { readonly tabela: NomeDaTabela; readonly coluna: string };
+}
+
+export const tabela = (nome: NomeDaTabela): Tabela => {
+  const t = TABELAS.find((x) => x.nome === nome);
+  if (t === undefined) throw new Error(`tabela ${nome} não existe`);
+  return t;
+};
+
+/** Todas as constraints de uma tabela, com o nome que o DDL dá a elas. */
+export function constraintsDe(t: Tabela): Constraint[] {
+  const lista: Constraint[] = [{ nome: nomeDaConstraint("PK", t.nome), tipo: "PK", sql: `PRIMARY KEY (${t.pk})`, colunas: [t.pk] }];
+  for (const c of t.colunas) {
+    if (c.unico === true) lista.push({ nome: nomeDaConstraint("UK", t.nome, semPrefixo(c.nome)), tipo: "UK", sql: `UNIQUE (${c.nome})`, colunas: [c.nome] });
+    if (c.check !== undefined) lista.push({ nome: nomeDaConstraint("CK", t.nome, semPrefixo(c.nome)), tipo: "CK", sql: `CHECK (${c.check})`, colunas: [c.nome], expressao: c.check });
+  }
+  for (const u of t.unicos ?? []) {
+    const juntos = u.map(semPrefixo).join("_");
+    const nome = `UK_${t.nome.replace(/^T_/u, "")}_${juntos}`.length <= 30 ? nomeDaConstraint("UK", t.nome, juntos) : nomeDaConstraint("UK", t.nome, semPrefixo(u.at(-1) ?? ""));
+    lista.push({ nome, tipo: "UK", sql: `UNIQUE (${u.join(", ")})`, colunas: u });
+  }
+  for (const k of t.checks ?? []) lista.push({ nome: k.nome, tipo: "CK", sql: `CHECK (${k.expressao})`, colunas: [], expressao: k.expressao });
+  for (const f of t.fks ?? []) {
+    const pai = tabela(f.tabela);
+    lista.push({ nome: nomeDaConstraint("FK", t.nome, f.tabela.replace(/^T_/u, "")), tipo: "FK", sql: `FOREIGN KEY (${f.coluna}) REFERENCES ${f.tabela} (${pai.pk})`, colunas: [f.coluna], referencia: { tabela: f.tabela, coluna: pai.pk } });
+  }
+  return lista;
+}
+
+/**
+ * Quantos degraus de chave estrangeira separam a tabela de uma tabela que não
+ * aponta para ninguém. É a ordem em que se cria e se preenche o banco (quem é
+ * referenciado antes), e é a altura da tabela na vista 3D.
+ */
+export function nivelDe(nome: NomeDaTabela): number {
+  const t = tabela(nome);
+  return Math.max(0, ...(t.fks ?? []).map((f) => nivelDe(f.tabela) + 1));
 }

@@ -2,6 +2,8 @@
 -- OpenLabs no Telecentro — Script DML (Oracle)
 -- Global Solution 2026.2 · Database Design
 --
+-- Gerado por database/gerar.mjs a partir de packages/database-domain.
+--
 -- Dados de exemplo: pelo menos cinco linhas em cada tabela.
 -- Handbooks, fases e labs são o catálogo real do OpenLabs.
 -- Telecentros, monitores, alunos, computadores, progresso e notas são
@@ -16,16 +18,11 @@
 -- T_TELECENTRO (5) — a faixa de rede segue o padrão 192.168.X.0/24 da
 -- disciplina de redes; o telecentro 1 é o da equipe 10.
 -- ---------------------------------------------------------------------
-INSERT INTO T_TELECENTRO (id_telecentro, nm_telecentro, nm_bairro, nm_cidade, sg_uf, nr_computadores, ds_faixa_rede, dt_inauguracao)
-VALUES (1, 'Telecentro Jardim Ângela', 'Jardim Ângela', 'São Paulo', 'SP', 20, '192.168.10.0/24', DATE '2024-03-15');
-INSERT INTO T_TELECENTRO (id_telecentro, nm_telecentro, nm_bairro, nm_cidade, sg_uf, nr_computadores, ds_faixa_rede, dt_inauguracao)
-VALUES (2, 'Telecentro Cidade Tiradentes', 'Cidade Tiradentes', 'São Paulo', 'SP', 15, '192.168.11.0/24', DATE '2023-08-01');
-INSERT INTO T_TELECENTRO (id_telecentro, nm_telecentro, nm_bairro, nm_cidade, sg_uf, nr_computadores, ds_faixa_rede, dt_inauguracao)
-VALUES (3, 'Telecentro Capão Redondo', 'Capão Redondo', 'São Paulo', 'SP', 18, '192.168.12.0/24', DATE '2022-05-20');
-INSERT INTO T_TELECENTRO (id_telecentro, nm_telecentro, nm_bairro, nm_cidade, sg_uf, nr_computadores, ds_faixa_rede, dt_inauguracao)
-VALUES (4, 'Telecentro Jardim Gramacho', 'Jardim Gramacho', 'Duque de Caxias', 'RJ', 12, '192.168.13.0/24', DATE '2025-02-10');
-INSERT INTO T_TELECENTRO (id_telecentro, nm_telecentro, nm_bairro, nm_cidade, sg_uf, nr_computadores, ds_faixa_rede, dt_inauguracao)
-VALUES (5, 'Telecentro Vila Kennedy', 'Vila Kennedy', 'Rio de Janeiro', 'RJ', 10, '192.168.14.0/24', DATE '2025-09-01');
+INSERT INTO T_TELECENTRO (id_telecentro, nm_telecentro, nm_bairro, nm_cidade, sg_uf, nr_computadores, ds_faixa_rede, dt_inauguracao) VALUES (1, 'Telecentro Jardim Ângela', 'Jardim Ângela', 'São Paulo', 'SP', 20, '192.168.10.0/24', DATE '2024-03-15');
+INSERT INTO T_TELECENTRO (id_telecentro, nm_telecentro, nm_bairro, nm_cidade, sg_uf, nr_computadores, ds_faixa_rede, dt_inauguracao) VALUES (2, 'Telecentro Cidade Tiradentes', 'Cidade Tiradentes', 'São Paulo', 'SP', 15, '192.168.11.0/24', DATE '2023-08-01');
+INSERT INTO T_TELECENTRO (id_telecentro, nm_telecentro, nm_bairro, nm_cidade, sg_uf, nr_computadores, ds_faixa_rede, dt_inauguracao) VALUES (3, 'Telecentro Capão Redondo', 'Capão Redondo', 'São Paulo', 'SP', 18, '192.168.12.0/24', DATE '2022-05-20');
+INSERT INTO T_TELECENTRO (id_telecentro, nm_telecentro, nm_bairro, nm_cidade, sg_uf, nr_computadores, ds_faixa_rede, dt_inauguracao) VALUES (4, 'Telecentro Jardim Gramacho', 'Jardim Gramacho', 'Duque de Caxias', 'RJ', 12, '192.168.13.0/24', DATE '2025-02-10');
+INSERT INTO T_TELECENTRO (id_telecentro, nm_telecentro, nm_bairro, nm_cidade, sg_uf, nr_computadores, ds_faixa_rede, dt_inauguracao) VALUES (5, 'Telecentro Vila Kennedy', 'Vila Kennedy', 'Rio de Janeiro', 'RJ', 10, '192.168.14.0/24', DATE '2025-09-01');
 
 -- ---------------------------------------------------------------------
 -- T_MONITOR (6) — todo telecentro tem pelo menos um monitor.
@@ -55,8 +52,8 @@ INSERT INTO T_ALUNO (id_aluno, id_telecentro, nm_aluno, dt_nascimento, ds_email,
 INSERT INTO T_ALUNO (id_aluno, id_telecentro, nm_aluno, dt_nascimento, ds_email, dt_cadastro, st_ativo) VALUES (12, 5, 'Mateus Oliveira Barros', DATE '2005-06-30', 'mateus.barros@example.com', DATE '2026-10-20', 'S');
 
 -- ---------------------------------------------------------------------
--- T_COMPUTADOR (6) — os mesmos nomes e endereços do projeto de redes:
--- o servidor tem IP fixo; os outros recebem endereço por DHCP (NULL).
+-- T_COMPUTADOR (6) — os mesmos nomes e endereços do projeto de redes: o
+-- servidor tem IP fixo; os outros recebem endereço por DHCP (NULL).
 -- ---------------------------------------------------------------------
 INSERT INTO T_COMPUTADOR (id_computador, id_telecentro, nm_hostname, ds_endereco_ip, nr_vlan) VALUES (1, 1, 'SRV-OPENLABS', '192.168.10.162', 30);
 INSERT INTO T_COMPUTADOR (id_computador, id_telecentro, nm_hostname, ds_endereco_ip, nr_vlan) VALUES (2, 1, 'PC-MONITOR', NULL, 10);
@@ -75,7 +72,8 @@ INSERT INTO T_HANDBOOK (id_handbook, cd_slug, nm_handbook, ds_assunto, st_estagi
 INSERT INTO T_HANDBOOK (id_handbook, cd_slug, nm_handbook, ds_assunto, st_estagio) VALUES (5, 'algorithms', 'Algorithms Visual Handbook', 'algoritmos', 'building');
 
 -- ---------------------------------------------------------------------
--- T_FASE (9) — fases reais dos roteiros; nr_ordem é a posição no roteiro.
+-- T_FASE (9) — fases reais dos roteiros; nr_ordem é a posição no
+-- roteiro.
 -- ---------------------------------------------------------------------
 INSERT INTO T_FASE (id_fase, id_handbook, nr_ordem, nm_fase) VALUES (1, 1, 1, 'A network you can walk through');
 INSERT INTO T_FASE (id_fase, id_handbook, nr_ordem, nm_fase) VALUES (2, 1, 2, 'Leaving the building');
@@ -88,16 +86,17 @@ INSERT INTO T_FASE (id_fase, id_handbook, nr_ordem, nm_fase) VALUES (8, 4, 2, 'W
 INSERT INTO T_FASE (id_fase, id_handbook, nr_ordem, nm_fase) VALUES (9, 5, 1, 'What holds the data');
 
 -- ---------------------------------------------------------------------
--- T_LAB (8) — labs reais; os dois de redes ainda em breve têm st_disponivel = 'N'.
+-- T_LAB (8) — labs reais; os dois de redes ainda em breve têm
+-- st_disponivel = 'N'.
 -- ---------------------------------------------------------------------
 INSERT INTO T_LAB (id_lab, id_fase, cd_slug, nm_lab, tp_interacao, nr_minutos, st_disponivel) VALUES (1, 1, 'telecentro-network', 'What happens when a learner joins the telecentre Wi-Fi', 'filme', 30, 'S');
 INSERT INTO T_LAB (id_lab, id_fase, cd_slug, nm_lab, tp_interacao, nr_minutos, st_disponivel) VALUES (2, 1, 'subnetting-by-need', 'Splitting a /24 by how many people need it', 'direto', 20, 'N');
 INSERT INTO T_LAB (id_lab, id_fase, cd_slug, nm_lab, tp_interacao, nr_minutos, st_disponivel) VALUES (3, 3, 'acl-order', 'Move one ACL line and watch what breaks', 'direto', 15, 'N');
-INSERT INTO T_LAB (id_lab, id_fase, cd_slug, nm_lab, tp_interacao, nr_minutos, st_disponivel) VALUES (4, 4, 'three-pillars', 'Three pillars, one blind spot', 'fluxo', 25, 'S');
+INSERT INTO T_LAB (id_lab, id_fase, cd_slug, nm_lab, tp_interacao, nr_minutos, st_disponivel) VALUES (4, 4, 'three-pillars', 'Three pillars,  one blind spot', 'fluxo', 25, 'S');
 INSERT INTO T_LAB (id_lab, id_fase, cd_slug, nm_lab, tp_interacao, nr_minutos, st_disponivel) VALUES (5, 5, 'anatomy-of-a-trace', 'Anatomy of a Trace', 'fluxo', 30, 'S');
 INSERT INTO T_LAB (id_lab, id_fase, cd_slug, nm_lab, tp_interacao, nr_minutos, st_disponivel) VALUES (6, 6, 'backpressure-and-drops', 'Backpressure and drops', 'filme', 25, 'S');
-INSERT INTO T_LAB (id_lab, id_fase, cd_slug, nm_lab, tp_interacao, nr_minutos, st_disponivel) VALUES (7, 7, 'pod-lifecycle', 'A manifest, a Pod, and the controller that replaces it', 'estado', 20, 'S');
-INSERT INTO T_LAB (id_lab, id_fase, cd_slug, nm_lab, tp_interacao, nr_minutos, st_disponivel) VALUES (8, 8, 'splunk-ingest', 'Where parsing happens, and what it costs', 'fluxo', 25, 'S');
+INSERT INTO T_LAB (id_lab, id_fase, cd_slug, nm_lab, tp_interacao, nr_minutos, st_disponivel) VALUES (7, 7, 'pod-lifecycle', 'A manifest,  a Pod,  and the controller that replaces it', 'estado', 20, 'S');
+INSERT INTO T_LAB (id_lab, id_fase, cd_slug, nm_lab, tp_interacao, nr_minutos, st_disponivel) VALUES (8, 8, 'splunk-ingest', 'Where parsing happens,  and what it costs', 'fluxo', 25, 'S');
 
 -- ---------------------------------------------------------------------
 -- T_AVALIACAO (6) — um checkpoint por lab publicado.
@@ -129,8 +128,9 @@ INSERT INTO T_PROGRESSO (id_progresso, id_aluno, id_lab, dt_inicio, dt_conclusao
 INSERT INTO T_PROGRESSO (id_progresso, id_aluno, id_lab, dt_inicio, dt_conclusao) VALUES (15, 12, 7, DATE '2026-10-21', DATE '2026-10-21');
 
 -- ---------------------------------------------------------------------
--- T_TENTATIVA (12) — nota = acertos ÷ questões × 10. Um aluno pode tentar
--- de novo (a aluna 7 refez o checkpoint de redes e subiu de 4 para 8).
+-- T_TENTATIVA (12) — nota = acertos ÷ questões × 10. Um aluno pode
+-- tentar de novo (a aluna 7 refez o checkpoint de redes e subiu de 4
+-- para 8).
 -- ---------------------------------------------------------------------
 INSERT INTO T_TENTATIVA (id_tentativa, id_aluno, id_avaliacao, dt_envio, nr_acertos, vl_nota) VALUES (1, 1, 1, DATE '2026-08-04', 4, 8.00);
 INSERT INTO T_TENTATIVA (id_tentativa, id_aluno, id_avaliacao, dt_envio, nr_acertos, vl_nota) VALUES (2, 1, 2, DATE '2026-08-18', 5, 10.00);

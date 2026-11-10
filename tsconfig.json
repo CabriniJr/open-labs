@@ -9,6 +9,7 @@
     { "path": "packages/algo-domain" },
     { "path": "packages/splunk-domain" },
     { "path": "packages/network-domain" },
+    { "path": "packages/database-domain" },
     { "path": "packages/depth-core" },
     { "path": "packages/depth-ui" },
     { "path": "packages/motion" },

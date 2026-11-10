@@ -2,7 +2,7 @@
 -- OpenLabs no Telecentro — Script DDL (Oracle)
 -- Global Solution 2026.2 · Database Design
 --
--- Gerado por database/gerar.mjs a partir de database/esquema.mjs.
+-- Gerado por database/gerar.mjs a partir de packages/database-domain.
 -- Ordem de execução: 01-ddl.sql → 02-dml.sql → 03-dql.sql.
 -- =====================================================================
 

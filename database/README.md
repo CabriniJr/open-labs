@@ -18,6 +18,15 @@ Este banco guarda isso, com **10 tabelas** em três grupos:
 
 O diagrama de conferência está em [MODELO.md](MODELO.md).
 
+**O mesmo banco funcionando, no site:** o handbook *Databases* do OpenLabs tem o lab
+[`labs/telecentro-database`](../apps/site/src/pages/labs/telecentro-database.astro)
+(`/labs/telecentro-database/` no site). Ele mostra estas tabelas, chaves e consultas em
+filme, diagrama e 3D, e roda o banco no navegador para tentar os erros. No fim da página há o
+**passo a passo no Oracle**: conectar o SQL Developer, rodar cada script, conferir cada requisito
+com uma consulta ao dicionário do Oracle (tabelas, PK, FK, relacionamentos, linhas), ver as regras
+recusando dados e gerar o diagrama no Data Modeler — com o que a tela deve mostrar em cada passo. O roteiro do lab
+está em [`docs/roteiros/databases.md`](../docs/roteiros/databases.md).
+
 ## Arquivos
 
 | Arquivo | O que é | Vai na entrega? |
@@ -27,12 +36,13 @@ O diagrama de conferência está em [MODELO.md](MODELO.md).
 | `03-dql.sql` | as três consultas pedidas | sim (item 5) |
 | `entrega/GS-Database-Design.pdf` | capa, sumário, objetivo e escopo, funcionalidades, modelo, dicionário | sim (itens 1 e 2) |
 | `entrega/ddl-para-o-data-modeler.sql` | o DDL sem o bloco de limpeza, para importar no Data Modeler | não |
-| `esquema.mjs` | a descrição das tabelas, de onde o resto é gerado | não |
-| `gerar.mjs` | gera o DDL, o `MODELO.md` e o documento (`--pdf` gera o PDF) | não |
+| `gerar.mjs` | gera os três scripts, o `MODELO.md` e o documento (`--pdf` gera o PDF; `--check` só confere) | não |
+| `../packages/database-domain` | a fonte: `esquema.ts` (tabelas), `dados.ts` (linhas), `consultas.ts` (as três consultas) | não |
 
-**Mudar uma tabela:** edite `esquema.mjs` e rode `node database/gerar.mjs --pdf`. O DDL, o
-diagrama e o dicionário de dados do PDF mudam juntos. `02-dml.sql` e `03-dql.sql` são
-escritos à mão.
+**Mudar uma tabela, um dado ou uma consulta:** edite `packages/database-domain/src/telecentro/`
+(`esquema.ts`, `dados.ts` ou `consultas.ts`) e rode `node database/gerar.mjs --pdf`. Os três
+scripts, o diagrama, o dicionário de dados do PDF e o lab do site mudam juntos. Um teste
+(`pnpm test`) falha se os scripts desta pasta ficarem diferentes do que o pacote gera.
 
 ## 1. Rodar os scripts no Oracle da FIAP
 

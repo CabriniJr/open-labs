@@ -1,5 +1,20 @@
 # Progresso
 
+## Handbook de bancos de dados — o banco do OpenLabs no telecentro
+
+10/11/2026. O handbook `databases` explica um banco relacional usando o
+banco do próprio OpenLabs num telecentro: 10 tabelas, 10 chaves estrangeiras.
+`packages/database-domain` é a fonte única: o esquema, os dados de exemplo e as
+três consultas geram os scripts do Oracle em `database/` (`node database/gerar.mjs`;
+um teste falha se ficarem para trás) e alimentam o lab `telecentro-database`.
+
+O lab tem um filme de nove capítulos (INSERT atravessando NOT NULL, PK, CHECK
+e FK; 1:N com pé de galinha; N:N com tabela associativa; uma escrita recusada;
+INNER JOIN, GROUP BY e LEFT OUTER JOIN), a vista Diagrama em SVG próprio, Blocks
+e 3D, em que a altura é a ordem de criação das tabelas. A simulação roda o banco no navegador,
+com os códigos de erro do Oracle. `qa:labs` passou nos dois perfis (60 fps, p95
+17 ms). Roteiro em `docs/roteiros/databases.md`.
+
 ## Português, inglês e configurações
 
 19/10/2026. A PR #22 integrou avaliações e revisão editorial à main com CI

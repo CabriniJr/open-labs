@@ -1,0 +1,83 @@
+# O handbook de bancos de dados. Nasceu da Global Solution 2026.2 (FIAP ·
+# CitizenTech): acesso gratuito à educação tecnológica, com o OpenLabs rodando
+# num telecentro comunitário. O banco que ele explica é o do próprio OpenLabs
+# no telecentro — as mesmas tabelas, dados e consultas dos scripts em database/.
+#
+# O caminho dourado inteiro está em docs/handbooks.md.
+apiVersion: openlabs/handbook/v1
+
+id: databases
+name: Databases Visual Handbook
+subject: databases
+tagline: Ten tables, one telecentre. Watch a row pass every rule, and a JOIN find its partners.
+blurb: >-
+  The database behind OpenLabs in a community telecentre: learners, labs,
+  progress and grades. Follow one sign-up through NOT NULL, the primary key, a
+  CHECK and a foreign key; see why many-to-many needs a table in between; then
+  run INNER JOIN, GROUP BY and LEFT OUTER JOIN on the same data the Oracle
+  scripts load.
+model: telecentre database · relational model
+stage: building
+
+# Quem mantém. É daqui que sai o CODEOWNERS deste diretório.
+# Regerar o CODEOWNERS depois de mudar quem mantém:
+#   node scripts/handbook.mjs codeowners --write
+maintainers:
+  - name: Rogerio
+    github: Rogerio-Arroyo
+
+theme:
+  light:
+    accent: "#4338ca"
+    flow: "#4338ca"
+    dropped: "#b8442a"
+    ok: "#3f7a52"
+    mutation: "#c2410c"
+    processor: "#4338ca"
+    conduit: "#3f7a52"
+    species: ["#4338ca", "#0e7490", "#b45309", "#a21caf"]
+  dark:
+    accent: "#a5b4fc"
+    flow: "#a5b4fc"
+    processor: "#a5b4fc"
+    species: ["#a5b4fc", "#22d3ee", "#e3b341", "#f0abfc"]
+
+phases:
+  - number: 1
+    title: Tables, keys and rules
+    line: What a row is, what a key promises, and the rules the database enforces for every program.
+  - number: 2
+    title: Asking questions
+    line: JOINs, GROUP BY, and the rows that have no partner.
+  - number: 3
+    title: From the model to the server
+    line: Normal forms, the logical model, and the API that reads it.
+
+articles:
+  - id: a-foreign-key-is-a-promise
+    title: A foreign key is a promise the database keeps
+    status: coming
+    phase: 1
+  - id: null-is-not-a-value
+    title: NULL is not a value, it is a question mark
+    status: coming
+    phase: 2
+  - id: one-fact-one-place
+    title: One fact, one place — the third normal form
+    status: coming
+    phase: 3
+
+labs:
+  - id: telecentro-database
+    title: How the OpenLabs database works in a telecentre
+    status: available
+    phase: 1
+    href: labs/telecentro-database
+  - id: join-by-hand
+    title: Pair two tables by hand and watch the JOIN
+    status: coming
+    phase: 2
+  - id: normalize-a-spreadsheet
+    title: Split one spreadsheet until every fact lives in one place
+    status: coming
+    phase: 3
