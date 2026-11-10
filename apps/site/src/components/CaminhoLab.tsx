@@ -2,6 +2,13 @@ import {
   buscarNaCidade,
   BUSCAS_REAIS,
   carregarSaoPaulo,
+  CENARIOS,
+  MAIS_PARADAS,
+  melhorOrdem,
+  rodarCenario,
+  rotaComParadas,
+  type Cenario,
+  type ResultadoDoCenario,
   CLASSES_DE_BUSCA,
   FICHAS_REAIS,
   maisPerto,
@@ -15,7 +22,9 @@ import {
 import { memo, useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
 import { som, tomDe } from "../lib/som";
 import { css, misturar, rampa, usePaleta, type Paleta, type Rgb } from "../lib/tinta";
+import { desenharBase, fonteDe, paraTela, rotular, tempos, tracar, type Visao } from "../lib/mapa-desenho";
 import { BotaoSom, GraficoVivo, Narrador, ProgressoVivo, Pseudocodigo, tomDaPista, useRelogio, type CapituloDoShowcase, type Serie } from "./CorridaKit";
+import { comoResultado, MapaCompartilhado, type Parada } from "./MapaCompartilhado";
 import { ModosDoLab } from "./ModosDoLab";
 
 /** O mapa de São Paulo, carregado só quando o lab abre (260 KB, ~100 KB comprimido). */
@@ -31,93 +40,6 @@ function useCidade(): Cidade | null {
     };
   }, []);
   return c;
-}
-
-/** O tempo da busca no momento em que cada cruzamento foi resolvido — é a cor da pintura. */
-function tempos(r: ResultadoReal, n: number): { d: Float64Array; lado: Uint8Array; max: number } {
-  const d = new Float64Array(n).fill(-1);
-  const lado = new Uint8Array(n);
-  let max = 1;
-  for (const p of r.passos) {
-    if (p.t !== "settle") continue;
-    d[p.no] = p.d;
-    lado[p.no] = p.lado;
-    max = Math.max(max, p.d);
-  }
-  return { d, lado, max };
-}
-
-interface Visao {
-  readonly escala: number;
-  readonly w: number;
-  readonly h: number;
-}
-
-const paraTela = (c: Cidade, v: Visao, x: number, y: number): [number, number] => [(x + c.largura / 2) * v.escala, (y + c.altura / 2) * v.escala];
-
-function tracar(ctx: CanvasRenderingContext2D, c: Cidade, v: Visao, e: number) {
-  const a = c.de[e]!;
-  const b = c.para[e]!;
-  const g = c.geometria[e]!;
-  let [x, y] = paraTela(c, v, c.x[a]!, c.y[a]!);
-  ctx.moveTo(x, y);
-  for (let i = 0; i < g.length; i += 2) {
-    [x, y] = paraTela(c, v, g[i]!, g[i + 1]!);
-    ctx.lineTo(x, y);
-  }
-  [x, y] = paraTela(c, v, c.x[b]!, c.y[b]!);
-  ctx.lineTo(x, y);
-}
-
-/** A base: as ruas da cidade, uma vez por tamanho e por tema. Vias grandes mais grossas. */
-/** Um rótulo com contorno, que vai para a esquerda do ponto quando não cabe à direita. */
-function rotular(ctx: CanvasRenderingContext2D, v: Visao, p: Paleta, texto: string, x: number, y: number, forte: boolean) {
-  const largo = ctx.measureText(texto).width;
-  const tx = x + 7 + largo > v.w - 2 ? x - 7 - largo : x + 7;
-  ctx.lineWidth = 3;
-  ctx.strokeStyle = css(p.fundo, 0.9);
-  ctx.strokeText(texto, tx, y);
-  ctx.fillStyle = css(p.claro, forte ? 1 : 0.8);
-  ctx.fillText(texto, tx, y);
-}
-
-const fonteDe = (v: Visao, familia: string) => `600 ${Math.max(10, Math.min(13, v.w / 50))}px ${familia}`;
-
-function desenharBase(c: Cidade, v: Visao, p: Paleta, dpr: number, familia: string): HTMLCanvasElement {
-  const tela = document.createElement("canvas");
-  tela.width = Math.round(v.w * dpr);
-  tela.height = Math.round(v.h * dpr);
-  const ctx = tela.getContext("2d")!;
-  ctx.scale(dpr, dpr);
-  ctx.fillStyle = css(p.fundo);
-  ctx.fillRect(0, 0, v.w, v.h);
-  ctx.lineCap = "round";
-  ctx.lineJoin = "round";
-  const grossura = (t: number) => (t <= 3 ? 2.2 : t <= 7 ? 1.5 : 0.9);
-  for (const passada of [0, 1]) {
-    for (let e = 0; e < c.m; e += 1) {
-      const t = c.tipo[e]!;
-      if ((passada === 0) !== t > 5) continue;
-      ctx.beginPath();
-      tracar(ctx, c, v, e);
-      ctx.strokeStyle = css(misturar(p.fundo, p.claro, t <= 5 ? 0.3 : 0.17));
-      ctx.lineWidth = grossura(t) * Math.max(0.6, v.escala * 5);
-      ctx.stroke();
-    }
-  }
-  // Os pontos de interesse comuns moram na base: texto com contorno é o mais caro de
-  // desenhar, e estes não mudam. Só os destacados são redesenhados a cada quadro.
-  ctx.font = fonteDe(v, familia);
-  ctx.textBaseline = "middle";
-  for (const poi of c.pois) {
-    const [x, y] = paraTela(c, v, poi.x, poi.y);
-    ctx.beginPath();
-    ctx.arc(x, y, 3, 0, Math.PI * 2);
-    ctx.fillStyle = css(p.alto, 0.75);
-    ctx.fill();
-    if (v.w > 520) rotular(ctx, v, p, poi.nome, x, y, false);
-  }
-  return tela;
 }
 
 interface PropsDaPista {
@@ -565,14 +487,119 @@ function Vitrine({ cidade, paleta }: { cidade: Cidade; paleta: Paleta }) {
 // ---------------------------------------------------------------------------------------- simulação
 
 const MAIS_PISTAS = 4;
+/** A cor de cada boneco: tons que não são os das pistas, para parada e busca nunca se confundirem. */
+const TONS_DAS_PARADAS = ["live", "high", "conduit", "processor"] as const;
+
+interface ParadaEscolhida {
+  readonly id: number;
+  readonly no: number;
+}
+
+/** O nome de um cruzamento: o ponto de interesse dele, ou o mais perto ("perto do Copan"). */
+function nomeDoCruzamento(c: Cidade, no: number): string {
+  const exato = c.pois.find((p) => p.no === no);
+  if (exato !== undefined) return exato.nome;
+  let melhor = c.pois[0]!;
+  let d = Number.POSITIVE_INFINITY;
+  for (const p of c.pois) {
+    const dd = Math.hypot(p.x - c.x[no]!, p.y - c.y[no]!);
+    if (dd < d) {
+      d = dd;
+      melhor = p;
+    }
+  }
+  return `${Math.round(d / 10) * 10} m from ${melhor.nome}`;
+}
+
+/** Quem vence onde: todas as buscas em todos os cenários, calculado aos poucos depois de pintar. */
+function QuemVenceOnde({ cidade, aoEscolher }: { cidade: Cidade; aoEscolher: (c: Cenario) => void }) {
+  const [linhas, setLinhas] = useState<ResultadoDoCenario[]>([]);
+  useEffect(() => {
+    let vivo = true;
+    let k = 0;
+    const saida: ResultadoDoCenario[] = [];
+    const proximo = () => {
+      if (!vivo || k >= CENARIOS.length) return;
+      saida.push(rodarCenario(cidade, CENARIOS[k]!));
+      k += 1;
+      setLinhas([...saida]);
+      window.setTimeout(proximo, 30);
+    };
+    const id = window.setTimeout(proximo, 600);
+    return () => {
+      vivo = false;
+      clearTimeout(id);
+    };
+  }, [cidade]);
+  return (
+    <div className="algo-tabela">
+      <table>
+        <caption>Who wins where: every search on every scenario — intersections settled, and minutes lost against the fastest route. ★ least work among the exact searches; ⚡ finished first overall.</caption>
+        <thead>
+          <tr>
+            <th scope="col">Scenario</th>
+            {BUSCAS_REAIS.map((b) => (
+              <th key={b} scope="col" className="num">
+                {FICHAS_REAIS[b].curto}
+              </th>
+            ))}
+            <th scope="col">
+              <span className="sr-only">Load</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {linhas.map((r) => (
+            <tr key={r.cenario.id}>
+              <th scope="row">
+                {r.cenario.nome}
+                <br />
+                <small>{r.cenario.paradas.length} stops</small>
+              </th>
+              {r.linhas.map((l) => (
+                <td key={l.busca} className="num" data-melhor={l.busca === r.melhorExata ? "" : undefined}>
+                  <span translate="no">{l.resolvidos}</span>
+                  {l.busca === r.melhorExata ? " ★" : ""}
+                  {l.busca === r.maisRapida ? " ⚡" : ""}
+                  <br />
+                  <small data-ruim={l.excesso > 1e-6 ? "" : undefined}>{l.excesso <= 1e-6 ? "fastest" : l.excesso < 10 ? "+<1 s" : `+${tempoEmTexto(l.excesso)}`}</small>
+                </td>
+              ))}
+              <td>
+                <button type="button" className="algo-btn" onClick={() => aoEscolher(r.cenario)}>
+                  Race it
+                </button>
+              </td>
+            </tr>
+          ))}
+          {linhas.length < CENARIOS.length ? (
+            <tr>
+              <td colSpan={BUSCAS_REAIS.length + 2} className="algo-nota">
+                Racing every search on {CENARIOS.length} scenarios… {linhas.length}/{CENARIOS.length}
+              </td>
+            </tr>
+          ) : null}
+        </tbody>
+      </table>
+    </div>
+  );
+}
 
 function Simulacao({ cidade, paleta }: { cidade: Cidade; paleta: Paleta }) {
-  const [origem, setOrigem] = useState(() => cidade.pois.find((p) => p.id === "masp")!.no);
-  const [destino, setDestino] = useState(() => cidade.pois.find((p) => p.id === "mercadao")!.no);
-  const [clique, setClique] = useState<"start" | "goal">("start");
+  const poi = (id: string) => cidade.pois.find((p) => p.id === id)!.no;
+  const proximoId = useRef(3);
+  const [paradas, setParadas] = useState<readonly ParadaEscolhida[]>(() => [
+    { id: 1, no: poi("masp") },
+    { id: 2, no: poi("mercadao") },
+  ]);
+  const [fixarFim, setFixarFim] = useState(false);
+  const [modo, setModo] = useState<"unico" | "lado">("unico");
   const [buscas, setBuscas] = useState<readonly BuscaReal[]>(CLASSES_DE_BUSCA.exact.buscas);
   const [focada, setFocada] = useState(0);
-  const rs = useMemo(() => buscas.map((b) => buscarNaCidade(cidade, b, origem, destino)), [buscas, origem, destino, cidade]);
+
+  const nos = paradas.map((p) => p.no);
+  const ordem = useMemo(() => (nos.length >= 2 ? melhorOrdem(cidade, nos, fixarFim).ordem : nos), [nos.join(","), fixarFim, cidade]);
+  const rs = useMemo(() => buscas.map((b) => comoResultado(rotaComParadas(cidade, b, ordem))), [buscas, ordem.join(","), cidade]);
   const total = Math.max(1, ...rs.map((r) => r.passos.length));
   const relogio = useRelogio(total, ritmoPara(rs, 10));
   useEffect(() => {
@@ -581,28 +608,53 @@ function Simulacao({ cidade, paleta }: { cidade: Cidade; paleta: Paleta }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rs]);
 
-  // O gráfico ao vivo: quanto do tempo até o destino a fronteira já cobriu. O Dijkstra
-  // avança devagar porque espalha em todas as direções; o A* e a bidirecional sobem rápido.
+  const visitaDe = (no: number) => ordem.indexOf(no) + 1;
+  const paradasNoMapa: Parada[] = paradas.map((p, k) => ({
+    id: p.id,
+    no: p.no,
+    tom: TONS_DAS_PARADAS[k % TONS_DAS_PARADAS.length]!,
+    numero: visitaDe(p.no),
+    rotulo: `Stop ${visitaDe(p.no)}: ${nomeDoCruzamento(cidade, p.no)}. Drag it, or use the arrow keys to move it.`,
+  }));
+  const moverPara = (id: number, no: number) => setParadas((ps) => ps.map((p) => (p.id === id ? { ...p, no } : p)));
+  const soltar = (id: number, x: number, y: number) => moverPara(id, maisPerto(cidade, x, y));
+  // Setas: um passo de 150 m na direção, e de volta para o cruzamento mais perto.
+  const mover = (id: number, dx: number, dy: number) => {
+    const p = paradas.find((q) => q.id === id);
+    if (p === undefined) return;
+    moverPara(id, maisPerto(cidade, cidade.x[p.no]! + dx * 150, cidade.y[p.no]! + dy * 150));
+  };
+  const acrescentar = () => {
+    if (paradas.length >= MAIS_PARADAS) return;
+    const usados = new Set(paradas.map((p) => p.no));
+    const livre = cidade.pois.find((p) => !usados.has(p.no)) ?? cidade.pois[0]!;
+    som.acordar();
+    setParadas([...paradas, { id: proximoId.current++, no: livre.no }]);
+  };
+  const tirar = (id: number) => {
+    if (paradas.length > 2) setParadas(paradas.filter((p) => p.id !== id));
+  };
+  const carregar = (cen: Cenario) => {
+    setParadas(cen.paradas.map((idPoi) => ({ id: proximoId.current++, no: poi(idPoi) })));
+    setFixarFim(false);
+  };
+
+  // O gráfico ao vivo: quanto da rota (em tempo) cada busca já alcançou.
   const ao_vivo: Serie[] = useMemo(() => {
     const amostra = Math.max(1, Math.floor(total / 120));
     return rs.map((r, i) => {
       const pts: [number, number][] = [[0, 0]];
-      // `cobre[0]` e `cobre[1]`: o maior tempo resolvido de cada lado. Numa busca de uma
-      // ponta só existe o lado 0; na bidirecional as duas ondas somam.
-      const cobre = [0, 0];
-      const alvo = Number.isFinite(r.tempo) && r.tempo > 0 ? r.tempo : 1;
       const ate = Math.min(relogio.passo, r.passos.length);
+      let feito = 0;
       for (let k = 0; k < ate; k += 1) {
-        const q = r.passos[k]!;
-        if (q.t === "settle") cobre[q.lado] = Math.max(cobre[q.lado]!, q.d);
-        if ((k + 1) % amostra === 0 || k === ate - 1) pts.push([k + 1, Math.min(100, (100 * (cobre[0]! + cobre[1]!)) / alvo)]);
+        if (r.passos[k]!.t === "settle") feito += 1;
+        if ((k + 1) % amostra === 0 || k === ate - 1) pts.push([k + 1, Math.min(100, (100 * feito) / Math.max(1, r.resolvidos))]);
       }
-      if (ate >= r.passos.length && r.passos.length > 0) pts.push([r.passos.length, 100]);
       return { id: r.busca, nome: FICHAS_REAIS[r.busca].nome, tom: tomDaPista(i), pontos: pts };
     });
   }, [rs, relogio.passo, total]);
 
-  // O Big-O do mapa: trabalho contra distância, para as buscas da corrida. Calculado aos poucos, depois de pintar.
+  // O Big-O do mapa: trabalho contra distância, para as buscas da corrida.
   const [bigO, setBigO] = useState<{ chave: string; pontos: ReturnType<typeof trabalhoPorDistancia> } | null>(null);
   const chaveBigO = buscas.join(",");
   useEffect(() => {
@@ -618,14 +670,13 @@ function Simulacao({ cidade, paleta }: { cidade: Cidade; paleta: Paleta }) {
   }, [chaveBigO, cidade, buscas]);
   const seriesBigO: Serie[] = useMemo(() => {
     if (bigO === null || bigO.chave !== chaveBigO) return [];
-    // Médias por faixa de 400 m: a nuvem de pontos vira uma curva legível.
     return buscas.map((b, i) => {
       const faixas = new Map<number, number[]>();
-      for (const p of bigO.pontos) {
-        const f = Math.round(p.distancia / 400) * 0.4;
-        faixas.set(f, [...(faixas.get(f) ?? []), p.resolvidos[b]!]);
+      for (const pt of bigO.pontos) {
+        const f = Math.round(pt.distancia / 400) * 0.4;
+        faixas.set(f, [...(faixas.get(f) ?? []), pt.resolvidos[b]!]);
       }
-      const pontos = [...faixas.entries()].sort((a, b2) => a[0] - b2[0]).map(([km, vs]) => [km, vs.reduce((s, x) => s + x, 0) / vs.length] as const);
+      const pontos = [...faixas.entries()].sort((a, b2) => a[0] - b2[0]).map(([km, vs]) => [km, vs.reduce((s2, x) => s2 + x, 0) / vs.length] as const);
       return { id: b, nome: FICHAS_REAIS[b].nome, tom: tomDaPista(i), pontos };
     });
   }, [bigO, chaveBigO, buscas]);
@@ -635,52 +686,19 @@ function Simulacao({ cidade, paleta }: { cidade: Cidade; paleta: Paleta }) {
       if (buscas.length > 1) setBuscas(buscas.filter((x) => x !== b));
     } else if (buscas.length < MAIS_PISTAS) setBuscas([...buscas, b]);
   };
-  const escolherNoMapa = (x: number, y: number) => {
-    const no = maisPerto(cidade, x, y);
-    if (clique === "start") {
-      setOrigem(no);
-      setClique("goal");
-    } else {
-      setDestino(no);
-      setClique("start");
-    }
-  };
-  const nomeDe = (no: number) => cidade.pois.find((p) => p.no === no)?.nome ?? "a point you picked";
   const f = Math.min(focada, rs.length - 1);
   const otimo = Math.min(...rs.map((r) => r.tempo));
+  const trajeto = ordem.map((no) => nomeDoCruzamento(cidade, no)).join(" → ");
 
   return (
     <div className="algo mapa" data-testid="path-sim">
       <div className="algo-controles">
-        <label>
-          From
-          <select aria-label="From" value={cidade.pois.some((p) => p.no === origem) ? origem : ""} onChange={(e) => setOrigem(Number(e.target.value))}>
-            {cidade.pois.some((p) => p.no === origem) ? null : <option value="">a point on the map</option>}
-            {cidade.pois.map((p) => (
-              <option key={p.id} value={p.no}>
-                {p.nome}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          To
-          <select aria-label="To" value={cidade.pois.some((p) => p.no === destino) ? destino : ""} onChange={(e) => setDestino(Number(e.target.value))}>
-            {cidade.pois.some((p) => p.no === destino) ? null : <option value="">a point on the map</option>}
-            {cidade.pois.map((p) => (
-              <option key={p.id} value={p.no}>
-                {p.nome}
-              </option>
-            ))}
-          </select>
-        </label>
-        <div className="algo-seg" role="group" aria-label="A click on the map sets">
-          <button type="button" aria-pressed={clique === "start"} onClick={() => setClique("start")}>
-            Click sets the start
-          </button>
-          <button type="button" aria-pressed={clique === "goal"} onClick={() => setClique("goal")}>
-            Click sets the goal
-          </button>
+        <div className="algo-seg" role="group" aria-label="Scenario">
+          {CENARIOS.map((cen) => (
+            <button key={cen.id} type="button" aria-pressed={false} onClick={() => carregar(cen)} title={cen.pergunta}>
+              {cen.nome}
+            </button>
+          ))}
         </div>
         <div className="algo-seg" role="group" aria-label="Race a class">
           {(Object.keys(CLASSES_DE_BUSCA) as ClasseDeBusca[]).map((k) => (
@@ -698,7 +716,50 @@ function Simulacao({ cidade, paleta }: { cidade: Cidade; paleta: Paleta }) {
             </label>
           ))}
         </fieldset>
+        <div className="algo-seg" role="group" aria-label="View">
+          <button type="button" aria-pressed={modo === "unico"} onClick={() => setModo("unico")}>
+            All on one map
+          </button>
+          <button type="button" aria-pressed={modo === "lado"} onClick={() => setModo("lado")}>
+            Side by side
+          </button>
+        </div>
       </div>
+
+      <section className="paradas" aria-label="Stops">
+        <ol className="paradas__lista">
+          {paradas.map((pa, k) => (
+            <li key={pa.id} data-tone={TONS_DAS_PARADAS[k % TONS_DAS_PARADAS.length]}>
+              <span className="paradas__num mono">{visitaDe(pa.no)}</span>
+              <select aria-label={`Stop ${k + 1}`} value={cidade.pois.some((p) => p.no === pa.no) ? pa.no : ""} onChange={(e) => moverPara(pa.id, Number(e.target.value))}>
+                {cidade.pois.some((p) => p.no === pa.no) ? null : <option value="">{nomeDoCruzamento(cidade, pa.no)}</option>}
+                {cidade.pois.map((p) => (
+                  <option key={p.id} value={p.no}>
+                    {p.nome}
+                  </option>
+                ))}
+              </select>
+              <button type="button" className="paradas__tirar" onClick={() => tirar(pa.id)} disabled={paradas.length <= 2} aria-label={`Remove stop ${k + 1}`}>
+                ×
+              </button>
+            </li>
+          ))}
+        </ol>
+        <button type="button" className="algo-btn" onClick={acrescentar} disabled={paradas.length >= MAIS_PARADAS}>
+          + Add a stop
+        </button>
+        <label className="ctxlab-switch" htmlFor="fixar-fim">
+          <input id="fixar-fim" type="checkbox" role="switch" checked={fixarFim} onChange={(e) => setFixarFim(e.target.checked)} disabled={paradas.length < 3} />
+          <span className="ctxlab-switch__track" aria-hidden="true">
+            <span />
+          </span>
+          <span>The last stop is the destination</span>
+        </label>
+        <p className="algo-nota">
+          Shortest order: <b>{trajeto}</b>
+          {paradas.length > 2 ? " — chosen by trying every order of the middle stops with exact times." : "."} Drag a figure onto any street to move a stop.
+        </p>
+      </section>
 
       <div className="algo-transporte">
         <button type="button" className="algo-btn algo-btn--grande" onClick={() => (relogio.tocando ? relogio.pausar() : relogio.tocar())}>
@@ -722,11 +783,12 @@ function Simulacao({ cidade, paleta }: { cidade: Cidade; paleta: Paleta }) {
           step <span translate="no">{relogio.passo}</span> of {total}
         </output>
       </div>
-      <p className="algo-nota">
-        {nomeDe(origem)} → {nomeDe(destino)}. One step is one intersection settled or one road looked at, and every lane gets the same clock — the first to finish did the least work. Click any map to move the {clique === "start" ? "start" : "goal"}.
-      </p>
 
-      <Corrida cidade={cidade} paleta={paleta} rs={rs} passo={relogio.passo} onClique={escolherNoMapa} destaque={[origem, destino]} />
+      {modo === "unico" ? (
+        <MapaCompartilhado cidade={cidade} paleta={paleta} rs={rs} passo={relogio.passo} paradas={paradasNoMapa} onSoltar={soltar} onMover={mover} />
+      ) : (
+        <Corrida cidade={cidade} paleta={paleta} rs={rs} passo={relogio.passo} destaque={ordem} />
+      )}
 
       <div className="mapa-baixo">
         <div>
@@ -754,7 +816,7 @@ function Simulacao({ cidade, paleta }: { cidade: Cidade; paleta: Paleta }) {
           </dl>
         </div>
         <div>
-          <GraficoVivo series={ao_vivo} titulo="How far the search has reached, as % of the route time" eixoX="race clock (steps)" eixoY="% of the way" xMax={total} yMax={100} />
+          <GraficoVivo series={ao_vivo} titulo="Work done so far, as % of each search's total" eixoX="race clock (steps)" eixoY="% of its work" xMax={total} yMax={100} />
           <GraficoVivo
             series={seriesBigO}
             titulo={seriesBigO.length === 0 ? "Big-O on a real map — measuring 48 trips…" : "Big-O on a real map: work against distance (48 random trips)"}
@@ -766,9 +828,7 @@ function Simulacao({ cidade, paleta }: { cidade: Cidade; paleta: Paleta }) {
 
       <div className="algo-tabela">
         <table>
-          <caption>
-            The scoreboard, {nomeDe(origem)} → {nomeDe(destino)}
-          </caption>
+          <caption>The scoreboard: {trajeto}</caption>
           <thead>
             <tr>
               <th scope="col">Search</th>
@@ -805,6 +865,9 @@ function Simulacao({ cidade, paleta }: { cidade: Cidade; paleta: Paleta }) {
           </tbody>
         </table>
       </div>
+
+      <QuemVenceOnde cidade={cidade} aoEscolher={carregar} />
+
       <p className="algo-nota">
         Streets: {cidade.credito} — <a href={cidade.licenca}>openstreetmap.org/copyright</a>. Travel times use a typical speed per kind of street (30 km/h on residential streets up to 70 km/h on expressways), with every one-way street respected.
       </p>

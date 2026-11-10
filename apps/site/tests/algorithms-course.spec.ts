@@ -103,8 +103,47 @@ test("shortest path on the real map: the exact class agrees, greedy loses minute
   await sim.getByRole("button", { name: "Fast, no guarantee" }).click();
   await expect(placar.locator("tr", { hasText: "Greedy best-first" })).toContainText("no, +24 s");
   await sim.getByLabel("Race clock, in steps").fill(await sim.getByLabel("Race clock, in steps").getAttribute("max") ?? "0");
-  await expect(sim.locator(".mapa-cartao[data-fim]")).toHaveCount(3);
+  await expect(sim.locator(".mapa-legenda li[data-fim]")).toHaveCount(3);
+  await sim.getByRole("button", { name: "Side by side" }).click();
+  await expect(sim.locator(".mapa-cartao")).toHaveCount(3);
   await expect(sim.getByText(/OpenStreetMap contributors/)).toBeVisible();
+  await semRolagemNemErro(page, erros);
+});
+
+test("shortest path: drag a figure to move a stop, add stops, and load a scenario from who-wins-where", async ({ page }) => {
+  const erros = vigiar(page);
+  await page.goto("labs/shortest-path/");
+  await page.getByRole("tab", { name: /Simulation/ }).click();
+  const sim = page.getByTestId("path-sim");
+  const bonecos = sim.locator(".boneco__corpo");
+  await expect(bonecos).toHaveCount(2, { timeout: 20_000 });
+  // Arrastar o boneco do destino para longe: a parada deixa de ser o Mercadão.
+  const parada2 = sim.getByLabel("Stop 2", { exact: true });
+  await expect(parada2.locator("option:checked")).toHaveText("Mercadão");
+  // O boneco respira o tempo todo (nunca "para", e o scroll do Playwright espera parar):
+  // rola-se pelo DOM até ele ficar no meio da janela.
+  await bonecos.nth(1).evaluate((el) => el.scrollIntoView({ block: "center" }));
+  const b = (await bonecos.nth(1).boundingBox())!;
+  await page.mouse.move(b.x + b.width / 2, b.y + 15);
+  await page.mouse.down();
+  for (let k = 1; k <= 10; k += 1) await page.mouse.move(b.x + b.width / 2 - 12 * k, b.y + 15 + 9 * k, { steps: 2 });
+  await page.mouse.up();
+  await expect(parada2.locator("option:checked")).not.toHaveText("Mercadão");
+  // Teclado: o boneco também anda pelas setas.
+  await bonecos.nth(0).focus();
+  const antes = await sim.getByLabel("Stop 1", { exact: true }).inputValue();
+  await page.keyboard.press("ArrowUp");
+  await page.keyboard.press("ArrowUp");
+  await expect(sim.getByLabel("Stop 1", { exact: true })).not.toHaveValue(antes);
+  await sim.getByRole("button", { name: "+ Add a stop" }).click();
+  await expect(bonecos).toHaveCount(3);
+  await expect(sim.getByText(/Shortest order:/)).toContainText("→");
+  // Quem vence onde: seis cenários, e carregar um põe os bonecos dele no mapa.
+  const tabela = sim.locator("table", { hasText: "Who wins where" });
+  await expect(tabela.getByRole("button", { name: "Race it" })).toHaveCount(6, { timeout: 30_000 });
+  await tabela.locator("tr", { hasText: "Four errands" }).getByRole("button", { name: "Race it" }).click();
+  await expect(bonecos).toHaveCount(4);
+  await expect(tabela.locator("tr", { hasText: "Behind one-way streets" }).locator("td[data-melhor]")).toContainText("658");
   await semRolagemNemErro(page, erros);
 });
 

@@ -7940,5 +7940,8 @@
   "Radix sort (LSD)": "Radix sort (LSD)",
   "RADIX-SORT(A, n, d) ▹ least significant digit first": "RADIX-SORT(A, n, d) ▹ least significant digit first",
   "steps per frame": "steps per frame",
-  "time so far, d": "time so far, d"
+  "time so far, d": "time so far, d",
+  "Side by side": "Side by side",
+  "translate({0} {1}) rotate({2}) scale({3} {4})": "translate({0} {1}) rotate({2}) scale({3} {4})",
+  "translate({0} {1}) rotate({2}) translate(0 {3})": "translate({0} {1}) rotate({2}) translate(0 {3})"
 }

@@ -219,3 +219,56 @@
 /* As três camadas do mapa, empilhadas: base, pintura e sobreposição. A base leva o fundo. */
 .mapa-pista { position: relative; }
 .mapa-pista .mapa-tela { position: absolute; inset: 0; }
+
+/* ================================================================ o mapa compartilhado e os bonecos */
+.mapa-unico { display: grid; gap: 10px; }
+.bonecos { position: absolute; inset: 0; overflow: visible; pointer-events: none; }
+.boneco__corpo { pointer-events: auto; cursor: grab; outline: none; touch-action: none; }
+.boneco__corpo:active { cursor: grabbing; }
+.boneco__corpo:focus-visible .boneco__alvo { stroke-width: 4; stroke: var(--accent); }
+.boneco__sombra { fill: var(--ink); }
+.boneco__alvo { fill: color-mix(in oklab, var(--algo-c) 25%, transparent); stroke: var(--algo-c); stroke-width: 2.5; }
+.boneco__tronco { fill: var(--algo-c); stroke: color-mix(in oklab, var(--algo-c) 60%, var(--ink)); stroke-width: 1.6; }
+.boneco__cabeca { fill: color-mix(in oklab, var(--algo-c) 12%, var(--paper)); stroke: color-mix(in oklab, var(--algo-c) 60%, var(--ink)); stroke-width: 1.6; }
+.boneco__chapeu { fill: var(--algo-c); stroke: color-mix(in oklab, var(--algo-c) 60%, var(--ink)); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.boneco__olhos circle { fill: var(--ink); }
+.boneco__perna, .boneco__braco { stroke: color-mix(in oklab, var(--algo-c) 55%, var(--ink)); stroke-width: 3.4; stroke-linecap: round; }
+.boneco__placa circle { fill: var(--paper); stroke: var(--algo-c); stroke-width: 2.2; }
+.boneco__placa text { font: 700 10px var(--font-mono); fill: var(--ink); }
+
+/* Parado, ele vive: respira, pisca e acena de tempos em tempos. Cada boneco num
+   tempo próprio (--atraso), para os quatro nunca se mexerem em uníssono. */
+.boneco__respira, .boneco__olhos, .boneco__aceno { transform-box: fill-box; }
+.boneco__respira { transform-origin: 50% 100%; animation: boneco-respira 2.6s ease-in-out infinite; animation-delay: var(--atraso); }
+.boneco__olhos { transform-origin: 50% 50%; animation: boneco-pisca 4.3s steps(1, end) infinite; animation-delay: var(--atraso); }
+.boneco__aceno { transform-origin: 0% 0%; animation: boneco-aceno 7s ease-in-out infinite; animation-delay: calc(var(--atraso) * 1.7); }
+.boneco--ativo .boneco__respira, .boneco--ativo .boneco__aceno { animation-play-state: paused; }
+@keyframes boneco-respira { 0%, 100% { transform: translateY(0) scale(1, 1); } 50% { transform: translateY(-1.4px) scale(1.02, 0.985); } }
+@keyframes boneco-pisca { 0%, 95% { transform: scaleY(1); } 96%, 98% { transform: scaleY(0.12); } }
+@keyframes boneco-aceno { 0%, 82%, 100% { transform: rotate(0deg); } 86% { transform: rotate(-150deg); } 89% { transform: rotate(-115deg); } 92% { transform: rotate(-150deg); } 95% { transform: rotate(-115deg); } }
+@media (prefers-reduced-motion: reduce) { .boneco__respira, .boneco__olhos, .boneco__aceno { animation: none; } }
+
+.paradas { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding: var(--space-2); border: 1px solid var(--rule); border-radius: 8px; }
+.paradas .algo-nota { flex-basis: 100%; }
+.paradas__lista { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.paradas__lista li { display: flex; align-items: center; gap: 6px; padding: 4px 6px 4px 4px; border: 2px solid var(--algo-c); border-radius: 999px; background: color-mix(in oklab, var(--algo-c) 10%, var(--paper)); }
+.paradas__num { display: grid; place-items: center; width: 1.6rem; height: 1.6rem; border-radius: 50%; background: var(--algo-c); color: var(--paper); font-weight: 700; font-size: 0.8rem; }
+.paradas__lista select { max-width: 12rem; padding: 3px 6px; border: 1px solid var(--rule); border-radius: 6px; background: var(--paper); color: var(--ink); font: inherit; font-size: 0.84rem; }
+.paradas__tirar { width: 1.6rem; height: 1.6rem; border: 0; border-radius: 50%; background: transparent; color: var(--ink-muted); font-size: 1.1rem; cursor: pointer; }
+.paradas__tirar:hover:not(:disabled) { background: color-mix(in oklab, var(--sig-drop) 15%, transparent); color: var(--ink); }
+.paradas__tirar:disabled { opacity: 0.3; cursor: default; }
+.paradas__tirar:focus-visible { outline: 2px solid var(--accent); }
+
+.mapa-legenda { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.mapa-legenda li { display: grid; grid-template-columns: auto minmax(7rem, auto) minmax(6rem, 1fr) auto auto; align-items: center; gap: 4px 10px; padding: 6px 10px; border: 1px solid var(--rule); border-left: 4px solid var(--algo-c); border-radius: 8px; background: var(--paper); font-size: 0.82rem; }
+.mapa-legenda li .mono { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.mapa-legenda li [data-ruim] { color: var(--sig-drop); font-weight: 700; }
+@container (max-width: 40rem) { .mapa-legenda li { grid-template-columns: auto 1fr; } .mapa-legenda li .pv { grid-column: 1 / -1; } }
+.algo-tabela td[data-melhor] { background: color-mix(in oklab, var(--sig-ok) 12%, transparent); font-weight: 700; }
+.algo-tabela small[data-ruim] { color: var(--sig-drop); }
+/* A coluna do lab nunca cresce com o conteúdo: uma tabela larga rola dentro do próprio
+   bloco em vez de esticar a grade (e a página) no celular. */
+.algo { grid-template-columns: minmax(0, 1fr); }
+/* O texto só para leitor de tela é absolute: sem um ancestral posicionado, ele escapa do
+   bloco que rola e soma na largura da página. */
+.algo-tabela { position: relative; }
