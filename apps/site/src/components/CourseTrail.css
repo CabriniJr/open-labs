@@ -212,6 +212,13 @@
   .course-trail__panel { max-height: min(72dvh, 42rem); }
 }
 
+/* Celular deitado: a barra encolhe, a tela é do conteúdo. */
+@media (orientation: landscape) and (max-height: 32rem) and (max-width: 79.999rem) {
+  .course-trail > summary { min-height: 2.75rem; padding-block: .4rem; }
+  .course-ring { width: 1.85rem; height: 1.85rem; }
+  .course-trail__panel { max-height: 78dvh; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .course-sidebar *, .course-sidebar *::before, .course-sidebar *::after, .learning-layout { transition: none !important; animation: none !important; }
 }

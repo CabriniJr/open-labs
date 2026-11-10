@@ -1,0 +1,249 @@
+{
+  "algorithms/hero": {
+    "file": "File:Bookshelves Suzzallo Allen Library University of Washington Seattle Washington 2026.jpg",
+    "alt": "A long library aisle between two tall bookshelves, the rows of books converging in perspective",
+    "author": "Guywelch2000",
+    "license": "CC BY 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Bookshelves_Suzzallo_Allen_Library_University_of_Washington_Seattle_Washington_2026.jpg"
+  },
+  "algorithms/phase-1": {
+    "file": "File:Card Catalog 2.jpg",
+    "alt": "Rows of labeled wooden card-catalog drawers, each one holding an index to part of the collection",
+    "author": "mamsy (Flickr)",
+    "authorSource": "https://www.flickr.com/photos/mamsy/",
+    "license": "CC BY 2.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Card_Catalog_2.jpg"
+  },
+  "algorithms/phase-2": {
+    "file": "File:Conveyor system in a factory.jpg",
+    "alt": "A curving roller conveyor in a factory, carrying items one after another past each station",
+    "author": "falco",
+    "license": "CC0",
+    "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "source": "https://commons.wikimedia.org/wiki/File:Conveyor_system_in_a_factory.jpg"
+  },
+  "algorithms/phase-3": {
+    "file": "File:Romanesco -- 2021 -- 5799.jpg",
+    "alt": "Close-up of Romanesco broccoli: spirals made of smaller spirals, the same shape repeating at every scale",
+    "author": "Dietmar Rabich",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Romanesco_--_2021_--_5799.jpg"
+  },
+  "algorithms/phase-4": {
+    "file": "File:Godorf Station at Dusk, May 2018.jpg",
+    "alt": "A railway marshalling yard at dusk, dozens of tracks fanning out under floodlights to sort wagons by destination",
+    "author": "Martin Falbisoner",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Godorf_Station_at_Dusk,_May_2018.jpg"
+  },
+  "algorithms/phase-5": {
+    "file": "File:Old cathedral of Kaliningrad in Russia.jpg",
+    "alt": "The river island of Kaliningrad, once Königsberg, whose seven bridges gave Euler the first problem of graph theory",
+    "author": "Gumerov Ildar",
+    "license": "Public domain",
+    "source": "https://commons.wikimedia.org/wiki/File:Old_cathedral_of_Kaliningrad_in_Russia.jpg",
+    "focus": "50% 60%"
+  },
+  "algorithms/phase-6": {
+    "file": "File:Jane M. Byrne Interchange 4-1-22.jpg",
+    "alt": "Aerial view of a multi-level highway interchange in Chicago, ramps curving between every pair of directions",
+    "author": "Sea Cow",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Jane_M._Byrne_Interchange_4-1-22.jpg"
+  },
+  "algorithms/phase-7": {
+    "file": "File:Argentina 1828 8 Escudos.jpg",
+    "alt": "Both faces of an 1828 Argentine gold coin on a black background",
+    "author": "National Museum of American History",
+    "license": "Public domain",
+    "source": "https://commons.wikimedia.org/wiki/File:Argentina_1828_8_Escudos.jpg"
+  },
+  "algorithms/phase-8": {
+    "file": "File:Türme von Hanoi in Bremen 7024.JPG",
+    "alt": "A wooden Tower of Hanoi puzzle with discs stacked on three pegs",
+    "author": "Bin im Garten",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:T%C3%BCrme_von_Hanoi_in_Bremen_7024.JPG"
+  },
+  "cpu/hero": {
+    "file": "File:Intel-pentium-ii-dixon-die-shot-high-resolution-stitched.jpg",
+    "alt": "High-resolution photograph of a Pentium II processor die, its blocks of logic and cache in copper and violet tones",
+    "author": "Martijn Boer",
+    "license": "Public domain",
+    "source": "https://commons.wikimedia.org/wiki/File:Intel-pentium-ii-dixon-die-shot-high-resolution-stitched.jpg"
+  },
+  "cpu/phase-1": {
+    "file": "File:Tektronix Oscilloscope 475A.jpg",
+    "alt": "An analog Tektronix oscilloscope showing a clean sine wave on its screen",
+    "author": "Pittigrilli",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Tektronix_Oscilloscope_475A.jpg"
+  },
+  "cpu/phase-2": {
+    "file": "File:TF78 60 - Wire bonding.jpg",
+    "alt": "Inside an opened germanium transistor: gold-plated base, fine bond wires and the tiny die on a black background",
+    "author": "Mister rf",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:TF78_60_-_Wire_bonding.jpg"
+  },
+  "cpu/phase-3": {
+    "file": "File:Museo de Informática Histórica (MIH) – UNIZAR – Magnetic-core memory 8k x 12 bit H-212 – close up.jpg",
+    "alt": "Close-up of magnetic-core memory: a woven grid of wires where each tiny ferrite ring holds one bit",
+    "author": "José Luis Briz Velasco",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Museo_de_Inform%C3%A1tica_Hist%C3%B3rica_(MIH)_%E2%80%93_UNIZAR_%E2%80%93_Magnetic-core_memory_8k_x_12_bit_H-212_%E2%80%93_close_up.jpg"
+  },
+  "cpu/phase-4": {
+    "file": "File:Computer Museum of America (52).jpg",
+    "alt": "The Apollo Guidance Computer's DSKY keypad, with VERB and NOUN keys for entering instructions",
+    "author": "Bubba73",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Computer_Museum_of_America_(52).jpg"
+  },
+  "cpu/phase-5": {
+    "file": "File:Printed Circuit Board 9990.jpg",
+    "alt": "A densely populated printed circuit board: chips, capacitors and traces all working at once",
+    "author": "Ashley Pomeroy",
+    "license": "CC BY 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Printed_Circuit_Board_9990.jpg"
+  },
+  "cpu/phase-6": {
+    "file": "File:Blue-punch-card-front-horiz.png",
+    "alt": "A blue punched card, a program written as rows of holes",
+    "author": "Gwern; derivative work: agr",
+    "authorSource": "Blue-punch-card-front.png: Gwern derivative work: agr (talk)",
+    "license": "Public domain",
+    "source": "https://commons.wikimedia.org/wiki/File:Blue-punch-card-front-horiz.png"
+  },
+  "kubernetes/hero": {
+    "file": "File:Aerial photograph of a cargo ship.jpg",
+    "alt": "Aerial photograph of a loaded container ship crossing dark open water",
+    "author": "Wilfredor",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Aerial_photograph_of_a_cargo_ship.jpg"
+  },
+  "kubernetes/phase-1": {
+    "file": "File:Container cranes at the MPET- MSC PSA European Terminal in Port of Antwerp (Kieldrecht, Belgium) during the sunset civil twilight (DSCF3919).jpg",
+    "alt": "A row of container cranes at the Port of Antwerp silhouetted against the evening sky",
+    "author": "Trougnouf",
+    "license": "CC BY 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Container_cranes_at_the_MPET-_MSC_PSA_European_Terminal_in_Port_of_Antwerp_(Kieldrecht,_Belgium)_during_the_sunset_civil_twilight_(DSCF3919).jpg"
+  },
+  "kubernetes/phase-2": {
+    "file": "File:Pride of Baltimore II Manhattan Pier 15, July 2026 ship's wheel.jpg",
+    "alt": "The wooden ship's wheel of a tall ship on deck: the helm that keeps the vessel on course",
+    "author": "SnowFire",
+    "license": "CC BY 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Pride_of_Baltimore_II_Manhattan_Pier_15,_July_2026_ship%27s_wheel.jpg"
+  },
+  "networks/hero": {
+    "file": "File:AMS-IX optical patch panel.jpg",
+    "alt": "Hundreds of yellow fiber-optic patch cables plugged into the optical patch panel of an internet exchange",
+    "author": "Fabienne Serriere",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:AMS-IX_optical_patch_panel.jpg"
+  },
+  "networks/phase-1": {
+    "file": "File:Network switches.jpg",
+    "alt": "Ethernet switches in a rack with blue and grey patch cables plugged into their ports",
+    "author": "ShakataGaNai",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Network_switches.jpg"
+  },
+  "networks/phase-2": {
+    "file": "File:Submarine Optical Cables.jpg",
+    "alt": "Cross-sections of submarine optical cables, from heavily armored to lightweight, each with a thread of fiber at its core",
+    "author": "Lonnie Hagadorn",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Submarine_Optical_Cables.jpg"
+  },
+  "networks/phase-3": {
+    "file": "File:Vintage telephone switchboard (49467795397).jpg",
+    "alt": "A vintage telephone switchboard with rows of jacks and patch cords: the operator decided which lines could connect",
+    "author": "Mike McBey",
+    "license": "CC BY 2.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Vintage_telephone_switchboard_(49467795397).jpg"
+  },
+  "otel/hero": {
+    "file": "File:NOIRLab HQ Server Racks (6V6A0395-CC).jpg",
+    "alt": "Server racks with rows of blue and red status lights in a dark machine room",
+    "author": "NOIRLab/NSF/AURA/T. Slovinský",
+    "license": "CC BY 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:NOIRLab_HQ_Server_Racks_(6V6A0395-CC).jpg",
+    "focus": "70% 50%"
+  },
+  "otel/phase-1": {
+    "file": "File:Diagnostic monitors in the control room of Wendelstein 7-X.jpg",
+    "alt": "A wall of separate diagnostic monitors in a fusion experiment's control room, each showing its own signal",
+    "author": "Siarhei Besarab",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Diagnostic_monitors_in_the_control_room_of_Wendelstein_7-X.jpg"
+  },
+  "otel/phase-2": {
+    "file": "File:Ross Island, Andamans, Tree roots on red brick wall.jpg",
+    "alt": "Tree roots branching across an old red brick wall",
+    "author": "Vyacheslav Argenberg",
+    "license": "CC BY 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Ross_Island,_Andamans,_Tree_roots_on_red_brick_wall.jpg"
+  },
+  "otel/phase-3": {
+    "file": "File:Trans-Alaska Pipeline segment 1.jpg",
+    "alt": "The Trans-Alaska Pipeline zigzagging across autumn tundra on its supports",
+    "author": "Arthur T. LaBar",
+    "license": "CC BY 2.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Trans-Alaska_Pipeline_segment_1.jpg"
+  },
+  "otel/phase-4": {
+    "file": "File:F-4N cockpit simulator PCAM pilot's instruments 11.JPG",
+    "alt": "Close-up of an aircraft attitude indicator surrounded by cockpit gauges",
+    "author": "BrokenSphere",
+    "license": "CC BY 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:F-4N_cockpit_simulator_PCAM_pilot%27s_instruments_11.JPG"
+  },
+  "otel/phase-5": {
+    "file": "File:Aerial image of the Eurogate and Burchardkai container terminals (view from the southeast).jpg",
+    "alt": "Aerial view of two container terminals in the port of Hamburg, thousands of containers in rows along the river",
+    "author": "Carsten Steger",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Aerial_image_of_the_Eurogate_and_Burchardkai_container_terminals_(view_from_the_southeast).jpg"
+  },
+  "splunk/hero": {
+    "file": "File:Coastal delta on Kodiak Island.jpg",
+    "alt": "Aerial view of a coastal river delta on Kodiak Island, streams branching across sediment into the sea",
+    "author": "Alaska Region U.S. Fish & Wildlife Service",
+    "license": "Public domain",
+    "source": "https://commons.wikimedia.org/wiki/File:Coastal_delta_on_Kodiak_Island.jpg"
+  },
+  "splunk/phase-1": {
+    "file": "File:Confluence of Indus and Zanskar rivers.jpg",
+    "alt": "The confluence of the Indus and Zanskar rivers in Ladakh: two differently colored streams entering one channel",
+    "author": "Bernard Gagnon",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Confluence_of_Indus_and_Zanskar_rivers.jpg"
+  }
+}

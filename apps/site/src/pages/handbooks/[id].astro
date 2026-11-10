@@ -7,6 +7,7 @@ import { url } from "../../lib/urls";
 import {
   HANDBOOKS,
   ITEM_STATUS_LABEL,
+  readyCount,
   type Handbook,
   type HandbookItem,
 } from "../../data/handbooks";
@@ -15,6 +16,10 @@ import "../../styles/docs.css";
 import { bankForHandbook } from "../../lib/assessment-catalog";
 import { AssessmentPlayer } from "../../components/AssessmentPlayer";
 import "../../components/AssessmentPlayer.css";
+import HandbookImage from "../../components/HandbookImage.astro";
+import { hasImage, heroOf, phaseImageOf } from "../../lib/imagens";
+import { coursePath } from "../../lib/course-path";
+import "../../styles/handbook-landing.css";
 
 export function getStaticPaths() {
   return HANDBOOKS.map((handbook) => ({ params: { id: handbook.id }, props: { handbook } }));
@@ -30,24 +35,24 @@ const finalAssessment = assessmentBank?.assessments.find((a) => a.scope.kind ===
 
 /**
  * Todo handbook tem a mesma anatomia — roadmap, artigos, labs — e a página é
- * essa anatomia. Agrupar por fase em vez de listar corrido é o que faz o
- * artigo e o lab da mesma fase aparecerem lado a lado, que é como se estuda.
+ * essa anatomia, contada como história: capa, um capítulo por fase (artigo e
+ * lab da mesma fase lado a lado, que é como se estuda), o mapa, a avaliação.
  */
-interface Grupo {
-  readonly phase: number;
-  readonly title: string;
-  readonly line: string;
-  readonly articles: readonly HandbookItem[];
-  readonly labs: readonly HandbookItem[];
-}
-
-const grupos: readonly Grupo[] = handbook.phases.map((phase) => ({
-  phase: phase.number,
+// Os capítulos leem a trilha (lib/course-path): a mesma ordem, as mesmas
+// chaves de progresso que o painel e o mapa usam.
+const path = coursePath(handbook);
+const chapters = path.phases.map((phase) => ({
+  number: phase.number,
   title: phase.title,
-  line: phase.line,
-  articles: handbook.articles.filter((item) => item.phase === phase.number),
-  labs: handbook.labs.filter((item) => item.phase === phase.number),
+  line: handbook.phases.find((p) => p.number === phase.number)!.line,
+  articles: phase.stops.filter((s) => s.kind === "Article"),
+  labs: phase.stops.filter((s) => s.kind === "Lab"),
 }));
+const firstStop = path.available[0];
+// A ordem da trilha, não a do desenho: no capítulo o lab vem antes do artigo
+// (é a estrela), mas "continue" segue a ordem em que se estuda.
+const order = (stop: { readonly key: string; readonly progressId: string }) =>
+  path.available.findIndex((s) => s.key === stop.key && s.progressId === stop.progressId);
 
 const orfaos = [...handbook.articles, ...handbook.labs].filter(
   (item) => !handbook.phases.some((phase) => phase.number === item.phase),
@@ -68,24 +73,46 @@ if (orfaos.length > 0) {
 >
   <SiteNav current="handbooks" />
 
-  <main id="content">
-    <section class="hb-head editorial">
-      <div class="prose">
-        <p class="hb-head__eyebrow mono">OpenLabs handbook</p>
-        <h1>{handbook.name}</h1>
-        <p class="hb-head__tagline">{handbook.tagline}</p>
-        <p>{handbook.blurb}</p>
-      </div>
-      <aside class="hb-head__note mono">
-        <p>Model: {handbook.model}</p>
-        <p>
-          {
-            handbook.stage === "building"
-              ? "Being built now."
-              : "Designed, not yet running."
-          }
+  <main id="content" class="hb-story" data-handbook={handbook.id}>
+    {/* A capa. A imagem é atmosfera, não informação: se faltar, o gradiente do
+        tema ocupa o lugar e nada da página depende dela. */}
+    <section class:list={["hb-hero", { "hb-hero--image": hasImage(heroOf(handbook.id)) }]}>
+      <HandbookImage name={heroOf(handbook.id)} class="hb-hero__image" sizes="100vw" eager widths={[640, 1024, 1440, 1920]} />
+      <div class="hb-hero__inner">
+        <p class="hb-hero__eyebrow mono" data-reveal>OpenLabs handbook</p>
+        <h1 data-reveal>{handbook.name}</h1>
+        <p class="hb-hero__tagline" data-reveal>{handbook.tagline}</p>
+        <p class="hb-hero__blurb" data-reveal>{handbook.blurb}</p>
+        <div class="hb-hero__actions" data-reveal>
+          {firstStop ? (
+            <a class="hb-cta" href={url(firstStop.href!)} data-hb-resume>
+              <small data-hb-resume-label>Start learning</small>
+              <span data-hb-resume-title>{firstStop.title}</span>
+            </a>
+          ) : null}
+          <a class="hb-cta hb-cta--ghost" href="#content-tracks"><span>See the path</span></a>
+        </div>
+        <dl class="hb-hero__stats mono" data-reveal>
+          <div><dt>Phases</dt><dd>{handbook.phases.length}</dd></div>
+          <div><dt>Labs</dt><dd>{readyCount(handbook.labs)}</dd></div>
+          <div><dt>Articles</dt><dd>{readyCount(handbook.articles)}</dd></div>
+          <div><dt>Model</dt><dd translate="no">{handbook.model}</dd></div>
+        </dl>
+        <p class="hb-hero__stage mono">
+          {handbook.stage === "building" ? "Being built now." : "Designed, not yet running."}
         </p>
-      </aside>
+      </div>
+      <ol class="hb-phases" aria-label="Chapters">
+        {handbook.phases.map((phase) => (
+          <li class="hb-phase">
+            <a href={`#phase-${phase.number}`}>
+              <span class="hb-phase__number mono">{String(phase.number).padStart(2, "0")}</span>
+              <span class="hb-phase__title">{phase.title}</span>
+              <span class="hb-phase__line">{phase.line}</span>
+            </a>
+          </li>
+        ))}
+      </ol>
     </section>
 
     {
@@ -102,81 +129,84 @@ if (orfaos.length > 0) {
       )
     }
 
-    <section class="hb-section" id="roadmap">
-      <h2>Roadmap</h2>
-      <p class="hb-section__lede">
-        {
-          handbook.map
-            ? "The order in which the concepts hold each other up. Not a queue — later phases reach back, and the map shows it."
-            : "The order in which the concepts hold each other up. The interactive map is not drawn yet — drawing the path before walking it would be a promise, so the phases are listed plainly instead."
-        }
-      </p>
-      {handbook.map && <Roadmap mapa={handbook.map} client:idle />}
-      <ol class="hb-phases">
-        {
-          handbook.phases.map((phase) => (
-            <li class="hb-phase">
-              <span class="hb-phase__number mono">{String(phase.number).padStart(2, "0")}</span>
-              <a class="hb-phase__title" href={`#phase-${phase.number}`}>{phase.title}</a>
-              <span class="hb-phase__line">{phase.line}</span>
-            </li>
-          ))
-        }
-      </ol>
-    </section>
+    {/* A história: uma fase por capítulo, artigo e lab lado a lado, que é como
+        se estuda. Os labs são a estrela — cartão grande, chamada para abrir. */}
+    <section class="hb-chapters" id="content-tracks">
+      <header class="hb-section hb-chapters__head">
+        <h2 data-reveal>Articles and labs</h2>
+        <p class="hb-section__lede" data-reveal>
+          Each phase pairs prose with a model. The article says what is true; the
+          lab is the thing running, and you can break it.
+        </p>
+      </header>
+      {chapters.map((chapter, index) => (
+        <section class:list={["hb-group", "hb-chapter", { "hb-chapter--flip": index % 2 === 1, "hb-chapter--image": hasImage(phaseImageOf(handbook.id, chapter.number)) }]} id={`phase-${chapter.number}`} data-chapter={chapter.number}>
+          <div class="hb-chapter__media" data-reveal>
+            <HandbookImage name={phaseImageOf(handbook.id, chapter.number)} class="hb-chapter__image" sizes="(min-width: 64rem) 45vw, 100vw" />
+            <span class="hb-chapter__numeral mono" aria-hidden="true">{String(chapter.number).padStart(2, "0")}</span>
+          </div>
+          <div class="hb-chapter__body">
+            <p class="hb-chapter__eyebrow mono" data-reveal>
+              <span>Phase</span>{` ${String(chapter.number).padStart(2, "0")}`}
+              <span class="hb-chapter__progress" data-chapter-progress hidden></span>
+            </p>
+            <h3 data-reveal>{chapter.title}</h3>
+            <p class="hb-group__line" data-reveal>{chapter.line}</p>
 
-    <section class="hb-section" id="content-tracks">
-      <h2>Articles and labs</h2>
-      <p class="hb-section__lede">
-        Each phase pairs prose with a model. The article says what is true; the
-        lab is the thing running, and you can break it.
-      </p>
-      <div class="hb-grid">
-        {
-          grupos.map((grupo) => (
-            <section class="hb-group" id={`phase-${grupo.phase}`}>
-              <h3>
-                <span class="mono">{String(grupo.phase).padStart(2, "0")}</span> {grupo.title}
-              </h3>
-              <p class="hb-group__line">{grupo.line}</p>
-              <p class="hb-group__label mono">Articles</p>
+            {chapter.labs.length > 0 && <>
+              <p class="hb-group__label mono" data-reveal>Labs</p>
+              <ul class="hb-items hb-items--labs">
+                {chapter.labs.map((item) => (
+                  <li class="hb-item hb-item--lab" data-reveal data-order={order(item)} data-title={item.title} data-key={item.key} data-progress-id={item.progressId} data-available={String(item.available)}>
+                    {item.href === undefined ? (
+                      <span class="hb-item__title">{item.title}</span>
+                    ) : (
+                      <a class="hb-item__title" href={url(item.href)}>{item.title}</a>
+                    )}
+                    <span class="hb-item__meta">
+                      <span class={`status status--${item.status}`}>{ITEM_STATUS_LABEL[item.status]}</span>
+                      {item.href !== undefined && <span class="hb-item__open">Open lab →</span>}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </>}
+
+            {chapter.articles.length > 0 && <>
+              <p class="hb-group__label mono" data-reveal>Articles</p>
               <ul class="hb-items">
-                {grupo.articles.map((item) => (
-                  <li class="hb-item">
+                {chapter.articles.map((item) => (
+                  <li class="hb-item" data-reveal data-order={order(item)} data-title={item.title} data-key={item.key} data-progress-id={item.progressId} data-available={String(item.available)}>
                     {/* Mesma marcação dos labs de propósito: um artigo escrito
                         que aparece como texto morto é indistinguível de um que
                         não existe — foi o que aconteceu com os dois labs. */}
                     {item.href === undefined ? (
-                      <span>{item.title}</span>
+                      <span class="hb-item__title">{item.title}</span>
                     ) : (
-                      <a href={url(item.href)}>{item.title}</a>
+                      <a class="hb-item__title" href={url(item.href)}>{item.title}</a>
                     )}
-                    <span class={`status status--${item.status}`}>
-                      {ITEM_STATUS_LABEL[item.status]}
-                    </span>
+                    <span class={`status status--${item.status}`}>{ITEM_STATUS_LABEL[item.status]}</span>
                   </li>
                 ))}
               </ul>
-              <p class="hb-group__label mono">Labs</p>
-              <ul class="hb-items">
-                {grupo.labs.map((item) => (
-                  <li class="hb-item">
-                    {item.href === undefined ? (
-                      <span>{item.title}</span>
-                    ) : (
-                      <a href={url(item.href)}>{item.title}</a>
-                    )}
-                    <span class={`status status--${item.status}`}>
-                      {ITEM_STATUS_LABEL[item.status]}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ))
-        }
-      </div>
+            </>}
+          </div>
+        </section>
+      ))}
     </section>
+
+    <section class="hb-section" id="roadmap">
+      <h2 data-reveal>Roadmap</h2>
+      <p class="hb-section__lede" data-reveal>
+        {
+          handbook.map
+            ? "The order in which the concepts hold each other up. Not a queue — later phases reach back, and the map shows it."
+            : "The order in which the concepts hold each other up. The interactive map is not drawn yet — drawing the path before walking it would be a promise, so the chapters above are the path."
+        }
+      </p>
+      {handbook.map && <Roadmap mapa={handbook.map} client:idle />}
+    </section>
+
     <section class="hb-section" id="assessment" aria-label="Final handbook assessment">
       {assessmentBank && finalAssessment ? <AssessmentPlayer bank={assessmentBank} assessmentId={finalAssessment.id} client:visible /> : <><h2>Handbook assessment</h2><p class="hb-section__lede">The cumulative assessment has not been authored yet. Available labs and articles remain open for study.</p></>}
     </section>
@@ -185,164 +215,4 @@ if (orfaos.length > 0) {
   <SiteFooter />
 </Base>
 
-<style>
-  .hb-head {
-    padding-block: var(--space-5) var(--space-3);
-  }
-
-  .hb-head__eyebrow {
-    color: var(--accent);
-    font-size: var(--size-step--1);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    margin: 0 0 var(--space-1);
-  }
-
-  h1 {
-    margin: 0 0 var(--space-2);
-    font-size: var(--size-step-3);
-    max-width: 18ch;
-  }
-
-  .hb-head__tagline {
-    font-size: var(--size-step-1);
-  }
-
-  .hb-head__note {
-    align-self: end;
-    color: var(--ink-muted);
-    font-size: var(--size-step--1);
-  }
-
-  .hb-head__note p {
-    margin: 0 0 0.35rem;
-  }
-
-  .hb-section {
-    max-width: 92rem;
-    margin-inline: auto;
-    padding: var(--space-4) var(--space-3);
-    border-block-start: 1px solid var(--rule);
-  }
-
-  h2 {
-    font-size: var(--size-step-2);
-    margin: 0 0 var(--space-1);
-  }
-
-  .hb-section__lede {
-    max-width: var(--measure);
-    color: var(--ink-muted);
-    margin: 0 0 var(--space-3);
-  }
-
-  /* O crédito fica acima do roadmap, e não no rodapé: quem emprestou o modelo
-     aparece antes do que foi feito com ele. */
-  .hb-reference__line {
-    max-width: var(--measure);
-    margin: 0 0 var(--space-1);
-  }
-
-  .hb-reference__cite {
-    margin: 0;
-    color: var(--ink-muted);
-    font-size: var(--size-step--1);
-  }
-
-  .hb-phases {
-    list-style: none;
-    margin: var(--space-3) 0 0;
-    padding: 0;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
-    gap: 1px;
-    background: var(--rule);
-    border: 1px solid var(--rule);
-    border-radius: var(--radius-3);
-    overflow: hidden;
-  }
-
-  .hb-phase {
-    display: flex;
-    flex-direction: column;
-    gap: 0.2rem;
-    padding: var(--space-3) var(--space-2);
-    background: var(--paper-raised);
-  }
-
-  .hb-phase__number {
-    color: var(--accent);
-    font-size: var(--size-step--1);
-  }
-
-  .hb-phase__title {
-    font-family: var(--font-display);
-    font-weight: 700;
-    font-size: var(--size-step-1);
-    letter-spacing: -0.02em;
-  }
-
-  .hb-phase__line {
-    color: var(--ink-muted);
-    font-size: var(--size-step--1);
-    line-height: 1.45;
-  }
-
-  .hb-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr));
-    gap: var(--space-2);
-  }
-
-  .hb-group {
-    padding: var(--space-3);
-    background: var(--paper-raised);
-    border: 1px solid var(--rule);
-    border-radius: var(--radius-3);
-  }
-
-  .hb-group h3 {
-    margin: 0 0 0.35rem;
-    font-size: var(--size-step-1);
-  }
-
-  .hb-group h3 span {
-    color: var(--accent);
-    font-size: var(--size-step--1);
-  }
-
-  .hb-group__line {
-    margin: 0 0 var(--space-2);
-    color: var(--ink-muted);
-    font-size: var(--size-step--1);
-    line-height: 1.5;
-  }
-
-  .hb-group__label {
-    margin: var(--space-2) 0 0.35rem;
-    color: var(--ink-faint);
-    font-size: var(--size-step--1);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-
-  .hb-items {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-  }
-
-  .hb-item {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: var(--space-1);
-    padding-block: 0.35rem;
-    border-block-end: 1px solid var(--rule);
-    font-size: var(--size-step--1);
-  }
-
-  .hb-item:last-child {
-    border-block-end: none;
-  }
-</style>
+<script src="../../lib/handbook-landing-client.ts"></script>

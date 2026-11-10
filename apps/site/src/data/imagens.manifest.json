@@ -1,0 +1,161 @@
+{
+  "otel/hero": {
+    "file": "File:NOIRLab HQ Server Racks (6V6A0395-CC).jpg",
+    "alt": "Server racks with rows of blue and red status lights in a dark machine room",
+    "focus": "70% 50%",
+    "altPt": "Racks de servidores com fileiras de luzes de status azuis e vermelhas numa sala de máquinas escura"
+  },
+  "otel/phase-1": {
+    "file": "File:Diagnostic monitors in the control room of Wendelstein 7-X.jpg",
+    "alt": "A wall of separate diagnostic monitors in a fusion experiment's control room, each showing its own signal",
+    "altPt": "Uma parede de monitores de diagnóstico separados na sala de controle de um experimento de fusão, cada um mostrando o seu próprio sinal"
+  },
+  "otel/phase-2": {
+    "file": "File:Ross Island, Andamans, Tree roots on red brick wall.jpg",
+    "alt": "Tree roots branching across an old red brick wall",
+    "altPt": "Raízes de árvore se ramificando sobre um velho muro de tijolos vermelhos"
+  },
+  "otel/phase-3": {
+    "file": "File:Trans-Alaska Pipeline segment 1.jpg",
+    "alt": "The Trans-Alaska Pipeline zigzagging across autumn tundra on its supports",
+    "altPt": "O oleoduto Trans-Alasca em zigue-zague sobre seus suportes, cruzando a tundra no outono"
+  },
+  "otel/phase-4": {
+    "file": "File:F-4N cockpit simulator PCAM pilot's instruments 11.JPG",
+    "alt": "Close-up of an aircraft attitude indicator surrounded by cockpit gauges",
+    "altPt": "Close de um horizonte artificial de avião cercado pelos instrumentos da cabine"
+  },
+  "otel/phase-5": {
+    "file": "File:Aerial image of the Eurogate and Burchardkai container terminals (view from the southeast).jpg",
+    "alt": "Aerial view of two container terminals in the port of Hamburg, thousands of containers in rows along the river",
+    "altPt": "Vista aérea de dois terminais de contêineres no porto de Hamburgo, milhares de contêineres enfileirados à beira do rio"
+  },
+  "cpu/hero": {
+    "file": "File:Intel-pentium-ii-dixon-die-shot-high-resolution-stitched.jpg",
+    "alt": "High-resolution photograph of a Pentium II processor die, its blocks of logic and cache in copper and violet tones",
+    "altPt": "Fotografia em alta resolução do die de um processador Pentium II, com seus blocos de lógica e cache em tons de cobre e violeta"
+  },
+  "cpu/phase-1": {
+    "file": "File:Tektronix Oscilloscope 475A.jpg",
+    "alt": "An analog Tektronix oscilloscope showing a clean sine wave on its screen",
+    "altPt": "Um osciloscópio analógico Tektronix mostrando uma senoide limpa na tela"
+  },
+  "cpu/phase-2": {
+    "file": "File:TF78 60 - Wire bonding.jpg",
+    "alt": "Inside an opened germanium transistor: gold-plated base, fine bond wires and the tiny die on a black background",
+    "altPt": "O interior de um transistor de germânio aberto: base banhada a ouro, fios de ligação finíssimos e o pequeno die sobre fundo preto"
+  },
+  "cpu/phase-3": {
+    "file": "File:Museo de Informática Histórica (MIH) – UNIZAR – Magnetic-core memory 8k x 12 bit H-212 – close up.jpg",
+    "alt": "Close-up of magnetic-core memory: a woven grid of wires where each tiny ferrite ring holds one bit",
+    "altPt": "Close de uma memória de núcleos magnéticos: uma grade tecida de fios em que cada anel de ferrite guarda um bit"
+  },
+  "cpu/phase-4": {
+    "file": "File:Computer Museum of America (52).jpg",
+    "alt": "The Apollo Guidance Computer's DSKY keypad, with VERB and NOUN keys for entering instructions",
+    "altPt": "O teclado DSKY do computador de bordo da Apollo, com as teclas VERB e NOUN para entrar instruções"
+  },
+  "cpu/phase-5": {
+    "file": "File:Printed Circuit Board 9990.jpg",
+    "alt": "A densely populated printed circuit board: chips, capacitors and traces all working at once",
+    "altPt": "Uma placa de circuito impresso densa: chips, capacitores e trilhas trabalhando todos ao mesmo tempo"
+  },
+  "cpu/phase-6": {
+    "file": "File:Blue-punch-card-front-horiz.png",
+    "alt": "A blue punched card, a program written as rows of holes",
+    "credit": "Gwern; derivative work: agr",
+    "altPt": "Um cartão perfurado azul, um programa escrito em fileiras de furos"
+  },
+  "algorithms/hero": {
+    "file": "File:Bookshelves Suzzallo Allen Library University of Washington Seattle Washington 2026.jpg",
+    "alt": "A long library aisle between two tall bookshelves, the rows of books converging in perspective",
+    "altPt": "Um longo corredor de biblioteca entre duas estantes altas, as fileiras de livros convergindo em perspectiva"
+  },
+  "algorithms/phase-1": {
+    "file": "File:Card Catalog 2.jpg",
+    "alt": "Rows of labeled wooden card-catalog drawers, each one holding an index to part of the collection",
+    "credit": "mamsy (Flickr)",
+    "altPt": "Fileiras de gavetas de madeira etiquetadas de um fichário de biblioteca, cada uma guardando o índice de uma parte do acervo"
+  },
+  "algorithms/phase-2": {
+    "file": "File:Conveyor system in a factory.jpg",
+    "alt": "A curving roller conveyor in a factory, carrying items one after another past each station",
+    "altPt": "Uma esteira de roletes em curva numa fábrica, levando os itens um depois do outro por cada estação"
+  },
+  "algorithms/phase-3": {
+    "file": "File:Romanesco -- 2021 -- 5799.jpg",
+    "alt": "Close-up of Romanesco broccoli: spirals made of smaller spirals, the same shape repeating at every scale",
+    "altPt": "Close de um romanesco: espirais feitas de espirais menores, a mesma forma se repetindo em cada escala"
+  },
+  "algorithms/phase-4": {
+    "file": "File:Godorf Station at Dusk, May 2018.jpg",
+    "alt": "A railway marshalling yard at dusk, dozens of tracks fanning out under floodlights to sort wagons by destination",
+    "altPt": "Um pátio de manobras ferroviárias ao entardecer, dezenas de trilhos se abrindo sob holofotes para separar vagões por destino"
+  },
+  "algorithms/phase-5": {
+    "file": "File:Old cathedral of Kaliningrad in Russia.jpg",
+    "alt": "The river island of Kaliningrad, once Königsberg, whose seven bridges gave Euler the first problem of graph theory",
+    "focus": "50% 60%",
+    "altPt": "A ilha fluvial de Kaliningrado, antiga Königsberg, cujas sete pontes deram a Euler o primeiro problema da teoria dos grafos"
+  },
+  "algorithms/phase-6": {
+    "file": "File:Jane M. Byrne Interchange 4-1-22.jpg",
+    "alt": "Aerial view of a multi-level highway interchange in Chicago, ramps curving between every pair of directions",
+    "altPt": "Vista aérea de um entroncamento rodoviário de vários níveis em Chicago, com alças curvando entre cada par de direções"
+  },
+  "algorithms/phase-7": {
+    "file": "File:Argentina 1828 8 Escudos.jpg",
+    "alt": "Both faces of an 1828 Argentine gold coin on a black background",
+    "altPt": "As duas faces de uma moeda de ouro argentina de 1828 sobre fundo preto"
+  },
+  "algorithms/phase-8": {
+    "file": "File:Türme von Hanoi in Bremen 7024.JPG",
+    "alt": "A wooden Tower of Hanoi puzzle with discs stacked on three pegs",
+    "altPt": "Uma Torre de Hanói de madeira com discos empilhados em três pinos"
+  },
+  "kubernetes/hero": {
+    "file": "File:Aerial photograph of a cargo ship.jpg",
+    "alt": "Aerial photograph of a loaded container ship crossing dark open water",
+    "altPt": "Fotografia aérea de um navio carregado de contêineres cruzando águas escuras"
+  },
+  "kubernetes/phase-1": {
+    "file": "File:Container cranes at the MPET- MSC PSA European Terminal in Port of Antwerp (Kieldrecht, Belgium) during the sunset civil twilight (DSCF3919).jpg",
+    "alt": "A row of container cranes at the Port of Antwerp silhouetted against the evening sky",
+    "altPt": "Uma fileira de guindastes de contêineres no porto de Antuérpia recortada contra o céu do entardecer"
+  },
+  "kubernetes/phase-2": {
+    "file": "File:Pride of Baltimore II Manhattan Pier 15, July 2026 ship's wheel.jpg",
+    "alt": "The wooden ship's wheel of a tall ship on deck: the helm that keeps the vessel on course",
+    "altPt": "O leme de madeira de um veleiro no convés: o timão que mantém o navio no rumo"
+  },
+  "networks/hero": {
+    "file": "File:AMS-IX optical patch panel.jpg",
+    "alt": "Hundreds of yellow fiber-optic patch cables plugged into the optical patch panel of an internet exchange",
+    "altPt": "Centenas de cabos de fibra óptica amarelos ligados ao patch panel óptico de um ponto de troca de tráfego da internet"
+  },
+  "networks/phase-1": {
+    "file": "File:Network switches.jpg",
+    "alt": "Ethernet switches in a rack with blue and grey patch cables plugged into their ports",
+    "altPt": "Switches Ethernet num rack, com cabos azuis e cinza ligados às suas portas"
+  },
+  "networks/phase-2": {
+    "file": "File:Submarine Optical Cables.jpg",
+    "alt": "Cross-sections of submarine optical cables, from heavily armored to lightweight, each with a thread of fiber at its core",
+    "altPt": "Cortes de cabos ópticos submarinos, do mais blindado ao mais leve, cada um com um fio de fibra no centro"
+  },
+  "networks/phase-3": {
+    "file": "File:Vintage telephone switchboard (49467795397).jpg",
+    "alt": "A vintage telephone switchboard with rows of jacks and patch cords: the operator decided which lines could connect",
+    "altPt": "Uma mesa telefônica antiga com fileiras de tomadas e cordões: a telefonista decidia quais linhas podiam se ligar"
+  },
+  "splunk/hero": {
+    "file": "File:Coastal delta on Kodiak Island.jpg",
+    "alt": "Aerial view of a coastal river delta on Kodiak Island, streams branching across sediment into the sea",
+    "altPt": "Vista aérea de um delta costeiro na Ilha Kodiak, com canais se ramificando sobre o sedimento até o mar"
+  },
+  "splunk/phase-1": {
+    "file": "File:Confluence of Indus and Zanskar rivers.jpg",
+    "alt": "The confluence of the Indus and Zanskar rivers in Ladakh: two differently colored streams entering one channel",
+    "altPt": "O encontro dos rios Indo e Zanskar, em Ladakh: duas águas de cores diferentes entrando no mesmo leito"
+  }
+}

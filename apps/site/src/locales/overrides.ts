@@ -1,9 +1,38 @@
 import ASSESSMENT_PT from "./assessment-pt.json" with { type: "json" };
 import type { Language, Messages } from "../lib/localize-text.js";
+import IMAGENS from "../data/imagens.manifest.json" with { type: "json" };
+
+/** O texto alternativo de cada foto curada mora no manifesto, com a tradução ao lado. */
+const ALT_PT: Messages = Object.fromEntries(Object.values(IMAGENS as Record<string, { alt: string; altPt?: string }>).flatMap((i) => (i.altPt ? [[i.alt, i.altPt]] : [])));
 
 /** Reviewed terminology and scientific/assessment wording override generated text. */
 export const OVERRIDES: Record<Language, Messages> = {
   en: {
+    // docs/imagens.md
+    "— baixa o que falta e reescreve os créditos.": "— downloads what is missing and rewrites the credits.",
+    ", lendo a API": ", reading the API",
+    ". A API limita cliente anônimo; o script espera o": ". The API rate-limits anonymous clients; the script waits for the",
+    "); o navegador baixa o tamanho da tela, não o do arquivo.": "); the browser downloads the size of the screen, not the size of the file.",
+    "367 palavras": "367 words",
+    "a curadoria: qual arquivo da Commons, o texto alternativo, o recorte (": "the curation: which Commons file, the alt text, the crop (",
+    "A foto é a metáfora da fase, não uma ilustração dela: o OTel “The Problem” é uma parede de monitores que não conversam; “The Model” são raízes se ramificando; “The Architecture” é um oleoduto com estações. Prefira objeto real a stock genérico, e evite pessoas identificáveis em primeiro plano.": "The photo is the phase's metaphor, not an illustration of it: OTel's “The Problem” is a wall of monitors that do not talk to each other; “The Model” is roots branching; “The Architecture” is a pipeline with stations. Prefer a real object to generic stock, and avoid identifiable people in the foreground.",
+    "A landing de cada handbook tem uma capa e uma imagem por fase. São fotos reais, da Wikimedia Commons, escolhidas uma a uma — atmosfera, não informação: se uma faltar, o gradiente do tema ocupa o lugar e nada da página depende dela.": "Each handbook's landing has a cover and one image per phase. They are real photographs from Wikimedia Commons, chosen one by one — atmosphere, not information: if one is missing, the theme's gradient takes its place and nothing on the page depends on it.",
+    "Ache o arquivo na Commons. Licença precisa permitir reuso com atribuição: CC BY, CC BY-SA, CC0 ou domínio público. Paisagem, ≥ 1600 px de largura.": "Find the file on Commons. The license must allow reuse with attribution: CC BY, CC BY-SA, CC0 or public domain. Landscape, ≥ 1600 px wide.",
+    "autor, licença e fonte de cada imagem": "author, license and source of each image",
+    "cobra: todo arquivo tem crédito, todo crédito veio do manifesto, só licenças livres, a chave aponta para handbook e fase reais, nenhum arquivo acima de 600 KB.": "checks: every file has a credit, every credit came from the manifest, only free licenses, the key points at a real handbook and phase, no file above 600 KB.",
+    "Critério de curadoria": "Curation criteria",
+    "em vez de insistir.": "instead of insisting.",
+    "Escreva a entrada no manifesto, com a chave": "Write the manifest entry, with the key",
+    "Imagens dos handbooks": "Handbook images",
+    "Imagens dos handbooks — OTel Visual Handbook": "Handbook images — OTel Visual Handbook",
+    "O Astro gera AVIF e WebP em vários tamanhos no build (": "Astro generates AVIF and WebP in several sizes at build time (",
+    "O crédito nunca é digitado. Digitado, ele envelhece e mente; lido da fonte, ele é a fonte. Ele aparece sobre a própria foto, com link para a página da Commons (no card da home, onde o card inteiro já é link, sai como texto).": "The credit is never typed. Typed, it ages and lies; read from the source, it is the source. It appears on the photo itself, linking to the Commons page (on the home card, where the whole card is already a link, it is plain text).",
+    "o JPEG-fonte (capa 1920 px, fase 1280 px, ≤ 500 KB)": "the source JPEG (cover 1920 px, phase 1280 px, ≤ 500 KB)",
+    "Onde mora cada coisa": "Where each thing lives",
+    "pessoa": "person",
+    "rebaixa tudo.": "downloads everything again.",
+    "Rede: a API e os arquivos ficam em": "Network: the API and the files are at",
+    "Trocar ou adicionar uma imagem": "Replace or add an image",
     "O motor": "The engine", "Andamento": "Progress", "Escrever um lab": "Write a lab", "Submeter um handbook": "Submit a handbook", "rascunho": "draft", "proposta": "proposal", "estável": "stable",
     "Principal": "Main", "Documentação": "Docs", "Rodapé": "Footer", "Código": "Code", "Pular para o conteúdo": "Skip to content",
     "Toda a documentação": "All documentation", "Progresso": "Progress", "Decisões e ideias consolidadas": "Consolidated decisions and ideas",
@@ -13,6 +42,10 @@ export const OVERRIDES: Record<Language, Messages> = {
   },
   "pt-BR": {
     ...ASSESSMENT_PT,
+    ...ALT_PT,
+    "— publishing only what is finished would hide the part that is still being argued. Every chapter says which it is: 7 settled, 13 drafted, 3 still proposals.": "— publicar só o que está pronto esconderia a parte que ainda está em discussão. Cada capítulo diz o que é: 7 decididos, 13 rascunhados, 3 ainda propostas.",
+    "imagens": "imagens",
+    "The order in which the concepts hold each other up. The interactive map is not drawn yet — drawing the path before walking it would be a promise, so the chapters above are the path.": "A ordem em que os conceitos se sustentam. O mapa interativo ainda não foi desenhado — traçar o caminho antes de percorrê-lo seria uma promessa, então os capítulos acima são o caminho.",
     "Lab progress": "Progresso nos labs",
     "Enable JavaScript to track completion. All course links remain available.": "Ative o JavaScript para acompanhar o progresso. Todos os links da trilha continuam disponíveis.",
     "Article · draft": "Artigo · rascunho", "Article · coming": "Artigo · em breve", "Lab · draft": "Lab · rascunho", "Lab · coming": "Lab · em breve",
@@ -38,6 +71,9 @@ export const OVERRIDES: Record<Language, Messages> = {
     "Complete and continue": "Concluir e continuar",
     "Previous": "Anterior", "Next": "Próximo", "Activity": "Atividade",
     "End of the path": "Fim da trilha",
+    "See the path": "Ver a trilha", "Open lab →": "Abrir lab →",
+    // O catálogo gerado traduziu o id do handbook como palavra ("hotel").
+    "otel": "otel", "Phases": "Fases", "Model": "Modelo",
     "Lab": "Lab", "Handbook": "Handbook",
     "ASSESS · EXPLAIN · IMPROVE": "AVALIE · EXPLIQUE · MELHORE", "Kubernetes example": "Exemplo de Kubernetes", "✓ Ready to export": "✓ Pronto para exportar", "APPROVED": "APROVADAS",
     "· objective": "· objetivo",

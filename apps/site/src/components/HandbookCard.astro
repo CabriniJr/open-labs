@@ -1,6 +1,9 @@
 ---
 import { url } from "../lib/urls";
 import { readyCount, type Handbook } from "../data/handbooks";
+import HandbookImage from "./HandbookImage.astro";
+import { hasImage, heroOf } from "../lib/imagens";
+import "./HandbookCard.css";
 
 interface Props {
   handbook: Handbook;
@@ -10,7 +13,8 @@ const { handbook } = Astro.props;
 const labsProntos = readyCount(handbook.labs);
 ---
 
-<a class="hb-card" href={url(`handbooks/${handbook.id}`)}>
+<a class:list={["hb-card", { "hb-card--image": hasImage(heroOf(handbook.id)) }]} href={url(`handbooks/${handbook.id}`)}>
+  <HandbookImage name={heroOf(handbook.id)} class="hb-card__cover" sizes="(min-width: 64rem) 30vw, 100vw" widths={[480, 800, 1200]} linked={false} />
   <span class="hb-card__subject mono">{handbook.subject}</span>
   <h3 class="hb-card__name">{handbook.name}</h3>
   <p class="hb-card__tagline">{handbook.tagline}</p>
@@ -36,9 +40,19 @@ const labsProntos = readyCount(handbook.labs);
     text-decoration: none;
   }
 
+  .hb-card {
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s, transform 0.25s cubic-bezier(0.2, 0.7, 0.2, 1), box-shadow 0.25s;
+  }
+
   .hb-card:hover {
     border-color: var(--accent);
+    transform: translateY(-3px);
+    box-shadow: 0 22px 40px -30px var(--ink);
   }
+
+
 
   .hb-card__subject {
     color: var(--accent);

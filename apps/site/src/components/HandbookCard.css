@@ -1,0 +1,44 @@
+/* A capa do card de handbook (em .css, e não no <style> do componente, porque a
+   capa é HTML do HandbookImage, de fora do escopo do componente). */
+/* A capa sangra até a borda do card: margens negativas desfazem o padding. */
+.hb-card .hb-card__cover {
+  position: relative;
+  margin: calc(var(--space-3) * -1) calc(var(--space-3) * -1) var(--space-1);
+  aspect-ratio: 16 / 8;
+  overflow: hidden;
+}
+
+.hb-card .hb-card__cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: var(--focus, center);
+  display: block;
+  transition: transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.hb-card:hover .hb-card__cover img {
+  transform: scale(1.04);
+}
+
+.hb-card .hb-card__cover figcaption {
+  position: absolute;
+  right: 0.5rem;
+  bottom: 0.4rem;
+}
+
+.hb-card .hb-image__credit {
+  display: inline-block;
+  padding: 0.15rem 0.45rem;
+  border-radius: var(--radius-1);
+  font-size: 0.62rem;
+  color: var(--dui-foto-tinta);
+  background: color-mix(in srgb, var(--dui-foto-veu) 45%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hb-card,
+  .hb-card .hb-card__cover img {
+    transition: none;
+  }
+}

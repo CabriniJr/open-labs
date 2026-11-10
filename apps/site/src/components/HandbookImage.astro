@@ -1,0 +1,47 @@
+---
+// locale: skip-file — the credit line is assembled from license metadata; its words are in overrides.
+import { Picture } from "astro:assets";
+import type { ImageMetadata } from "astro";
+import { creditOf } from "../lib/imagens";
+
+/**
+ * Uma imagem curada de um handbook, com o crédito que a licença exige.
+ *
+ * O arquivo e o crédito saem do mesmo manifesto (`scripts/imagens.mjs` baixa
+ * os dois da Wikimedia Commons): uma imagem sem crédito não tem como entrar,
+ * porque sem a linha no manifesto não existe arquivo para importar.
+ */
+interface Props {
+  /** `<handbook>/<hero|phase-N>` */
+  readonly name: string;
+  readonly sizes: string;
+  readonly class?: string;
+  readonly eager?: boolean;
+  readonly widths?: readonly number[];
+  /** Dentro de um link (o card), o crédito vira texto: link dentro de link é HTML inválido. */
+  readonly linked?: boolean;
+}
+const { name, sizes, class: className, eager = false, widths = [480, 800, 1200, 1600], linked = true } = Astro.props;
+const files = import.meta.glob<{ default: ImageMetadata }>("../assets/handbooks/**/*.jpg", { eager: true });
+const file = files[`../assets/handbooks/${name}.jpg`]?.default;
+const credit = creditOf(name);
+---
+{file && credit && (
+  <figure class:list={["hb-image", className]} style={credit.focus ? `--focus: ${credit.focus}` : undefined}>
+    <Picture
+      src={file}
+      alt={credit.alt}
+      formats={["avif", "webp"]}
+      widths={widths.filter((w) => w <= file.width) as number[]}
+      sizes={sizes}
+      loading={eager ? "eager" : "lazy"}
+      fetchpriority={eager ? "high" : "auto"}
+      decoding="async"
+    />
+    <figcaption translate="no">
+      {linked
+        ? <a href={credit.source} rel="noopener"><span>{credit.author}</span> · {credit.license}</a>
+        : <span class="hb-image__credit"><span>{credit.author}</span> · {credit.license}</span>}
+    </figcaption>
+  </figure>
+)}

@@ -103,6 +103,12 @@
   --dui-especie-3: #db61a2;
   --dui-especie-4: #e3b341;
   --dui-especie-5: var(--ink-faint);
+
+  /* Sobre fotografia: o crédito e o numeral do capítulo ficam em cima de uma
+     foto qualquer, clara ou escura, e o tema não sabe qual. Branco sobre um véu
+     escuro é o único par legível nas duas — e não muda com o tema, de propósito. */
+  --dui-foto-tinta: #fff;
+  --dui-foto-veu: #000;
 }
 
 /* O compasso é de cada palco, e vem escrito na instância. */

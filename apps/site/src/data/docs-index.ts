@@ -60,6 +60,7 @@ export const THEMES: readonly Theme[] = [
       { id: "delivery", language: "en", title: "Runnable handbook deliveries", status: "draft" },
       { id: "assessments", language: "en", title: "Interactive assessments", status: "draft" },
       { id: "localization", language: "en", title: "Language and appearance", status: "draft" },
+      { id: "imagens", title: "Imagens dos handbooks", status: "stable" },
       { id: "authoring", title: "Guia de autoria", status: "draft" },
       { id: "model-format", title: "Formato do modelo", status: "proposal" },
       { id: "motion", title: "O palco animado", status: "draft" },
