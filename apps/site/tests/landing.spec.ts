@@ -9,7 +9,8 @@ import { noTema } from "./tema.js";
  * lembrar deste arquivo, e quem esquecer descobre no CI — que foi o que
  * aconteceu quando a trilha do OTel cresceu de treze para dezoito nós.
  */
-const TOTAL_CPU = MAPA_CPU.labs.length;
+// Só o que está no ar entra no total: lab `coming` é promessa, não pendência.
+const TOTAL_CPU = MAPA_CPU.labs.filter((lab) => lab.status === "available").length;
 const TOTAL_OTEL = MAPA_OTEL.labs.length;
 
 
