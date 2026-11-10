@@ -131,9 +131,21 @@ recusa como parâmetro, ocupação por `Message.weight`.
 - **Showcase:** seis capítulos com pares reais — MASP → Mercadão, Sírio-Libanês →
   Luz (A* 119 × Dijkstra 941), Bixiga → São Bento (bidirecional vence o A*),
   guloso errando por 3 min 49 s, A* com pressa, BFS contando esquinas.
-- **Simulação:** origem/destino por ponto de interesse ou clique no mapa, até 4
-  pistas, pseudocódigo aceso, gráfico ao vivo ("% do caminho alcançado") e Big-O
-  do mapa (resolvidos × distância em 48 viagens: o Dijkstra cresce com a área).
+- **Simulação — todas no mesmo mapa:** um canvas só, cada busca pintando na cor da
+  pista; no fim, as rotas viram faixas concêntricas (vão escuro só onde coincidem).
+  Opção "lado a lado" para quem quer as pistas separadas.
+- **Paradas com bonecos:** de 2 a 4 personagens próprios do lab (chapéu de
+  explorador na cor da parada, alvo no chão). Arrastado, o boneco pendura pela
+  cabeça e balança com física de mola (ragdoll: braços e pernas atrasados); solto,
+  cai, amassa e quica no cruzamento mais perto; parado, respira, pisca e acena
+  (CSS, defasado por boneco). Setas do teclado também movem. A ordem das paradas
+  do meio é a de menor tempo, testando todas as permutações com Dijkstra
+  (`mapa-real/paradas.ts`).
+- **Quem vence onde:** seis cenários reais × seis buscas, com ★ (exata que menos
+  trabalhou) e ⚡ (terminou primeiro). O A* vence com linha reta clara; a
+  bidirecional, atrás das mãos únicas e no passeio de três paradas.
+- Embaixo: pseudocódigo aceso, gráfico ao vivo e Big-O do mapa (resolvidos ×
+  distância em 48 viagens: o Dijkstra cresce com a área).
 - **Desempenho conhecido:** 60 fps com CPU normal; com CPU 4× mais lenta no
   Chromium sem tela (pintura por software), ~26 fps na simulação com 3 pistas
   largas e ~49 fps no showcase. O gargalo medido é a rasterização dos canvas

@@ -64,3 +64,5 @@ export async function carregarSaoPaulo(): Promise<import("./mapa-real/cidade.js"
   const m = await import("./mapa-real/dados.js");
   return m.saoPaulo();
 }
+export { CENARIOS, MAIS_PARADAS, melhorOrdem, rodarCenario, rotaComParadas } from "./mapa-real/paradas.js";
+export type { Cenario, LinhaDoCenario, PassoComPerna, ResultadoDoCenario, RotaComParadas } from "./mapa-real/paradas.js";
