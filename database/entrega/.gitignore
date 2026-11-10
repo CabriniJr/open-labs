@@ -1,0 +1,3 @@
+# O PDF e o HTML são gerados por ../gerar.mjs e são da equipe; não vão para o repositório.
+*.pdf
+documento.html
