@@ -4,6 +4,8 @@ import { url } from "../lib/urls";
 // que o use sair com a navegação crua (os índices de labs e de handbooks saíam).
 import "../styles/docs.css";
 import { chrome, type Lang } from "../lib/chrome-strings";
+import { courseAt, pageOf } from "../lib/course-at";
+import CourseStep from "./CourseStep.astro";
 
 interface Props {
   lang?: Lang | undefined;
@@ -11,7 +13,12 @@ interface Props {
 
 const { lang = "en" } = Astro.props;
 const t = chrome(lang);
+// O fim de uma atividade da trilha é aqui, logo acima do rodapé.
+const current = pageOf(Astro.url.pathname);
+const course = courseAt(current);
 ---
+
+{course && <CourseStep handbook={course} current={current} />}
 
 <footer class="site-footer">
   <div>

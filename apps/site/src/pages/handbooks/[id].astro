@@ -111,7 +111,7 @@ if (orfaos.length > 0) {
             : "The order in which the concepts hold each other up. The interactive map is not drawn yet — drawing the path before walking it would be a promise, so the phases are listed plainly instead."
         }
       </p>
-      {handbook.map && <Roadmap mapa={handbook.map} client:visible />}
+      {handbook.map && <Roadmap mapa={handbook.map} client:idle />}
       <ol class="hb-phases">
         {
           handbook.phases.map((phase) => (

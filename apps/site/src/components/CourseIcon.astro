@@ -1,0 +1,17 @@
+---
+// locale: skip-file — icon names, no rendered strings.
+/** Ícones da trilha: traço de 1,6 sobre grade 16, herdando a cor do texto. */
+interface Props { name: "article" | "lab" | "check" | "chevron" | "arrow" | "path"; class?: string }
+const { name, class: className } = Astro.props;
+---
+<svg class:list={["course-icon", className]} viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false">
+  {name === "article" && <><path d="M4 1.8h5.2L12.5 5v9.2H4z" /><path d="M9 1.8V5.3h3.4M6.2 8h4M6.2 10.5h4" /></>}
+  {name === "lab" && <><path d="M6.2 1.8h3.6M6.8 1.8v4.4L3 12.6a1.1 1.1 0 0 0 1 1.6h8a1.1 1.1 0 0 0 1-1.6L9.2 6.2V1.8" /><path d="M4.8 10h6.4" /></>}
+  {name === "check" && <path d="M3.4 8.4 6.4 11.2 12.6 4.8" />}
+  {name === "chevron" && <path d="M10 3.5 5.5 8l4.5 4.5" />}
+  {name === "arrow" && <path d="M3 8h9.5M8.8 4.2 12.6 8l-3.8 3.8" />}
+  {name === "path" && <><circle cx="4" cy="3.5" r="1.6" /><circle cx="12" cy="12.5" r="1.6" /><path d="M5.6 3.5h4.2a2.3 2.3 0 0 1 0 4.6H6.2a2.2 2.2 0 0 0 0 4.4h4.2" /></>}
+</svg>
+<style>
+  .course-icon { flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+</style>

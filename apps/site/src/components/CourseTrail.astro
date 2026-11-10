@@ -1,54 +1,84 @@
 ---
 import type { Handbook } from "../data/handbooks";
 import { url } from "../lib/urls";
-import { courseProgressKey } from "../lib/learning-progress";
+import { coursePath, positionOf } from "../lib/course-path";
+import CourseIcon from "./CourseIcon.astro";
 import "./CourseTrail.css";
 interface Props { handbook: Handbook; current: string }
 const { handbook, current } = Astro.props;
-const courseKey = courseProgressKey(handbook.id);
-const phases = handbook.phases.map((phase) => ({
-  ...phase,
-  items: [
-    ...handbook.articles.filter((item) => item.phase === phase.number).map((item) => ({ ...item, kind: "Article", key: courseKey, progressId: `article:${item.id}` })),
-    ...handbook.labs.filter((item) => item.phase === phase.number).map((item) => {
-      const legacy = handbook.map?.labs.find((lab) => lab.href === item.href);
-      return { ...item, kind: "Lab", key: legacy ? handbook.map!.storageKey : courseKey, progressId: legacy?.id ?? `lab:${item.id}` };
-    }),
-  ],
-}));
-const available = phases.flatMap((phase) => phase.items).filter((item) => item.href && item.status === "available");
-const active = available.find((item) => url(item.href!) === current);
-const currentPhase = phases.find((phase) => phase.items.some((item) => item.href && url(item.href) === current));
+const path = coursePath(handbook);
+const { available } = path;
+const here = positionOf(path, current, url);
+const home = url(`handbooks/${handbook.id}`);
+const first = available[0];
 ---
 <aside class="course-sidebar" aria-label="Learning path">
   <details class="course-trail" open data-current={current} data-preference="ovh:course-navigation:v1">
     <summary title="Toggle learning path" aria-label="Toggle learning path">
-      <span class="course-trail__icon" aria-hidden="true">☰</span>
-      <span class="course-trail__summary">Learning path</span>
-      <span class="course-trail__collapse" aria-hidden="true">↔</span>
+      <span class="course-ring" data-course-ring style="--p: 0" aria-hidden="true"><CourseIcon name="path" /></span>
+      <span class="course-trail__summary">
+        <span>Learning path</span>
+        <small class="mono" data-course-chip>0 / {available.length}</small>
+      </span>
+      <CourseIcon name="chevron" class="course-trail__collapse" />
     </summary>
     <div class="course-trail__panel">
-      <a class="course-trail__home" href={url(`handbooks/${handbook.id}`)} aria-current={current === url(`handbooks/${handbook.id}`) ? "page" : undefined}>{handbook.name}</a>
+      <a class="course-trail__home" href={home} aria-current={current === home ? "page" : undefined}>
+        <small class="mono">Handbook</small>
+        <span>{handbook.name}</span>
+      </a>
       <div class="course-trail__progress" aria-live="polite">
-        <p><span>Your progress</span><strong data-course-percent>0%</strong></p>
-        <progress max={available.length || 1} value="0" aria-label="Completed learning activities"></progress>
-        <p><span data-course-count>0 / {available.length}</span><span>available activities</span></p>
+        <div class="course-trail__score">
+          <strong data-course-percent>0%</strong>
+          <span><span data-course-count>0 / {available.length}</span> <span>available activities</span></span>
+        </div>
+        <progress class="visually-hidden" max={available.length || 1} value="0" aria-label="Completed learning activities"></progress>
+        <ol class="course-trail__strip" aria-hidden="true">
+          {path.phases.map((phase) => {
+            const n = phase.stops.filter((s) => s.available).length;
+            return n > 0 && <li data-phase-bar={phase.number} style={`--n: ${n}; --fill: 0`} title={phase.title}></li>;
+          })}
+        </ol>
       </div>
       <noscript><p class="course-trail__note">Enable JavaScript to track completion. All course links remain available.</p></noscript>
       <p class="course-trail__note" data-course-storage>Mark activities when you finish. Progress stays in this browser.</p>
-      {available.length > 0 ? <a class="course-trail__continue" data-course-continue href={url(available[0]!.href!)}>Start learning →</a> : <p>No activities published yet.</p>}
-      {active && <button class="course-trail__complete" hidden data-course-active data-key={active.key} data-progress-id={active.progressId} aria-pressed="false">Mark as complete</button>}
+      {first ? (
+        <a class="course-trail__continue" data-course-continue href={url(first.href!)}>
+          <span class="course-trail__continue-text">
+            <small data-course-next-label>Start learning</small>
+            <span data-course-next-title>{first.title}</span>
+          </span>
+          <CourseIcon name="arrow" />
+        </a>
+      ) : <p class="course-trail__note">No activities published yet.</p>}
       <nav aria-label="Course activities">
-        {phases.map((phase) => (
-          <details class="course-trail__phase" open={!currentPhase || currentPhase.number === phase.number}>
-            <summary><span class="mono">{String(phase.number).padStart(2, "0")}</span><span>{phase.title}</span><small data-phase-count></small></summary>
+        {path.phases.map((phase) => (
+          <details class="course-trail__phase" data-phase={phase.number} open={!here.phase || here.phase.number === phase.number}>
+            <summary>
+              <span class="course-trail__badge mono" aria-hidden="true">
+                <span>{String(phase.number).padStart(2, "0")}</span>
+                <CourseIcon name="check" />
+              </span>
+              <span class="course-trail__phase-title">{phase.title}</span>
+              <small class="mono" data-phase-count></small>
+            </summary>
             <ol>
-              {phase.items.map((item) => (
-                <li data-course-item data-key={item.key} data-progress-id={item.progressId} data-available={Boolean(item.href && item.status === "available")}>
-                  {item.href ? <>
-                    <a id={item.progressId} href={url(item.href)} aria-current={url(item.href) === current ? "page" : undefined}><small>{item.kind}{item.status !== "available" ? ` · ${item.status}` : ""}</small><span>{item.title}</span></a>
-                    {item.status === "available" && <button hidden class="course-trail__check" data-course-toggle aria-label="Toggle activity completion" aria-describedby={item.progressId} aria-pressed="false"><span aria-hidden="true">○</span></button>}
-                  </> : <span class="course-trail__unavailable"><small>{item.kind} · coming</small><span>{item.title}</span></span>}
+              {phase.stops.map((stop) => (
+                <li data-course-item data-title={stop.title} data-kind={stop.kind.toLowerCase()} data-key={stop.key} data-progress-id={stop.progressId} data-available={stop.available ? "true" : "false"}>
+                  <span class="course-trail__kind" aria-hidden="true"><CourseIcon name={stop.kind === "Lab" ? "lab" : "article"} /></span>
+                  {stop.href ? <>
+                    <a id={stop.progressId} href={url(stop.href)} aria-current={url(stop.href) === current ? "page" : undefined}>
+                      <small>{stop.kind}{stop.status !== "available" ? ` · ${stop.status}` : ""}</small>
+                      <span>{stop.title}</span>
+                    </a>
+                    {stop.available && (
+                      <button type="button" hidden class="course-trail__check" data-course-toggle aria-label="Toggle activity completion" aria-describedby={stop.progressId} aria-pressed="false">
+                        <CourseIcon name="check" />
+                      </button>
+                    )}
+                  </> : (
+                    <span class="course-trail__unavailable"><small>{stop.kind} · coming</small><span>{stop.title}</span></span>
+                  )}
                 </li>
               ))}
             </ol>

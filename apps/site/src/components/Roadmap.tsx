@@ -83,7 +83,13 @@ export function Roadmap({ mapa }: { readonly mapa: RoadmapMap }) {
   // O placar dos exercícios, também só depois da hidratação, e pela mesma razão.
   const [placar, setPlacar] = useState<Readonly<Record<string, string>>>({});
 
+  // `data-vivo`: o mapa só responde a clique depois da hidratação. Antes disso
+  // o botão existe no HTML e o gesto se perde — o e2e (e quem testa à mão)
+  // precisa saber a diferença.
+  const [vivo, setVivo] = useState(false);
+
   useEffect(() => {
+    setVivo(true);
     const refresh = () => setDone(readProgress(storageKey));
     refresh();
     setPlacar(lerPlacar());
@@ -101,7 +107,7 @@ export function Roadmap({ mapa }: { readonly mapa: RoadmapMap }) {
   const completed = availableLabs.filter((lab) => done.includes(lab.id)).length;
 
   return (
-    <div ref={localeReady} className="roadmap">
+    <div ref={localeReady} className="roadmap" data-vivo={vivo ? "true" : undefined}>
       <div className="roadmap__progress">
         <span className="roadmap__progress-label mono">Lab progress</span>
         <span className="roadmap__progress-count mono">

@@ -1,6 +1,6 @@
 ---
 import CourseTrail from "../components/CourseTrail.astro";
-import { url } from "../lib/urls";
+import { courseAt, pageOf } from "../lib/course-at";
 import "../styles/tokens.css";
 import "../styles/base.css";
 import "@ovh/depth-ui/src/depth-ui.css";
@@ -18,11 +18,8 @@ import { cssDosTemas } from "../lib/tema";
   token: `lib/tema.ts` tem a lista fechada do que um tema pode pintar.
 */
 const temas = cssDosTemas(HANDBOOKS);
-const current = `${Astro.url.pathname.replace(/\/$/, "")}/`;
-const course = HANDBOOKS.find((handbook) =>
-  current === url(`handbooks/${handbook.id}`) ||
-  [...handbook.articles, ...handbook.labs].some((item) => item.href && url(item.href) === current),
-);
+const current = pageOf(Astro.url.pathname);
+const course = courseAt(current);
 
 interface Props {
   title: string;

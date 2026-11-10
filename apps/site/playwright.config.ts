@@ -13,9 +13,13 @@ const basePath = process.env.PUBLIC_BASE_PATH ?? "/";
 // — e a falha aparecia como asserção estranha, longe da causa.
 const origin = `http://127.0.0.1:4399${basePath}`;
 
+// Mesmo escape do `qa/labs.mjs`: onde o Chromium do Playwright não bate com a
+// versão fixada aqui, `PW_CHROMIUM=/caminho/do/chromium` aponta outro binário.
+const exe = process.env.PW_CHROMIUM;
+
 export default defineConfig({
   testDir: "./tests",
-  use: { baseURL: origin },
+  use: { baseURL: origin, ...(exe === undefined ? {} : { launchOptions: { executablePath: exe } }) },
   webServer: {
     // `--host 127.0.0.1` casa com a origem acima: sem isso o preview escuta só
     // em IPv6 e a espera do Playwright nunca termina.

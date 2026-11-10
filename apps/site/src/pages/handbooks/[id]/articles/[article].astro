@@ -1,6 +1,7 @@
 ---
 import { getCollection, render } from "astro:content";
 import SiteFooter from "../../../../components/SiteFooter.astro";
+import { isCourseStop, pageOf } from "../../../../lib/course-at";
 import SiteNav from "../../../../components/SiteNav.astro";
 import Base from "../../../../layouts/Base.astro";
 import { HANDBOOKS, handbookOf } from "../../../../data/handbooks";
@@ -56,6 +57,7 @@ const irmaos = handbook.articles.filter((a) => a.status === "available");
 const posicao = irmaos.findIndex((a) => a.id === entry.id.split("/")[1]);
 const anterior = posicao > 0 ? irmaos[posicao - 1] : undefined;
 const proximo = posicao >= 0 ? irmaos[posicao + 1] : undefined;
+const naTrilha = isCourseStop(pageOf(Astro.url.pathname));
 
 const artigoUrl = (id: string) => url(`handbooks/${handbook.id}/articles/${id}`);
 const secoes = headings.filter((h) => h.depth === 2);
@@ -136,7 +138,9 @@ const secoes = headings.filter((h) => h.depth === 2);
       </article>
     </div>
 
-    <nav class="article__around" aria-label="Reading order">
+    {/* Na trilha, o passo seguinte (artigos e labs) vem do rodapé da trilha; dois
+        "próximo" com destinos diferentes seriam uma pergunta, não uma resposta. */}
+    {!naTrilha && <nav class="article__around" aria-label="Reading order">
       {
         anterior ? (
           <a class="article__around-link" href={artigoUrl(anterior.id)}>
@@ -157,7 +161,7 @@ const secoes = headings.filter((h) => h.depth === 2);
           <span />
         )
       }
-    </nav>
+    </nav>}
   </main>
 
   <SiteFooter />

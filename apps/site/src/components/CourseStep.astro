@@ -1,0 +1,58 @@
+---
+import type { Handbook } from "../data/handbooks";
+import { url } from "../lib/urls";
+import { coursePath, positionOf } from "../lib/course-path";
+import CourseIcon from "./CourseIcon.astro";
+import "./CourseStep.css";
+/**
+ * O fim de uma atividade é o momento em que o leitor decide se continua.
+ * Sem isto ele precisa voltar ao topo e procurar o painel; com isto, o passo
+ * seguinte está onde o olho já está. Sem JavaScript, os links continuam
+ * funcionando — só o botão de marcar depende do script.
+ */
+interface Props { handbook: Handbook; current: string }
+const { handbook, current } = Astro.props;
+const path = coursePath(handbook);
+const here = positionOf(path, current, url);
+const stop = here.current;
+---
+{stop && (
+  <nav class="course-step" aria-label="Next in the learning path" data-course-step data-key={stop.key} data-progress-id={stop.progressId}>
+    <div class="course-step__head">
+      <p class="mono">
+        <span>Phase</span>{` ${String(here.phase!.number).padStart(2, "0")} · `}<span>{here.phase!.title}</span>
+      </p>
+      <p class="mono"><span>Activity</span>{` ${here.index} / ${path.available.length}`}</p>
+    </div>
+    <div class="course-step__actions">
+      <button type="button" class="course-step__mark" data-course-complete hidden aria-pressed="false">
+        <span class="course-step__box" aria-hidden="true"><CourseIcon name="check" /></span>
+        <span data-course-complete-label>Mark as complete</span>
+      </button>
+      {here.next && (
+        <a class="course-step__go" data-course-advance hidden href={url(here.next.href!)}>
+          <span>Complete and continue</span><CourseIcon name="arrow" />
+        </a>
+      )}
+    </div>
+    <div class="course-step__links">
+      {here.previous ? (
+        <a class="course-step__link course-step__link--prev" href={url(here.previous.href!)} rel="prev">
+          <small class="mono">← <span>Previous</span> · <span>{here.previous.kind}</span></small>
+          <span>{here.previous.title}</span>
+        </a>
+      ) : <span />}
+      {here.next ? (
+        <a class="course-step__link course-step__link--next" href={url(here.next.href!)} rel="next">
+          <small class="mono"><span>Next</span> · <span>{here.next.kind}</span> →</small>
+          <span>{here.next.title}</span>
+        </a>
+      ) : (
+        <a class="course-step__link course-step__link--next" href={url(`handbooks/${handbook.id}`)}>
+          <small class="mono"><span>End of the path</span> →</small>
+          <span>{handbook.name}</span>
+        </a>
+      )}
+    </div>
+  </nav>
+)}
