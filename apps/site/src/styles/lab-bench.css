@@ -6,10 +6,21 @@
  * lado ou embaixo, com uma divisória que se arrasta. O lab em si não muda de
  * lugar no DOM — só ganha espaço.
  */
-.lab-bench { position: relative; }
+/* O espaço da barra é reservado desde o primeiro quadro, e a barra entra
+   posicionada nele. Inserida no fluxo depois que o lab já estava desenhado,
+   ela empurrava o lab ~45 px de uma vez — e um toque nesse instante caía no
+   lugar errado (o e2e do celular pegou). Só com script: sem ele não há barra. */
+@media (scripting: enabled) {
+  /* Um ::before, e não padding: várias páginas definem o padding do palco
+     com seletor mais específico, e a reserva sumiria nelas. */
+  main :is(.lab-palco, .lab-stage) { position: relative; }
+  main :is(.lab-palco, .lab-stage)::before { content: ""; display: block; height: 2.9rem; }
+}
+.lab-bench:not([data-focus="true"]) > .bench-bar { position: absolute; top: 0; right: 0; left: 0; height: 2.9rem; padding-inline: inherit; }
+.lab-bench[data-focus="true"]::before { display: none; }
 .bench-bar {
   display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: .4rem;
-  margin: 0 0 .6rem;
+  margin: 0;
 }
 .bench-bar[hidden] { display: none; }
 .bench-bar__layout { display: inline-flex; padding: 2px; border: 1px solid var(--rule); border-radius: 999px; background: var(--paper-raised); }

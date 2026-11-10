@@ -84,3 +84,27 @@ test("the guide is a copy: the page keeps its own Break it, with no duplicated i
   });
   expect(dupes).toEqual([]);
 });
+
+test("the bar arrives without moving the lab (no layout shift)", async ({ page }) => {
+  // A barra fica fora do fluxo, num espaço reservado desde o primeiro quadro:
+  // o lab começa exatamente depois da reserva, com ou sem a barra lá.
+  await page.goto("labs/hard-context-and-baggage/");
+  await expect(bench(page)).toHaveAttribute("data-bench", "ready");
+  const m = await page.evaluate(() => {
+    const section = document.querySelector<HTMLElement>(".lab-bench")!;
+    const lab = section.querySelector("astro-island > *")!;
+    const bar = section.querySelector(".bench-bar")!;
+    const cs = getComputedStyle(section);
+    const reserved = parseFloat(getComputedStyle(section, "::before").height);
+    return {
+      offset: lab.getBoundingClientRect().top - section.getBoundingClientRect().top,
+      expected: parseFloat(cs.paddingTop) + parseFloat(cs.borderTopWidth) + reserved,
+      barPosition: getComputedStyle(bar).position,
+      barBottom: bar.getBoundingClientRect().bottom,
+      labTop: lab.getBoundingClientRect().top,
+    };
+  });
+  expect(m.barPosition).toBe("absolute");
+  expect(Math.abs(m.offset - m.expected)).toBeLessThanOrEqual(1);
+  expect(m.barBottom).toBeLessThanOrEqual(m.labTop + 1);
+});
