@@ -424,6 +424,9 @@ const SEM_PALCO: ReadonlySet<string> = new Set([
   // O lab de ciência de dados (18/11/2026): filme do `@ovh/motion` com pontos e
   // a matriz de confusão, simulação React em tabelas e SVG livre.
   "labs/who-comes-back/",
+  // A fila (11/11/2026): filme do `@ovh/motion` com as duas estruturas e
+  // simulação React (vagas em HTML, lotação em SVG). Nenhum fio do `depth-ui`.
+  "labs/fifo/",
 ]);
 
 test("todo lab publicado COM palco tem teto de cruzamentos medido", () => {

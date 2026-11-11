@@ -179,6 +179,31 @@ test("knapsack: Rafa's 90 minutes — greedy 13, the table 14, and a cell explai
   await semRolagemNemErro(page, erros);
 });
 
+test("fifo: same requests, same order — the array pays more, and a faster server beats more slots", async ({ page }) => {
+  const erros = vigiar(page);
+  await page.goto("labs/fifo/");
+  await expect(page.getByTestId("fifo-showcase")).toBeVisible();
+  await page.getByRole("tab", { name: /Simulation/ }).click();
+  const sim = page.getByTestId("fifo-sim");
+  const veredito = sim.getByTestId("fifo-verdict");
+  await expect(veredito).toContainText("52 requests arrived: 42 served, 10 lost");
+  await expect(veredito).toContainText("same order");
+  await expect(veredito).toContainText("The ring did 84 operations; the array did 496");
+  // Sobrecarga: a fila vive no teto.
+  await sim.getByRole("group", { name: "Load" }).getByRole("button", { name: "Overload" }).click();
+  await expect(veredito).toContainText("77 requests arrived: 47 served, 30 lost (turned away on arrival)");
+  // Mais vagas trocam perda por espera; um atendente mais rápido resolve.
+  await sim.getByRole("combobox", { name: /^Slots/ }).selectOption("32");
+  await expect(veredito).toContainText("63 served, 14 lost");
+  await expect(sim.locator("table tbody tr").first()).toContainText("63 ticks");
+  await sim.getByRole("combobox", { name: /^Server/ }).selectOption("1");
+  await expect(veredito).toContainText("77 served, 0 lost");
+  // Arrastar o tempo mostra as vagas daquele tick.
+  await sim.getByLabel("Tick", { exact: true }).fill("0");
+  await expect(sim.getByText(/Tick 0 of/)).toBeVisible();
+  await semRolagemNemErro(page, erros);
+});
+
 test("real time: the growth lab times the algorithms on this device and reports it", async ({ page }) => {
   const erros = vigiar(page);
   await page.goto("labs/how-work-grows/");

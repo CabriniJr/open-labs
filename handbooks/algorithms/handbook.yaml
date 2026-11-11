@@ -120,8 +120,9 @@ labs:
     href: labs/rpn
   - id: fifo
     title: A queue, and what fills it
-    status: coming
+    status: available
     phase: 1
+    href: labs/fifo
   - id: how-work-grows
     title: "Six ways to grow: O(1) to O(2ⁿ), measured"
     status: available

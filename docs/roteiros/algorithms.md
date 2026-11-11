@@ -54,15 +54,37 @@ lado a lado, e cinco palcos do `depth-ui` no mesmo relógio não cabem na tela.
 | `auxiliar` | memória extra (a fita do merge) | corrida |
 | `contador` | a conta de operações | crescimento |
 | `moeda`, `tabela` | a bandeja de moedas, a tabela da PD | troco |
+| `chegada`, `fila`, `atendente`, `descarte` | os pedidos, a fila, quem atende, o que se perdeu | fila |
 | `no`, `aresta`, `fronteira`, `comparar`, `trocar` | reservados no catálogo | *a aplicar* (o círculo do nó leu como artefato no filme do grafo e foi retirado de lá) |
 
 ## A espinha: fases e labs
 
 ### Fase 1 — What holds the data
 
-#### fifo — *A queue, and what fills it* · em breve
-Desenho pronto no spec recuperado (§2): `source → buffer → sink`, política de
-recusa como parâmetro, ocupação por `Message.weight`.
+#### fifo — *A queue, and what fills it* (`labs/fifo`) · disponível (filme + livre)
+- **Pergunta:** quanto custa tirar a cabeça, e quem se perde quando a fila enche?
+- **Mal-entendido:** "fila é uma lista que tira da frente" (no vetor isso é O(n)
+  por pedido) e "fila maior resolve sobrecarga" (só adia, e a espera cresce).
+- **Modelo:** `packages/algo-domain/src/fila/fila.ts` — `rodarFila()` roda o
+  anel e o vetor sobre as mesmas chegadas semeadas (`chegadasDe`, via
+  `semente.ts`), contando cada escrita, leitura e empurrão. Passos (`move` é o
+  empurrão do vetor) e uma foto por tick (`linhaDoTempo`). Políticas: recusar o
+  novo, expulsar o mais antigo. Recusa vagas fora de 1–64 e ritmo não inteiro.
+- **Showcase (`filmeDaFila(politica)`):** 8 vagas, 13 pedidos em 8 ticks, um
+  atendente a cada 2 ticks. As duas filas no mesmo relógio: em cima o anel (só
+  `head`/`tail` andam), embaixo o vetor (todo mundo sobe uma casa a cada
+  atendimento). A barra de cada uma é a conta do modelo. Capítulos: *Same
+  requests* → *Filling up* → *Full* (o título diz a política) → *Draining* com a
+  conta final. O painel mostra a fila na ordem, atendidos, perdidos e as duas
+  contas no mesmo instante do palco.
+- **Simulação:** carga (rajada, constante, sobrecarga), política, vagas (4–64),
+  ritmo do atendente (1, 2 ou 3 ticks), novas chegadas (semente). Gráfico de
+  lotação com o teto e as perdas, um tick arrastável que mostra as vagas das duas
+  estruturas, e o placar: operações, por pedido, atendidos, perdidos, maior espera.
+- **3D:** não tem. Uma fila é uma linha; a altura não significaria nada.
+- **Ícones:** `chegada` (os pedidos), `fila` (as faixas), `atendente`, `descarte`.
+- **Fronteira:** sem bloqueio do produtor (backpressure) e sem peso por pedido —
+  o `Message.weight` do spec recuperado ficou de fora; a página diz isso.
 
 ### Fase 2 — One pass at a time
 
@@ -193,6 +215,12 @@ recusa como parâmetro, ocupação por `Message.weight`.
 
 ## Correlações
 
+- fila ↔ rpn: as duas pontas da mesma pergunta — a fila tira o mais antigo, a
+  pilha o mais novo.
+- fila → crescimento: o vetor que empurra é a linha O(n) por operação; o anel, a O(1).
+- fila ↔ OpenTelemetry (`labs/backpressure-and-drops`): a política de descarte
+  do Collector é a mesma escolha.
+
 - crescimento ↔ corrida: as classes O(n²) e O(n log n) do gráfico são as das
   pistas; a seleção e o merge são os mesmos algoritmos nos dois.
 - grafo → mapa: o triângulo (7 contra 3 + 3) é o mapa em três pontos.
@@ -206,7 +234,7 @@ recusa como parâmetro, ocupação por `Message.weight`.
   mapa do `shortest-path` (Dijkstra multi-fonte até o telecentro mais perto) e a
   mesma mochila deste lab; o README de lá aponta para os dois labs.
 
-## Critério de pronto (todos os seis cumprem hoje)
+## Critério de pronto (todos os labs publicados cumprem hoje)
 
 `pnpm test`, `typecheck` (sem erro novo), `boundaries`, `catalogo`, `handbooks`,
 `locale:check`, e2e em `apps/site/tests/algorithms-course.spec.ts` (desktop e
@@ -214,9 +242,8 @@ celular) e `pnpm qa:labs` sem falha nem alerta, com as fotos olhadas.
 
 ## Fila
 
-1. `fifo` e o lab da tabela hash, do spec recuperado. Há uma versão de 05/11
-   (fila e pilha medidas, com showcase em canvas) guardada no branch local
-   `wip/algo-showcase-0511`, para portar.
+1. O lab da tabela hash, do spec recuperado (`fifo` saiu em 11/11/2026; falta
+   nele o bloqueio do produtor e a ocupação por peso).
 2. Avaliações por lab (`handbooks/algorithms/assessments.json`), no formato do
    handbook de Kubernetes.
 3. Os seis artigos marcados como `coming` no `handbook.yaml`.
