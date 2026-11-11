@@ -148,6 +148,7 @@ labs:
     phase: 7
     href: labs/greedy-change
   - id: dynamic
-    title: The table that remembers
-    status: coming
+    title: "The table that remembers: what fits in a session"
+    status: available
     phase: 8
+    href: labs/knapsack-session

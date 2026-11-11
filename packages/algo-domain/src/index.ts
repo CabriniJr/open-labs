@@ -66,3 +66,8 @@ export async function carregarSaoPaulo(): Promise<import("./mapa-real/cidade.js"
 }
 export { CENARIOS, MAIS_PARADAS, melhorOrdem, rodarCenario, rotaComParadas } from "./mapa-real/paradas.js";
 export type { Cenario, LinhaDoCenario, PassoComPerna, ResultadoDoCenario, RotaComParadas } from "./mapa-real/paradas.js";
+// A mochila da sessão no telecentro: a tabela 2D, a volta por ela e a recursão sem memória contada.
+export { CATALOGO, CENARIOS_DA_MOCHILA, chamadasComMemoria, chamadasSemMemoria, conferirItens, conferirSessao, ErroDeMochila, forcaBruta, gulosa, itensDoCenario, MAIOR_SESSAO, MAIS_ITENS, mochila, PASSO, porQue } from "./mochila/mochila.js";
+export type { CenarioDaMochila, Gulosa, ItemDaMochila, Mochila } from "./mochila/mochila.js";
+export { filmeDaMochila } from "./mochila/filme.js";
+export type { DetalheDaMochila } from "./mochila/filme.js";

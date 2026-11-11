@@ -1,0 +1,22 @@
+{
+  "fonte": "Catálogo real do OpenLabs (handbooks/*/handbook.yaml). Minutos iguais aos de T_LAB no banco da GS de Database Design quando o lab aparece lá; os demais, os pontos (objetivos de aprendizagem) e os pré-requisitos são estimativas da equipe.",
+  "labs": [
+    { "slug": "telecentro-network", "titulo": "O que acontece quando alguém entra no Wi-Fi do telecentro", "handbook": "networks", "minutos": 30, "pontos": 5, "requer": [] },
+    { "slug": "telecentro-database", "titulo": "Como o banco do OpenLabs funciona no telecentro", "handbook": "databases", "minutos": 30, "pontos": 5, "requer": [] },
+    { "slug": "join-by-hand", "titulo": "Junte duas tabelas à mão e veja o JOIN", "handbook": "databases", "minutos": 20, "pontos": 3, "requer": ["telecentro-database"] },
+    { "slug": "normalize-a-spreadsheet", "titulo": "Quebre uma planilha até cada fato morar num lugar só", "handbook": "databases", "minutos": 25, "pontos": 4, "requer": ["join-by-hand"] },
+    { "slug": "rpn", "titulo": "Uma máquina de pilha, rodando", "handbook": "algorithms", "minutos": 20, "pontos": 3, "requer": [] },
+    { "slug": "how-work-grows", "titulo": "Seis jeitos de crescer: de O(1) a O(2ⁿ), medidos", "handbook": "algorithms", "minutos": 25, "pontos": 4, "requer": [] },
+    { "slug": "sorting-race", "titulo": "Ordenação, troca a troca", "handbook": "algorithms", "minutos": 30, "pontos": 4, "requer": ["how-work-grows"] },
+    { "slug": "what-is-a-graph", "titulo": "O que é um grafo: dois pontos e uma linha", "handbook": "algorithms", "minutos": 15, "pontos": 2, "requer": [] },
+    { "slug": "shortest-path", "titulo": "Caminhos mínimos nas ruas reais de São Paulo", "handbook": "algorithms", "minutos": 30, "pontos": 5, "requer": ["what-is-a-graph", "how-work-grows"] },
+    { "slug": "greedy-change", "titulo": "O guloso, e o caso que ele erra", "handbook": "algorithms", "minutos": 20, "pontos": 3, "requer": ["how-work-grows"] },
+    { "slug": "knapsack-session", "titulo": "A tabela que lembra", "handbook": "algorithms", "minutos": 25, "pontos": 5, "requer": ["greedy-change"] },
+    { "slug": "three-pillars", "titulo": "Três pilares, um ponto cego", "handbook": "otel", "minutos": 25, "pontos": 3, "requer": [] },
+    { "slug": "anatomy-of-a-trace", "titulo": "Anatomia de um trace", "handbook": "otel", "minutos": 30, "pontos": 4, "requer": ["three-pillars"] },
+    { "slug": "backpressure-and-drops", "titulo": "Backpressure e descartes", "handbook": "otel", "minutos": 25, "pontos": 4, "requer": ["anatomy-of-a-trace"] },
+    { "slug": "pod-lifecycle", "titulo": "Um manifesto, um Pod e o controlador que o substitui", "handbook": "kubernetes", "minutos": 20, "pontos": 3, "requer": ["telecentro-network"] },
+    { "slug": "splunk-ingest", "titulo": "Onde o parsing acontece, e quanto custa", "handbook": "splunk", "minutos": 25, "pontos": 3, "requer": ["three-pillars"] },
+    { "slug": "splunk-buckets", "titulo": "Um índice envelhecendo, bucket a bucket", "handbook": "splunk", "minutos": 20, "pontos": 3, "requer": ["splunk-ingest"] }
+  ]
+}

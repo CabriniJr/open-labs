@@ -160,6 +160,25 @@ test("change: {1, 3, 4} for 6 — greedy three coins, the table two, and the cou
   await semRolagemNemErro(page, erros);
 });
 
+test("knapsack: Rafa's 90 minutes — greedy 13, the table 14, and a cell explains itself", async ({ page }) => {
+  const erros = vigiar(page);
+  await page.goto("labs/knapsack-session/");
+  await expect(page.getByTestId("knapsack-showcase")).toBeVisible();
+  await page.getByRole("tab", { name: /Simulation/ }).click();
+  const sim = page.getByTestId("knapsack-sim");
+  await expect(sim).toContainText("Greedy: 13 points. The table: 14.");
+  // Há mais de um plano de 14 pontos; o que importa é o total e o tempo usado.
+  await expect(sim.getByRole("region", { name: "Dynamic programming" })).toContainText("14 pts · 90 of 90 min");
+  await expect(sim.getByTestId("knapsack-why")).toContainText("T[7][90] = max(");
+  // A armadilha menor: a gulosa sobra 10 minutos.
+  await sim.getByRole("button", { name: "The smallest trap" }).click();
+  await expect(sim).toContainText("Greedy: 6 points. The table: 7.");
+  // Sem o lab mais denso, as duas concordam.
+  await sim.getByRole("checkbox", { name: /How work grows/ }).uncheck();
+  await expect(sim).toContainText("Here greedy happens to be right");
+  await semRolagemNemErro(page, erros);
+});
+
 test("real time: the growth lab times the algorithms on this device and reports it", async ({ page }) => {
   const erros = vigiar(page);
   await page.goto("labs/how-work-grows/");

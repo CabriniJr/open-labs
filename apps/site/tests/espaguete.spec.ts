@@ -418,6 +418,9 @@ const SEM_PALCO: ReadonlySet<string> = new Set([
   "labs/what-is-a-graph/",
   "labs/shortest-path/",
   "labs/greedy-change/",
+  // A mochila da sessão (11/11/2026): filme do `@ovh/motion` com a tabela 2D e
+  // simulação React em tabela HTML. Nenhum fio roteado pelo `depth-ui`.
+  "labs/knapsack-session/",
 ]);
 
 test("todo lab publicado COM palco tem teto de cruzamentos medido", () => {

@@ -22,7 +22,8 @@
     "delivery:smoke": "node scripts/delivery-smoke.mjs",
     "qa:labs": "pnpm --filter @ovh/site qa:labs --",
     "locale:inventory": "node scripts/locale-inventory.mjs",
-    "locale:check": "node scripts/check-locales.mjs"
+    "locale:check": "node scripts/check-locales.mjs",
+    "pd:test": "cd programacao-dinamica && python -X utf8 -m unittest discover -s tests -t ."
   },
   "devDependencies": {
     "@testing-library/react": "^16.1.0",

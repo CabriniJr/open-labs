@@ -1,5 +1,34 @@
 # Progresso
 
+## Programação dinâmica — o planejador do telecentro e a mochila da sessão
+
+11/11/2026. A fase 8 do handbook de algoritmos tem lab:
+`labs/knapsack-session`, *The table that remembers*. É a mochila 0/1 de
+quais labs cabem numa sessão de computador. Um filme mostra a gulosa por
+pontos/minuto, a tabela `T[i][t]` enchendo e a volta pelo canto. Na simulação,
+cada célula explica a própria conta, e o trabalho é contado rodando: subconjuntos,
+chamadas sem e com memória, células. O modelo fica em
+`packages/algo-domain/src/mochila/`, com propriedade contra força bruta.
+`qa:labs` passou nos dois perfis (60 fps, p95 17 ms).
+
+A entrega de Dynamic Programming da GS fica em `programacao-dinamica/`. É um
+planejador em Python, só com a biblioteca padrão, com quatro decisões:
+
+- o telecentro mais perto a pé, por Dijkstra multi-fonte no mesmo mapa
+  OpenStreetMap do `shortest-path`;
+- a trilha de pré-requisitos, num DAG com ancestrais e caminho crítico
+  memoizados e tabulados;
+- a mesma mochila do lab;
+- a agenda do computador de atendimento, por intervalos ponderados: ingênua,
+  memoizada e tabulada.
+
+São 22 testes, cada PD conferida contra força bruta. `benchmark.py` mede
+contado e cronometrado, e `empacotar.py` gera o ZIP e o confere fora do
+repositório. Os integrantes vêm de `entrega/equipe.json`, fora do Git.
+
+`pnpm locale:check` já falhava na `main` (173 textos sem pt-BR). Os textos
+novos do lab também ainda não têm tradução revisada.
+
 ## Handbook de bancos de dados — o banco do OpenLabs no telecentro
 
 10/11/2026. O handbook `databases` explica um banco relacional usando o
