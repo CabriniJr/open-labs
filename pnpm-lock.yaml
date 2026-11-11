@@ -81,6 +81,9 @@ importers:
       '@ovh/cpu-domain':
         specifier: workspace:*
         version: link:../../packages/cpu-domain
+      '@ovh/database-domain':
+        specifier: workspace:*
+        version: link:../../packages/database-domain
       '@ovh/depth-core':
         specifier: workspace:*
         version: link:../../packages/depth-core
@@ -169,6 +172,12 @@ importers:
       '@ovh/depth-ui':
         specifier: workspace:*
         version: link:../depth-ui
+      '@ovh/motion':
+        specifier: workspace:*
+        version: link:../motion
+
+  packages/database-domain:
+    dependencies:
       '@ovh/motion':
         specifier: workspace:*
         version: link:../motion

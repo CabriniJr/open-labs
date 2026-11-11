@@ -1,0 +1,78 @@
+---
+import AlgoPagina from "../../components/AlgoPagina.astro";
+import SiteFooter from "../../components/SiteFooter.astro";
+import SiteNav from "../../components/SiteNav.astro";
+import Base from "../../layouts/Base.astro";
+import { JuncaoModos } from "../../components/JuncaoLab.tsx";
+import { Predicao } from "../../components/Predicao.tsx";
+import "../../components/BancoLab.css";
+import "../../components/BancoNovos.css";
+---
+
+<Base
+  domain="databases"
+  title="Pair two tables by hand and watch the JOIN — OpenLabs"
+  description="Twelve learners and twelve assessment attempts from the OpenLabs database. Pair them by hand and watch what INNER JOIN drops, what LEFT JOIN keeps with NULL, why a filter in WHERE turns LEFT into INNER, and why COUNT(*) counts attempts nobody took."
+>
+  <SiteNav current="labs" />
+  <AlgoPagina
+    handbook="databases"
+    nomeDoHandbook="Databases Visual Handbook"
+    titulo="Pair two tables by hand and watch the JOIN"
+    href="labs/join-by-hand"
+    nota={["A JOIN row is a pair, not a person.", "INNER keeps pairs; LEFT keeps everyone on the left.", "WHERE runs after the join; ON chooses the partner."]}
+    quebre={[
+      { b: "Switch the showcase to INNER JOIN and watch “INNER JOIN drops who has no partner”.", texto: "Five learners never took an assessment. With INNER JOIN they are not zero and not NULL: they are not in the result at all. That is why query 3 of the database needs LEFT." },
+      { b: "Keep LEFT, put the grade filter in WHERE.", texto: "The NULL rows go too, because NULL >= 7 is unknown and unknown does not pass. The LEFT JOIN quietly returns what INNER would: 8 rows." },
+      { b: "Now move the filter to ON.", texto: "Everyone stays. Bruno's only attempt scored 6, so he comes back with NULL — 14 rows, every learner and their good grades." },
+      { b: "Count with COUNT(*), then with COUNT(te.id_tentativa).", texto: "COUNT(*) counts rows, and the NULL row is a row: five learners get 1 attempt they never took. Counting the column skips NULL and gives 0." },
+      { b: "In the simulation, try to give attempt 3 to learner 1.", texto: "ON says no: attempt 3 carries id_aluno 2. A foreign key is one value, so an attempt has exactly one owner." },
+    ]}
+    erros={[
+      {
+        crenca: "With good data, INNER and LEFT JOIN return the same rows.",
+        verdade: "They differ exactly on the rows without a partner. In this data, 5 of 12 learners have no attempt: INNER returns 12 rows, LEFT returns 17.",
+        fonte: "https://docs.oracle.com/en/database/oracle/oracle-database/19/sqlrf/Joins.html",
+      },
+      {
+        crenca: "Putting a condition in ON or in WHERE is the same thing.",
+        verdade: "For INNER JOIN it is. For an outer join, ON decides which row is a partner and WHERE filters the joined result afterwards — removing the NULL rows the outer join was there to keep.",
+        fonte: "https://docs.oracle.com/en/database/oracle/oracle-database/19/sqlrf/Joins.html",
+      },
+      {
+        crenca: "COUNT(*) and COUNT(column) count the same thing.",
+        verdade: "COUNT(*) counts rows, NULL or not. COUNT(expr) counts the rows where expr is not NULL. After a LEFT JOIN, the difference is the learners with no attempt.",
+        fonte: "https://docs.oracle.com/en/database/oracle/oracle-database/19/sqlrf/COUNT.html",
+      },
+      {
+        crenca: "A JOIN returns one row per learner.",
+        verdade: "It returns one row per pair. A learner with two attempts comes out twice; to get one row per learner, GROUP BY the learner.",
+      },
+    ]}
+    fronteira="The lab joins two tables of the OpenLabs database with an equality on the foreign key, as the queries of the OpenLabs database do. It compares every pair, the way a nested loop does; a real optimiser may use an index or a hash join instead, and returns the same rows. RIGHT and FULL OUTER JOIN are not drawn: they are the same idea with the other table kept."
+    ligacoes={[
+      { href: "labs/telecentro-database", texto: "How the OpenLabs database works — the ten tables and the three queries" },
+      { href: "labs/normalize-a-spreadsheet", texto: "Split one spreadsheet until every fact lives in one place" },
+    ]}
+  >
+    <p>
+      The monitor of a telecentre wants to know who took which assessment, and who has not taken any yet. The answer is in two tables of the OpenLabs database: <code
+        translate="no">T_ALUNO</code
+      >, with the learners, and <code translate="no">T_TENTATIVA</code>, where each attempt carries the <code translate="no">id_aluno</code> of who answered it.
+    </p>
+    <p>
+      A JOIN puts them together by pairs. The showcase shows the database doing it — every pair checked by <code translate="no">ON</code>, a wire for each match — and then the
+      three decisions that change the answer. In the simulation you pair the rows yourself, and the database tells you when your result matches its own.
+    </p>
+    <JuncaoModos slot="palco" client:only="react" />
+    <Predicao
+      slot="predicao"
+      client:visible
+      pergunta="T_ALUNO has 12 learners; 5 of them have no attempt. You run T_ALUNO a LEFT JOIN T_TENTATIVA te ON te.id_aluno = a.id_aluno WHERE te.vl_nota >= 7. Do the 5 learners appear?"
+      opcoes={["No — the WHERE drops their rows, because NULL >= 7 is not true", "Yes, with NULL in the attempt columns — that is what LEFT JOIN is for", "Yes, with a grade of 0"]}
+      correta={0}
+      revelacao="The join keeps them, with NULL. Then WHERE runs on the joined rows, and NULL >= 7 is unknown — which does not pass. The result is the same as INNER JOIN. To keep everyone and filter only the partners, move the condition into ON."
+    />
+  </AlgoPagina>
+  <SiteFooter />
+</Base>

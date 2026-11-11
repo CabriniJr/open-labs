@@ -1,0 +1,237 @@
+/* O lab do banco do telecentro. Só tokens do tema: nenhuma tinta escrita aqui. */
+.bdlab-h { margin: 0 0 6px; color: var(--ink-muted); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; }
+
+/* ---------------------------------------------------------------- painel do filme */
+.bdlab-sql {
+  margin: 0;
+  padding: 10px 12px;
+  max-height: 15rem;
+  overflow: auto;
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  background: color-mix(in oklab, var(--ink) 5%, var(--paper));
+  font-size: 0.76rem;
+  line-height: 1.45;
+  white-space: pre;
+}
+.bdlab-resposta { margin: 0; padding: 8px 12px; border-left: 4px solid var(--sig-drop); border-radius: 4px; background: color-mix(in oklab, var(--sig-drop) 10%, var(--paper)); font-size: 0.78rem; overflow-wrap: anywhere; }
+.bdlab-resposta[data-ok] { border-left-color: var(--sig-ok); background: color-mix(in oklab, var(--sig-ok) 10%, var(--paper)); }
+
+.bdlab-resultado { overflow-x: auto; }
+.bdlab-resultado table { width: 100%; border-collapse: collapse; font-size: 0.76rem; }
+.bdlab-resultado caption { padding-bottom: 4px; text-align: start; color: var(--ink-muted); font-size: 0.72rem; }
+.bdlab-resultado th { padding: 4px 8px; border-bottom: 2px solid var(--rule); text-align: start; font-size: 0.7rem; color: var(--ink-muted); white-space: nowrap; }
+.bdlab-resultado td { padding: 4px 8px; border-bottom: 1px solid color-mix(in oklab, var(--rule) 70%, transparent); white-space: nowrap; }
+.bdlab-resultado td[data-nulo] { color: var(--ink-faint); font-style: italic; }
+.bdlab-resultado tr[data-aceso] td { background: color-mix(in oklab, var(--accent) 14%, var(--paper)); font-weight: 600; }
+.bdlab-mais { margin: 4px 0 0; color: var(--ink-faint); font-size: 0.72rem; }
+
+.bdlab-escolha { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin: 0; padding: 0; border: 0; font-size: var(--size-step--1); }
+.bdlab-escolha legend { float: left; margin-right: 6px; color: var(--ink-muted); }
+.bdlab-escolha label { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
+.bdlab-escolha input { accent-color: var(--accent); }
+
+/* ---------------------------------------------------------------- a vista Diagrama */
+.bd { --mo-c: var(--dui-tinta); }
+.bd [data-tone="muted"] { --mo-c: var(--ink-faint); }
+.bd [data-tone="ink"] { --mo-c: var(--ink); }
+.bd [data-tone="live"] { --mo-c: var(--dui-viva); }
+.bd [data-tone="processor"] { --mo-c: var(--dui-processor); }
+.bd [data-tone="container"] { --mo-c: var(--dui-container); }
+.bd [data-tone="controller"] { --mo-c: var(--dui-controller); }
+.bd [data-tone="conduit"] { --mo-c: var(--dui-conduit); }
+.bd [data-tone="kind-1"] { --mo-c: var(--dui-especie-1); }
+.bd [data-tone="kind-2"] { --mo-c: var(--dui-especie-2); }
+.bd [data-tone="kind-3"] { --mo-c: var(--dui-especie-3); }
+.bd [data-tone="kind-4"] { --mo-c: var(--dui-especie-4); }
+.bd [data-tone="kind-5"] { --mo-c: var(--dui-especie-5); }
+
+.bd-stage { display: block; width: 100%; height: auto; aspect-ratio: var(--mo-aspect, 16 / 9); background: var(--paper); }
+
+.bd-regiao rect { fill: color-mix(in oklab, var(--mo-c) 4%, transparent); stroke: color-mix(in oklab, var(--mo-c) 45%, transparent); stroke-width: 1.5; stroke-dasharray: 7 6; }
+.bd-regiao text { font: 600 13px var(--font-mono); letter-spacing: 0.04em; fill: color-mix(in oklab, var(--mo-c) 70%, var(--ink)); }
+
+.bd-corpo { fill: var(--paper); stroke: var(--mo-c); stroke-width: 1.6; }
+.bd-cabeca { fill: color-mix(in oklab, var(--mo-c) 22%, var(--paper)); }
+.bd-tabela[data-aceso] .bd-corpo { stroke-width: 3.2; }
+.bd-tabela[data-aceso] .bd-cabeca { fill: color-mix(in oklab, var(--mo-c) 40%, var(--paper)); }
+.bd-ping { fill: none; stroke: var(--mo-c); stroke-width: 2; }
+.bd-nome { font: 700 13px var(--font-mono); fill: var(--ink); }
+.bd-qtd { font: 11px var(--font-mono); fill: var(--ink-muted); text-anchor: end; }
+.bd-app-sub { text-anchor: start; }
+.bd-icone path { fill: none; stroke: var(--mo-c); stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.bd-icone .bd-icone-cheio { fill: var(--mo-c); stroke: none; }
+
+.bd-coluna text { font: 10px var(--font-mono); }
+.bd-sigla { font-family: var(--font-mono) !important; font-weight: 700 !important; font-size: 8.5px !important; fill: var(--ink-muted); }
+.bd-sigla[data-sigla="PK"] { fill: var(--dui-especie-3); }
+.bd-sigla[data-sigla="FK"] { fill: var(--dui-especie-4); }
+.bd-card { font: 700 10px var(--font-mono); fill: var(--ink-muted); paint-order: stroke; stroke: var(--paper); stroke-width: 4px; stroke-linejoin: round; }
+.bd-fk[data-aceso] .bd-card { fill: var(--accent); }
+.bd-leg-fundo { fill: color-mix(in oklab, var(--ink) 3%, var(--paper)); stroke: var(--rule); }
+.bd-leg-texto { font: 14px var(--font-body); fill: var(--ink); }
+.bd-legenda .bd-sigla { font-size: 14px !important; }
+.bd-leg-q { font: 14px var(--font-mono); fill: var(--ink); }
+.bd-legenda .bd-pontas path { fill: none; stroke: color-mix(in oklab, var(--ink) 55%, transparent); stroke-width: 1.6; }
+.bd-col { fill: var(--ink); }
+.bd-coluna[data-pk] .bd-col { font-weight: 700; text-decoration: underline; }
+.bd-tipo { fill: var(--ink-faint); text-anchor: end; font-size: 9px !important; }
+.bd-realce { fill: color-mix(in oklab, var(--accent) 26%, var(--paper)); }
+
+.bd-fk path, .bd-pontas path { fill: none; stroke: color-mix(in oklab, var(--ink) 45%, transparent); stroke-width: 1.6; stroke-linecap: round; }
+.bd-fk[data-aceso] path { stroke: var(--accent); stroke-width: 2.8; }
+.bd-zero { fill: var(--paper); stroke: color-mix(in oklab, var(--ink) 45%, transparent); stroke-width: 1.6; }
+.bd-fk[data-aceso] .bd-zero { stroke: var(--accent); }
+
+.bd-app rect { fill: color-mix(in oklab, var(--mo-c) 14%, var(--paper)); stroke: var(--mo-c); stroke-width: 1.6; }
+.bd-app[data-aceso] rect { stroke-width: 3.2; }
+
+.bd-ficha rect { fill: var(--mo-c); }
+.bd-ficha text { font: 700 11px var(--font-mono); fill: var(--paper); text-anchor: middle; }
+.bd-ficha .bd-ficha-sub { font-weight: 500; fill: var(--ink); paint-order: stroke; stroke: var(--paper); stroke-width: 4px; }
+.bd-nota text { font: 700 13px var(--font-mono); fill: var(--mo-c); text-anchor: middle; paint-order: stroke; stroke: var(--paper); stroke-width: 5px; stroke-linejoin: round; }
+
+/* ---------------------------------------------------------------- a simulação */
+.bdlab-sim { display: grid; gap: var(--space-3); }
+.bdlab-bloco { display: grid; gap: var(--space-1); min-width: 0; }
+.bdlab-escrever { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: var(--space-2); }
+@container (max-width: 720px) {
+  .bdlab-escrever { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 760px) {
+  .bdlab-escrever { grid-template-columns: minmax(0, 1fr); }
+}
+.bdlab-form { display: grid; gap: 8px; align-content: start; padding: var(--space-2); border: 1px solid var(--rule); border-radius: 8px; }
+.bdlab-campo { display: grid; gap: 3px; font-size: 0.8rem; }
+.bdlab-campo > span { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px; color: var(--ink); }
+.bdlab-campo small { color: var(--ink-faint); font-size: 0.7rem; }
+.bdlab-campo input,
+.bdlab-campo select { width: 100%; min-width: 0; padding: 6px 8px; border: 1px solid var(--rule); border-radius: 6px; background: var(--paper); color: var(--ink); font: inherit; font-size: 0.82rem; }
+.bdlab-campo input:focus-visible,
+.bdlab-campo select:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.bdlab-campo--tabela { padding-bottom: 6px; border-bottom: 1px solid var(--rule); }
+.bdlab-sigla { padding: 0 5px; border-radius: 4px; background: color-mix(in oklab, var(--accent) 16%, var(--paper)); color: var(--ink); font-size: 0.66rem; }
+
+.bdlab-acao { display: grid; gap: var(--space-1); align-content: start; min-width: 0; }
+.bdlab-botoes { display: flex; flex-wrap: wrap; gap: 8px; }
+.bdlab-executar,
+.bdlab-secundario,
+.bdlab-erro,
+.bdlab-aba { border: 1px solid var(--rule); border-radius: 999px; background: var(--paper); color: var(--ink); font: inherit; font-size: 0.8rem; cursor: pointer; }
+.bdlab-executar { padding: 7px 16px; border-color: var(--accent); background: color-mix(in oklab, var(--accent) 18%, var(--paper)); font-weight: 600; }
+.bdlab-secundario { padding: 7px 14px; }
+.bdlab-erros > div { display: flex; flex-wrap: wrap; gap: 6px; }
+.bdlab-erro { padding: 5px 12px; border-color: color-mix(in oklab, var(--sig-drop) 50%, var(--rule)); }
+.bdlab-executar:hover,
+.bdlab-secundario:hover,
+.bdlab-erro:hover,
+.bdlab-aba:hover { background: color-mix(in oklab, var(--accent) 12%, var(--paper)); }
+.bdlab-executar:focus-visible,
+.bdlab-secundario:focus-visible,
+.bdlab-erro:focus-visible,
+.bdlab-aba:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.bdlab-console { display: grid; gap: 8px; padding: var(--space-1) var(--space-2); border: 1px solid var(--rule); border-radius: 8px; background: color-mix(in oklab, var(--ink) 3%, var(--paper)); }
+.bdlab-vazio { margin: 0; color: var(--ink-faint); font-size: 0.8rem; }
+.bdlab-saida { display: grid; gap: 4px; padding: 6px 0 8px 10px; border-left: 4px solid var(--sig-drop); }
+.bdlab-saida[data-ok] { border-left-color: var(--sig-ok); }
+.bdlab-saida pre { margin: 0; overflow-x: auto; font-size: 0.72rem; color: var(--ink-muted); white-space: pre; }
+.bdlab-saida p { margin: 0; font-size: 0.8rem; overflow-wrap: anywhere; }
+.bdlab-saida .bdlab-explica { font-family: var(--font-body); color: var(--ink-muted); }
+
+.bdlab-abas { display: flex; flex-wrap: wrap; gap: 6px; }
+.bdlab-aba { padding: 5px 12px; font-size: 0.74rem; }
+.bdlab-aba[aria-selected="true"] { border-color: var(--accent); background: color-mix(in oklab, var(--accent) 18%, var(--paper)); font-weight: 600; }
+.bdlab-aba small { color: var(--ink-muted); }
+.bdlab-descricao,
+.bdlab-pergunta { margin: 0; max-width: var(--measure, 70ch); font-size: 0.86rem; color: var(--ink-muted); }
+.bdlab-pergunta { color: var(--ink); font-weight: 600; }
+.bdlab-consulta { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: var(--space-2); align-items: start; }
+@media (max-width: 760px) {
+  .bdlab-consulta { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ---------------------------------------------------------------- o que é o quê (dicionário) */
+.bdd { display: grid; gap: var(--space-2); margin-top: var(--space-4); }
+.bdd-sub { margin-top: var(--space-2); }
+.bdd-sobre { margin: 0; max-width: var(--measure, 70ch); font-size: 0.88rem; color: var(--ink-muted); }
+.bdd-conceitos { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr)); gap: 12px; margin: 0; padding: 0; list-style: none; }
+.bdd-conceitos li { display: grid; grid-template-columns: 6.5rem minmax(0, 1fr); gap: 12px; align-items: start; padding: 12px; border: 1px solid var(--rule); border-radius: 10px; background: var(--paper); }
+.bdd-conceitos b { font-family: var(--font-display, var(--font-body)); }
+.bdd-conceitos p { margin: 4px 0 0; font-size: 0.84rem; color: var(--ink-muted); }
+.bdd-conceitos .bdd-aqui { color: var(--ink); }
+.bdd-mini { width: 100%; height: auto; }
+.bdd-mini .bd-mini { font: 10.5px var(--font-mono); fill: var(--ink); }
+.bdd-mini .bd-mini-pk { font-weight: 700; text-decoration: underline; }
+.bdd-mini .bd-mini-sigla { font-size: 10.5px !important; }
+.bdd-mini .bd-grade { fill: none; stroke: var(--rule); stroke-width: 1; }
+.bdd-mini .bd-seta { fill: none; stroke: color-mix(in oklab, var(--ink) 55%, transparent); stroke-width: 1.6; }
+.bdd-mini .bd-corpo-meio { fill: color-mix(in oklab, var(--dui-conduit) 18%, var(--paper)); }
+
+.bdd-rolagem { overflow-x: auto; }
+.bdd table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+.bdd th { padding: 5px 8px; border-bottom: 2px solid var(--rule); text-align: start; font-size: 0.72rem; color: var(--ink-muted); white-space: nowrap; }
+.bdd td { padding: 5px 8px; border-bottom: 1px solid color-mix(in oklab, var(--rule) 70%, transparent); vertical-align: top; }
+.bdd td.mono { white-space: nowrap; }
+.bdd tr[data-pk] td:nth-child(2) { font-weight: 700; text-decoration: underline; }
+.bdd-tabela td:last-child { min-width: 13rem; }
+.bdd a { color: inherit; }
+
+.bdd-sigla { display: inline-block; margin-right: 4px; padding: 0 5px; border-radius: 4px; font: 700 0.68rem var(--font-mono); color: var(--paper); background: var(--ink-muted); }
+.bdd-sigla[data-sigla="PK"] { background: var(--dui-especie-3); }
+.bdd-sigla[data-sigla="FK"] { background: var(--dui-especie-4); }
+.bdd-alvo { font-size: 0.7rem; color: var(--ink-muted); white-space: nowrap; }
+.bdd-chave { white-space: nowrap; }
+.bdd-regra { display: block; margin-top: 2px; font-size: 0.7rem; color: var(--ink-muted); }
+
+.bdd-tabelas { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 34rem), 1fr)); gap: 14px; }
+.bdd-tabela { display: grid; gap: 8px; align-content: start; min-width: 0; padding: 12px; border: 1px solid var(--rule); border-top: 4px solid var(--mo-c); border-radius: 10px; background: var(--paper); scroll-margin-top: 5rem; }
+.bdd-tabela header { display: flex; align-items: center; gap: 10px; }
+.bdd-tabela h4 { margin: 0; font-size: 1rem; }
+.bdd-grupo { margin: 0; font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; color: color-mix(in oklab, var(--mo-c) 75%, var(--ink)); }
+.bdd-icone { width: 26px; height: 26px; flex: none; }
+.bdd-extra { margin: 0; font-size: 0.78rem; color: var(--ink-muted); }
+.bdd-extra code { margin-right: 8px; }
+.bdd-rels { display: grid; gap: 2px; margin: 0; padding: 0 0 0 1rem; font-size: 0.8rem; color: var(--ink-muted); }
+.bdd-rels b { color: var(--ink); font-family: var(--font-mono); }
+
+/* ---------------------------------------------------------------- passo a passo no Oracle */
+.bdo { display: grid; gap: var(--space-2); }
+.bdo h2 { margin: 0; }
+.bdo-intro { margin: 0; max-width: var(--measure, 70ch); color: var(--ink-muted); }
+.bdo-baixar { padding: var(--space-1) var(--space-2); border: 1px solid var(--rule); border-radius: 8px; }
+.bdo-baixar ul { display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 0; padding: 0; list-style: none; }
+.bdo-baixar a { display: inline-block; padding: 5px 12px; border: 1px solid var(--accent); border-radius: 999px; color: var(--ink); text-decoration: none; font-size: 0.8rem; background: color-mix(in oklab, var(--accent) 10%, var(--paper)); }
+.bdo-baixar a:hover { background: color-mix(in oklab, var(--accent) 22%, var(--paper)); }
+.bdo-baixar a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.bdo-subtitulo { margin: 0 0 6px; color: var(--ink-muted); font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; }
+.bdo-passos { display: grid; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
+.bdo-passo { display: grid; grid-template-columns: 2.4rem minmax(0, 1fr); gap: 12px; padding: var(--space-2); border: 1px solid var(--rule); border-radius: 10px; background: var(--paper); }
+.bdo-numero { display: grid; place-items: center; width: 2.2rem; height: 2.2rem; border-radius: 50%; background: var(--accent); color: var(--paper); font-weight: 700; }
+.bdo-corpo { display: grid; gap: 10px; min-width: 0; }
+.bdo-corpo h3 { margin: 0; font-size: 1.05rem; }
+.bdo-corpo p, .bdo-corpo li { font-size: 0.9rem; }
+.bdo-corpo p { margin: 0; max-width: var(--measure, 75ch); }
+.bdo-corpo ul, .bdo-corpo ol { display: grid; gap: 6px; margin: 0; padding-left: 1.2rem; }
+.bdo-onde { margin: 0; padding: 6px 10px; border-left: 3px solid var(--accent); background: color-mix(in oklab, var(--accent) 7%, var(--paper)); font-size: 0.78rem; }
+.bdo-codigo { position: relative; display: grid; gap: 6px; min-width: 0; }
+.bdo-copiar { justify-self: end; padding: 4px 12px; border: 1px solid var(--accent); border-radius: 999px; background: color-mix(in oklab, var(--accent) 10%, var(--paper)); color: var(--ink); font: inherit; font-size: 0.76rem; cursor: pointer; }
+.bdo-copiar:hover { background: color-mix(in oklab, var(--accent) 22%, var(--paper)); }
+.bdo-copiar:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.bdo-conferir { display: grid; gap: 8px; padding-top: 8px; border-top: 1px dashed var(--rule); min-width: 0; }
+.bdo-saida pre { margin: 0; padding: 10px 12px; overflow-x: auto; border: 1px solid var(--rule); border-radius: 6px; background: color-mix(in oklab, var(--sig-ok) 6%, var(--paper)); font-size: 0.76rem; }
+.bdo-checklist li::marker { content: "☐  "; }
+.bdo-problemas { padding: var(--space-2); border: 1px solid var(--rule); border-radius: 10px; }
+.bdo-problemas h3 { margin: 0 0 8px; font-size: 1.05rem; }
+.bdo-problemas dl { display: grid; gap: 8px; margin: 0; }
+.bdo-problemas dt { font-weight: 600; font-size: 0.86rem; overflow-wrap: anywhere; }
+.bdo-problemas dd { margin: 2px 0 0; color: var(--ink-muted); font-size: 0.86rem; }
+/* No celular: as grades não crescem com o código, e o código em linha quebra. */
+.bdo, .bdo-passos, .bdo-corpo, .bdo-codigo, .bdo-conferir { grid-template-columns: minmax(0, 1fr); }
+.bdo-saida, .bdo-codigo, .bdo-conferir { min-width: 0; }
+.bdo-corpo code, .bdo-intro code, .bdo-problemas code { overflow-wrap: anywhere; white-space: normal; }
+@media (max-width: 520px) {
+  .bdo-passo { grid-template-columns: minmax(0, 1fr); }
+  .bdo-numero { width: 1.9rem; height: 1.9rem; }
+}
+.bdo-codigo .bdlab-sql { max-height: none; }

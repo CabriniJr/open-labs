@@ -1,0 +1,227 @@
+---
+import LabAssessment from "../../components/LabAssessment.astro";
+import { MAL_ENTENDIDOS_DO_BANCO, TABELAS } from "@ovh/database-domain";
+import { BancoModos } from "../../components/BancoModos.tsx";
+import { BancoOracle } from "../../components/BancoOracle.tsx";
+import ddl from "../../../../../database/01-ddl.sql?raw";
+import { Predicao } from "../../components/Predicao.tsx";
+import SiteFooter from "../../components/SiteFooter.astro";
+import SiteNav from "../../components/SiteNav.astro";
+import Base from "../../layouts/Base.astro";
+import { url } from "../../lib/urls";
+import "../../styles/docs.css";
+import "../../components/ModosDoLab.css";
+import "../../components/CpuVitrine.css";
+import "../../components/ContextoLab.css";
+import "../../components/BancoLab.css";
+import "@ovh/motion/src/react/motion.css";
+import "@ovh/stage3d/src/iso.css";
+import "../../components/Predicao.css";
+
+const fks = TABELAS.reduce((n, t) => n + (t.fks?.length ?? 0), 0);
+
+// O trecho do DDL que cria T_ALUNO, tirado do script de verdade: o CREATE e as
+// constraints dela, com o comentário de cardinalidade antes da FK.
+const linhasDoDdl = ddl.replaceAll("\r\n", "\n").split("\n");
+const inicio = linhasDoDdl.findIndex((l) => l.startsWith("CREATE TABLE T_ALUNO"));
+const fim = linhasDoDdl.findIndex((l, i) => i > inicio && l === ");");
+const trechoDoDdl = [
+  ...linhasDoDdl.slice(inicio, fim + 1),
+  "",
+  ...linhasDoDdl.flatMap((l, i) => (l.startsWith("ALTER TABLE T_ALUNO ") ? (l.includes("FOREIGN KEY") && linhasDoDdl[i - 1]?.startsWith("-- ") ? [linhasDoDdl[i - 1] ?? "", l] : [l]) : [])),
+].join("\n");
+---
+
+<Base
+  domain="databases"
+  title="How the OpenLabs database works — OpenLabs"
+  description="The relational database behind OpenLabs in a community telecentre: ten tables, primary and foreign keys, one-to-many and many-to-many, CHECK and UNIQUE rules, and three queries — INNER JOIN, GROUP BY and LEFT OUTER JOIN — running on the same data as the Oracle scripts."
+>
+  <SiteNav current="labs" />
+
+  <main id="content">
+    <section class="lab-head editorial">
+      <div class="prose">
+        <p class="lab-head__eyebrow mono">
+          <a href={url("handbooks/databases")}>Databases Visual Handbook</a> · lab
+        </p>
+        <h1>How the OpenLabs database works in a telecentre</h1>
+        <p>
+          The OpenLabs site is static: what it remembers lives in each browser. A
+          community telecentre needs more — which telecentres exist, who the
+          learners and monitors are, which labs each learner finished and how the
+          assessments went. That is a relational database: {TABELAS.length} tables
+          joined by {fks} foreign keys.
+        </p>
+        <p>
+          The film follows one learner signing up. Her row passes every rule the
+          database enforces, a bad write gets refused, and then three queries run
+          — and she shows up in their results. The simulation
+          runs the same database in your browser: write rows, try the classic
+          mistakes, and ask the questions yourself.
+        </p>
+      </div>
+      <aside class="lab-head__note mono">
+        <p>In 3D, height is the order of creation:</p>
+        <p>a table stands on the tables it points to. The ones on the floor point to no one, so they are created and filled first.</p>
+      </aside>
+    </section>
+
+    <section class="lab-palco">
+      <BancoModos client:only="react" />
+    </section>
+
+    <section class="lab-prosa editorial">
+      <div class="prose">
+        <h2>Break it</h2>
+        <ol>
+          <li>
+            <b>Switch the bad write under the stage, and watch “The database says no”.</b>
+            Telecentre 77 is caught by the foreign key, grade 11 by a CHECK, the same
+            lab twice by a UNIQUE pair. Three rules, three error codes.
+          </li>
+          <li>
+            <b>Turn LEFT OUTER JOIN off and watch the last chapter.</b> The query
+            still runs, and returns nothing: the INNER JOIN dropped exactly the
+            learners the question was about.
+          </li>
+          <li>
+            <b>In the simulation, delete telecentre 1.</b> It has learners, monitors
+            and computers pointing to it, so the database refuses — a foreign key
+            protects both directions.
+          </li>
+          <li>
+            <b>Insert a learner, then open query 3.</b> A learner with no attempt
+            yet is exactly who the monitor needs to call.
+          </li>
+        </ol>
+
+        <h2>Predict before you look</h2>
+        <p>Answer first, then try it in the simulation.</p>
+      </div>
+      <div class="lab-predicao">
+        <Predicao
+          client:visible
+          pergunta="T_TENTATIVA has CHECK (vl_nota BETWEEN 0 AND 10), and vl_nota is NOT NULL. Someone inserts an attempt with vl_nota = 100. Which error comes back?"
+          opcoes={[
+            "ORA-01438: the value is larger than NUMBER(4,2) allows — the type is checked before the rule",
+            "ORA-02290: the CHECK constraint is violated, because 100 is not between 0 and 10",
+            "None: CHECK only refuses NULL, and 100 is not NULL",
+          ]}
+          correta={0}
+          revelacao="NUMBER(4,2) has four digits, two after the decimal point: the largest value it can hold is 99.99. The value has to fit the column before any constraint can look at it, so the type refuses first. Try 11 instead and the CHECK is what answers."
+        />
+      </div>
+    </section>
+
+    <section class="lab-prosa editorial">
+      <div class="prose">
+        <h2>What people get wrong</h2>
+        <p>Each row is a belief the lab is built to take apart. The right column is the documentation, with the link.</p>
+      </div>
+      <div class="lab-mal-entendidos">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">What people believe</th>
+              <th scope="col">What the docs say</th>
+            </tr>
+          </thead>
+          <tbody>
+            {
+              MAL_ENTENDIDOS_DO_BANCO.map((m) => (
+                <tr>
+                  <td>{m.crenca}</td>
+                  <td>
+                    {m.spec}{" "}
+                    <a href={m.fonte} rel="noreferrer noopener" target="_blank">
+                      source
+                    </a>
+                  </td>
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="lab-prosa editorial">
+      <div class="lab-oracle">
+        <BancoOracle client:visible trechoDoDdl={trechoDoDdl} />
+      </div>
+    </section>
+    <LabAssessment href="labs/telecentro-database" />
+  </main>
+
+  <SiteFooter />
+</Base>
+
+<style>
+  .lab-head {
+    padding-block: var(--space-4) var(--space-2);
+  }
+
+  .lab-head__eyebrow {
+    margin: 0 0 var(--space-1);
+    color: var(--accent);
+    font-size: var(--size-step--1);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  h1 {
+    margin: 0 0 var(--space-2);
+    font-size: var(--size-step-2);
+    max-width: 24ch;
+  }
+
+  .lab-head__note {
+    align-self: end;
+    color: var(--ink-muted);
+    font-size: var(--size-step--1);
+  }
+
+  .lab-head__note p {
+    margin: 0 0 0.35rem;
+  }
+
+  .lab-palco {
+    margin-block: var(--space-2) var(--space-4);
+  }
+
+  .lab-prosa {
+    padding-block-end: var(--space-4);
+  }
+
+  .lab-predicao {
+    grid-column: 1 / -1;
+    margin-block-start: var(--space-2);
+    max-width: var(--measure);
+  }
+
+  .lab-mal-entendidos {
+    grid-column: 1 / -1;
+    margin-block-start: var(--space-2);
+    overflow-x: auto;
+  }
+
+  .lab-oracle {
+    grid-column: 1 / -1;
+    min-width: 0;
+  }
+
+  .lab-mal-entendidos table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: var(--size-step--1);
+  }
+
+  .lab-mal-entendidos th,
+  .lab-mal-entendidos td {
+    border-block-end: 1px solid var(--border);
+    padding: var(--space-1) var(--space-2);
+    text-align: start;
+    vertical-align: top;
+  }
+</style>

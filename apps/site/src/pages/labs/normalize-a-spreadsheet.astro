@@ -1,0 +1,76 @@
+---
+import AlgoPagina from "../../components/AlgoPagina.astro";
+import SiteFooter from "../../components/SiteFooter.astro";
+import SiteNav from "../../components/SiteNav.astro";
+import Base from "../../layouts/Base.astro";
+import { NormalizacaoModos } from "../../components/NormalizacaoLab.tsx";
+import { Predicao } from "../../components/Predicao.tsx";
+import "../../components/BancoLab.css";
+import "../../components/BancoNovos.css";
+---
+
+<Base
+  domain="databases"
+  title="Split one spreadsheet until every fact lives in one place — OpenLabs"
+  description="The spreadsheet a telecentre monitor would keep, split into first, second and third normal form until it becomes the OpenLabs tables. Each step measures the update, insertion and deletion anomalies, and the last one takes the logical model to CREATE TABLE and the Java API."
+>
+  <SiteNav current="labs" />
+  <AlgoPagina
+    handbook="databases"
+    nomeDoHandbook="Databases Visual Handbook"
+    titulo="Split one spreadsheet until every fact lives in one place"
+    href="labs/normalize-a-spreadsheet"
+    nota={["1NF: one value per cell.", "2NF: depend on the whole key.", "3NF: depend on the key and nothing else.", "Then CREATE TABLE, then the API."]}
+    quebre={[
+      { b: "In the simulation, stay on Spreadsheet and press “Rename Telecentro Jardim Ângela”.", texto: "Four cells light up. They must change together; a spreadsheet does not stop you from changing three." },
+      { b: "Go to 1NF and look at how many learners it can hold.", texto: "Seven of twelve. One row per attempt means a learner who never took an assessment has no row — the insertion anomaly, in a list of people." },
+      { b: "Still in 1NF, delete the attempts at assessment 6.", texto: "The only Splunk attempt goes, and the lab title and the handbook name go with it: they were only ever written next to that attempt." },
+      { b: "Jump to 3NF and open a telecentre with no learners.", texto: "One row in T_TELECENTRO. In every earlier form there was no row to put it in." },
+    ]}
+    erros={[
+      {
+        crenca: "Normalizing is about saving disk space.",
+        verdade: "It is about keeping each fact in one place, so that it cannot contradict itself. The anomalies in this lab — four cells for one rename, names lost with a deleted attempt — are wrong answers, not wasted bytes.",
+        fonte: "https://doi.org/10.1145/358024.358054",
+      },
+      {
+        crenca: "A table is in first normal form if it has a primary key.",
+        verdade: "First normal form is about values: each cell holds one value. The spreadsheet has a perfectly good key, id_aluno, and a cell holding a list.",
+        fonte: "https://doi.org/10.1145/362384.362685",
+      },
+      {
+        crenca: "Third normal form means many small tables, so the queries get slow.",
+        verdade: "It means each table describes one thing. The joins it needs follow foreign keys and primary keys, which the database indexes; the OpenLabs queries join two tables each.",
+      },
+      {
+        crenca: "The logical model and the database are two different projects.",
+        verdade: "The 3NF tables are the logical model; CREATE TABLE makes them physical; the Java API reads and writes the same tables. Here, one schema serves the SQL scripts and the API.",
+      },
+    ]}
+    fronteira="The spreadsheet is built from the same rows as 02-dml.sql, so the final tables are the real ones — with the columns the spreadsheet had (T_ALUNO's birth date or T_LAB's minutes are not in it). The lab shows first, second and third normal form; Boyce–Codd and the higher forms are not needed for these tables. The real schema gives every table a surrogate key (an IDENTITY), which the lab adopts at 3NF."
+    ligacoes={[
+      { href: "labs/telecentro-database", texto: "How the OpenLabs database works — the ten tables, the rules and the Oracle scripts" },
+      { href: "labs/join-by-hand", texto: "Pair two tables by hand and watch the JOIN" },
+    ]}
+  >
+    <p>
+      Before a database, a telecentre would keep a spreadsheet: one row per learner, the telecentre written out on every row, the assessments in one cell. It works until
+      something changes — a telecentre is renamed, a new one opens before its first learner, an attempt is deleted.
+    </p>
+    <p>
+      Normalization splits that spreadsheet wherever a fact depends on something other than the key, until every fact lives in one place. The last step is not a textbook
+      exercise: it is the tables the OpenLabs database creates, and the API that reads them. The spreadsheet is built from the same data, so every anomaly here is measured, not
+      described.
+    </p>
+    <NormalizacaoModos slot="palco" client:only="react" />
+    <Predicao
+      slot="predicao"
+      client:visible
+      pergunta="In second normal form, ALUNO_2FN(id_aluno, nm_aluno, ds_email, nm_telecentro, nm_bairro, nm_cidade). Which column breaks third normal form?"
+      opcoes={["nm_bairro — it depends on the telecentre, which depends on the learner", "ds_email — it can be NULL", "nm_aluno — two learners can have the same name"]}
+      correta={0}
+      revelacao="nm_bairro (and nm_cidade) describe the telecentre, not the learner: a fact about a fact. That transitive dependency is what 3NF removes, by moving them to T_TELECENTRO and keeping only id_telecentro in T_ALUNO. A NULL column or a repeated name does not break any normal form."
+    />
+  </AlgoPagina>
+  <SiteFooter />
+</Base>

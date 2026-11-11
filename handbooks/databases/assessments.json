@@ -1,0 +1,266 @@
+{
+  "apiVersion": "openlabs/assessment-set/v1",
+  "id": "databases-concepts",
+  "version": "0.1.0",
+  "handbook": "databases",
+  "title": "Databases concept assessments",
+  "objectives": [
+    { "id": "keys-and-rules", "title": "Explain what primary keys, foreign keys and CHECK rules make the database refuse" },
+    { "id": "relational-model", "title": "Read a relational model: relationships, cardinality and associative tables" },
+    { "id": "joins-and-null", "title": "Predict what INNER JOIN, LEFT JOIN, WHERE and COUNT return when NULL is involved" },
+    { "id": "normal-forms", "title": "Place each fact by what it depends on: first, second and third normal form" },
+    { "id": "model-to-server", "title": "Turn a logical model into DDL, DML and DQL, and into rows an API can write" }
+  ],
+  "sources": [
+    { "id": "oracle-integrity", "title": "Oracle Database Concepts 19c — Data Integrity", "url": "https://docs.oracle.com/en/database/oracle/oracle-database/19/cncpt/data-integrity.html", "license": { "id": "Oracle documentation, cited and not reproduced", "url": "https://www.oracle.com/legal/copyright.html" } },
+    { "id": "oracle-constraint", "title": "Oracle Database SQL Language Reference 19c — constraint", "url": "https://docs.oracle.com/en/database/oracle/oracle-database/19/sqlrf/constraint.html", "license": { "id": "Oracle documentation, cited and not reproduced", "url": "https://www.oracle.com/legal/copyright.html" } },
+    { "id": "oracle-nulls", "title": "Oracle Database SQL Language Reference 19c — Nulls", "url": "https://docs.oracle.com/en/database/oracle/oracle-database/19/sqlrf/Nulls.html", "license": { "id": "Oracle documentation, cited and not reproduced", "url": "https://www.oracle.com/legal/copyright.html" } },
+    { "id": "oracle-joins", "title": "Oracle Database SQL Language Reference 19c — Joins", "url": "https://docs.oracle.com/en/database/oracle/oracle-database/19/sqlrf/Joins.html", "license": { "id": "Oracle documentation, cited and not reproduced", "url": "https://www.oracle.com/legal/copyright.html" } },
+    { "id": "oracle-count", "title": "Oracle Database SQL Language Reference 19c — COUNT", "url": "https://docs.oracle.com/en/database/oracle/oracle-database/19/sqlrf/COUNT.html", "license": { "id": "Oracle documentation, cited and not reproduced", "url": "https://www.oracle.com/legal/copyright.html" } },
+    { "id": "oracle-create-table", "title": "Oracle Database SQL Language Reference 19c — CREATE TABLE", "url": "https://docs.oracle.com/en/database/oracle/oracle-database/19/sqlrf/CREATE-TABLE.html", "license": { "id": "Oracle documentation, cited and not reproduced", "url": "https://www.oracle.com/legal/copyright.html" } },
+    { "id": "codd-1970", "title": "E. F. Codd (1970) — A Relational Model of Data for Large Shared Data Banks", "url": "https://doi.org/10.1145/362384.362685", "license": { "id": "ACM copyright, cited and not reproduced", "url": "https://www.acm.org/publications/policies/copyright-policy" } },
+    { "id": "kent-1983", "title": "William Kent (1983) — A Simple Guide to Five Normal Forms in Relational Database Theory", "url": "https://doi.org/10.1145/358024.358054", "license": { "id": "ACM copyright, cited and not reproduced", "url": "https://www.acm.org/publications/policies/copyright-policy" } }
+  ],
+  "questions": [
+    {
+      "id": "delete-a-parent",
+      "revision": 1,
+      "type": "single-choice",
+      "prompt": "Telecentre 1 still has learners in T_ALUNO, and FK_ALUNO_TELECENTRO has no ON DELETE clause. Someone runs DELETE FROM T_TELECENTRO WHERE id_telecentro = 1. What happens?",
+      "objective": "keys-and-rules",
+      "points": 1,
+      "explanation": "Without ON DELETE CASCADE or ON DELETE SET NULL, Oracle does not allow deleting a referenced parent row that still has dependent child rows. The statement fails with ORA-02292 and nothing is deleted.",
+      "sourceIds": ["oracle-constraint", "oracle-integrity"],
+      "provenance": { "kind": "original", "author": "OpenLabs contributors", "license": { "id": "CC-BY-SA-4.0", "url": "https://creativecommons.org/licenses/by-sa/4.0/" } },
+      "review": { "status": "in-review", "notes": "Original practice question. An educator should review factual accuracy, distractors and objective alignment." },
+      "remediation": "In the simulation of the telecentre database lab, press “Delete telecentre 1” and read the error the database returns.",
+      "options": [
+        { "id": "refused", "text": "The delete is refused with ORA-02292: child record found.", "explanation": "Correct. The foreign key protects the parent while children point to it." },
+        { "id": "cascade", "text": "The telecentre and its learners are deleted together.", "explanation": "That only happens with ON DELETE CASCADE, which this constraint does not have." },
+        { "id": "dangling", "text": "The telecentre is deleted and the learners keep id_telecentro = 1.", "explanation": "That would leave learners pointing to nothing, which is exactly what a foreign key forbids." }
+      ],
+      "correct": "refused"
+    },
+    {
+      "id": "check-and-null",
+      "revision": 1,
+      "type": "code-analysis",
+      "prompt": "Imagine vl_nota were nullable. Which result does this INSERT get?",
+      "objective": "keys-and-rules",
+      "points": 1,
+      "explanation": "A check constraint is satisfied when its condition is TRUE or unknown. NULL BETWEEN 0 AND 10 is unknown, so the row passes the CHECK. That is why the real T_TENTATIVA also declares vl_nota NOT NULL: each rule closes a gap the other leaves open.",
+      "sourceIds": ["oracle-constraint", "oracle-nulls"],
+      "provenance": { "kind": "original", "author": "OpenLabs contributors", "license": { "id": "CC-BY-SA-4.0", "url": "https://creativecommons.org/licenses/by-sa/4.0/" } },
+      "review": { "status": "in-review", "notes": "Original practice question. An educator should review factual accuracy, distractors and objective alignment." },
+      "remediation": "Read “A CHECK lets NULL through” in the article on NULL, then compare the CHECK and the NOT NULL of vl_nota in 01-ddl.sql.",
+      "language": "sql",
+      "code": "CREATE TABLE T_NOTA_TESTE (\n  id_teste NUMBER(4) NOT NULL,\n  vl_nota  NUMBER(4,2) NULL,\n  CONSTRAINT CK_NOTA_TESTE CHECK (vl_nota BETWEEN 0 AND 10)\n);\n\nINSERT INTO T_NOTA_TESTE (id_teste, vl_nota) VALUES (1, NULL);",
+      "options": [
+        { "id": "accepted", "text": "1 row inserted.", "explanation": "Correct. The condition is unknown, not false, so the CHECK is satisfied." },
+        { "id": "check", "text": "ORA-02290: check constraint violated.", "explanation": "A CHECK only refuses a row when its condition is FALSE." },
+        { "id": "notnull", "text": "ORA-01400: cannot insert NULL.", "explanation": "That needs a NOT NULL constraint, and vl_nota is declared NULL here." }
+      ],
+      "correct": "accepted"
+    },
+    {
+      "id": "many-to-many",
+      "revision": 1,
+      "type": "single-choice",
+      "prompt": "A learner does many labs and a lab is done by many learners. How does the OpenLabs schema store that relationship?",
+      "objective": "relational-model",
+      "points": 1,
+      "explanation": "A many-to-many relationship has no side to hold a single foreign key. The relational answer is an associative table — T_PROGRESSO — with one row per pair, a foreign key to each side and a UNIQUE pair so the same learner and lab are not recorded twice.",
+      "sourceIds": ["codd-1970", "oracle-integrity"],
+      "provenance": { "kind": "original", "author": "OpenLabs contributors", "license": { "id": "CC-BY-SA-4.0", "url": "https://creativecommons.org/licenses/by-sa/4.0/" } },
+      "review": { "status": "in-review", "notes": "Original practice question. An educator should review factual accuracy, distractors and objective alignment." },
+      "remediation": "Watch the many-to-many chapter of the telecentre database film and find T_PROGRESSO in the diagram.",
+      "options": [
+        { "id": "associative", "text": "T_PROGRESSO, with FKs to T_ALUNO and T_LAB and UNIQUE (id_aluno, id_lab).", "explanation": "Correct. Each row is one learner–lab pair, and it also carries the start and finish dates of that pair." },
+        { "id": "list", "text": "A column in T_ALUNO holding the list of lab ids.", "explanation": "A list in one cell is a value the database cannot check, join or count, and it breaks first normal form." },
+        { "id": "one-fk", "text": "A foreign key in T_LAB pointing to T_ALUNO.", "explanation": "That would allow only one learner per lab." }
+      ],
+      "correct": "associative"
+    },
+    {
+      "id": "cardinality",
+      "revision": 1,
+      "type": "matching",
+      "prompt": "Match each relationship of the OpenLabs schema with its cardinality.",
+      "objective": "relational-model",
+      "points": 2,
+      "explanation": "The foreign key sits on the many side; NOT NULL makes the one side mandatory. T_ALUNO may be empty for a new telecentre (0..N), every telecentre has at least one monitor (1..N), and learner × lab is many-to-many through T_PROGRESSO.",
+      "sourceIds": ["oracle-integrity"],
+      "provenance": { "kind": "original", "author": "OpenLabs contributors", "license": { "id": "CC-BY-SA-4.0", "url": "https://creativecommons.org/licenses/by-sa/4.0/" } },
+      "review": { "status": "in-review", "notes": "Original practice question. An educator should review factual accuracy, distractors and objective alignment." },
+      "remediation": "Open “What is what” under the telecentre database lab: the table of the ten relationships writes each cardinality.",
+      "items": [
+        { "id": "learners", "text": "T_TELECENTRO → T_ALUNO", "target": "zero-many", "explanation": "A telecentre may have no learners yet; each learner has exactly one telecentre." },
+        { "id": "monitors", "text": "T_TELECENTRO → T_MONITOR", "target": "one-many", "explanation": "Every telecentre has at least one monitor." },
+        { "id": "progress", "text": "T_ALUNO ↔ T_LAB", "target": "many-many", "explanation": "Resolved by the associative table T_PROGRESSO." }
+      ],
+      "targets": [
+        { "id": "zero-many", "text": "1 — 0..N" },
+        { "id": "one-many", "text": "1 — 1..N" },
+        { "id": "many-many", "text": "N : N (associative table)" }
+      ],
+      "scoring": "per-item"
+    },
+    {
+      "id": "left-join-where",
+      "revision": 1,
+      "type": "code-analysis",
+      "prompt": "T_ALUNO has 12 learners; 5 have no attempt. 8 attempts have vl_nota >= 7. How many rows does this query return?",
+      "objective": "joins-and-null",
+      "points": 1,
+      "explanation": "The LEFT JOIN keeps the 5 learners with NULL, but WHERE runs afterwards: NULL >= 7 is unknown, and a WHERE condition that is unknown returns no row. Attempts below 7 go too. 8 rows remain — the same as an INNER JOIN. With the condition in ON, everyone stays: 14 rows.",
+      "sourceIds": ["oracle-nulls", "oracle-joins"],
+      "provenance": { "kind": "original", "author": "OpenLabs contributors", "license": { "id": "CC-BY-SA-4.0", "url": "https://creativecommons.org/licenses/by-sa/4.0/" } },
+      "review": { "status": "in-review", "notes": "Original practice question. An educator should review factual accuracy, distractors and objective alignment." },
+      "remediation": "In the JOIN lab, choose LEFT OUTER JOIN and move the grade filter between WHERE and ON; compare the row counts.",
+      "language": "sql",
+      "code": "SELECT a.id_aluno, te.id_tentativa, te.vl_nota\n  FROM T_ALUNO a\n  LEFT OUTER JOIN T_TENTATIVA te\n    ON te.id_aluno = a.id_aluno\n WHERE te.vl_nota >= 7;",
+      "options": [
+        { "id": "eight", "text": "8 rows", "explanation": "Correct. The WHERE removed the NULL rows the LEFT JOIN had kept." },
+        { "id": "fourteen", "text": "14 rows", "explanation": "That is the result with the condition in ON, not in WHERE." },
+        { "id": "seventeen", "text": "17 rows", "explanation": "That is the LEFT JOIN with no filter at all." }
+      ],
+      "correct": "eight"
+    },
+    {
+      "id": "count-star",
+      "revision": 1,
+      "type": "multiple-response",
+      "prompt": "After T_ALUNO a LEFT JOIN T_TENTATIVA te, grouped by learner, select every correct statement.",
+      "objective": "joins-and-null",
+      "points": 2,
+      "explanation": "COUNT(*) counts all rows, nulls included, so a learner with no attempt — one NULL row — is counted as 1. COUNT(expr) counts only rows where expr is not null, giving 0. Comparing with = NULL is unknown and finds nothing; IS NULL is the test that answers TRUE.",
+      "sourceIds": ["oracle-count", "oracle-nulls"],
+      "provenance": { "kind": "original", "author": "OpenLabs contributors", "license": { "id": "CC-BY-SA-4.0", "url": "https://creativecommons.org/licenses/by-sa/4.0/" } },
+      "review": { "status": "in-review", "notes": "Original practice question. An educator should review factual accuracy, distractors and objective alignment." },
+      "remediation": "Watch the last chapter of the JOIN film with COUNT(*) and then with COUNT(te.id_tentativa).",
+      "options": [
+        { "id": "star-one", "text": "COUNT(*) reports 1 for a learner who never took an assessment.", "explanation": "Correct. The NULL row is still a row." },
+        { "id": "column-zero", "text": "COUNT(te.id_tentativa) reports 0 for that learner.", "explanation": "Correct. COUNT(expr) skips NULL." },
+        { "id": "equals-null", "text": "WHERE te.id_tentativa = NULL finds the learners without attempts.", "explanation": "A comparison with NULL is unknown and returns no rows. Use IS NULL." },
+        { "id": "same", "text": "COUNT(*) and COUNT(te.id_tentativa) always give the same number.", "explanation": "They differ exactly on the rows the outer join filled with NULL." }
+      ],
+      "correct": ["star-one", "column-zero"]
+    },
+    {
+      "id": "anomaly-name",
+      "revision": 1,
+      "type": "single-choice",
+      "prompt": "In the monitor's spreadsheet, a new telecentre cannot be recorded until its first learner signs up. Which anomaly is this?",
+      "objective": "normal-forms",
+      "points": 1,
+      "explanation": "An insertion anomaly: a fact (the telecentre exists) cannot be stored without an unrelated fact (a learner). In third normal form T_TELECENTRO has its own key, so a telecentre is one row by itself.",
+      "sourceIds": ["kent-1983"],
+      "provenance": { "kind": "original", "author": "OpenLabs contributors", "license": { "id": "CC-BY-SA-4.0", "url": "https://creativecommons.org/licenses/by-sa/4.0/" } },
+      "review": { "status": "in-review", "notes": "Original practice question. An educator should review factual accuracy, distractors and objective alignment." },
+      "remediation": "In the normalization lab, press “Open a telecentre with no learners” in each normal form.",
+      "options": [
+        { "id": "insertion", "text": "Insertion anomaly", "explanation": "Correct. There is no row to put the telecentre in." },
+        { "id": "update", "text": "Update anomaly", "explanation": "That is the name typed on many rows, which must change together." },
+        { "id": "deletion", "text": "Deletion anomaly", "explanation": "That is losing a fact when an unrelated row is deleted." }
+      ],
+      "correct": "insertion"
+    },
+    {
+      "id": "partial-dependency",
+      "revision": 1,
+      "type": "single-choice",
+      "prompt": "TENTATIVA_1FN has the key (id_aluno, id_avaliacao, dt_envio) and also the column nm_aluno. Moving nm_aluno to a table keyed by id_aluno is required by which normal form?",
+      "objective": "normal-forms",
+      "points": 1,
+      "explanation": "nm_aluno depends on id_aluno alone, which is only part of the key. Second normal form requires every non-key column to depend on the whole key. Third normal form removes dependencies between non-key columns, such as nm_bairro depending on the telecentre.",
+      "sourceIds": ["kent-1983"],
+      "provenance": { "kind": "original", "author": "OpenLabs contributors", "license": { "id": "CC-BY-SA-4.0", "url": "https://creativecommons.org/licenses/by-sa/4.0/" } },
+      "review": { "status": "in-review", "notes": "Original practice question. An educator should review factual accuracy, distractors and objective alignment." },
+      "remediation": "Compare the 1NF and 2NF tabs of the normalization lab and read which columns moved, and why.",
+      "options": [
+        { "id": "second", "text": "Second normal form", "explanation": "Correct. It removes dependencies on part of the key." },
+        { "id": "first", "text": "First normal form", "explanation": "1NF is about one value per cell; the table already satisfies it." },
+        { "id": "third", "text": "Third normal form", "explanation": "3NF removes dependencies between non-key columns; this one is on part of the key." }
+      ],
+      "correct": "second"
+    },
+    {
+      "id": "build-order",
+      "revision": 1,
+      "type": "ordering",
+      "prompt": "Put the steps that build and use the OpenLabs database in order.",
+      "objective": "model-to-server",
+      "points": 2,
+      "explanation": "The logical model comes first. CREATE TABLE builds the structure; the foreign keys are added once every referenced table exists; parents are inserted before the children that reference them; and queries read the filled tables.",
+      "sourceIds": ["oracle-create-table", "oracle-integrity"],
+      "provenance": { "kind": "original", "author": "OpenLabs contributors", "license": { "id": "CC-BY-SA-4.0", "url": "https://creativecommons.org/licenses/by-sa/4.0/" } },
+      "review": { "status": "in-review", "notes": "Original practice question. An educator should review factual accuracy, distractors and objective alignment." },
+      "remediation": "Read “From the diagram to the server”, then follow the Oracle step by step at the end of the telecentre database lab.",
+      "items": [
+        { "id": "model", "text": "Draw the relational model: tables, keys, relationships, cardinality" },
+        { "id": "create", "text": "CREATE TABLE for every table" },
+        { "id": "fks", "text": "ALTER TABLE … ADD CONSTRAINT … FOREIGN KEY" },
+        { "id": "parents", "text": "INSERT into T_TELECENTRO and T_HANDBOOK" },
+        { "id": "children", "text": "INSERT into T_PROGRESSO and T_TENTATIVA" },
+        { "id": "query", "text": "SELECT with INNER JOIN, GROUP BY and LEFT JOIN" }
+      ],
+      "correct": ["model", "create", "fks", "parents", "children", "query"],
+      "scoring": "per-item"
+    },
+    {
+      "id": "identity-post",
+      "revision": 1,
+      "type": "code-analysis",
+      "prompt": "T_ALUNO already holds ids 1 to 12, loaded with fixed values. The Java API sends this INSERT for POST /alunos. What happens?",
+      "objective": "model-to-server",
+      "points": 1,
+      "explanation": "With GENERATED BY DEFAULT ON NULL AS IDENTITY, the database assigns the next value of the identity column when the insert leaves the id out (or sends NULL), while explicit ids are still accepted for the sample data. The generator starts after the sample ids, so the new learner gets 13.",
+      "sourceIds": ["oracle-create-table"],
+      "provenance": { "kind": "original", "author": "OpenLabs contributors", "license": { "id": "CC-BY-SA-4.0", "url": "https://creativecommons.org/licenses/by-sa/4.0/" } },
+      "review": { "status": "in-review", "notes": "Original practice question. An educator should review factual accuracy, distractors and objective alignment." },
+      "remediation": "Watch the last chapter of the normalization film, where POST /alunos reaches T_ALUNO.",
+      "language": "sql",
+      "code": "-- id_aluno NUMBER(8) GENERATED BY DEFAULT ON NULL AS IDENTITY (START WITH 13)\nINSERT INTO T_ALUNO (id_telecentro, nm_aluno, dt_nascimento, dt_cadastro)\nVALUES (1, 'Nina Prado Lopes', DATE '2009-02-02', DATE '2026-11-01');",
+      "options": [
+        { "id": "thirteen", "text": "1 row inserted, with id_aluno = 13.", "explanation": "Correct. The identity column fills the key the API did not send." },
+        { "id": "null", "text": "ORA-01400: cannot insert NULL into ID_ALUNO.", "explanation": "That would be the result without the identity clause." },
+        { "id": "one", "text": "ORA-00001: the database tries id_aluno = 1 again.", "explanation": "The identity starts after the sample ids, at 13." }
+      ],
+      "correct": "thirteen"
+    }
+  ],
+  "assessments": [
+    {
+      "id": "telecentro-database-checkpoint",
+      "title": "Check your reasoning about keys and the model",
+      "description": "Four questions after the telecentre database lab: what the rules refuse, and how the model links the tables. This is a practice checkpoint.",
+      "scope": { "kind": "lab", "lab": "telecentro-database" },
+      "questions": ["delete-a-parent", "check-and-null", "many-to-many", "cardinality"],
+      "passPercentage": 70
+    },
+    {
+      "id": "join-by-hand-checkpoint",
+      "title": "Check your reasoning about JOINs and NULL",
+      "description": "Three questions after pairing the tables by hand. Predict the rows before you answer.",
+      "scope": { "kind": "lab", "lab": "join-by-hand" },
+      "questions": ["left-join-where", "count-star", "check-and-null"],
+      "passPercentage": 70
+    },
+    {
+      "id": "normalize-a-spreadsheet-checkpoint",
+      "title": "Check your reasoning about normal forms",
+      "description": "Four questions after splitting the spreadsheet: the anomalies, the normal forms and the path to the server.",
+      "scope": { "kind": "lab", "lab": "normalize-a-spreadsheet" },
+      "questions": ["anomaly-name", "partial-dependency", "build-order", "identity-post"],
+      "passPercentage": 70
+    },
+    {
+      "id": "databases-final",
+      "title": "Databases handbook assessment",
+      "description": "A cumulative practice assessment of the three labs and four articles: keys and rules, the relational model, JOINs and NULL, normal forms, and the path from the model to the server.",
+      "scope": { "kind": "handbook" },
+      "questions": ["delete-a-parent", "check-and-null", "many-to-many", "cardinality", "left-join-where", "count-star", "anomaly-name", "partial-dependency", "build-order", "identity-post"],
+      "passPercentage": 70
+    }
+  ]
+}

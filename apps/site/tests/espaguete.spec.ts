@@ -400,6 +400,16 @@ const SEM_PALCO: ReadonlySet<string> = new Set([
   // isométrica e simulação React; os fios são cabos fixos de uma topologia
   // pequena, sem roteador de fios do `depth-ui`.
   "labs/telecentro-network/",
+  // O banco do telecentro (handbook de bancos de dados, 09/11/2026): filme com
+  // vista Diagrama em SVG próprio (as ligações são as chaves estrangeiras,
+  // calculadas pelo modelo) e vista isométrica; simulação React. Nenhum fio
+  // roteado pelo `depth-ui`.
+  "labs/telecentro-database/",
+  // Os outros dois labs do handbook de bancos de dados (10/11/2026): filme do
+  // `@ovh/motion` (pares de um JOIN; tabelas da planilha à 3FN) e simulação
+  // React em listas e tabelas HTML. Nenhum fio roteado pelo `depth-ui`.
+  "labs/join-by-hand/",
+  "labs/normalize-a-spreadsheet/",
   // O curso de algoritmos (09/11/2026): filmes do `@ovh/motion` (o mapa com
   // vista isométrica) e simulações React em SVG livre — barras, gráfico log-log,
   // editor de grafo, mapa e moedas. Nenhum fio roteado pelo `depth-ui`.

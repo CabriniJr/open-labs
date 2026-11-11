@@ -1,0 +1,54 @@
+/* Os labs de JOIN e de normalização do handbook de bancos de dados. Só tokens do tema. */
+
+/* ---------------------------------------------------------------- juntar à mão */
+.bdj-controles { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-3); }
+.bdj-instrucao { margin: 0; font-size: var(--size-step--1); color: var(--ink-muted); }
+.bdj-placar { margin: 0; font-size: 0.85rem; font-weight: 600; }
+.bdj-colunas { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--space-2); }
+@media (max-width: 640px) {
+  .bdj-colunas { grid-template-columns: minmax(0, 1fr); }
+}
+.bdj-lista { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.bdj-linha {
+  display: grid;
+  gap: 1px;
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid var(--rule);
+  border-left: 4px solid var(--dui-processor);
+  border-radius: 6px;
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.78rem;
+  text-align: start;
+  cursor: pointer;
+}
+.bdj-linha span { overflow-wrap: anywhere; }
+.bdj-linha small { color: var(--ink-muted); font-size: 0.7rem; }
+.bdj-linha--te { border-left-color: var(--dui-conduit); }
+.bdj-linha[data-ligado] { background: color-mix(in oklab, var(--dui-especie-2) 12%, var(--paper)); }
+.bdj-linha[aria-pressed="true"] { outline: 2px solid var(--accent); outline-offset: 1px; }
+.bdj-linha:hover { background: color-mix(in oklab, var(--accent) 10%, var(--paper)); }
+.bdj-linha:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.bdj-resultados { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--space-2); }
+@media (max-width: 760px) {
+  .bdj-resultados { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ---------------------------------------------------------------- da planilha às tabelas */
+.bdn-porque { margin: 0; max-width: var(--measure); font-size: var(--size-step--1); }
+.bdn-medidas { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-3); margin: 0; font-size: 0.78rem; }
+.bdn-medidas div { display: flex; gap: 6px; }
+.bdn-medidas dt { color: var(--ink-muted); }
+.bdn-medidas dd { margin: 0; font-weight: 700; }
+.bdn-tabelas { display: grid; gap: var(--space-2); min-width: 0; }
+.bdn-grade th[data-chave] { text-decoration: underline; }
+.bdn-grade th .bdlab-sigla { margin-left: 4px; }
+.bdn-grade td[data-marca] { background: color-mix(in oklab, var(--sig-drop) 18%, var(--paper)); font-weight: 600; }
+.bdn-grade td { white-space: nowrap; }
+.bdn-grade td[data-longo] { min-width: 18rem; max-width: 28rem; white-space: normal; overflow-wrap: anywhere; }
+.bdn-servidor { display: grid; gap: var(--space-1); padding-top: var(--space-2); border-top: 1px solid var(--rule); }
+.bdn-servidor p { margin: 0; max-width: var(--measure); font-size: var(--size-step--1); }
+.bdn-servidor td { white-space: normal; overflow-wrap: anywhere; }
+.bdlab-erro[aria-pressed="true"] { background: color-mix(in oklab, var(--sig-drop) 14%, var(--paper)); }
