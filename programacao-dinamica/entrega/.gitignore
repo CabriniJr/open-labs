@@ -1,0 +1,4 @@
+# O ZIP é gerado por ../empacotar.py e é da equipe; não vai para o repositório.
+*.zip
+# Integrantes e RMs: dados dos alunos, só na máquina de quem gera a entrega.
+equipe.json

@@ -1,0 +1,58 @@
+---
+import AlgoPagina from "../../components/AlgoPagina.astro";
+import SiteFooter from "../../components/SiteFooter.astro";
+import SiteNav from "../../components/SiteNav.astro";
+import Base from "../../layouts/Base.astro";
+import { MochilaModos } from "../../components/MochilaLab.tsx";
+import { Predicao } from "../../components/Predicao.tsx";
+---
+
+<Base domain="algorithms" title="The table that remembers: what fits in a session — OpenLabs" description="An hour of computer time at the telecentre and a list of unlocked labs. Greedy picks by points per minute; a dynamic-programming table fills every smaller session first and finds the plan greedy misses. Every cell explains itself.">
+<SiteNav current="labs" />
+<AlgoPagina
+  titulo="The table that remembers: what fits in a session"
+  href="labs/knapsack-session"
+  nota={["Each lab goes in whole, or not at all.", "The table solves every smaller session first.", "Walk back through it, and the plan falls out."]}
+  quebre={[
+    { b: "Pick “The smallest trap”.", texto: "Greedy takes the two densest labs, 40 minutes, and the last 10 fit nothing: 6 points. The table pairs How work grows with Three pillars and uses all 50: 7 points." },
+    { b: "Pick “Rafa, 90 minutes” and click the bottom-right cell.", texto: "It is the max of two cells in the row above: skipping the last lab, or taking it plus the best of what is left. Every number in the table is built that way, from numbers already there." },
+    { b: "Slide the session down to 25 minutes, then back up.", texto: "The table changes width, not shape: one column per 5 minutes. The work is labs × columns, and the walk back always takes one step per row." },
+    { b: "Tick every lab.", texto: "Twelve labs: 4,096 subsets to try by brute force, thousands of calls for the recurrence without memory, 12 × 37 cells for the table. Add one more and only the first two double." },
+  ]}
+  erros={[
+    { crenca: "Take the best value for money first, and you get the best plan.", verdade: "Points per minute is a good guess, not a guarantee. A dense lab can leave a gap that no other lab fits; the table checks every way to fill each gap." },
+    { crenca: "Dynamic programming is just recursion.", verdade: "Recursion that recalculates the same (row, minutes) pair is exponential. The same recurrence with a table — or a memo — solves each pair once. The lab counts both." },
+    { crenca: "The table only gives the score.", verdade: "It also gives the plan: walk back from the corner, and wherever a cell differs from the one above it, that row's lab was taken." },
+  ]}
+  fronteira="Up to 12 labs and 180 minutes, in blocks of 5 minutes. Each lab is taken once or not at all (0/1 knapsack), and only labs already unlocked count: finishing one mid-session does not unlock the next here. Points are the team's estimate of each lab's learning objectives, the same ones the Python planner of the telecentre uses."
+  ligacoes={[
+    { href: "labs/greedy-change", texto: "Greedy, and the case it misses — the 1-D table, with coins" },
+    { href: "labs/how-work-grows", texto: "Six ways to grow — why 2ⁿ subsets lose to n × t cells" },
+    { href: "labs/shortest-path", texto: "Shortest paths — Dijkstra, the same remembering on a graph" },
+  ]}
+>
+  <p>
+    The telecentre has a computer free for an hour, and the learner has a list of labs
+    already unlocked: each one takes some minutes and teaches some points. Which labs,
+    together, teach the most without going over the hour? Each lab goes in whole or not at
+    all — this is the <b>0/1 knapsack</b>.
+  </p>
+  <p>
+    The quick rule is <b>greedy</b>: best points per minute first. The sure way is a
+    <b>table</b>: for the first lab, then the first two, then the first three, the best score
+    for every session length from 0 up. Each cell is the better of two cells already
+    filled — skip this lab, or take it and use what is left. Nothing is ever worked out twice,
+    and walking back from the corner gives the plan.
+  </p>
+  <MochilaModos slot="palco" client:only="react" />
+  <Predicao
+    slot="predicao"
+    client:visible
+    pergunta="Fifty minutes. Labs: 15 min for 2 points, 25 min for 4, 25 min for 3. How many points can you get?"
+    opcoes={["7", "6", "9"]}
+    correta={0}
+    revelacao="Greedy takes the 25-minute lab worth 4, then the 15-minute one worth 2 — 6 points, and 10 minutes nobody can use. The two 25-minute labs fill the session exactly: 4 + 3 = 7. Nine would need all three, 65 minutes."
+  />
+</AlgoPagina>
+<SiteFooter />
+</Base>
