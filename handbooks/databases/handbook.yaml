@@ -51,21 +51,29 @@ phases:
     line: JOINs, GROUP BY, and the rows that have no partner.
   - number: 3
     title: From the model to the server
-    line: Normal forms, the logical model, and the API that reads it.
+    line: Normal forms, the logical model, CREATE TABLE, and the API that reads the same tables.
 
 articles:
   - id: a-foreign-key-is-a-promise
     title: A foreign key is a promise the database keeps
-    status: coming
+    status: available
     phase: 1
+    href: handbooks/databases/articles/a-foreign-key-is-a-promise
   - id: null-is-not-a-value
     title: NULL is not a value, it is a question mark
-    status: coming
+    status: available
     phase: 2
+    href: handbooks/databases/articles/null-is-not-a-value
   - id: one-fact-one-place
     title: One fact, one place — the third normal form
-    status: coming
+    status: available
     phase: 3
+    href: handbooks/databases/articles/one-fact-one-place
+  - id: from-the-diagram-to-the-server
+    title: "From the diagram to the server: DDL, DML and DQL"
+    status: available
+    phase: 3
+    href: handbooks/databases/articles/from-the-diagram-to-the-server
 
 labs:
   - id: telecentro-database
@@ -75,9 +83,11 @@ labs:
     href: labs/telecentro-database
   - id: join-by-hand
     title: Pair two tables by hand and watch the JOIN
-    status: coming
+    status: available
     phase: 2
+    href: labs/join-by-hand
   - id: normalize-a-spreadsheet
     title: Split one spreadsheet until every fact lives in one place
-    status: coming
+    status: available
     phase: 3
+    href: labs/normalize-a-spreadsheet

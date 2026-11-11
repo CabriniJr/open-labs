@@ -39,3 +39,13 @@ export { EXPLICACAO_DO_ERRO, linhaValida, TENTATIVAS_ERRADAS } from "./telecentr
 export type { Tentativa } from "./telecentro/simulacao.js";
 export { CONFERIR_TABELAS, conferirConstraints, conferirLinhas, conferirRelacionamentos, provasDasRegras, resultadosDoDql, saidaDoDdl, saidaDoDml } from "./telecentro/oracle.js";
 export type { Conferencia, ProvaDaRegra, ResultadoDaConsulta } from "./telecentro/oracle.js";
+// Fase 2 — juntar à mão: o que um JOIN faz com as linhas, e para onde vai quem não tem par.
+export { ALUNOS, andamento, casa, comoResultado, comparacoes, grupos, ligar, linhasDaJuncao, NOTA_MINIMA, OPCOES_DA_JUNCAO, resultadoDaJuncao, semPar, sqlDaJuncao, TENTATIVAS } from "./juncao/modelo.js";
+export type { Andamento, Comparacao, Contagem, Grupo, Ligacao, LinhaDaJuncao, MotivoDaRecusa, OndeFiltrar, OpcoesDaJuncao, TentativaDeLigar, TipoDeJuncao } from "./juncao/modelo.js";
+export { ALTURA_DA_JUNCAO, CAPITULOS_DA_JUNCAO, filmeDaJuncao, LARGURA_DA_JUNCAO, OPCOES_DO_FILME_DA_JUNCAO } from "./juncao/filme.js";
+export type { DetalheDaJuncao, OpcoesDoFilmeDaJuncao } from "./juncao/filme.js";
+// Fase 3 — da planilha às tabelas: as formas normais, medidas, e o caminho até o servidor.
+export { anomaliasDa, AVALIACAO_DO_EXEMPLO, cabeSozinho, celulasARenomear, createTable, ENDPOINTS_DO_ALUNO, ETAPAS, fatosIniciais, perdidosAoApagar, tabelasDa, TELECENTRO_DO_EXEMPLO } from "./normalizacao/modelo.js";
+export type { Anomalias, Etapa, Fatos, TabelaDaEtapa } from "./normalizacao/modelo.js";
+export { ALTURA_DA_NORMALIZACAO, CAPITULOS_DA_NORMALIZACAO, filmeDaNormalizacao, LARGURA_DA_NORMALIZACAO } from "./normalizacao/filme.js";
+export type { DetalheDaNormalizacao } from "./normalizacao/filme.js";

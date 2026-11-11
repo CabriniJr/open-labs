@@ -121,7 +121,7 @@ function Siglas({ t, coluna }: { t: Tabela; coluna: string }) {
 
 function regraDe(t: Tabela, coluna: string): string {
   const c = t.colunas.find((x) => x.nome === coluna);
-  return [c?.padrao === undefined ? "" : `DEFAULT ${c.padrao}`, c?.check === undefined ? "" : `CHECK ${c.check}`].filter(Boolean).join(" · ");
+  return [c?.nome === t.pk ? "IDENTITY" : "", c?.padrao === undefined ? "" : `DEFAULT ${c.padrao}`, c?.check === undefined ? "" : `CHECK ${c.check}`].filter(Boolean).join(" · ");
 }
 
 function CartaoDaTabela({ t }: { t: Tabela }) {

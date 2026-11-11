@@ -92,11 +92,11 @@ INSERT INTO T_FASE (id_fase, id_handbook, nr_ordem, nm_fase) VALUES (9, 5, 1, 'W
 INSERT INTO T_LAB (id_lab, id_fase, cd_slug, nm_lab, tp_interacao, nr_minutos, st_disponivel) VALUES (1, 1, 'telecentro-network', 'What happens when a learner joins the telecentre Wi-Fi', 'filme', 30, 'S');
 INSERT INTO T_LAB (id_lab, id_fase, cd_slug, nm_lab, tp_interacao, nr_minutos, st_disponivel) VALUES (2, 1, 'subnetting-by-need', 'Splitting a /24 by how many people need it', 'direto', 20, 'N');
 INSERT INTO T_LAB (id_lab, id_fase, cd_slug, nm_lab, tp_interacao, nr_minutos, st_disponivel) VALUES (3, 3, 'acl-order', 'Move one ACL line and watch what breaks', 'direto', 15, 'N');
-INSERT INTO T_LAB (id_lab, id_fase, cd_slug, nm_lab, tp_interacao, nr_minutos, st_disponivel) VALUES (4, 4, 'three-pillars', 'Three pillars,  one blind spot', 'fluxo', 25, 'S');
+INSERT INTO T_LAB (id_lab, id_fase, cd_slug, nm_lab, tp_interacao, nr_minutos, st_disponivel) VALUES (4, 4, 'three-pillars', 'Three pillars, one blind spot', 'fluxo', 25, 'S');
 INSERT INTO T_LAB (id_lab, id_fase, cd_slug, nm_lab, tp_interacao, nr_minutos, st_disponivel) VALUES (5, 5, 'anatomy-of-a-trace', 'Anatomy of a Trace', 'fluxo', 30, 'S');
 INSERT INTO T_LAB (id_lab, id_fase, cd_slug, nm_lab, tp_interacao, nr_minutos, st_disponivel) VALUES (6, 6, 'backpressure-and-drops', 'Backpressure and drops', 'filme', 25, 'S');
-INSERT INTO T_LAB (id_lab, id_fase, cd_slug, nm_lab, tp_interacao, nr_minutos, st_disponivel) VALUES (7, 7, 'pod-lifecycle', 'A manifest,  a Pod,  and the controller that replaces it', 'estado', 20, 'S');
-INSERT INTO T_LAB (id_lab, id_fase, cd_slug, nm_lab, tp_interacao, nr_minutos, st_disponivel) VALUES (8, 8, 'splunk-ingest', 'Where parsing happens,  and what it costs', 'fluxo', 25, 'S');
+INSERT INTO T_LAB (id_lab, id_fase, cd_slug, nm_lab, tp_interacao, nr_minutos, st_disponivel) VALUES (7, 7, 'pod-lifecycle', 'A manifest, a Pod, and the controller that replaces it', 'estado', 20, 'S');
+INSERT INTO T_LAB (id_lab, id_fase, cd_slug, nm_lab, tp_interacao, nr_minutos, st_disponivel) VALUES (8, 8, 'splunk-ingest', 'Where parsing happens, and what it costs', 'fluxo', 25, 'S');
 
 -- ---------------------------------------------------------------------
 -- T_AVALIACAO (6) — um checkpoint por lab publicado.

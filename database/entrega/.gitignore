@@ -1,3 +1,7 @@
 # O PDF e o HTML são gerados por ../gerar.mjs e são da equipe; não vão para o repositório.
 *.pdf
 documento.html
+# Equipe, integrantes e RMs da capa: dados dos alunos, só na máquina de quem gera o PDF.
+equipe.json
+# Diagramas exportados do Data Modeler: artefatos da entrega, gerados na máquina de quem entrega.
+diagrama-*

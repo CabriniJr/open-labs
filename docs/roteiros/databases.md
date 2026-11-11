@@ -73,15 +73,36 @@ Cada tabela leva o desenho do que uma linha dela é.
 
 ## Fase 2 — fazendo perguntas
 
-#### join-by-hand · a fazer
-Arrastar as linhas de duas tabelas e formar os pares à mão; o leitor vê o que o INNER descarta e o que o LEFT mantém com NULL.
+#### join-by-hand — *Pair two tables by hand and watch the JOIN* · disponível (filme + livre)
+- **Pergunta.** O que um JOIN faz com as linhas de duas tabelas — e para onde vão as que não têm par?
+- **Mal-entendido.** "Com dados bons, INNER e LEFT dão o mesmo" / "condição no ON ou no WHERE é a mesma coisa" / "COUNT(*) e COUNT(coluna) contam o mesmo" / "o JOIN devolve uma linha por aluno".
+- **Modelo.** `database-domain/juncao/modelo.ts`: T_ALUNO × T_TENTATIVA, as linhas do `bancoInicial()` (as mesmas do 02-dml.sql). `linhasDaJuncao({ tipo, filtro })` (INNER/LEFT; filtro `vl_nota >= 7` em lugar nenhum, no WHERE ou no ON), `grupos` (COUNT(*) × COUNT(te.id_tentativa)), `comparacoes` (o laço aninhado: 144 pares, 12 verdadeiros), `ligar`/`andamento` (o leitor liga os pares à mão; o ON decide). Números conferidos em teste: INNER 12, LEFT 17, LEFT+WHERE 8 (= INNER), LEFT+ON 14; COUNT(*) dá 1 a quem nunca tentou.
+- **Showcase.** `filmeDaJuncao`: seis capítulos — as duas tabelas; o ON em cada par (o aluno 1 contra as 12 tentativas, depois os 144); um aluno vira tantas linhas quantos pares; quem não tem par (NULL com LEFT, apagado com INNER); o filtro da nota no WHERE ou no ON; GROUP BY com a contagem escolhida (vermelho em quem COUNT(*) conta errado). **Interativo:** INNER/LEFT, WHERE/ON e COUNT(*)/COUNT(coluna) refazem o filme. O painel mostra o SQL e o resultado do passo.
+- **Simulação (livre).** `JuncaoLab`: escolher um aluno, tocar nas tentativas dele; o ON recusa a tentativa de outro aluno, a nota baixa com o filtro no ON e a tentativa já ligada (uma FK é um valor só). O placar conta os pares; "deixar o banco" completa; o resultado do leitor ao lado do resultado do banco.
+- **Correlação.** A consulta 3 da entrega é este LEFT JOIN filtrado por `IS NULL` (teste: os mesmos alunos).
 
 ## Fase 3 — do modelo ao servidor
 
-#### normalize-a-spreadsheet · a fazer
-Uma planilha com tudo repetido, quebrada passo a passo até a terceira forma normal — e a anomalia de atualização que some em cada passo.
+#### normalize-a-spreadsheet — *Split one spreadsheet until every fact lives in one place* · disponível (filme + livre)
+- **Pergunta.** Por que o OpenLabs tem dez tabelas e não uma planilha?
+- **Mal-entendido.** "Normalizar é economizar espaço" / "1FN é ter chave primária" / "3FN deixa tudo lento" / "modelo lógico e banco são projetos diferentes".
+- **Modelo.** `database-domain/normalizacao/modelo.ts`: a planilha do monitor (uma linha por aluno, tentativas numa célula) montada dos MESMOS dados; `tabelasDa(etapa)` para planilha, 1FN, 2FN e 3FN — a 3FN são as tabelas reais (teste: mesmas linhas do 02-dml.sql). As anomalias são medidas: `celulasARenomear` (4 → 5 → 4 → 1), `cabeSozinho` (telecentro sem aluno só na 3FN), `perdidosAoApagar` (apagar as tentativas da avaliação 6 leva lab e handbook até a 2FN), alunos que cabem (12, 7, 12, 12). `createTable` reproduz o CREATE TABLE do 01-ddl.sql (teste) e `ENDPOINTS_DO_ALUNO` liga a tabela à API Java.
+- **Showcase.** `filmeDaNormalizacao`: cinco capítulos — a planilha; 1FN (a planilha fica vermelha: 5 alunos somem); 2FN (três tabelas, as colunas viajam); 3FN (as sete tabelas reais, com ícones e as chaves estrangeiras); do modelo ao servidor (CREATE TABLE com IDENTITY e o POST /alunos que o motor responde com o id 13).
+- **Simulação (livre).** `NormalizacaoLab`: abas por forma normal, as tabelas com PK/FK, e três anomalias para tentar (renomear o telecentro acende as células; abrir um telecentro sem alunos; apagar as tentativas da avaliação 6 mostra o que some). Na 3FN, o CREATE TABLE e a tabela de endpoints GET/POST/PUT/DELETE.
+
+## Artigos
+
+| Fase | Artigo | Lab |
+|---|---|---|
+| 1 | *A foreign key is a promise the database keeps* — FK nos dois sentidos (ORA-02291/02292), a pilha de regras, cardinalidade e associativas | telecentro-database |
+| 2 | *NULL is not a value, it is a question mark* — UNKNOWN, IS NULL, CHECK e NULL, LEFT+WHERE, COUNT | join-by-hand |
+| 3 | *One fact, one place — the third normal form* — as três anomalias medidas, 1FN/2FN/3FN, chave substituta | normalize-a-spreadsheet |
+| 3 | *From the diagram to the server: DDL, DML and DQL* — o que o diagrama precisa dizer, os três scripts, a API | normalize-a-spreadsheet |
+
+Fontes: Codd (1970, 1971), Kent (1983) e a documentação do Oracle 19c (Data Integrity, constraint, Nulls, Joins, COUNT, CREATE/ALTER TABLE, INSERT, SELECT) e do Data Modeler. Nenhum texto do site cita a disciplina ou a entrega.
 
 ## Correlações
 
 - ← `telecentro-network` (redes): `T_COMPUTADOR` guarda o hostname, o IP e a VLAN da mesma rede; `ds_faixa_rede` de cada telecentro é a faixa do projeto de redes.
-- → a API Java da GS (DDD Java) lê e escreve estas mesmas tabelas no Oracle da FIAP.
+- → a API Java da GS (DDD Java) lê e escreve estas mesmas tabelas no Oracle da FIAP; toda PK é IDENTITY para o POST não mandar id.
+- ↔ `join-by-hand` e `normalize-a-spreadsheet` usam as linhas de `dados.ts`: mudar um dado muda os três labs e os scripts.

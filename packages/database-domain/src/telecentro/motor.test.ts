@@ -126,7 +126,14 @@ describe("o banco recusa o que o Oracle recusaria", () => {
     expect(t.ok && linhasDe(t.banco, "T_TENTATIVA").length).toBe(11);
   });
 
-  it("o próximo id é o que uma sequence daria", () => expect(proximoId(b0, "T_ALUNO")).toBe(13));
+  it("o próximo id é o que a IDENTITY daria", () => expect(proximoId(b0, "T_ALUNO")).toBe(13));
+
+  it("sem id, a IDENTITY gera o próximo — como no POST da API Java", () => {
+    const r = inserir(b0, "T_ALUNO", { ...aluno, id_aluno: null });
+    expect(r.ok && r.linha.id_aluno).toBe(13);
+    const s = inserir(b0, "T_TELECENTRO", { nm_telecentro: "Telecentro Teste", nm_bairro: "Centro", nm_cidade: "Santos", sg_uf: "SP", nr_computadores: 4, ds_faixa_rede: "10.9.0.0/24", dt_inauguracao: "2026-11-10" });
+    expect(s.ok && s.linha.id_telecentro).toBe(6);
+  });
 });
 
 describe("as três consultas, com os resultados do README", () => {
