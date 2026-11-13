@@ -1,3 +1,4 @@
+import { readProgress, writeProgress, subscribeProgress } from "../lib/learning-progress.js";
 import { localeReady } from "../lib/i18n.js";
 import { EXERCICIOS_DOS_PROVEDORES } from "@ovh/otel-domain";
 import { useEffect, useState } from "react";
@@ -19,26 +20,7 @@ import {
   type RoadmapPhase,
 } from "../data/roadmap.js";
 
-function readProgress(chave: string): string[] {
-  try {
-    const raw = window.localStorage.getItem(chave);
-    if (raw === null) return [];
-    const parsed: unknown = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed.filter((v): v is string => typeof v === "string") : [];
-  } catch {
-    return [];
-  }
-}
-
-function writeProgress(chave: string, ids: readonly string[]): void {
-  try {
-    window.localStorage.setItem(chave, JSON.stringify(ids));
-  } catch {
-    // Modo privado ou storage cheio: o mapa segue funcionando sem memória.
-  }
-}
-
-const pct = (value: number, total: number): string => `${(value / total) * 100}%`;
+const pct = (value: number, total: number): string => `${total ? (value / total) * 100 : 0}%`;
 
 /**
  * A ordem do array `labs` já agrupa por fase (as fases estão em ordem crescente
@@ -102,8 +84,10 @@ export function Roadmap({ mapa }: { readonly mapa: RoadmapMap }) {
   const [placar, setPlacar] = useState<Readonly<Record<string, string>>>({});
 
   useEffect(() => {
-    setDone(readProgress(storageKey));
+    const refresh = () => setDone(readProgress(storageKey));
+    refresh();
     setPlacar(lerPlacar());
+    return subscribeProgress(refresh);
   }, [storageKey]);
 
   const toggle = (id: string): void => {
@@ -112,13 +96,14 @@ export function Roadmap({ mapa }: { readonly mapa: RoadmapMap }) {
     writeProgress(storageKey, next);
   };
 
-  const total = labs.length;
-  const completed = done.length;
+  const availableLabs = labs.filter((lab) => lab.status === "available");
+  const total = availableLabs.length;
+  const completed = availableLabs.filter((lab) => done.includes(lab.id)).length;
 
   return (
     <div ref={localeReady} className="roadmap">
       <div className="roadmap__progress">
-        <span className="roadmap__progress-label mono">Your progress</span>
+        <span className="roadmap__progress-label mono">Lab progress</span>
         <span className="roadmap__progress-count mono">
           {completed} of {total}
         </span>
