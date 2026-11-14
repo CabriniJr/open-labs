@@ -164,6 +164,15 @@ lado da saída esperada. O PDF usa também os prints complementares
 `teste-8-wpa2-notebook`) e `topologia.png`. Todos foram tirados do `.pkt`
 entregue, depois de reaberto, sem nenhum ajuste manual.
 
+A vista **Physical** do `.pkt` também está organizada como o lugar real:
+cidade *Sao Paulo - SP* com dois prédios. No *Telecentro Jardim Angela*, R1,
+SW1 e SRV-OPENLABS ficam no rack da *Sala de rede (rack)*, o PC-MONITOR na sala
+da equipe e o AP-TELECENTRO com o LAPTOP-CIDADAO no laboratório. No *Provedor
+de Internet (ISP)*, o ISP e o WEB-INTERNET ficam no rack da *Sala tecnica do
+provedor*. As imagens estão em `fisica-*.png`. A API do Packet Tracer não cria
+nem renomeia prédios ou salas: isso foi feito pela interface (Navigation Panel,
+*Create New Building/Closet*, *Move Object* e o nome do local na barra física).
+
 O `.pkt` usa os comentários e as descrições de interface em português
 (`configR1(t, "pt")`, e o mesmo para SW1 e ISP); o lab mostra a versão em
 inglês. Os comandos são idênticos nas duas (há teste para isso).

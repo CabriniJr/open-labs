@@ -93,6 +93,7 @@ const requisitos: { criterio: string; itens: [string, string, string][] }[] = [
   {
     criterio: "Arquitetura e endereçamento (3 pontos)",
     itens: [
+      ["Topologia da rede do local físico (entregável)", "Arquitetura lógica (vista Logical) e física (vista Physical: telecentro e provedor, salas e racks)", "Seções 2.1 e 2.2"],
       [`Faixa 192.168.${t.x}.0/24 em pelo menos 3 sub-redes (Equipe, Cidadão, Servidores)`, `VLSM: CIDADAO ${cidr(cidadao)}, EQUIPE ${cidr(equipe)}, SERVIDORES ${cidr(servidores)}`, "Seção 3"],
       ["Uma VLAN por setor", `VLAN ${equipe.vlan} EQUIPE, ${cidadao.vlan} CIDADAO, ${servidores.vlan} SERVIDORES no SW1`, "Teste 7"],
       ["Trunk 802.1Q e router-on-a-stick", `SW1 Gi0/1 em trunk; R1 G0/0.${equipe.vlan}, .${cidadao.vlan} e .${servidores.vlan} com encapsulation dot1Q`, "Teste 7 e Teste 1; running-config do R1 (seção 4)"],
@@ -195,6 +196,18 @@ const testes: Teste[] = [
   },
 ];
 
+/** Onde cada aparelho está na vista física do .pkt (lido do arquivo pela API do Packet Tracer). */
+const fisico: [aparelho: string, predio: string, sala: string, montagem: string][] = [
+  ["R1", "Telecentro Jardim Ângela", "Sala de rede", "rack"],
+  ["SW1", "Telecentro Jardim Ângela", "Sala de rede", "rack"],
+  ["SRV-OPENLABS", "Telecentro Jardim Ângela", "Sala de rede", "rack"],
+  ["PC-MONITOR", "Telecentro Jardim Ângela", "Sala da equipe", "mesa, cabo até o SW1 Fa0/1"],
+  ["AP-TELECENTRO", "Telecentro Jardim Ângela", "Laboratório", "no salão, cabo até o SW1 Fa0/2"],
+  ["LAPTOP-CIDADAO", "Telecentro Jardim Ângela", "Laboratório", "sem fio, no alcance do AP"],
+  ["ISP", "Provedor de Internet (ISP)", "Sala técnica do provedor", "rack"],
+  ["WEB-INTERNET", "Provedor de Internet (ISP)", "Sala técnica do provedor", "rack"],
+];
+
 const aparelhos: DispId[] = ["r1", "sw1", "ap", "laptop", "pc", "srv", "isp", "web"];
 const nomeDe = (id: DispId) => t.dispositivos[id].nome;
 /** O valor de um campo da tabela da interface gráfica, em português e sem nome de função do código. */
@@ -248,15 +261,44 @@ const valorGrafico = (campo: string, valor: string) => (campo === "content" ? "a
     <section class="quebra">
       <h2>2. Topologia</h2>
       <p>O local físico é um telecentro comunitário com três setores isolados: a <b>equipe</b> (monitores e instrutores), o <b>cidadão</b> (Wi-Fi público dos alunos) e os <b>servidores</b> (o servidor do OpenLabs). Um switch separa os setores em VLANs e leva todas pelo trunk 802.1Q até o roteador (router-on-a-stick), que sai para a internet por um roteador do provedor.</p>
+      <h3>2.1 Arquitetura lógica</h3>
+      <p>Como os aparelhos se ligam e em que rede cada um está: a vista <i>Logical</i> do Packet Tracer.</p>
       <figure class="captura">
-        <img src={`${prints}topologia.png`} alt="Topologia montada no Cisco Packet Tracer" />
-        <figcaption>A topologia no Cisco Packet Tracer (<code>{pkt}</code>), com as sub-redes anotadas no canvas.</figcaption>
+        <img src={`${prints}topologia.png`} alt="Arquitetura lógica no Cisco Packet Tracer" />
+        <figcaption>Vista lógica do <code>{pkt}</code>, com as sub-redes e as instruções de teste anotadas no canvas.</figcaption>
       </figure>
       <figure class="topologia">
         <VistaRede film={filme} frame={quadro} label="Diagrama lógico da rede do telecentro" traduzir={em} />
         <figcaption>Diagrama lógico: cada VLAN é uma sala, com a sua sub-rede; o R1 é o gateway das três e o ISP leva à internet simulada.</figcaption>
       </figure>
-      <h3>Aparelhos</h3>
+    </section>
+
+    <section class="quebra">
+      <h3>2.2 Arquitetura física</h3>
+      <p>Onde cada aparelho fica de fato: a vista <i>Physical</i> do Packet Tracer, organizada como o lugar real. São dois prédios em São Paulo. No <b>Telecentro Jardim Ângela</b>, os equipamentos de rede ficam no rack da sala de rede; o PC da equipe fica na sala da equipe; o ponto de acesso e o notebook do aluno ficam no laboratório. O roteador do provedor e o servidor da internet ficam no prédio do <b>provedor</b>, ligados ao telecentro pelo cabo da WAN.</p>
+      <table>
+        <thead><tr><th>Aparelho</th><th>Prédio</th><th>Sala</th><th>Montagem</th></tr></thead>
+        <tbody>{fisico.map(([a, p, s, m]) => <tr><td><code>{a}</code></td><td>{p}</td><td>{s}</td><td>{m}</td></tr>)}</tbody>
+      </table>
+      <figure class="captura">
+        <img src={`${prints}fisica-cidade.png`} alt="Os dois prédios no mapa da cidade" />
+        <figcaption>A cidade: à esquerda o Telecentro Jardim Ângela (a mancha roxa é a cobertura do Wi-Fi), à direita o Provedor de Internet (ISP). A linha entre os dois é o cabo da WAN (R1 G0/1 ↔ ISP G0/0).</figcaption>
+      </figure>
+      <figure class="captura">
+        <img src={`${prints}fisica-planta.png`} alt="A planta do telecentro" />
+        <figcaption>A planta do telecentro. No alto, ao centro, a sala de rede (o armário com o rack); à esquerda, a sala da equipe com o PC-MONITOR. Embaixo, o laboratório, com o AP-TELECENTRO e o LAPTOP-CIDADAO. Os cabos vão das salas até o rack, e o da WAN sai para o provedor.</figcaption>
+      </figure>
+      <div class="racks">
+        <figure class="captura">
+          <img src={`${prints}fisica-rack-telecentro.png`} alt="O rack da sala de rede do telecentro" />
+          <figcaption>Rack do telecentro: régua de energia, R1, SW1 e SRV-OPENLABS, com os cabos de cada porta.</figcaption>
+        </figure>
+        <figure class="captura">
+          <img src={`${prints}fisica-rack-provedor.png`} alt="O rack da sala técnica do provedor" />
+          <figcaption>Rack do provedor: régua de energia, o roteador ISP e o servidor WEB-INTERNET.</figcaption>
+        </figure>
+      </div>
+      <h3 class="nova-pagina">Aparelhos</h3>
       <table>
         <thead><tr><th>Aparelho</th><th>Modelo no Packet Tracer</th><th>Papel</th></tr></thead>
         <tbody>
@@ -371,6 +413,8 @@ const valorGrafico = (campo: string, valor: string) => (campo === "content" ? "a
   .guia thead tr:first-child th { background: color-mix(in oklab, var(--accent) 22%, var(--paper)); font-size: 0.9rem; }
   .guia td:first-child { width: 34%; }
   .guia td:last-child { width: 24%; }
+  .racks { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: start; break-inside: avoid; }
+  .racks .captura img { max-height: 105mm; }
   .topologia { margin: 1rem 0; border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; break-inside: avoid; }
   .topologia figcaption { font-size: 0.75rem; color: var(--ink-muted); padding: 0.3rem 0.6rem; }
   .captura { margin: 0.6rem 0 1.2rem; break-inside: avoid; text-align: center; }
@@ -386,7 +430,7 @@ const valorGrafico = (campo: string, valor: string) => (campo === "content" ? "a
   .onde, .nota { color: var(--ink-muted); font-size: 0.85rem; }
   @page { size: A4; margin: 14mm 14mm 18mm; }
   @media print {
-    .quebra { break-before: page; }
+    .quebra, .nova-pagina { break-before: page; }
     .doc { padding: 0; max-width: none; }
     .capa { min-height: 60vh; }
   }
