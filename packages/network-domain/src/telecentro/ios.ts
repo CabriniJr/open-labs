@@ -1,6 +1,7 @@
 import { curinga, mascara, texto } from "./enderecamento.js";
 import { comandoIos, concessao, dora, excluidos, linhaIos, NOME_DA_ACL, NOME_DA_ACL_VTY, regrasDoCidadao, TTL_INICIAL, type Resultado, type TraducaoNat } from "./protocolos.js";
 import type { DispId, Telecentro } from "./topologia.js";
+import { TEXTOS_PT } from "./ios-pt.js";
 
 /**
  * Os comandos que montam no Cisco Packet Tracer a mesma rede que o lab
@@ -20,7 +21,46 @@ const m = (p: number) => texto(mascara(p));
 /** Senhas de laboratório, para o PDF. Num telecentro de verdade, troque. */
 export const CREDENCIAIS = { usuario: "admin", senha: "Telecentro@2026", enable: "Enable@2026", wifi: "AprenderLivre2026" } as const;
 
-export function configR1(t: Telecentro): string[] {
+/**
+ * A língua dos comentários (`!`) e das descrições de interface. O lab mostra
+ * "en", a língua de origem do site; o .pkt e o PDF de entrega usam "pt". Os
+ * comandos são os mesmos nas duas. Sem acento: o IOS não garante UTF-8.
+ */
+export type Idioma = "en" | "pt";
+
+export interface TextosIos {
+  readonly roteador: string;
+  readonly wan: string;
+  readonly descWan: string;
+  readonly dhcp: string;
+  readonly nat: string;
+  readonly acl: (vlan: number) => string;
+  readonly gerencia: string;
+  readonly descTrunk: string;
+  readonly descIspTelecentro: string;
+  readonly descIspInternet: string;
+  readonly semRota: string;
+}
+
+const TEXTOS: Readonly<Record<Idioma, TextosIos>> = {
+  pt: TEXTOS_PT,
+  en: {
+    roteador: "! --- router-on-a-stick: one physical port, one subinterface per VLAN",
+    wan: "! --- WAN to the ISP",
+    descWan: "WAN to ISP",
+    dhcp: "! --- DHCP: one pool per VLAN, gateway and server excluded",
+    nat: "! --- NAT/PAT: every inside address leaves as R1's WAN address",
+    acl: (vlan: number) => `! --- ACL: what the public Wi-Fi may reach (applied on G0/0.${vlan} in)`,
+    gerencia: "! --- management only by SSH, and only from the staff VLAN",
+    descTrunk: "TRUNK to R1",
+    descIspTelecentro: "link to the telecentro (R1)",
+    descIspInternet: "the simulated internet",
+    semRota: "! no route to 192.168.0.0/16: private addresses are not routed on the internet",
+  },
+};
+
+export function configR1(t: Telecentro, idioma: Idioma = "en"): string[] {
+  const tx = TEXTOS[idioma];
   const { cidadao, equipe, servidores } = t.subredes;
   const ex = excluidos(t);
   const srv = texto(t.dispositivos.srv.ip!);
@@ -57,7 +97,7 @@ export function configR1(t: Telecentro): string[] {
     "crypto key generate rsa general-keys modulus 1024",
     "ip ssh version 2",
     "!",
-    "! --- router-on-a-stick: one physical port, one subinterface per VLAN",
+    tx.roteador,
     "interface GigabitEthernet0/0",
     " no shutdown",
     " exit",
@@ -65,16 +105,16 @@ export function configR1(t: Telecentro): string[] {
     ...subif(cidadao, [` ip access-group ${NOME_DA_ACL} in`]),
     ...subif(servidores),
     "!",
-    "! --- WAN to the ISP",
+    tx.wan,
     "interface GigabitEthernet0/1",
-    " description WAN to ISP",
+    ` description ${tx.descWan}`,
     ` ip address ${texto(t.wan.r1)} ${m(t.wan.prefixo)}`,
     " ip nat outside",
     " no shutdown",
     " exit",
     `ip route 0.0.0.0 0.0.0.0 ${texto(t.wan.isp)}`,
     "!",
-    "! --- DHCP: one pool per VLAN, gateway and server excluded",
+    tx.dhcp,
     faixas(ex.equipe),
     faixas(ex.cidadao),
     faixas(ex.servidores),
@@ -82,16 +122,16 @@ export function configR1(t: Telecentro): string[] {
     ...pool(cidadao),
     ...pool(servidores),
     "!",
-    "! --- NAT/PAT: every inside address leaves as R1's WAN address",
+    tx.nat,
     `access-list 1 permit ${texto(t.base)} ${texto(curinga(24))}`,
     "ip nat inside source list 1 interface GigabitEthernet0/1 overload",
     "!",
-    `! --- ACL: what the public Wi-Fi may reach (applied on G0/0.${cidadao.vlan} in)`,
+    tx.acl(cidadao.vlan),
     `ip access-list extended ${NOME_DA_ACL}`,
     ...regrasDoCidadao(t).map((r) => ` ${comandoIos(r)}`),
     " exit",
     "!",
-    "! --- management only by SSH, and only from the staff VLAN",
+    tx.gerencia,
     `ip access-list standard ${NOME_DA_ACL_VTY}`,
     ` permit ${texto(equipe.rede)} ${texto(curinga(equipe.prefixo))}`,
     " exit",
@@ -109,7 +149,8 @@ export function configR1(t: Telecentro): string[] {
   ];
 }
 
-export function configSw1(t: Telecentro): string[] {
+export function configSw1(t: Telecentro, idioma: Idioma = "en"): string[] {
+  const tx = TEXTOS[idioma];
   const { cidadao, equipe, servidores } = t.subredes;
   const acesso = (porta: string, s: typeof cidadao, quem: string) => [`interface ${porta}`, ` description ${quem}`, " switchport mode access", ` switchport access vlan ${s.vlan}`, " exit"];
   return [
@@ -122,7 +163,7 @@ export function configSw1(t: Telecentro): string[] {
     ...acesso("FastEthernet0/2", cidadao, "AP-TELECENTRO"),
     ...acesso("FastEthernet0/3", servidores, "SRV-OPENLABS"),
     "interface GigabitEthernet0/1",
-    " description TRUNK to R1",
+    ` description ${tx.descTrunk}`,
     " switchport mode trunk",
     ` switchport trunk allowed vlan ${[equipe, cidadao, servidores].map((s) => s.vlan).join(",")}`,
     " exit",
@@ -131,22 +172,23 @@ export function configSw1(t: Telecentro): string[] {
   ];
 }
 
-export function configIsp(t: Telecentro): string[] {
+export function configIsp(t: Telecentro, idioma: Idioma = "en"): string[] {
+  const tx = TEXTOS[idioma];
   return [
     "enable",
     "configure terminal",
     "hostname ISP",
     "interface GigabitEthernet0/0",
-    " description link to the telecentro (R1)",
+    ` description ${tx.descIspTelecentro}`,
     ` ip address ${texto(t.wan.isp)} ${m(t.wan.prefixo)}`,
     " no shutdown",
     " exit",
     "interface GigabitEthernet0/1",
-    " description the simulated internet",
+    ` description ${tx.descIspInternet}`,
     ` ip address ${texto(t.internet.gateway)} ${m(t.internet.prefixo)}`,
     " no shutdown",
     " exit",
-    "! no route to 192.168.0.0/16: private addresses are not routed on the internet",
+    tx.semRota,
     "end",
     "write memory",
   ];
@@ -248,19 +290,6 @@ export function saidaDoCliente(t: Telecentro, r: Resultado): string[] {
   }
   const nome = t.dns.find((d) => d.ip === r.pacote.destino)?.nome ?? destino;
   return r.veredito === "entregue" ? [`Web Browser → http://${nome}`, "the page loads"] : [`Web Browser → http://${nome}`, "Request Timeout"];
-}
-
-/** A página que o servidor do telecentro serve: a Ficha da CitizenTech. */
-export function fichaHtml(t: Telecentro): string {
-  return [
-    "<html><body>",
-    "<h1>OpenLabs no Telecentro</h1>",
-    "<p><b>Cidadao:</b> quem nao tem computador nem internet em casa e quer aprender tecnologia.</p>",
-    "<p><b>Problema:</b> o ensino de tecnologia gratuito e pratico nao chega a periferia.</p>",
-    `<p><b>Rede:</b> 192.168.${t.x}.0/24 em tres VLANs, Wi-Fi ${t.ssid}.</p>`,
-    "<p><b>ODS:</b> 4, 9, 10 e 11.</p>",
-    "</body></html>",
-  ].join("\n");
 }
 
 /** Para o filme e o simulador: os aparelhos que um pedido pode ter como alvo. */

@@ -1,0 +1,145 @@
+R1#show running-config
+Building configuration...
+
+Current configuration : 2549 bytes
+!
+version 15.1
+no service timestamps log datetime msec
+no service timestamps debug datetime msec
+service password-encryption
+!
+hostname R1
+!
+!
+!
+enable secret 5 $1$mERr$SEeq95QRSlh1jqrQEWOf50
+!
+!
+ip dhcp excluded-address 192.168.10.129
+ip dhcp excluded-address 192.168.10.1
+ip dhcp excluded-address 192.168.10.161 192.168.10.162
+!
+ip dhcp pool VLAN10-EQUIPE
+ network 192.168.10.128 255.255.255.224
+ default-router 192.168.10.129
+ dns-server 192.168.10.162
+ip dhcp pool VLAN20-CIDADAO
+ network 192.168.10.0 255.255.255.128
+ default-router 192.168.10.1
+ dns-server 192.168.10.162
+ip dhcp pool VLAN30-SERVIDORES
+ network 192.168.10.160 255.255.255.240
+ default-router 192.168.10.161
+ dns-server 192.168.10.162
+!
+!
+!
+ip cef
+no ipv6 cef
+!
+!
+!
+username admin secret 5 $1$mERr$cMUTL4Zuc5Z2A1Vr3kgNL0
+!
+!
+license udi pid CISCO2911/K9 sn FTX15245A3X-
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+ip ssh version 2
+no ip domain-lookup
+ip domain-name telecentro.local
+!
+!
+spanning-tree mode pvst
+!
+!
+!
+!
+!
+!
+interface GigabitEthernet0/0
+ no ip address
+ duplex auto
+ speed auto
+!
+interface GigabitEthernet0/0.10
+ description VLAN 10 EQUIPE
+ encapsulation dot1Q 10
+ ip address 192.168.10.129 255.255.255.224
+ ip nat inside
+!
+interface GigabitEthernet0/0.20
+ description VLAN 20 CIDADAO
+ encapsulation dot1Q 20
+ ip address 192.168.10.1 255.255.255.128
+ ip nat inside
+ ip access-group CIDADAO-IN in
+!
+interface GigabitEthernet0/0.30
+ description VLAN 30 SERVIDORES
+ encapsulation dot1Q 30
+ ip address 192.168.10.161 255.255.255.240
+ ip nat inside
+!
+interface GigabitEthernet0/1
+ description WAN PARA O ISP
+ ip address 100.64.10.1 255.255.255.252
+ ip nat outside
+ duplex auto
+ speed auto
+!
+interface GigabitEthernet0/2
+ no ip address
+ duplex auto
+ speed auto
+ shutdown
+!
+interface Vlan1
+ no ip address
+ shutdown
+!
+ip nat inside source list 1 interface GigabitEthernet0/1 overload
+ip classless
+ip route 0.0.0.0 0.0.0.0 100.64.10.2
+!
+ip flow-export version 9
+!
+!
+access-list 1 permit 192.168.10.0 0.0.0.255
+ip access-list extended CIDADAO-IN
+ permit udp any any eq bootps
+ deny ip 192.168.10.0 0.0.0.127 192.168.10.128 0.0.0.31
+ permit udp 192.168.10.0 0.0.0.127 host 192.168.10.162 eq domain
+ permit tcp 192.168.10.0 0.0.0.127 host 192.168.10.162 eq www
+ deny ip 192.168.10.0 0.0.0.127 192.168.10.160 0.0.0.15
+ permit ip 192.168.10.0 0.0.0.127 any
+ip access-list standard VTY-EQUIPE
+ permit 192.168.10.128 0.0.0.31
+!
+!
+!
+!
+!
+line con 0
+ password 7 081549420C1A001906190324787B767E
+ login
+!
+line aux 0
+!
+line vty 0 4
+ access-class VTY-EQUIPE in
+ login local
+ transport input ssh
+!
+!
+!
+end

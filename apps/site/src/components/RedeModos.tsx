@@ -9,12 +9,21 @@ import { OQueE, VistaRede, VistaSequencia } from "./RedeVistas";
 const IsoStage = lazy(() => import("@ovh/stage3d").then((m) => ({ default: m.IsoStage })));
 
 /**
- * Os prints da equipe no Cisco Packet Tracer, um por capítulo. Salve a imagem
- * em `apps/site/public/network/packet-tracer/<capítulo>.png` e acrescente o
- * capítulo aqui: o painel passa a mostrar a captura real ao lado da saída
- * esperada. Enquanto não há print, o painel diz qual tirar.
+ * Os prints da equipe no Cisco Packet Tracer, um por capítulo, tirados do
+ * `labs/telecentro-network/entrega/telecentro-equipe-10.pkt`. São os mesmos
+ * arquivos dos testes do PDF de entrega (`apps/site/public/network/packet-tracer/`).
+ * O painel mostra a captura real ao lado da saída esperada; um capítulo sem
+ * print diz qual tirar.
  */
-const PRINTS: Partial<Record<CapituloDaRede, string>> = {};
+const PRINTS: Partial<Record<CapituloDaRede, string>> = {
+  network: "teste-7-vlans.png",
+  dhcp: "teste-2-dhcp.png",
+  dns: "teste-3-dns.png",
+  http: "teste-3-pagina-pelo-nome.png",
+  nat: "teste-4-nat.png",
+  acl: "teste-5-acl.png",
+  ssh: "teste-6-ssh.png",
+};
 
 const ROTULO_DA_CAMADA: Record<(typeof CAMADAS)[number], string> = {
   application: "application",

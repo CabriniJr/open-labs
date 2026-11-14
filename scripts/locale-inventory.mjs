@@ -51,7 +51,8 @@ for (const path of walk(join(root, "apps/site/dist"), (name) => name.endsWith(".
   const scope = file.includes("/docs/") ? "reference" : "ui";
   const walker = doc.createTreeWalker(doc.documentElement, 4);
   for (let node; (node = walker.nextNode());) if (!node.parentElement?.closest("script,style,pre,code,textarea,kbd,samp,[translate=no],[data-no-translate]")) add(node.nodeValue, file, doc.documentElement.lang, scope);
-  for (const el of doc.querySelectorAll("[aria-label],[title],[placeholder],[alt],meta[name=description]")) for (const attr of ["aria-label", "title", "placeholder", "alt", ...(el.matches("meta[name=description]") ? ["content"] : [])]) if (el.hasAttribute(attr)) add(el.getAttribute(attr), file, doc.documentElement.lang, scope);
+  // Attributes follow the same opt-out as text: a delivery document marked translate="no" keeps its alt text out too.
+  for (const el of doc.querySelectorAll("[aria-label],[title],[placeholder],[alt],meta[name=description]")) if (!el.closest("[translate=no],[data-no-translate]")) for (const attr of ["aria-label", "title", "placeholder", "alt", ...(el.matches("meta[name=description]") ? ["content"] : [])]) if (el.hasAttribute(attr)) add(el.getAttribute(attr), file, doc.documentElement.lang, scope);
 }
 const paths = ["apps/site/src", "apps/runner/src", "packages/handbook-format/src", "packages/interactive-core/src", "packages/depth-core/src", "packages/depth-ui/src", "packages/otel-domain/src", "packages/cpu-domain/src", "packages/algo-domain/src", "packages/kubernetes-domain/src", "packages/splunk-domain/src", "packages/network-domain/src", "packages/database-domain/src", "packages/motion/src", "packages/stage3d/src"];
 for (const prefix of paths) for (const path of walk(join(root, prefix), (name) => /\.(?:tsx?|astro)$/u.test(name) && !/\.test\./u.test(name))) {

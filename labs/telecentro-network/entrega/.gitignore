@@ -1,2 +1,4 @@
 # O PDF é gerado (gerar-pdf.mjs) e é da equipe: não vai para o repositório.
 *.pdf
+# Nomes e RMs da equipe também ficam fora (ver gerar-pdf.mjs).
+equipe.json
