@@ -2,12 +2,15 @@
 /**
  * O documento de entrega da disciplina Network Architect Solutions (GS 2026.2),
  * montado a partir do mesmo modelo que desenha o lab: plano de endereçamento,
- * configurações, ACL, testes e saídas esperadas não são copiados à mão — se o
- * número da equipe mudar, o documento muda junto.
+ * configurações e ACL não são copiados à mão — se o número da equipe mudar, o
+ * documento muda junto.
  *
  * Abra no navegador e salve em PDF (Ctrl+P → Salvar como PDF), ou rode
  * `node labs/telecentro-network/entrega/gerar-pdf.mjs` com o site no ar.
- * O que só a equipe pode escrever está marcado em amarelo.
+ * Os prints e as running-configs são capturas reais do
+ * `telecentro-equipe-10.pkt`. Os nomes e RMs dos integrantes não ficam no
+ * repositório: o gerador do PDF os preenche a partir de um arquivo local
+ * (ver `gerar-pdf.mjs`); sem ele, o campo fica marcado em amarelo.
  *
  * locale: skip-file — é um documento em português para o professor; o seletor
  * de idioma não o traduz (`translate="no"` abaixo) e o inventário o ignora.
@@ -19,21 +22,17 @@ import {
   configR1,
   configSw1,
   EQUIPE_PADRAO,
+  ficha,
   filmeDaRede,
-  ipconfig,
   linhaIos,
   NOME_DA_ACL,
+  NOME_DA_ACL_VTY,
   NOME_DA_FICHA,
   NOME_DA_INTERNET,
   O_QUE_E,
   PEDIDOS,
-  percorrer,
   planoDeEnderecamento,
   regrasDoCidadao,
-  saidaDoCliente,
-  showAccessLists,
-  showNat,
-  showVlanBrief,
   telecentro,
   texto,
   type DispId,
@@ -44,39 +43,162 @@ import { VistaRede } from "../../../components/RedeVistas.tsx";
 import { localizeText } from "../../../lib/localize-text";
 import pt from "../../../../locales/pt-BR.json";
 import "../../../components/RedeLab.css";
+import runR1 from "../../../../../../labs/telecentro-network/entrega/running-config-R1.txt?raw";
+import runSw1 from "../../../../../../labs/telecentro-network/entrega/running-config-SW1.txt?raw";
+import runIsp from "../../../../../../labs/telecentro-network/entrega/running-config-ISP.txt?raw";
+import { url } from "../../../lib/urls";
 
 const t = telecentro(EQUIPE_PADRAO);
+const { equipe, cidadao, servidores } = t.subredes;
+const prints = `${url()}network/packet-tracer/`;
+const nomeDaCitizenTech = ficha(t)[0][1];
+const ip = (n: number) => texto(n);
+const srv = ip(t.dispositivos.srv.ip!);
+const cidr = (s: typeof equipe) => `${ip(s.rede)}/${s.prefixo}`;
+const pkt = `telecentro-equipe-${t.x}.pkt`;
+
+/**
+ * A running-config como o aparelho mostrou, só mais curta: as portas de acesso
+ * vazias do switch (Fa0/4–Fa0/24) saem e cada sequência de "!" vira um "!".
+ */
+const trecho = (run: string) => {
+  const vazia = /^interface FastEthernet0\/([4-9]|1\d|2[0-4])$/u;
+  const saida: string[] = [];
+  for (const l of run.replace(/\r/gu, "").trimEnd().split("\n")) {
+    if (vazia.test(l)) continue;
+    if (l === "!" && saida.at(-1) === "!") continue;
+    saida.push(l);
+  }
+  return saida.join("\n");
+};
 const em = (s: string) => localizeText(s, pt as Record<string, string>);
 const plano = planoDeEnderecamento(t);
 const regras = regrasDoCidadao(t);
+const linhaDoDeny = regras.find((r) => r.acao === "deny")!.seq;
 
-// A topologia é a própria vista Rede, parada depois do DHCP, com a rede inteira no quadro.
+// O diagrama lógico é a própria vista Rede do lab, parada depois do DHCP, com a rede inteira no quadro.
 const filme = filmeDaRede();
 const depoisDoDhcp = filme.chapters.find((c) => c.id === "dhcp")!.end;
 const quadro = { ...frameAt(filme, depoisDoDhcp), camera: frameAt(filme, 0).camera };
 
-const r = {
-  pingVlans: percorrer(t, "pc", "srv", "ping"),
-  dns: percorrer(t, "laptop", "srv", "dns"),
-  http: percorrer(t, "laptop", "srv", "http"),
-  nat: percorrer(t, "laptop", "web", "http"),
-  acl: percorrer(t, "laptop", "pc", "ping"),
-  sshEquipe: percorrer(t, "pc", "r1", "ssh"),
-  sshWifi: percorrer(t, "laptop", "r1", "ssh"),
-};
+const senhas: [string, string, string][] = [
+  ["R1 — console", `senha ${CREDENCIAIS.senha}`, "pedida ao abrir a aba CLI do R1"],
+  ["R1 e SW1 — enable", `enable secret ${CREDENCIAIS.enable}`, "para entrar no modo privilegiado"],
+  ["R1 — SSH", `usuário ${CREDENCIAIS.usuario}, senha ${CREDENCIAIS.senha}`, `só a partir da VLAN ${equipe.vlan} (PC-MONITOR)`],
+  ["Wi-Fi", `${t.ssid}, WPA2-PSK/AES, senha ${CREDENCIAIS.wifi}`, "AP-TELECENTRO e LAPTOP-CIDADAO"],
+];
 
-const testes = [
-  { n: 1, titulo: "Ping entre VLANs", exigido: true, objetivo: `O PC da equipe (VLAN ${t.subredes.equipe.vlan}) alcança o servidor (VLAN ${t.subredes.servidores.vlan}) pelo roteador: o TTL de resposta cai de 128 para 127 porque o pacote atravessou o R1.`, onde: "PC-MONITOR · Desktop → Command Prompt", saida: saidaDoCliente(t, r.pingVlans), print: "teste-1-ping-entre-vlans" },
-  { n: 2, titulo: "PC recebendo IP por DHCP", exigido: true, objetivo: `O notebook entra no Wi-Fi sem endereço e recebe ${texto(r.acl.pacote.origem)} do pool da VLAN ${t.subredes.cidadao.vlan}, com gateway e DNS.`, onde: "LAPTOP-CIDADAO · Desktop → Command Prompt", saida: ipconfig(t, "laptop"), print: "teste-2-dhcp" },
-  { n: 3, titulo: "Página abrindo pelo nome", exigido: true, objetivo: `O DNS do servidor traduz ${NOME_DA_FICHA} para ${texto(t.dispositivos.srv.ip!)} e o navegador abre a página da Ficha (HTTP). A ACL permite exatamente isso ao Wi-Fi.`, onde: "LAPTOP-CIDADAO · Desktop → Web Browser", saida: [...saidaDoCliente(t, r.dns), "", ...saidaDoCliente(t, r.http)], print: "teste-3-pagina-pelo-nome" },
-  { n: 4, titulo: "show ip nat translations", exigido: true, objetivo: `Depois de o notebook abrir ${NOME_DA_INTERNET}, o R1 mostra a tradução do endereço privado para o público (PAT).`, onde: "R1 · CLI", saida: showNat([r.nat.traducao!]), print: "teste-4-nat" },
-  { n: 5, titulo: "Acesso barrado pela ACL", exigido: true, objetivo: `O notebook do Wi-Fi tenta pingar o PC da equipe e é barrado no R1 pela ${NOME_DA_ACL}, linha ${r.acl.decisao?.regra?.seq}.`, onde: "LAPTOP-CIDADAO · Desktop → Command Prompt, depois R1 · CLI", saida: [...saidaDoCliente(t, r.acl), "", ...showAccessLists(t, [r.dns, r.http, r.nat, r.acl])], print: "teste-5-acl" },
-  { n: 6, titulo: "Roteador só por SSH, só da equipe", exigido: false, objetivo: "Do PC da equipe o SSH pede usuário e senha; do Wi-Fi a conexão é recusada pelas linhas vty.", onde: "PC-MONITOR e LAPTOP-CIDADAO · Command Prompt", saida: [...saidaDoCliente(t, r.sshEquipe), "", ...saidaDoCliente(t, r.sshWifi)], print: "teste-6-ssh" },
-  { n: 7, titulo: "VLANs no switch", exigido: false, objetivo: "As três VLANs existem e cada porta de acesso está na sua.", onde: "SW1 · CLI", saida: ["SW1#show vlan brief", ...showVlanBrief(t)], print: "teste-7-vlans" },
+/** Cada requisito do slide 36, agrupado pelo critério de nota, com o que o atende e onde está a prova. */
+const requisitos: { criterio: string; itens: [string, string, string][] }[] = [
+  {
+    criterio: "Arquitetura e endereçamento (3 pontos)",
+    itens: [
+      [`Faixa 192.168.${t.x}.0/24 em pelo menos 3 sub-redes (Equipe, Cidadão, Servidores)`, `VLSM: CIDADAO ${cidr(cidadao)}, EQUIPE ${cidr(equipe)}, SERVIDORES ${cidr(servidores)}`, "Seção 3"],
+      ["Uma VLAN por setor", `VLAN ${equipe.vlan} EQUIPE, ${cidadao.vlan} CIDADAO, ${servidores.vlan} SERVIDORES no SW1`, "Teste 7"],
+      ["Trunk 802.1Q e router-on-a-stick", `SW1 Gi0/1 em trunk; R1 G0/0.${equipe.vlan}, .${cidadao.vlan} e .${servidores.vlan} com encapsulation dot1Q`, "Teste 7 e Teste 1; running-config do R1 (seção 4)"],
+    ],
+  },
+  {
+    criterio: "Configuração (3 pontos)",
+    itens: [
+      ["DHCP com um pool por VLAN, excluindo gateway e servidor", `3 pools no R1; excluded-address ${ip(cidadao.gateway)}, ${ip(equipe.gateway)} e ${ip(servidores.gateway)}–${srv}`, "Teste 2; running-config do R1"],
+      ["NAT/PAT até um roteador provedor, com servidor externo simulando a internet", `overload na G0/1 do R1 (${ip(t.wan.r1)}); ISP e WEB-INTERNET ${ip(t.internet.web)}`, "Teste 4"],
+      ["Servidor da solução com DNS e HTTP (página com a Ficha)", `SRV-OPENLABS ${srv}: DNS ${NOME_DA_FICHA} e HTTP com a Ficha`, "Teste 3 e seção 1"],
+    ],
+  },
+  {
+    criterio: "Segurança (2 pontos)",
+    itens: [
+      ["ACL estendida: o Wi-Fi acessa só HTTP e DNS do servidor e a internet, nada da VLAN Equipe", `${NOME_DA_ACL} na entrada da G0/0.${cidadao.vlan}`, "Teste 5 (barrado), Testes 3 e 4 (permitido); seção 5"],
+      ["Roteador só por SSH, com senhas e enable secret", `transport input ssh, login local, access-class ${NOME_DA_ACL_VTY}, enable secret, senha no console`, "Teste 6; running-config do R1"],
+      ["Wi-Fi com WPA2", `${t.ssid} com WPA2-PSK e AES`, "Teste 8"],
+    ],
+  },
+  {
+    criterio: "Testes (2 pontos)",
+    itens: [
+      ["Ping entre VLANs", `PC-MONITOR (VLAN ${equipe.vlan}) → servidor (VLAN ${servidores.vlan})`, "Teste 1"],
+      ["PC recebendo IP por DHCP", "PC-MONITOR e LAPTOP-CIDADAO", "Teste 2"],
+      ["Página abrindo pelo nome", `http://${NOME_DA_FICHA}`, "Teste 3"],
+      ["show ip nat translations", "no R1, depois do tráfego para a internet", "Teste 4"],
+      ["Um acesso barrado pela ACL", "Wi-Fi → PC da equipe", "Teste 5"],
+    ],
+  },
+];
+
+interface Teste {
+  readonly n: number;
+  readonly titulo: string;
+  readonly exigido: boolean;
+  readonly prova: string;
+  readonly comandos: readonly string[];
+  readonly resultado: string;
+  readonly prints: readonly (readonly [arquivo: string, legenda: string])[];
+}
+
+const testes: Teste[] = [
+  {
+    n: 1, titulo: "Ping entre VLANs", exigido: true,
+    prova: `O PC da equipe (VLAN ${equipe.vlan}) alcança o servidor (VLAN ${servidores.vlan}) passando pelo roteador.`,
+    comandos: [`PC-MONITOR> ping ${srv}`],
+    resultado: "Respostas com TTL=127: o pacote saiu com 128 e perdeu 1 ao atravessar o R1, a prova de que houve roteamento entre VLANs. A primeira tentativa se perde enquanto o ARP é resolvido, o que é normal.",
+    prints: [["teste-1-ping-entre-vlans", "PC-MONITOR pinga o servidor da VLAN 30."]],
+  },
+  {
+    n: 2, titulo: "PC recebendo IP por DHCP", exigido: true,
+    prova: "Os hosts não têm endereço fixo: cada um recebe IP, máscara, gateway e DNS do pool da sua VLAN, no R1.",
+    comandos: ["PC-MONITOR> ipconfig /all", "LAPTOP-CIDADAO> ipconfig /all"],
+    resultado: `PC-MONITOR recebe ${ip(equipe.gateway + 1)} (pool VLAN ${equipe.vlan}); LAPTOP-CIDADAO, no Wi-Fi, recebe ${ip(cidadao.gateway + 1)} (pool VLAN ${cidadao.vlan}). Nos dois, "DHCP Servers" é o gateway da VLAN e o DNS é ${srv}.`,
+    prints: [["teste-2-dhcp-pc", "PC-MONITOR: endereço da VLAN 10 recebido por DHCP."], ["teste-2-dhcp", "LAPTOP-CIDADAO, pelo Wi-Fi com WPA2: endereço da VLAN 20 recebido por DHCP."]],
+  },
+  {
+    n: 3, titulo: "Página abrindo pelo nome", exigido: true,
+    prova: `O DNS do servidor traduz o nome e o navegador abre a página da Ficha (HTTP). A ACL permite exatamente isso ao Wi-Fi.`,
+    comandos: [`LAPTOP-CIDADAO> nslookup ${NOME_DA_FICHA}`, `LAPTOP-CIDADAO · Web Browser: http://${NOME_DA_FICHA}`],
+    resultado: `O nome resolve para ${srv} e a página com a Ficha da CitizenTech abre.`,
+    prints: [["teste-3-dns", "nslookup: o servidor DNS responde o endereço do nome."], ["teste-3-pagina-pelo-nome", "O navegador do notebook abre a Ficha pelo nome."]],
+  },
+  {
+    n: 4, titulo: "show ip nat translations", exigido: true,
+    prova: "O tráfego de dentro sai para a internet com o endereço público do R1 (PAT).",
+    comandos: [`LAPTOP-CIDADAO · Web Browser: http://${NOME_DA_INTERNET}`, `PC-MONITOR> ping ${ip(t.internet.web)}`, "R1# show ip nat translations"],
+    resultado: `Cada conversa aparece com o endereço interno (Inside local, 192.168.${t.x}.x) traduzido para ${ip(t.wan.r1)} (Inside global): o TCP do notebook e os pings do PC.`,
+    prints: [["teste-4-nat-navegador", "O notebook abre o site da internet simulada, atrás do ISP."], ["teste-4-nat", "No R1: as traduções do PAT."]],
+  },
+  {
+    n: 5, titulo: "Acesso barrado pela ACL", exigido: true,
+    prova: `O Wi-Fi do cidadão não alcança a VLAN da equipe nem o servidor fora de HTTP e DNS.`,
+    comandos: [`LAPTOP-CIDADAO> ping ${ip(equipe.gateway + 1)}`, `LAPTOP-CIDADAO> ping ${srv}`, "R1# show access-lists"],
+    resultado: `Os dois pings são barrados no R1 ("Destination host unreachable" vindo de ${ip(cidadao.gateway)}). Nos contadores da ${NOME_DA_ACL}, a linha ${linhaDoDeny} (deny para a VLAN Equipe) e a linha 50 (deny para os servidores) registram os pacotes barrados; as linhas 30 e 40 (DNS e HTTP) e 60 (internet), os permitidos.`,
+    prints: [["teste-5-acl", "O notebook do Wi-Fi é barrado ao pingar o PC da equipe e o servidor."], ["teste-5-acl-contadores", "Os contadores de cada linha da ACL no R1."]],
+  },
+  {
+    n: 6, titulo: "Roteador só por SSH, só da equipe", exigido: false,
+    prova: "A gerência do roteador é só por SSH, com usuário e senha, e só a partir da VLAN da equipe.",
+    comandos: [`PC-MONITOR> ssh -l ${CREDENCIAIS.usuario} ${ip(equipe.gateway)}`, `PC-MONITOR> telnet ${ip(equipe.gateway)}`, `LAPTOP-CIDADAO> ssh -l ${CREDENCIAIS.usuario} ${ip(cidadao.gateway)}`],
+    resultado: "Do PC da equipe, o SSH pede a senha e entra (SSH versão 2) e o telnet é derrubado. Do Wi-Fi, a conexão SSH é recusada.",
+    prints: [["teste-6-ssh", "PC-MONITOR: SSH entra; telnet é recusado."], ["teste-6-ssh-wifi", "LAPTOP-CIDADAO: SSH recusado."]],
+  },
+  {
+    n: 7, titulo: "VLANs e trunk no switch", exigido: false,
+    prova: "Cada setor tem a sua VLAN e o trunk leva as três até o roteador.",
+    comandos: ["SW1> show vlan brief", "SW1> show interfaces trunk"],
+    resultado: `VLANs ${equipe.vlan}, ${cidadao.vlan} e ${servidores.vlan} com as portas Fa0/1, Fa0/2 e Fa0/3; Gi0/1 em trunk 802.1Q com as VLANs ${equipe.vlan},${cidadao.vlan},${servidores.vlan}.`,
+    prints: [["teste-7-vlans", "show vlan brief e show interfaces trunk no SW1."]],
+  },
+  {
+    n: 8, titulo: "Wi-Fi com WPA2", exigido: false,
+    prova: "O ponto de acesso exige WPA2 e o notebook se associa com a mesma senha.",
+    comandos: ["AP-TELECENTRO · Config → Port 1", "LAPTOP-CIDADAO · Config → Wireless0"],
+    resultado: `SSID ${t.ssid}, autenticação WPA2-PSK e criptografia AES nos dois; o notebook está associado e com o endereço do DHCP.`,
+    prints: [["teste-8-wpa2-ap", "AP-TELECENTRO: WPA2-PSK com AES."], ["teste-8-wpa2-notebook", "LAPTOP-CIDADAO: o mesmo SSID e WPA2-PSK, com 192.168.10.2 por DHCP."]],
+  },
 ];
 
 const aparelhos: DispId[] = ["r1", "sw1", "ap", "laptop", "pc", "srv", "isp", "web"];
 const nomeDe = (id: DispId) => t.dispositivos[id].nome;
+/** O valor de um campo da tabela da interface gráfica, em português e sem nome de função do código. */
+const valorGrafico = (campo: string, valor: string) => (campo === "content" ? "a página com a Ficha da CitizenTech (seção 1)" : em(valor).replace(/^A record → /u, "registro A → "));
 ---
 
 <Base domain="networks" lang="pt-BR" title="Network Architect Solutions — entrega GS 2026.2" description="Documento de entrega da rede do telecentro: ficha, topologia, endereçamento, configuração e testes.">
@@ -87,41 +209,58 @@ const nomeDe = (id: DispId) => t.dispositivos[id].nome;
       <h1>Network Architect Solutions</h1>
       <p class="sub">A rede do telecentro comunitário</p>
       <dl class="ficha-curta">
-        <div><dt>CitizenTech</dt><dd><mark>[Nome da CitizenTech]</mark></dd></div>
-        <div><dt>Equipe</dt><dd>Nº {EQUIPE_PADRAO} · faixa 192.168.{t.x}.0/24 <span class="nota">(sem numeração oficial das equipes; número escolhido pela equipe)</span></dd></div>
-        <div><dt>Integrantes</dt><dd><mark>[Nome completo — RM] × até 5</mark></dd></div>
-        <div><dt>Arquivo da rede</dt><dd><code>telecentro-equipe-{t.x}.pkt</code></dd></div>
+        <div><dt>CitizenTech</dt><dd>{nomeDaCitizenTech}</dd></div>
+        <div><dt>Equipe</dt><dd><span data-equipe-nome></span>Nº {EQUIPE_PADRAO} · faixa 192.168.{t.x}.0/24 <span class="nota">(sem numeração oficial das equipes; número escolhido pela equipe)</span></dd></div>
+        <div><dt>Integrantes</dt><dd data-equipe-integrantes><mark>[Nome completo — RM] × até 5</mark></dd></div>
+        <div><dt>Arquivos entregues</dt><dd><code>{pkt}</code> (Cisco Packet Tracer 9.0.1) e este PDF</dd></div>
       </dl>
     </section>
 
-    <section>
+    <section class="quebra">
+      <h2>Guia de correção</h2>
+      <p>Cada requisito do enunciado, o que na rede o atende e onde está a prova neste documento. Todos os prints foram tirados do próprio <code>{pkt}</code> entregue.</p>
+      {requisitos.map((g) => (
+        <table class="guia">
+          <thead><tr><th colspan="3">{g.criterio}</th></tr><tr><th>Requisito</th><th>Como a rede atende</th><th>Prova</th></tr></thead>
+          <tbody>{g.itens.map(([req, como, onde]) => <tr><td>{req}</td><td>{como}</td><td><b>{onde}</b></td></tr>)}</tbody>
+        </table>
+      ))}
+      <h3>Para testar no arquivo</h3>
+      <ul>
+        <li>Ao abrir o <code>.pkt</code>, espere cerca de 30 segundos (ou clique em <i>Fast Forward Time</i>) para o switch convergir e os hosts receberem endereço por DHCP: PC-MONITOR <code>{ip(equipe.gateway + 1)}</code>, LAPTOP-CIDADAO <code>{ip(cidadao.gateway + 1)}</code>.</li>
+        <li>Os comandos de cada teste estão na seção 6. Os mesmos dados estão numa nota no canvas do <code>.pkt</code>.</li>
+      </ul>
+      <table>
+        <thead><tr><th>Acesso</th><th>Credencial</th><th>Observação</th></tr></thead>
+        <tbody>{senhas.map(([a, c, o]) => <tr><td>{a}</td><td><code>{c}</code></td><td>{o}</td></tr>)}</tbody>
+      </table>
+      <p class="nota">Senhas de laboratório, para a correção. Numa rede real, todas seriam trocadas.</p>
+    </section>
+
+    <section class="quebra">
       <h2>1. Ficha da CitizenTech</h2>
       <table class="ficha">
-        <tr><th>Nome da CitizenTech</th><td><mark>[Nome]</mark></td></tr>
-        <tr><th>Cidade e bairro</th><td><mark>[Cidade — bairro]</mark></td></tr>
-        <tr><th>Cidadão beneficiado</th><td>Quem não tem computador nem internet em casa e quer aprender tecnologia: estudantes de escola pública, jovens e adultos da comunidade. <mark>[ajustar com a pessoa entrevistada]</mark></td></tr>
-        <tr><th>Problema, em uma frase</th><td>O ensino de tecnologia gratuito e prático não chega a quem mais precisa dele. <mark>[confirmar a frase da equipe]</mark></td></tr>
-        <tr><th>Como funciona</th><td>Um telecentro comunitário oferece Wi-Fi gratuito e computadores; o OpenLabs roda no servidor local, com laboratórios interativos que funcionam mesmo sem internet.</td></tr>
-        <tr><th>O que cada parte faz</th><td>Esta disciplina entrega a rede do telecentro: setores isolados, Wi-Fi público protegido, servidor do OpenLabs e saída para a internet. <mark>[uma linha por disciplina]</mark></td></tr>
-        <tr><th>Link do repositório</th><td><mark>[link do GitHub]</mark></td></tr>
-        <tr><th>Indicador de impacto</th><td><mark>[ex.: alunos atendidos por mês; horas de laboratório usadas]</mark></td></tr>
-        <tr><th>ODS conectados</th><td>ODS 4 (educação de qualidade), ODS 9 (inovação e infraestrutura), ODS 10 (redução das desigualdades), ODS 11 (cidades e comunidades sustentáveis).</td></tr>
+        {ficha(t).map(([campo, valor]) => <tr><th>{campo}</th><td>{valor}</td></tr>)}
       </table>
+      <p class="nota">A mesma ficha é a página <code>index.html</code> do servidor SRV-OPENLABS no <code>.pkt</code> (teste 3).</p>
     </section>
 
     <section class="quebra">
       <h2>2. Topologia</h2>
       <p>O local físico é um telecentro comunitário com três setores isolados: a <b>equipe</b> (monitores e instrutores), o <b>cidadão</b> (Wi-Fi público dos alunos) e os <b>servidores</b> (o servidor do OpenLabs). Um switch separa os setores em VLANs e leva todas pelo trunk 802.1Q até o roteador (router-on-a-stick), que sai para a internet por um roteador do provedor.</p>
-      <figure class="topologia">
-        <VistaRede film={filme} frame={quadro} label="Topologia da rede do telecentro" />
-        <figcaption>Topologia lógica, gerada pelo mesmo modelo que produz os comandos deste documento.</figcaption>
+      <figure class="captura">
+        <img src={`${prints}topologia.png`} alt="Topologia montada no Cisco Packet Tracer" />
+        <figcaption>A topologia no Cisco Packet Tracer (<code>{pkt}</code>), com as sub-redes anotadas no canvas.</figcaption>
       </figure>
-      <div class="print"><mark>[Print da topologia montada no Packet Tracer]</mark></div>
+      <figure class="topologia">
+        <VistaRede film={filme} frame={quadro} label="Diagrama lógico da rede do telecentro" traduzir={em} />
+        <figcaption>Diagrama lógico: cada VLAN é uma sala, com a sua sub-rede; o R1 é o gateway das três e o ISP leva à internet simulada.</figcaption>
+      </figure>
       <h3>Aparelhos</h3>
       <table>
         <thead><tr><th>Aparelho</th><th>Modelo no Packet Tracer</th><th>Papel</th></tr></thead>
         <tbody>
-          {aparelhos.map((id) => <tr><td><code>{nomeDe(id)}</code></td><td>{t.dispositivos[id].modelo}</td><td>{em(O_QUE_E[id].papel)} — {em(O_QUE_E[id].aqui)}</td></tr>)}
+          {aparelhos.map((id) => <tr><td><code>{nomeDe(id)}</code></td><td>{em(t.dispositivos[id].modelo)}</td><td>{em(O_QUE_E[id].papel)} — {em(O_QUE_E[id].aqui)}</td></tr>)}
         </tbody>
       </table>
       <h3>Cabos</h3>
@@ -138,32 +277,38 @@ const nomeDe = (id: DispId) => t.dispositivos[id].nome;
       <p>A faixa 192.168.{t.x}.0/24 foi dividida por VLSM, da maior necessidade para a menor, cada sub-rede alinhada ao seu tamanho: {PEDIDOS.map((p) => `${p.nome} precisa de ${p.hosts} hosts`).join("; ")}. O primeiro endereço útil de cada sub-rede é o gateway (subinterface do R1).</p>
       <table>
         <thead><tr><th>Rede</th><th>VLAN</th><th>CIDR</th><th>Máscara</th><th>Gateway</th><th>Faixa utilizável</th><th>Broadcast</th></tr></thead>
-        <tbody>{plano.map((l) => <tr><td>{em(l.rede)}</td><td>{l.vlan}</td><td><code>{l.cidr}</code></td><td><code>{l.mascara}</code></td><td><code>{l.gateway}</code></td><td><code>{em(l.faixa)}</code></td><td><code>{l.broadcast}</code></td></tr>)}</tbody>
+        <tbody>{plano.map((l) => <tr><td>{em(l.rede)}</td><td>{l.vlan}</td><td><code>{l.cidr}</code></td><td><code>{l.mascara}</code></td><td><code>{em(l.gateway)}</code></td><td><code>{em(l.faixa)}</code></td><td><code>{l.broadcast}</code></td></tr>)}</tbody>
       </table>
-      <p>Endereços fixos: servidor do OpenLabs <code>{texto(t.dispositivos.srv.ip!)}</code>; R1 na WAN <code>{texto(t.wan.r1)}</code>; provedor <code>{texto(t.wan.isp)}</code>; servidor externo <code>{texto(t.internet.web)}</code>. Os hosts recebem endereço por DHCP, com um pool por VLAN, excluindo o gateway e o servidor.</p>
+      <p>Endereços fixos: servidor do OpenLabs <code>{srv}</code>; R1 na WAN <code>{ip(t.wan.r1)}</code>; provedor <code>{ip(t.wan.isp)}</code>; servidor externo <code>{ip(t.internet.web)}</code>. Os hosts recebem endereço por DHCP, com um pool por VLAN, excluindo o gateway e o servidor.</p>
     </section>
 
     <section class="quebra">
       <h2>4. Configuração</h2>
-      <p>Trechos de configuração de cada equipamento. <mark>Anexar também o print do <code>show running-config</code> do R1 e do SW1.</mark></p>
+      <p>Os comandos digitados em cada equipamento, na ordem, e, no fim da seção, o <code>show running-config</code> que o R1, o SW1 e o ISP mostram no <code>.pkt</code>. As linhas que começam com <code>!</code> são comentários.</p>
       <h3>R1 — roteador do telecentro</h3>
-      <pre>{configR1(t).join("\n")}</pre>
+      <pre class="cfg">{configR1(t, "pt").join("\n")}</pre>
       <h3>SW1 — switch</h3>
-      <pre>{configSw1(t).join("\n")}</pre>
+      <pre class="cfg">{configSw1(t, "pt").join("\n")}</pre>
       <h3>ISP — roteador do provedor</h3>
-      <pre>{configIsp(t).join("\n")}</pre>
+      <pre class="cfg">{configIsp(t, "pt").join("\n")}</pre>
       <h3>Servidor, ponto de acesso e hosts (interface gráfica)</h3>
+      <p>Os menus têm o nome que o Packet Tracer mostra.</p>
       <table>
         <thead><tr><th>Aparelho</th><th>Onde</th><th>Valores</th></tr></thead>
-        <tbody>{ajustesGraficos(t).map((a) => <tr><td><code>{a.aparelho}</code></td><td>{a.onde}</td><td>{a.campos.map(([k, v]) => <div><code>{k}</code>: {v}</div>)}</td></tr>)}</tbody>
+        <tbody>{ajustesGraficos(t).map((a) => <tr><td><code>{a.aparelho}</code></td><td>{em(a.onde)}</td><td>{a.campos.map(([k, v]) => <div><code>{k === "content" ? "index.html" : k}</code>: {valorGrafico(k, v)}</div>)}</td></tr>)}</tbody>
       </table>
-      <div class="print"><mark>[Print do show running-config do R1]</mark></div>
-      <div class="print"><mark>[Print do show running-config do SW1]</mark></div>
+      <h3>show running-config do R1</h3>
+      <pre class="run">{trecho(runR1)}</pre>
+      <h3>show running-config do SW1</h3>
+      <pre class="run">{trecho(runSw1)}</pre>
+      <h3>show running-config do ISP</h3>
+      <pre class="run">{trecho(runIsp)}</pre>
+      <p class="nota">Saídas copiadas do console de cada aparelho. Para encurtar, as portas vazias Fa0/4–Fa0/24 do SW1 foram omitidas e cada sequência de linhas <code>!</code> virou uma só. As senhas aparecem cifradas (<code>secret 5</code> e <code>password 7</code>).</p>
     </section>
 
     <section class="quebra">
       <h2>5. Segurança</h2>
-      <h3>ACL estendida {NOME_DA_ACL} (entrada da G0/0.{t.subredes.cidadao.vlan})</h3>
+      <h3>ACL estendida {NOME_DA_ACL} (entrada da G0/0.{cidadao.vlan})</h3>
       <p>Lida de cima para baixo; a primeira linha que casa decide, e o que não casar com nenhuma é negado pelo deny implícito. O Wi-Fi do cidadão acessa só o DNS e o HTTP do servidor e a internet, nada da VLAN da equipe.</p>
       <table>
         <thead><tr><th>Linha</th><th>Regra</th><th>Por quê</th></tr></thead>
@@ -172,25 +317,31 @@ const nomeDe = (id: DispId) => t.dispositivos[id].nome;
       <h3>Gerência do roteador</h3>
       <ul>
         <li>Acesso remoto só por SSH versão 2 (<code>transport input ssh</code>), com usuário local (<code>login local</code>) e chave RSA de 1024 bits.</li>
-        <li>Só a VLAN da equipe pode abrir SSH (<code>access-class VTY-EQUIPE</code>); o Wi-Fi é recusado.</li>
+        <li>Só a VLAN da equipe pode abrir SSH (<code>access-class {NOME_DA_ACL_VTY}</code>); o Wi-Fi é recusado.</li>
         <li><code>enable secret</code>, senha no console e <code>service password-encryption</code>.</li>
       </ul>
       <h3>Wi-Fi</h3>
-      <p>SSID <code>{t.ssid}</code> com WPA2-PSK e criptografia AES. A rede sem fio pertence à VLAN {t.subredes.cidadao.vlan} (cidadão).</p>
-      <p class="nota">Senhas de laboratório usadas no arquivo: usuário <code>{CREDENCIAIS.usuario}</code>; num ambiente real, todas seriam trocadas.</p>
+      <p>SSID <code>{t.ssid}</code> com WPA2-PSK e criptografia AES, no ponto de acesso e no notebook (teste 8). A rede sem fio pertence à VLAN {cidadao.vlan} (cidadão).</p>
     </section>
 
     <section class="quebra">
       <h2>6. Testes</h2>
-      <p>Os cinco testes pedidos pelo enunciado (1 a 5) e dois complementares. Para cada um: o objetivo, onde executar, a saída esperada e o print da equipe.</p>
+      <p>Os testes 1 a 5 são os cinco pedidos pelo enunciado; 6 a 8 provam os demais requisitos de segurança e de VLAN. Cada um traz o que prova, o que foi digitado, o resultado e os prints do <code>.pkt</code>.</p>
       {
         testes.map((x) => (
           <article class="teste">
             <h3>Teste {x.n} — {x.titulo}{x.exigido ? "" : " (complementar)"}</h3>
-            <p>{x.objetivo}</p>
-            <p class="onde">Onde: {x.onde}</p>
-            <pre>{x.saida.join("\n")}</pre>
-            <div class="print"><mark>[Print: {x.print}.png]</mark></div>
+            <p><b>O que prova:</b> {x.prova}</p>
+            <pre class="cmd">{x.comandos.join("\n")}</pre>
+            <p><b>Resultado:</b> {x.resultado}</p>
+            <div class="prints" data-n={x.prints.length}>
+              {x.prints.map(([arquivo, legenda]) => (
+                <figure class="captura">
+                  <img src={`${prints}${arquivo}.png`} alt={legenda} loading="lazy" />
+                  <figcaption>{legenda}</figcaption>
+                </figure>
+              ))}
+            </div>
           </article>
         ))
       }
@@ -216,12 +367,24 @@ const nomeDe = (id: DispId) => t.dispositivos[id].nome;
   .ficha-curta dt { color: var(--ink-muted); }
   .ficha-curta dd { margin: 0; }
   .ficha th { width: 13rem; }
+  .guia { break-inside: avoid; }
+  .guia thead tr:first-child th { background: color-mix(in oklab, var(--accent) 22%, var(--paper)); font-size: 0.9rem; }
+  .guia td:first-child { width: 34%; }
+  .guia td:last-child { width: 24%; }
   .topologia { margin: 1rem 0; border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; break-inside: avoid; }
   .topologia figcaption { font-size: 0.75rem; color: var(--ink-muted); padding: 0.3rem 0.6rem; }
-  .print { border: 2px dashed var(--rule); border-radius: 8px; padding: 2.2rem 1rem; text-align: center; margin: 0.6rem 0 1rem; break-inside: avoid; }
-  .teste { break-inside: avoid; }
+  .captura { margin: 0.6rem 0 1.2rem; break-inside: avoid; text-align: center; }
+  .captura img { max-width: 100%; max-height: 92mm; border: 1px solid var(--rule); border-radius: 6px; }
+  .captura figcaption { font-size: 0.78rem; color: var(--ink-muted); margin-top: 0.3rem; }
+  .teste .captura img { max-height: 128mm; }
+  .doc pre.run { font-size: 0.66rem; line-height: 1.3; break-inside: auto; }
+  .doc pre.cfg { break-inside: auto; }
+  .doc pre.cmd { font-size: 0.78rem; }
+  .teste { margin-bottom: 1.6rem; }
+  .teste + .teste { break-before: page; }
+  .teste h3, .teste p, .teste pre { break-after: avoid; }
   .onde, .nota { color: var(--ink-muted); font-size: 0.85rem; }
-  @page { size: A4; margin: 14mm 14mm 16mm; }
+  @page { size: A4; margin: 14mm 14mm 18mm; }
   @media print {
     .quebra { break-before: page; }
     .doc { padding: 0; max-width: none; }

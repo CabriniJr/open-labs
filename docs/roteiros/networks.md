@@ -47,8 +47,8 @@ tecnologia. O lugar é o pretexto; o assunto é **como os protocolos funcionam**
 - **Modelo.** `network-domain/telecentro/`: `vlsm` calcula as sub-redes por necessidade; `percorrer(origem, alvo, serviço, {acl, nat})` devolve os saltos com o quadro (MACs, etiqueta 802.1Q, IPs, TTL, portas), o veredito e a linha da ACL que decidiu; `dora` são as quatro mensagens do DHCP; `ios.ts` gera a configuração de R1, SW1 e ISP e as saídas esperadas.
 - **Showcase.** `filmeDaRede`: sete capítulos — a rede (VLANs e trunk), DHCP, DNS, HTTP, NAT, ACL e SSH. O painel mostra a camada em foco, o quadro decodificado no salto em curso e o passo no Packet Tracer. **Interativo:** "ACL on the Wi-Fi" e "NAT to the ISP" refazem o filme.
 - **Simulação (livre).** `RedeLab`: de quem, para quem, qual serviço; a tabela salto a salto, o veredito, a saída do Command Prompt; e as abas do material (plano de endereçamento e configurações).
-- **Contraparte real.** `labs/telecentro-network/README.md`: montagem no Packet Tracer e a lista de prints.
-- **Pronto quando.** Testes do modelo e do filme verdes, `qa:labs` passando nos dois modos, e os prints da equipe registrados em `PRINTS`.
+- **Contraparte real.** `labs/telecentro-network/README.md`: montagem no Packet Tracer e a lista de prints. A rede montada está em `labs/telecentro-network/entrega/telecentro-equipe-10.pkt` (Packet Tracer 9.0.1), com as running-configs lidas dos aparelhos ao lado; os prints em `apps/site/public/network/packet-tracer/` alimentam o lab (`PRINTS`) e o PDF de entrega.
+- **Pronto quando.** Testes do modelo e do filme verdes, `qa:labs` passando nos dois modos, e os prints da equipe registrados em `PRINTS`. Feito em 13/11/2026: os sete capítulos têm print real.
 
 #### subnetting-by-need · a fazer
 Dividir uma /24 pelo número de pessoas de cada setor, e ver o que quebra quando um setor cresce.

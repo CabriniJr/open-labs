@@ -14,6 +14,20 @@ plan · R1 config · SW1 config · ISP config · Server, AP and hosts), gerados 
 > oficial das equipes; o número foi escolhido pela equipe e é o mesmo no `.pkt`,
 > no PDF e no lab.
 
+**A rede já está montada:** [`entrega/telecentro-equipe-10.pkt`](entrega/telecentro-equipe-10.pkt)
+(Cisco Packet Tracer 9.0.1). Ao abrir, espere uns 30 segundos (ou clique em
+*Fast Forward Time*) para o switch convergir e os hosts pegarem endereço por
+DHCP. As running-configs lidas dos aparelhos estão ao lado
+(`entrega/running-config-*.txt`), e os prints dos testes em
+`apps/site/public/network/packet-tracer/`. As seções 3 e 4 abaixo explicam
+como montar a mesma rede do zero.
+
+**Entrega.** Com o site no ar (`pnpm dev`),
+`node labs/telecentro-network/entrega/gerar-pdf.mjs` gera o PDF a partir de
+`/labs/telecentro-network/entrega/`. Os nomes e RMs vêm de um `equipe.json`
+local, fora do git (veja o cabeçalho do script). Sem esse arquivo, sai um
+rascunho com o campo em amarelo. Os PDFs não vão para o repositório.
+
 ## 1. Requisitos do enunciado → onde estão
 
 | Requisito (slide 36) | Como esta rede atende |
@@ -141,21 +155,29 @@ O lab mostra o que cada um deve exibir. Uma diferença ali aponta direto para o 
 ## 4. Testes que vão no PDF (um print cada)
 
 Cada teste é um capítulo do filme; o painel *In Cisco Packet Tracer* mostra o
-comando e a saída esperada. Salve os prints com estes nomes em
-`apps/site/public/network/packet-tracer/` e registre-os em `PRINTS`
-(`apps/site/src/components/RedeModos.tsx`), e o lab passa a mostrar a captura
-real ao lado da saída esperada.
+comando e a saída esperada. Os prints do `.pkt` estão com estes nomes em
+`apps/site/public/network/packet-tracer/` e registrados em `PRINTS`
+(`apps/site/src/components/RedeModos.tsx`); o lab mostra a captura real ao
+lado da saída esperada. O PDF usa também os prints complementares
+(`teste-2-dhcp-pc`, `teste-3-dns`, `teste-4-nat-navegador`,
+`teste-5-acl-contadores`, `teste-6-ssh-wifi`, `teste-8-wpa2-ap`,
+`teste-8-wpa2-notebook`) e `topologia.png`. Todos foram tirados do `.pkt`
+entregue, depois de reaberto, sem nenhum ajuste manual.
+
+O `.pkt` usa os comentários e as descrições de interface em português
+(`configR1(t, "pt")`, e o mesmo para SW1 e ISP); o lab mostra a versão em
+inglês. Os comandos são idênticos nas duas (há teste para isso).
 
 | Print | Capítulo | Onde | Comando | O que deve aparecer |
 |---|---|---|---|---|
-| `network.png` | Three rooms, one cable | SW1 | `show vlan brief` | VLANs 10, 20, 30 com as portas |
-| `dhcp.png` | DHCP | LAPTOP · Command Prompt | `ipconfig /all` | 192.168.10.2, gateway .1, DNS .162 |
-| `dns.png` | DNS | LAPTOP · Command Prompt | `nslookup openlabs.telecentro` | 192.168.10.162 |
-| `http.png` | HTTP | LAPTOP · Web Browser | `http://openlabs.telecentro` | a página com a Ficha (**a página abrindo pelo nome**) |
-| `nat.png` | NAT | R1 (depois de abrir `http://www.internet.example` no laptop) | `show ip nat translations` | 100.64.10.1:1025 ↔ 192.168.10.2:1025 |
-| `acl.png` | ACL | LAPTOP · Command Prompt | `ping 192.168.10.130` | `Destination host unreachable` (**acesso barrado**) |
-| `ssh.png` | SSH | PC-MONITOR · Command Prompt | `ssh -l admin 192.168.10.129` | `Password:` |
-| *(extra)* | — | PC-MONITOR | `ping 192.168.10.162` | resposta com TTL=127 (**ping entre VLANs**) |
+| `teste-7-vlans.png` | Three rooms, one cable | SW1 | `show vlan brief` | VLANs 10, 20, 30 com as portas |
+| `teste-2-dhcp.png` | DHCP | LAPTOP · Command Prompt | `ipconfig /all` | 192.168.10.2, gateway .1, DNS .162 |
+| `teste-3-dns.png` | DNS | LAPTOP · Command Prompt | `nslookup openlabs.telecentro` | 192.168.10.162 |
+| `teste-3-pagina-pelo-nome.png` | HTTP | LAPTOP · Web Browser | `http://openlabs.telecentro` | a página com a Ficha (**a página abrindo pelo nome**) |
+| `teste-4-nat.png` | NAT | R1 (depois de abrir `http://www.internet.example` no laptop) | `show ip nat translations` | 100.64.10.1:1025 ↔ 192.168.10.2:1025 |
+| `teste-5-acl.png` | ACL | LAPTOP · Command Prompt | `ping 192.168.10.130` | `Destination host unreachable` (**acesso barrado**) |
+| `teste-6-ssh.png` | SSH | PC-MONITOR · Command Prompt | `ssh -l admin 192.168.10.129` | `Password:` |
+| `teste-1-ping-entre-vlans.png` | — | PC-MONITOR | `ping 192.168.10.162` | resposta com TTL=127 (**ping entre VLANs**) |
 
 O enunciado pede: ping entre VLANs, PC recebendo IP por DHCP, página abrindo
 pelo nome, `show ip nat translations` e um acesso barrado pela ACL. Os cinco
