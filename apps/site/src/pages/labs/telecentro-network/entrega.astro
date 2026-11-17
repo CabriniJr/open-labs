@@ -88,44 +88,35 @@ const senhas: [string, string, string][] = [
   ["Wi-Fi", `${t.ssid}, WPA2-PSK/AES, senha ${CREDENCIAIS.wifi}`, "AP-TELECENTRO e LAPTOP-CIDADAO"],
 ];
 
-/** Cada requisito do slide 36, agrupado pelo critério de nota, com o que o atende e onde está a prova. */
-const requisitos: { criterio: string; itens: [string, string, string][] }[] = [
-  {
-    criterio: "Arquitetura e endereçamento (3 pontos)",
-    itens: [
-      ["Topologia da rede do local físico (entregável)", "Arquitetura lógica (vista Logical) e física (vista Physical: telecentro e provedor, salas e racks)", "Seções 2.1 e 2.2"],
-      [`Faixa 192.168.${t.x}.0/24 em pelo menos 3 sub-redes (Equipe, Cidadão, Servidores)`, `VLSM: CIDADAO ${cidr(cidadao)}, EQUIPE ${cidr(equipe)}, SERVIDORES ${cidr(servidores)}`, "Seção 3"],
-      ["Uma VLAN por setor", `VLAN ${equipe.vlan} EQUIPE, ${cidadao.vlan} CIDADAO, ${servidores.vlan} SERVIDORES no SW1`, "Teste 7"],
-      ["Trunk 802.1Q e router-on-a-stick", `SW1 Gi0/1 em trunk; R1 G0/0.${equipe.vlan}, .${cidadao.vlan} e .${servidores.vlan} com encapsulation dot1Q`, "Teste 7 e Teste 1; running-config do R1 (seção 4)"],
-    ],
-  },
-  {
-    criterio: "Configuração (3 pontos)",
-    itens: [
-      ["DHCP com um pool por VLAN, excluindo gateway e servidor", `3 pools no R1; excluded-address ${ip(cidadao.gateway)}, ${ip(equipe.gateway)} e ${ip(servidores.gateway)}–${srv}`, "Teste 2; running-config do R1"],
-      ["NAT/PAT até um roteador provedor, com servidor externo simulando a internet", `overload na G0/1 do R1 (${ip(t.wan.r1)}); ISP e WEB-INTERNET ${ip(t.internet.web)}`, "Teste 4"],
-      ["Servidor da solução com DNS e HTTP (página com a Ficha)", `SRV-OPENLABS ${srv}: DNS ${NOME_DA_FICHA} e HTTP com a Ficha`, "Teste 3 e seção 1"],
-    ],
-  },
-  {
-    criterio: "Segurança (2 pontos)",
-    itens: [
-      ["ACL estendida: o Wi-Fi acessa só HTTP e DNS do servidor e a internet, nada da VLAN Equipe", `${NOME_DA_ACL} na entrada da G0/0.${cidadao.vlan}`, "Teste 5 (barrado), Testes 3 e 4 (permitido); seção 5"],
-      ["Roteador só por SSH, com senhas e enable secret", `transport input ssh, login local, access-class ${NOME_DA_ACL_VTY}, enable secret, senha no console`, "Teste 6; running-config do R1"],
-      ["Wi-Fi com WPA2", `${t.ssid} com WPA2-PSK e AES`, "Teste 8"],
-    ],
-  },
-  {
-    criterio: "Testes (2 pontos)",
-    itens: [
-      ["Ping entre VLANs", `PC-MONITOR (VLAN ${equipe.vlan}) → servidor (VLAN ${servidores.vlan})`, "Teste 1"],
-      ["PC recebendo IP por DHCP", "PC-MONITOR e LAPTOP-CIDADAO", "Teste 2"],
-      ["Página abrindo pelo nome", `http://${NOME_DA_FICHA}`, "Teste 3"],
-      ["show ip nat translations", "no R1, depois do tráfego para a internet", "Teste 4"],
-      ["Um acesso barrado pela ACL", "Wi-Fi → PC da equipe", "Teste 5"],
-    ],
-  },
+/**
+ * A apresentação da rede, na ordem dos requisitos do enunciado (endereçamento
+ * e VLANs, serviços, segurança, testes), em texto corrido e com a seção do
+ * documento onde cada parte aparece em detalhe.
+ */
+const apresentacao: [titulo: string, texto: string, onde: string][] = [
+  [
+    "Endereçamento e VLANs",
+    `A faixa 192.168.${t.x}.0/24 foi dividida por VLSM em três sub-redes, uma por setor: Cidadão ${cidr(cidadao)} (até ${cidadao.capacidade} hosts), Equipe ${cidr(equipe)} (até ${equipe.capacidade}) e Servidores ${cidr(servidores)} (até ${servidores.capacidade}). Cada setor é uma VLAN no switch SW1: ${equipe.vlan} Equipe, ${cidadao.vlan} Cidadão e ${servidores.vlan} Servidores. O SW1 leva as três VLANs ao roteador R1 por um único cabo em trunk 802.1Q, e o R1 roteia entre elas com uma subinterface por VLAN (router-on-a-stick).`,
+    "Seções 2 e 3; testes 1 e 7.",
+  ],
+  [
+    "Serviços",
+    `O R1 entrega endereços por DHCP, com um pool por VLAN, e nunca entrega o endereço do gateway nem o do servidor. Para sair para a internet, o R1 traduz os endereços internos para o seu endereço público ${ip(t.wan.r1)} (NAT/PAT) e entrega o tráfego ao roteador do provedor (ISP), atrás do qual o servidor WEB-INTERNET simula a internet. O servidor do OpenLabs (${srv}) responde DNS, com o nome ${NOME_DA_FICHA}, e HTTP, com a página da Ficha da CitizenTech.`,
+    "Seções 1 e 4; testes 2, 3 e 4.",
+  ],
+  [
+    "Segurança",
+    `Uma ACL estendida (${NOME_DA_ACL}), aplicada na entrada da VLAN do Wi-Fi, deixa o cidadão usar só o DNS e o HTTP do servidor e a internet. Todo acesso à VLAN Equipe é bloqueado, e o servidor fica protegido de qualquer outro tipo de acesso. O roteador só aceita gerência por SSH, com usuário e senha e só a partir da VLAN Equipe; tem enable secret e senha no console. O Wi-Fi ${t.ssid} usa WPA2.`,
+    "Seção 5; testes 5, 6 e 8.",
+  ],
+  [
+    "Testes",
+    "Os cinco testes pedidos (ping entre VLANs, PC recebendo IP por DHCP, página abrindo pelo nome, show ip nat translations e um acesso barrado pela ACL) são os testes 1 a 5. Cada um mostra o comando digitado, o resultado e o print do Packet Tracer. Os testes 6 a 8 mostram o SSH, as VLANs no switch e o WPA2.",
+    "Seção 6.",
+  ],
 ];
+
+const conteudo = ["Ficha da CitizenTech", "Topologia: arquitetura lógica e física", "Plano de endereçamento", "Configuração e show running-config", "Segurança", "Testes, com os prints"];
 
 interface Teste {
   readonly n: number;
@@ -142,7 +133,7 @@ const testes: Teste[] = [
     n: 1, titulo: "Ping entre VLANs", exigido: true,
     prova: `O PC da equipe (VLAN ${equipe.vlan}) alcança o servidor (VLAN ${servidores.vlan}) passando pelo roteador.`,
     comandos: [`PC-MONITOR> ping ${srv}`],
-    resultado: "Respostas com TTL=127: o pacote saiu com 128 e perdeu 1 ao atravessar o R1, a prova de que houve roteamento entre VLANs. A primeira tentativa se perde enquanto o ARP é resolvido, o que é normal.",
+    resultado: "Respostas com TTL=127: o pacote saiu com 128 e perdeu 1 ao atravessar o R1, ou seja, houve roteamento entre VLANs. A primeira tentativa se perde enquanto o ARP é resolvido, o que é normal.",
     prints: [["teste-1-ping-entre-vlans", "PC-MONITOR pinga o servidor da VLAN 30."]],
   },
   {
@@ -230,24 +221,32 @@ const valorGrafico = (campo: string, valor: string) => (campo === "content" ? "a
     </section>
 
     <section class="quebra">
-      <h2>Guia de correção</h2>
-      <p>Cada requisito do enunciado, o que na rede o atende e onde está a prova neste documento. Todos os prints foram tirados do próprio <code>{pkt}</code> entregue.</p>
-      {requisitos.map((g) => (
-        <table class="guia">
-          <thead><tr><th colspan="3">{g.criterio}</th></tr><tr><th>Requisito</th><th>Como a rede atende</th><th>Prova</th></tr></thead>
-          <tbody>{g.itens.map(([req, como, onde]) => <tr><td>{req}</td><td>{como}</td><td><b>{onde}</b></td></tr>)}</tbody>
-        </table>
+      <h2>Apresentação</h2>
+      <p>Esta é a rede do <b>Telecentro Jardim Ângela</b>, um telecentro comunitário em São Paulo onde moradores que não têm computador nem internet em casa aprendem tecnologia com o OpenLabs. O telecentro tem três setores que precisam ficar isolados: a <b>equipe</b> (monitores e instrutores), o <b>cidadão</b> (o Wi-Fi gratuito dos alunos) e os <b>servidores</b> (o servidor do OpenLabs). A rede separa os três setores, oferece Wi-Fi ao público e leva o telecentro à internet por um provedor. Ela foi montada e testada no Cisco Packet Tracer, no arquivo <code>{pkt}</code>, de onde saíram todos os prints deste documento.</p>
+      {apresentacao.map(([titulo, texto, onde]) => (
+        <div class="bloco">
+          <h3>{titulo}</h3>
+          <p>{texto}</p>
+          <p class="onde">Onde ver: {onde}</p>
+        </div>
       ))}
-      <h3>Para testar no arquivo</h3>
+      <h3>O que este documento traz</h3>
+      <ol class="conteudo">{conteudo.map((c) => <li>{c}</li>)}</ol>
+    </section>
+
+    <section class="quebra">
+      <h2>Como abrir e testar o arquivo</h2>
       <ul>
-        <li>Ao abrir o <code>.pkt</code>, espere cerca de 30 segundos (ou clique em <i>Fast Forward Time</i>) para o switch convergir e os hosts receberem endereço por DHCP: PC-MONITOR <code>{ip(equipe.gateway + 1)}</code>, LAPTOP-CIDADAO <code>{ip(cidadao.gateway + 1)}</code>.</li>
-        <li>Os comandos de cada teste estão na seção 6. Os mesmos dados estão numa nota no canvas do <code>.pkt</code>.</li>
+        <li>Abra o <code>{pkt}</code> no Cisco Packet Tracer 9.0.1 ou mais recente.</li>
+        <li>Espere cerca de 30 segundos (ou clique em <i>Fast Forward Time</i>) para o switch convergir e os hosts receberem endereço por DHCP: PC-MONITOR <code>{ip(equipe.gateway + 1)}</code> e LAPTOP-CIDADAO <code>{ip(cidadao.gateway + 1)}</code>.</li>
+        <li>Os comandos de cada teste estão na seção 6. As mesmas instruções estão numa nota no canvas do arquivo.</li>
+        <li>Para ver onde cada aparelho fica no prédio, use a vista <i>Physical</i> (seção 2.2).</li>
       </ul>
       <table>
         <thead><tr><th>Acesso</th><th>Credencial</th><th>Observação</th></tr></thead>
         <tbody>{senhas.map(([a, c, o]) => <tr><td>{a}</td><td><code>{c}</code></td><td>{o}</td></tr>)}</tbody>
       </table>
-      <p class="nota">Senhas de laboratório, para a correção. Numa rede real, todas seriam trocadas.</p>
+      <p class="nota">Senhas de laboratório, para testar o arquivo. Numa rede real, todas seriam trocadas.</p>
     </section>
 
     <section class="quebra">
@@ -368,12 +367,12 @@ const valorGrafico = (campo: string, valor: string) => (campo === "content" ? "a
 
     <section class="quebra">
       <h2>6. Testes</h2>
-      <p>Os testes 1 a 5 são os cinco pedidos pelo enunciado; 6 a 8 provam os demais requisitos de segurança e de VLAN. Cada um traz o que prova, o que foi digitado, o resultado e os prints do <code>.pkt</code>.</p>
+      <p>Os testes 1 a 5 são os cinco pedidos pelo enunciado; os testes 6 a 8 mostram o SSH, as VLANs no switch e o WPA2. Cada um traz o que ele mostra, o que foi digitado, o resultado e os prints do <code>.pkt</code>.</p>
       {
         testes.map((x) => (
           <article class="teste">
             <h3>Teste {x.n} — {x.titulo}{x.exigido ? "" : " (complementar)"}</h3>
-            <p><b>O que prova:</b> {x.prova}</p>
+            <p><b>O que mostra:</b> {x.prova}</p>
             <pre class="cmd">{x.comandos.join("\n")}</pre>
             <p><b>Resultado:</b> {x.resultado}</p>
             <div class="prints" data-n={x.prints.length}>
@@ -409,10 +408,10 @@ const valorGrafico = (campo: string, valor: string) => (campo === "content" ? "a
   .ficha-curta dt { color: var(--ink-muted); }
   .ficha-curta dd { margin: 0; }
   .ficha th { width: 13rem; }
-  .guia { break-inside: avoid; }
-  .guia thead tr:first-child th { background: color-mix(in oklab, var(--accent) 22%, var(--paper)); font-size: 0.9rem; }
-  .guia td:first-child { width: 34%; }
-  .guia td:last-child { width: 24%; }
+  .bloco { break-inside: avoid; margin-bottom: 0.4rem; }
+  .bloco h3 { margin-top: 1rem; color: var(--accent); }
+  .bloco p { margin: 0.2rem 0; }
+  .conteudo li { margin: 0.15rem 0; }
   .racks { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: start; break-inside: avoid; }
   .racks .captura img { max-height: 105mm; }
   .topologia { margin: 1rem 0; border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; break-inside: avoid; }
