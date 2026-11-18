@@ -19,8 +19,9 @@ export {
   resolver,
 } from "./telecentro/protocolos.js";
 export type { Decisao, MensagemDhcp, OpcoesDaRede, Pacote, Quadro, RegraAcl, Resultado, Salto, Servico, TraducaoNat, Veredito } from "./telecentro/protocolos.js";
-export { ajustesGraficos, ALVOS, configIsp, configR1, configSw1, CREDENCIAIS, fichaHtml, ipconfig, saidaDoCliente, showAccessLists, showNat, showVlanBrief } from "./telecentro/ios.js";
-export type { AjusteGrafico } from "./telecentro/ios.js";
+export { ajustesGraficos, ALVOS, configIsp, configR1, configSw1, CREDENCIAIS, ipconfig, saidaDoCliente, showAccessLists, showNat, showVlanBrief } from "./telecentro/ios.js";
+export { ficha, fichaHtml } from "./telecentro/ficha.js";
+export type { AjusteGrafico, Idioma } from "./telecentro/ios.js";
 export { ALTURA_DA_REDE, CAIXAS, CAMADAS, CAPITULOS_DA_REDE, filmeDaRede, LARGURA_DA_REDE, TOM_DO_PROTOCOLO } from "./telecentro/filme.js";
 export type { Camada, CapituloDaRede, DetalheDaRede, PassoNoPacketTracer } from "./telecentro/filme.js";
 export { MAL_ENTENDIDOS_DA_REDE } from "./telecentro/labels.js";

@@ -149,7 +149,7 @@ const TOM_DO_APARELHO: Readonly<Record<DispId, Tone>> = { r1: "controller", isp:
 const centro = (id: DispId): P => [CAIXAS[id].x + CAIXAS[id].w / 2, CAIXAS[id].y + CAIXAS[id].h / 2];
 
 /** O cenário que não anda: grade, regiões e cabos. Memorizado, porque só o filme o muda. */
-const Cenario = memo(function Cenario({ film }: { film: Film<DetalheDaRede> }) {
+const Cenario = memo(function Cenario({ film, traduzir }: { film: Film<DetalheDaRede>; traduzir: (s: string) => string }) {
   return (
     <g>
       {film.entities.map((e) => {
@@ -157,7 +157,7 @@ const Cenario = memo(function Cenario({ film }: { film: Film<DetalheDaRede> }) {
           return (
             <g key={e.id} data-tone={e.tone ?? "muted"} className="rv-regiao">
               <rect x={e.box.x} y={e.box.y} width={e.box.w} height={e.box.h} rx={18} />
-              <text x={e.box.x + 14} y={e.box.y + 22}>{e.label}</text>
+              <text x={e.box.x + 14} y={e.box.y + 22}>{e.label === undefined ? undefined : traduzir(e.label)}</text>
             </g>
           );
         }
@@ -186,7 +186,11 @@ const Cenario = memo(function Cenario({ film }: { film: Film<DetalheDaRede> }) {
   );
 });
 
-export function VistaRede({ film, frame, label }: { film: Film<DetalheDaRede>; frame: Frame<DetalheDaRede>; label: string }) {
+/**
+ * `traduzir` só serve a quem renderiza fora da tradução do site (a página de
+ * entrega em português, que é `translate="no"`); no lab, o próprio site traduz.
+ */
+export function VistaRede({ film, frame, label, traduzir = (s) => s }: { film: Film<DetalheDaRede>; frame: Frame<DetalheDaRede>; label: string; traduzir?: (s: string) => string }) {
   const vb = viewBox(film, frame.camera);
   const m = porId(frame);
   return (
@@ -197,7 +201,7 @@ export function VistaRede({ film, frame, label }: { film: Film<DetalheDaRede>; f
         </pattern>
       </defs>
       <rect x={-200} y={-200} width={film.width + 400} height={film.height + 400} fill="url(#rv-grade)" />
-      <Cenario film={film} />
+      <Cenario film={film} traduzir={traduzir} />
       {(Object.keys(CAIXAS) as DispId[]).map((id) => {
         const s = m.get(id)?.state;
         if (s === undefined) return null;
@@ -208,7 +212,7 @@ export function VistaRede({ film, frame, label }: { film: Film<DetalheDaRede>; f
             {s.ping > 0 && s.ping < 1 ? <ellipse className="rv-ping" rx={46 + s.ping * 40} ry={(46 + s.ping * 40) / 2} opacity={1 - s.ping} /> : null}
             {DESENHOS[id]()}
             {/* Três linhas curtas, e não uma comprida: o que é, como se chama, onde mora. */}
-            <text className="rv-papel" y={34}>{O_QUE_E[id].papel}</text>
+            <text className="rv-papel" y={34}>{traduzir(O_QUE_E[id].papel)}</text>
             <text className="rv-nome" y={50}>{s.label}</text>
             {s.sublabel ? <text className="rv-nome rv-ip" y={65}>{s.sublabel}</text> : null}
           </g>

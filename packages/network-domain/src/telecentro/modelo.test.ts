@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ip, prefixoPara, texto, vlsm } from "./enderecamento.js";
-import { configR1, configSw1, saidaDoCliente, showNat } from "./ios.js";
+import { configIsp, configR1, configSw1, saidaDoCliente, showNat } from "./ios.js";
 import { avaliarAcl, concessao, dora, percorrer, regrasDoCidadao } from "./protocolos.js";
 import { PEDIDOS, planoDeEnderecamento, telecentro } from "./topologia.js";
 
@@ -142,6 +142,18 @@ describe("Packet Tracer commands and outputs come from the same model", () => {
     expect(regrasDoCidadao(t).map((r) => r.seq)).toEqual([10, 20, 30, 40, 50, 60]);
     expect(r1).toContain("ip dhcp excluded-address 192.168.10.161 192.168.10.162");
     expect(configSw1(t)).toContain(" switchport trunk allowed vlan 10,20,30");
+  });
+
+  it("the Portuguese configs type the same commands; only comments and descriptions change", () => {
+    const comando = (l: string) => !l.startsWith("!") && !l.startsWith(" description ");
+    for (const gerar of [configR1, configSw1, configIsp]) {
+      const [en, pt] = [gerar(t, "en"), gerar(t, "pt")];
+      expect(pt.filter(comando)).toEqual(en.filter(comando));
+      expect(pt.length).toBe(en.length);
+      // O IOS não garante UTF-8: nada fora do ASCII na versão em português.
+      expect(pt.join("\n")).toMatch(/^[\x20-\x7e\n]*$/u);
+    }
+    expect(configR1(t, "pt")).toContain(" description WAN PARA O ISP");
   });
 
   it("the ping output matches the verdict", () => {
