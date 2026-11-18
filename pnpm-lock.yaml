@@ -90,6 +90,9 @@ importers:
       '@ovh/depth-ui':
         specifier: workspace:*
         version: link:../../packages/depth-ui
+      '@ovh/ds-domain':
+        specifier: workspace:*
+        version: link:../../packages/ds-domain
       '@ovh/handbook-catalog':
         specifier: workspace:*
         version: link:../../packages/handbook-catalog
@@ -212,6 +215,12 @@ importers:
       jsdom:
         specifier: ^25.0.1
         version: 25.0.1
+
+  packages/ds-domain:
+    dependencies:
+      '@ovh/motion':
+        specifier: workspace:*
+        version: link:../motion
 
   packages/handbook-catalog:
     dependencies:

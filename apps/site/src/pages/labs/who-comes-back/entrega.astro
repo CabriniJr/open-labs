@@ -1,0 +1,155 @@
+---
+/**
+ * O anexo da entrega de Data Science & Statistical Computing (GS 2026.2): como a
+ * análise do notebook aparece no OpenLabs. As tabelas são calculadas no build pelo
+ * mesmo pacote que roda o lab (`@ovh/ds-domain`) e comparadas com a referência que
+ * o notebook gravou — se o CSV ou o modelo mudarem, o documento muda junto.
+ *
+ * Abra no navegador e salve em PDF (Ctrl+P), ou rode
+ * `node data-science/gerar_pdf_openlabs.mjs` com o site no ar. Os nomes e RMs não
+ * ficam no repositório: o gerador os preenche a partir do `equipe.json` local.
+ *
+ * locale: skip-file — documento em português para o professor; `translate="no"`.
+ */
+import { analisar, metricasDeClassificacao, retornoPorCaminhada, type Base as BaseDS } from "@ovh/ds-domain";
+import dados from "../../../../../../packages/ds-domain/src/retorno/dados.json";
+import Base from "../../../layouts/Base.astro";
+import { url } from "../../../lib/urls";
+
+const base = dados as unknown as BaseDS;
+const ref = base.referencia;
+const a = analisar(base);
+const vaza = analisar(base, { divisao: "linha" });
+const y = a.partes.teste.map((s) => s.voltou_em_7_dias);
+const m = metricasDeClassificacao(y, a.probabilidade, 0.5);
+const mv = metricasDeClassificacao(vaza.partes.teste.map((s) => s.voltou_em_7_dias), vaza.probabilidade, 0.5);
+const curva = retornoPorCaminhada(a, [0, 10, 20, 30, 40]);
+const f = (x: number, k = 3) => x.toFixed(k).replace(".", ",");
+const pct = (x: number) => `${(x * 100).toFixed(0)}%`;
+const maiorDiferenca = Math.max(
+  ...a.linear.nomes.map((n, k) => Math.abs(a.linear.pesos[k]! - ref.linear.coeficientes[n]!)),
+  ...a.logistica.nomes.map((n, k) => Math.abs(a.logistica.pesos[k]! - ref.logistica.coeficientes[n]!)),
+);
+const pessoas = (ss: readonly { id_aluno: number }[]) => new Set(ss.map((s) => s.id_aluno)).size;
+const site = "https://cabrinijr.github.io/open-labs/";
+const img = `${url()}data-science/`;
+---
+
+<Base domain="data-science" title="Entrega — Data Science no OpenLabs" description="Como a análise do notebook de Data Science aparece no OpenLabs: o lab Who comes back, com os mesmos dados, a mesma divisão e os mesmos coeficientes.">
+  <main class="doc" translate="no">
+    <section class="capa">
+      <p class="sobre">FIAP · Global Solution 2026.2 · CitizenTech · Engenharia de Software, 2º ano</p>
+      <h1>Quem volta ao telecentro?</h1>
+      <p class="sub">Data Science &amp; Statistical Computing · a análise representada no OpenLabs</p>
+      <dl class="ficha-curta">
+        <div><dt>Solução</dt><dd>OpenLabs no Telecentro</dd></div>
+        <div><dt>Equipe</dt><dd data-equipe-nome><mark>[Nome da equipe]</mark></dd></div>
+        <div><dt>Integrantes</dt><dd data-equipe-integrantes><mark>[Nome completo — RM]</mark></dd></div>
+        <div><dt>Lab</dt><dd><a href={`${site}labs/who-comes-back/`}>{site}labs/who-comes-back/</a></dd></div>
+        <div><dt>Repositório</dt><dd><a href="https://github.com/CabriniJr/open-labs">github.com/CabriniJr/open-labs</a> · pasta <code>data-science/</code> e pacote <code>packages/ds-domain/</code></dd></div>
+      </dl>
+    </section>
+
+    <h2>1. O que este anexo mostra</h2>
+    <p>
+      O notebook (<code>analise.ipynb</code>) responde duas perguntas sobre as sessões de estudo no telecentro. A
+      <b>regressão linear</b> prevê a nota do checkpoint, e a <b>regressão logística</b> prevê se a pessoa volta em até 7 dias.
+      O OpenLabs é a plataforma da nossa CitizenTech, e lá a mesma análise virou um lab interativo, o <b>Who comes back</b>.
+      Ele roda os dois modelos <b>no navegador</b>, sobre a mesma base, com a mesma divisão treino/teste por pessoa.
+      Qualquer pessoa no telecentro pode trocar as variáveis, mover o corte e ver a matriz de confusão mudar, sem instalar nada.
+    </p>
+
+    <h2>2. Os mesmos números nos dois lugares</h2>
+    <p>
+      O lab reimplementa a preparação e os modelos em TypeScript: imputação pela mediana e padronização aprendidas só no treino,
+      one-hot com a primeira categoria descartada, mínimos quadrados, e logística com penalidade ridge (C = 1) por Newton–Raphson. Um teste
+      automático (<code>packages/ds-domain/src/retorno/modelo.test.ts</code>) confere as métricas e os coeficientes contra os do
+      scikit-learn, que o próprio notebook grava em <code>dados/referencia_openlabs.json</code>. A maior diferença
+      entre os {a.linear.nomes.length + a.logistica.nomes.length} coeficientes dos dois modelos é de <b>{maiorDiferenca.toExponential(1)}</b>.
+    </p>
+    <table>
+      <thead><tr><th>métrica (teste)</th><th>notebook (scikit-learn)</th><th>OpenLabs (navegador)</th></tr></thead>
+      <tbody>
+        <tr><td>Linear · MAE</td><td>{f(ref.linear.MAE)}</td><td>{f(a.regressao.MAE)}</td></tr>
+        <tr><td>Linear · RMSE</td><td>{f(ref.linear.RMSE)}</td><td>{f(a.regressao.RMSE)}</td></tr>
+        <tr><td>Linear · R²</td><td>{f(ref.linear["R²"])}</td><td>{f(a.regressao.R2)}</td></tr>
+        <tr><td>Logística · acurácia</td><td>{f(ref.logistica["acurácia"])}</td><td>{f(m.acuracia)}</td></tr>
+        <tr><td>Logística · precisão</td><td>{f(ref.logistica["precisão"])}</td><td>{f(m.precisao)}</td></tr>
+        <tr><td>Logística · recall</td><td>{f(ref.logistica.recall)}</td><td>{f(m.recall)}</td></tr>
+        <tr><td>Logística · F1</td><td>{f(ref.logistica.F1)}</td><td>{f(m.F1)}</td></tr>
+      </tbody>
+    </table>
+
+    <h2>3. O lab: showcase e simulação</h2>
+    <p>O lab abre num <b>showcase</b> de cinco capítulos, um filme montado a partir do modelo, e passa à <b>simulação</b>, onde o leitor mexe.</p>
+    <figure class="captura"><img src={`${img}showcase-dados.png`} alt="Capítulo 1: cada ponto é uma sessão, minutos de caminhada × nota" /><figcaption>Capítulo 1 — cada ponto é uma sessão: minutos de caminhada × nota; verde, quem voltou.</figcaption></figure>
+    <figure class="captura"><img src={`${img}showcase-reta.png`} alt="Capítulo 3: nota real × prevista das sessões de teste" /><figcaption>Capítulo 3 — regressão linear: nota real × prevista das pessoas de teste, com a diagonal do acerto perfeito.</figcaption></figure>
+    <figure class="captura"><img src={`${img}showcase-curva.png`} alt="Capítulo 4: retorno previsto contra os minutos de caminhada" /><figcaption>Capítulo 4 — regressão logística: retorno previsto contra a caminhada, com o corte de 0,5.</figcaption></figure>
+    <figure class="captura"><img src={`${img}showcase-matriz.png`} alt="Capítulo 5: matriz de confusão" /><figcaption>Capítulo 5 — a matriz de confusão do teste, corte 0,5.</figcaption></figure>
+    <figure class="captura"><img src={`${img}simulacao.png`} alt="A simulação: variáveis, divisão, métricas, coeficientes e corte" /><figcaption>A simulação: escolher variáveis e divisão, ver métricas, coeficientes, a dispersão e a matriz com o corte móvel.</figcaption></figure>
+
+    <h2>4. O que a simulação deixa quebrar</h2>
+    <table>
+      <thead><tr><th>gesto</th><th>o que acontece</th></tr></thead>
+      <tbody>
+        <tr><td>“Split by row (leaks)”</td><td>{vaza.partes.pessoasNosDois} pessoas passam a ter sessões no treino e no teste. Com a divisão por pessoa: R² {f(a.regressao.R2)}, F1 {f(m.F1)}. Com a divisão por linha: R² {f(vaza.regressao.R2)}, F1 {f(mv.F1)}. Aqui as métricas até pioram um pouco, porque outra amostra caiu no teste. O problema não é o número subir ou descer: o teste deixa de medir o desempenho em gente nova, que é o que o telecentro precisa saber.</td></tr>
+        <tr><td>Desmarcar “minutes walking”</td><td>A logística perde a variável mais forte: o F1 cai de 0,63 para 0,55. A linear não muda (R² continua 0,61): a caminhada decide quem volta, não a nota.</td></tr>
+        <tr><td>Mover o corte</td><td>Corte mais alto: mais lembretes, maior recall de quem não volta, menor fração de lembretes certos. O lab mostra os três números ao vivo.</td></tr>
+        <tr><td>Desmarcar todas as variáveis</td><td>O lab recusa: um modelo precisa de pelo menos uma variável.</td></tr>
+      </tbody>
+    </table>
+
+    <h2>5. Do modelo para o telecentro</h2>
+    <p>Retorno previsto para as mesmas {a.partes.teste.length} sessões de teste ({pessoas(a.partes.teste)} pessoas), mudando só os minutos de caminhada:</p>
+    <table>
+      <thead><tr><th>caminhada</th><th>0 min</th><th>10 min</th><th>20 min</th><th>30 min</th><th>40 min</th></tr></thead>
+      <tbody><tr><td>retorno previsto</td>{curva.map((c) => <td>{pct(c)}</td>)}</tr></tbody>
+    </table>
+    <ul class="conteudo">
+      <li><b>Lembrete e computador reservado</b> para quem tem probabilidade de retorno abaixo de 0,50 — no lab, o leitor vê quantas pessoas isso alcança.</li>
+      <li><b>Showcase primeiro</b> para quem está começando: é a variável de maior coeficiente na nota, e o OpenLabs já abre os labs no showcase.</li>
+      <li><b>Onde abrir um ponto de acesso</b>: a caminhada pesa mais que tudo no retorno; o planejador de Programação Dinâmica mede a cobertura a pé no mapa real e diz onde um novo ponto ajuda mais.</li>
+    </ul>
+
+    <h2>6. Como a análise se liga às outras partes da CitizenTech</h2>
+    <table>
+      <thead><tr><th>disciplina</th><th>a ligação</th></tr></thead>
+      <tbody>
+        <tr><td>Dynamic Programming</td><td>As distâncias a pé da base saem do Dijkstra multi-fonte do planejador, nas ruas reais do OpenStreetMap.</td></tr>
+        <tr><td>Database Design</td><td>As colunas da base existem no banco do telecentro: <code>T_PROGRESSO</code> (sessões, conclusão) e <code>T_TENTATIVA</code> (notas). Com dados reais, a análise sai de lá.</td></tr>
+        <tr><td>Network Architect</td><td>O lab roda nos computadores do telecentro, na rede desenhada no Packet Tracer; os modelos rodam no navegador, sem servidor.</td></tr>
+      </tbody>
+    </table>
+
+    <h2>7. Dados e limites</h2>
+    <p>
+      A base tem {base.colunas.id_sessao.length} sessões de {pessoas(a.partes.treino) + pessoas(a.partes.teste)} pessoas e é <b>simulada</b>,
+      gerada por <code>gerar_dados.py</code> com semente fixa. A distância a pé é real (© OpenStreetMap contributors, ODbL) e os labs são
+      o catálogo real do OpenLabs. Não há dados pessoais reais. As regras que geram a base estão escritas no script: o notebook e o lab
+      mostram modelos recuperando regras conhecidas, não fatos sobre telecentros reais. Os coeficientes são associações, não causas.
+    </p>
+  </main>
+</Base>
+
+<style is:global>
+  .doc { max-width: 52rem; margin: 0 auto; padding: 2rem 1.5rem 4rem; color: var(--ink); font-size: 0.95rem; line-height: 1.55; }
+  .doc h1 { font-size: 2.2rem; margin: 0.2rem 0; }
+  .doc h2 { font-size: 1.35rem; margin: 2rem 0 0.6rem; border-bottom: 2px solid var(--accent); padding-bottom: 0.2rem; break-after: avoid; }
+  .doc table { width: 100%; border-collapse: collapse; margin: 0.6rem 0 1rem; font-size: 0.82rem; break-inside: avoid; }
+  .doc th, .doc td { border: 1px solid var(--rule); padding: 0.35rem 0.5rem; text-align: start; vertical-align: top; }
+  .doc th { background: color-mix(in oklab, var(--accent) 8%, var(--paper)); }
+  .doc code { font-family: var(--font-mono); font-size: 0.86em; }
+  .doc mark { background: color-mix(in oklab, var(--sig-mutation) 28%, var(--paper)); color: var(--ink); padding: 0 0.2em; }
+  .doc a { overflow-wrap: anywhere; }
+  .capa { padding: 3rem 0 2rem; border-bottom: 1px solid var(--rule); }
+  .capa .sobre { color: var(--ink-muted); text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.75rem; }
+  .capa .sub { font-size: 1.15rem; color: var(--accent); margin: 0 0 1.5rem; }
+  .ficha-curta div { display: grid; grid-template-columns: 8rem 1fr; gap: 0.5rem; padding: 0.25rem 0; }
+  .ficha-curta dt { color: var(--ink-muted); }
+  .ficha-curta dd { margin: 0; }
+  .captura { margin: 0.6rem 0 1.2rem; break-inside: avoid; text-align: center; }
+  .captura img { max-width: 100%; max-height: 95mm; border: 1px solid var(--rule); border-radius: 6px; }
+  .captura figcaption { font-size: 0.78rem; color: var(--ink-muted); margin-top: 0.3rem; }
+  .conteudo li { margin: 0.25rem 0; }
+  @media print { .capa { break-after: page; } }
+</style>

@@ -17,6 +17,7 @@ export default defineWorkspace([
         "packages/splunk-domain/src/**/*.test.ts",
         "packages/network-domain/src/**/*.test.ts",
         "packages/database-domain/src/**/*.test.ts",
+        "packages/ds-domain/src/**/*.test.ts",
         "packages/model-format/src/**/*.test.ts",
         "packages/mermaid-skeleton/src/**/*.test.ts",
         "packages/handbook-format/src/**/*.test.ts",

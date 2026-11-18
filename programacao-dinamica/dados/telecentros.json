@@ -1,0 +1,60 @@
+{
+  "fonte": "SIMULADO. Pontos de acesso fictícios, colocados junto a lugares conhecidos do recorte do mapa (Paulista ao Centro). Os nomes dos lugares e as ruas vêm do OpenStreetMap; os telecentros não existem nesses endereços.",
+  "telecentros": [
+    {
+      "nome": "Telecentro República",
+      "perto_de": "Praça da República",
+      "computadores": 6
+    },
+    {
+      "nome": "Telecentro Liberdade",
+      "perto_de": "Liberdade",
+      "computadores": 4
+    },
+    {
+      "nome": "Telecentro Bixiga",
+      "perto_de": "Bixiga",
+      "computadores": 5
+    },
+    {
+      "nome": "Telecentro Luz",
+      "perto_de": "Estação da Luz",
+      "computadores": 8
+    }
+  ],
+  "alunos": [
+    {
+      "nome": "Dona Cida",
+      "perfil": "aposentada, 67 anos, anda devagar",
+      "mora_perto_de": "Hospital Sírio-Libanês",
+      "velocidade_m_s": 0.9,
+      "sessao_minutos": 60,
+      "concluidos": [
+        "telecentro-network"
+      ],
+      "objetivo": "join-by-hand"
+    },
+    {
+      "nome": "Rafa",
+      "perfil": "estudante do ensino médio, quer trabalhar com dados",
+      "mora_perto_de": "Mackenzie",
+      "velocidade_m_s": 1.3,
+      "sessao_minutos": 90,
+      "concluidos": [
+        "telecentro-database",
+        "how-work-grows",
+        "what-is-a-graph"
+      ],
+      "objetivo": "knapsack-session"
+    },
+    {
+      "nome": "Seu Jorge",
+      "perfil": "ambulante, usa o telecentro no fim da tarde",
+      "mora_perto_de": "Mercadão",
+      "velocidade_m_s": 1.1,
+      "sessao_minutos": 45,
+      "concluidos": [],
+      "objetivo": "normalize-a-spreadsheet"
+    }
+  ]
+}

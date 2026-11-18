@@ -10,6 +10,8 @@
 
 /handbooks/algorithms/ @CabriniJr
 /apps/site/src/content/articles/algorithms/ @CabriniJr
+/handbooks/data-science/ @CabriniJr
+/apps/site/src/content/articles/data-science/ @CabriniJr
 /handbooks/databases/ @Rogerio-Arroyo
 /apps/site/src/content/articles/databases/ @Rogerio-Arroyo
 /handbooks/kubernetes/ @CabriniJr

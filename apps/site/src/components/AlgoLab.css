@@ -127,6 +127,14 @@
 .algo-faixa li[data-usado] { border-color: var(--dui-conduit); background: color-mix(in oklab, var(--dui-conduit) 18%, var(--paper)); }
 .algo-faixa li[data-alvo] { border-color: var(--dui-viva); border-width: 2px; }
 .algo-faixa li[data-impossivel] { color: var(--ink-faint); }
+/* a tabela 2D da mochila: o caminho de volta, a célula explicada e as duas de onde ela vem */
+.algo-pd table { width: auto; font-family: var(--font-mono); }
+.algo-pd th, .algo-pd td { padding: 4px 6px; }
+.algo-pd tbody th { white-space: nowrap; font-family: var(--font-body); font-weight: 500; }
+.algo-pd td { cursor: pointer; }
+.algo-pd td[data-usado] { background: color-mix(in oklab, var(--dui-conduit) 18%, var(--paper)); }
+.algo-pd td[data-fonte] { outline: 2px dashed var(--dui-alto); outline-offset: -2px; }
+.algo-pd td[data-alvo] { outline: 2px solid var(--dui-viva); outline-offset: -2px; font-weight: 700; }
 .algo-dois { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr)); gap: var(--space-2); }
 .algo-cartao { display: grid; gap: 8px; padding: 12px; border: 1px solid var(--rule); border-radius: 8px; background: var(--paper); }
 .algo-cartao h3 { margin: 0; font-size: 1rem; }

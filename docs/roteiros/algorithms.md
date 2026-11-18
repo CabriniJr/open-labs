@@ -163,9 +163,33 @@ recusa como parâmetro, ocupação por `Message.weight`.
 
 ### Fase 8 — Dynamic programming
 
-#### dynamic — *The table that remembers* · em breve
-O lab do troco já mostra a tabela; este deve ir além (mochila, ou subsequência
-comum), com a tabela 2D e a reconstrução.
+#### dynamic — *The table that remembers: what fits in a session* (`labs/knapsack-session`) · disponível (filme + livre)
+- **Pergunta:** quais labs cabem numa sessão de computador no telecentro, para
+  aprender o máximo?
+- **Mal-entendido:** "o melhor custo-benefício primeiro dá o melhor plano";
+  "programação dinâmica é só recursão"; "a tabela só dá a nota, não o plano".
+- **É a mesma pergunta da entrega de Dynamic Programming da GS**
+  (`programacao-dinamica/planejador/sessao.py`), sobre o mesmo catálogo e os
+  mesmos minutos de `T_LAB`. Rafa, 90 min: a tabela faz 14, a gulosa 13, nos
+  dois. Um teste de cada lado fixa os números.
+- **Mídia:** filme do `@ovh/motion`. Os labs à esquerda, cada um na altura da
+  linha dele; a tabela `T[i][t]` à direita, em blocos de 5 min (`PASSO`), para
+  caber numa tela.
+- **Showcase:** cinco capítulos — a pergunta; a gulosa por pontos/minuto (lab a
+  lab, "cabe" ou "não cabe"); a tabela enchendo linha a linha; a volta pelo
+  canto (verde = entrou, amarelo = a célula lida); e o custo contado. Três
+  cenários: Rafa 90 min (gulosa erra por 1), a menor armadilha (3 labs, 50 min),
+  Dona Cida 60 min (as duas concordam).
+- **Simulação:** cenários, labs marcáveis (até 12), sessão de 0 a 180 min; os
+  dois planos lado a lado; a tabela 2D com o caminho de volta; **clicar uma
+  célula** (ou escolher linha e minuto nos seletores, sem ponteiro) mostra a conta
+  dela: `max(deixa, leva)` e as duas células de onde vem (tracejado amarelo).
+  Embaixo, o trabalho **contado rodando**: subconjuntos, chamadas sem memória,
+  chamadas com memória, células.
+- **Recusa:** minutos fora de múltiplos de 5, pontos fora de 0–10, lab repetido,
+  mais de 12 labs, sessão fora de 0–180.
+- **Limite dito na página:** só labs já liberados contam; terminar um no meio da
+  sessão não libera o próximo (seria mochila com precedência).
 
 ## Correlações
 
@@ -176,8 +200,13 @@ comum), com a tabela 2D e a reconstrução.
   no critério errado.
 - troco → crescimento: a tabela custa `valor × moedas`; tentar todo subconjunto
   é a linha O(2ⁿ).
+- troco → mochila: a tabela de uma dimensão (valor) vira duas (lab × minutos);
+  a reconstrução é a mesma ideia — andar de volta pelo que mudou.
+- mochila ↔ GS: o planejador em Python (`programacao-dinamica/`) usa o mesmo
+  mapa do `shortest-path` (Dijkstra multi-fonte até o telecentro mais perto) e a
+  mesma mochila deste lab; o README de lá aponta para os dois labs.
 
-## Critério de pronto (todos os cinco cumprem hoje)
+## Critério de pronto (todos os seis cumprem hoje)
 
 `pnpm test`, `typecheck` (sem erro novo), `boundaries`, `catalogo`, `handbooks`,
 `locale:check`, e2e em `apps/site/tests/algorithms-course.spec.ts` (desktop e
@@ -185,8 +214,9 @@ celular) e `pnpm qa:labs` sem falha nem alerta, com as fotos olhadas.
 
 ## Fila
 
-1. `fifo` e o lab da tabela hash, do spec recuperado.
-2. `dynamic` (fase 8).
-3. Avaliações por lab (`handbooks/algorithms/assessments.json`), no formato do
+1. `fifo` e o lab da tabela hash, do spec recuperado. Há uma versão de 05/11
+   (fila e pilha medidas, com showcase em canvas) guardada no branch local
+   `wip/algo-showcase-0511`, para portar.
+2. Avaliações por lab (`handbooks/algorithms/assessments.json`), no formato do
    handbook de Kubernetes.
-4. Os seis artigos marcados como `coming` no `handbook.yaml`.
+3. Os seis artigos marcados como `coming` no `handbook.yaml`.
