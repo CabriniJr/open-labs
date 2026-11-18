@@ -62,7 +62,7 @@ const img = `${url()}data-science/`;
     <h2>2. Os mesmos números nos dois lugares</h2>
     <p>
       O lab reimplementa a preparação e os modelos em TypeScript: imputação pela mediana e padronização aprendidas só no treino,
-      one-hot com a primeira categoria descartada, mínimos quadrados, e logística L2 com C = 1 por Newton–Raphson. Um teste
+      one-hot com a primeira categoria descartada, mínimos quadrados, e logística com penalidade ridge (C = 1) por Newton–Raphson. Um teste
       automático (<code>packages/ds-domain/src/retorno/modelo.test.ts</code>) confere as métricas e os coeficientes contra os do
       scikit-learn, que o próprio notebook grava em <code>dados/referencia_openlabs.json</code>. A maior diferença
       entre os {a.linear.nomes.length + a.logistica.nomes.length} coeficientes dos dois modelos é de <b>{maiorDiferenca.toExponential(1)}</b>.

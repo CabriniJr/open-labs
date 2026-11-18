@@ -331,7 +331,7 @@ function Simulacao() {
         </section>
       </div>
       <p className="algo-nota">
-        The same two models as the team's notebook (scikit-learn), refitted here on every change: least squares for the grade, L2 logistic regression (C = 1) by Newton&apos;s method for coming back. With every input ticked and the split by person, the coefficients match the notebook&apos;s.
+        The same two models as the team's notebook (scikit-learn), refitted here on every change: least squares for the grade, ridge-penalised logistic regression (C = 1) by Newton&apos;s method for coming back. With every input ticked and the split by person, the coefficients match the notebook&apos;s.
       </p>
     </div>
   );
