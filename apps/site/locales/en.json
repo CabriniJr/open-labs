@@ -8052,5 +8052,19 @@
   "linear regression": "linear regression",
   "people) · test": "people) · test",
   "test sessions": "test sessions",
-  "é novo. Ele tem o lab": "is new. It has the lab"
+  "é novo. Ele tem o lab": "is new. It has the lab",
+  "· 1 per enqueue, 1 per dequeue": "· 1 per enqueue, 1 per dequeue",
+  "· 1 per enqueue, 1 per dequeue, 1 per shift": "· 1 per enqueue, 1 per dequeue, 1 per shift",
+  "1 request per tick": "1 request per tick",
+  "A bigger queue fixes overload.": "A bigger queue fixes overload.",
+  "about 0.4 per tick": "about 0.4 per tick",
+  "as duas filas deveriam contar os mesmos acontecimentos": "both queues should count the same events",
+  "Longest wait": "Longest wait",
+  "M12 4a3 3 0 1 0 0 6a3 3 0 1 0 0-6": "M12 4a3 3 0 1 0 0 6a3 3 0 1 0 0-6",
+  "No more losses": "No more losses",
+  "O(1) per request": "O(1) per request",
+  "O(n) per request": "O(n) per request",
+  "per request.": "per request.",
+  "Queue length over time": "Queue length over time",
+  "Same requests, two queues": "Same requests, two queues"
 }
