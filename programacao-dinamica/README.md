@@ -15,14 +15,14 @@ Entrega da disciplina **Dynamic Programming** (Global Solution 2026.2 · Citizen
 | | |
 |---|---|
 | **Nome** | OpenLabs no Telecentro |
-| **Cidade e bairro** | São Paulo. O planejador roda no centro (Paulista ao Centro), onde está o mapa real de ruas; os telecentros do banco ficam na periferia (Jardim Ângela, Cidade Tiradentes, Capão Redondo). |
+| **Cidade e bairro** | São Paulo (SP), Jardim Ângela, no Telecentro Jardim Ângela. O planejador roda no centro (da Paulista ao Centro), porque é lá que está o recorte do mapa real de ruas. |
 | **Cidadão beneficiado** | Quem não tem computador nem internet boa em casa e aprende tecnologia no telecentro. Por exemplo, a aposentada que anda devagar, o estudante do ensino médio e o ambulante que só tem o fim da tarde. |
 | **Problema, em uma frase** | O tempo de computador no telecentro é curto e disputado. A pessoa não sabe qual telecentro fica mais perto a pé, nem o que estudar no tempo que tem. O monitor não sabe como dividir o computador de atendimento entre quem mais precisa. |
 | **Como funciona** | O OpenLabs é um site de labs interativos que roda no navegador dos computadores do telecentro. Este planejador decide três coisas: aonde ir, o que estudar na sessão e quem usa o computador de atendimento. |
 | **O que cada parte faz** | Site (labs), banco Oracle (alunos, progresso, avaliações), rede do telecentro (Packet Tracer), API Java. **Esta parte:** os algoritmos de decisão, em Python. |
 | **Link do repositório** | https://github.com/CabriniJr/open-labs (pasta `programacao-dinamica/`) |
 | **Indicador de impacto** | (1) % de cruzamentos a até 15 min a pé de um telecentro. (2) Pontos de aprendizagem por sessão, comparados à escolha gulosa. (3) Prioridade atendida no computador de atendimento. |
-| **ODS conectados** | **4** (educação de qualidade), **10** (redução das desigualdades) e **11** (cidades e comunidades sustentáveis). |
+| **ODS conectados** | **4** (educação de qualidade), **9** (indústria, inovação e infraestrutura), **10** (redução das desigualdades) e **11** (cidades e comunidades sustentáveis). |
 
 ## O que o programa faz
 

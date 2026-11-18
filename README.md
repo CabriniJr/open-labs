@@ -1,5 +1,38 @@
 # OpenLabs
 
+## Global Solution 2026.2 · CitizenTech — OpenLabs no Telecentro
+
+**Equipe 10** · Engenharia de Software, 2º ano · FIAP
+
+**Integrantes:** Anthony Sforzin, Bruno Koeke, Luigi Mendes Cabrini e Rogério Cruz Arroyo. Os RMs estão nos arquivos de cada entrega, que ficam fora do Git.
+
+### Ficha da CitizenTech
+
+| | |
+|---|---|
+| **Nome da CitizenTech** | OpenLabs no Telecentro |
+| **Cidade e bairro** | São Paulo (SP), Jardim Ângela, no Telecentro Jardim Ângela |
+| **Cidadão beneficiado** | Quem não tem computador nem internet em casa e quer aprender tecnologia: estudantes de escola pública, jovens e adultos da comunidade. |
+| **Problema, em uma frase** | O ensino de tecnologia gratuito e prático não chega a quem mais precisa dele. |
+| **Como funciona** | Um telecentro comunitário oferece Wi-Fi gratuito e computadores. O OpenLabs roda no servidor local, com laboratórios interativos que funcionam mesmo sem internet. |
+| **O que cada parte faz** | A rede separa equipe, Wi-Fi público e servidores e protege o servidor do OpenLabs. O banco guarda telecentros, alunos, labs e avaliações. A API publica esses dados. Os algoritmos decidem aonde ir, o que estudar e quem usa o computador, e a análise de dados prevê nota e retorno. |
+| **Link do repositório** | https://github.com/CabriniJr/open-labs · site: https://cabrinijr.github.io/open-labs/ |
+| **Indicador de impacto** | Alunos ativos por telecentro e avaliações concluídas por mês; % da cidade a até 15 min a pé de um telecentro; retorno em 7 dias. |
+| **ODS conectados** | ODS 4 (educação de qualidade), ODS 9 (inovação e infraestrutura), ODS 10 (redução das desigualdades), ODS 11 (cidades e comunidades sustentáveis). |
+
+### As entregas neste repositório
+
+| disciplina | pasta | o que gerar | no OpenLabs |
+|---|---|---|---|
+| Database Design | [`database/`](database/README.md) | `node database/gerar.mjs --pdf` + os três `.sql` | [`/labs/telecentro-database/`](https://cabrinijr.github.io/open-labs/labs/telecentro-database/) |
+| Network Architect Solutions | [`labs/telecentro-network/`](labs/telecentro-network/README.md) | `node labs/telecentro-network/entrega/gerar-pdf.mjs` + `telecentro-equipe-10.pkt` | [`/labs/telecentro-network/`](https://cabrinijr.github.io/open-labs/labs/telecentro-network/) |
+| Dynamic Programming | [`programacao-dinamica/`](programacao-dinamica/README.md) | `python programacao-dinamica/empacotar.py` → ZIP | [`/labs/knapsack-session/`](https://cabrinijr.github.io/open-labs/labs/knapsack-session/) |
+| Data Science & Statistical Computing | [`data-science/`](data-science/README.md) | `python data-science/empacotar.py` → ZIP (notebook, CSV, TXT) + `node data-science/gerar_pdf_openlabs.mjs` | [`/labs/who-comes-back/`](https://cabrinijr.github.io/open-labs/labs/who-comes-back/) |
+
+Os nomes e RMs entram nos documentos a partir de um arquivo local, `database/entrega/equipe.json`, que fica fora do Git. Todos os geradores o leem.
+
+---
+
 Handbooks that run. Flow scenarios use a compositional engine and a canonical
 Mermaid contract; stateful experiments and direct manipulation use the model
 that fits the subject. You experiment with the mechanism instead of only

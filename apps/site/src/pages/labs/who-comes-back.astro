@@ -1,0 +1,61 @@
+---
+import AlgoPagina from "../../components/AlgoPagina.astro";
+import SiteFooter from "../../components/SiteFooter.astro";
+import SiteNav from "../../components/SiteNav.astro";
+import Base from "../../layouts/Base.astro";
+import { RetornoModos } from "../../components/RetornoLab.tsx";
+import { Predicao } from "../../components/Predicao.tsx";
+---
+
+<Base domain="data-science" title="Who comes back to the telecentre? Two regressions, one split — OpenLabs" description="1,247 study sessions at a community telecentre. Fit a linear regression for the grade and a logistic regression for coming back, in the browser, on a split by person — and watch what a split by row does to the scores.">
+<SiteNav current="labs" />
+<AlgoPagina
+  titulo="Who comes back to the telecentre? Two regressions, one split"
+  href="labs/who-comes-back"
+  handbook="data-science"
+  nomeDoHandbook="Data Science Visual Handbook"
+  nota={["Split by person: no one is graded twice.", "A line for the grade, a curve for coming back.", "The cut-off decides which mistake you make."]}
+  quebre={[
+    { b: "Switch to “Split by row (leaks)”.", texto: "211 of the 420 people now have sessions on both sides. The scores change — here they even drop a little, because other sessions landed in the test — but they stop answering the question that matters: how does the model do on someone it has never seen?" },
+    { b: "Untick “minutes walking”.", texto: "The logistic regression loses its strongest input: F1 falls from 0.63 to 0.55. The linear one does not notice (R² stays at 0.61): walking changes who comes back, not the grade." },
+    { b: "Untick “watched the showcase”.", texto: "R² of the grade model falls from 0.61 to 0.42. In the coefficient table it was the biggest number, worth about 1.3 points of grade." },
+    { b: "Slide the cut-off from 0.30 to 0.70.", texto: "Fewer people predicted to come back, more reminders sent. Recall of the people who stay away goes up; the share of reminders that hit goes down. No setting is free." },
+    { b: "Untick every input.", texto: "The lab refuses: a model needs at least one variable to learn from." },
+  ]}
+  erros={[
+    { crenca: "A random split is always fine.", verdade: "Not when the same person appears several times. Their sessions share what the data does not record — motivation, habits — so a model that can memorise a person looks better than it is. These two regressions cannot memorise much, and here the scores barely move; the test still stops measuring new people. Split by person." },
+    { crenca: "R² of 0.6 means the model is right 60% of the time.", verdade: "R² compares the squared error with the error of always guessing the average. 0.6 means 60% less squared error than that guess; it says nothing about how often a single prediction is close." },
+    { crenca: "The model says watching the showcase raises the grade, so it does.", verdade: "A coefficient is an association. People who choose to watch may be the more motivated ones. Only offering the showcase at random would show the effect itself." },
+    { crenca: "A cut-off of 0.5 is the correct one.", verdade: "It is a default. When a reminder costs little and losing a learner costs a lot, the telecentre should catch more of the people who would stay away, and accept more reminders that were not needed." },
+  ]}
+  fronteira="The 1,247 sessions are simulated by the team's script (seed 2026); the walking distances are real, computed on OpenStreetMap streets of central São Paulo, and the labs are the real OpenLabs catalogue. The rules that generated the data are written in data-science/gerar_dados.py, so the lab shows models recovering known rules — not facts about real telecentres. The fits use the full data (922 training sessions, up to 16 inputs) and run in your browser."
+  ligacoes={[
+    { href: "labs/telecentro-database", texto: "The telecentre database — the T_PROGRESSO and T_TENTATIVA tables that would hold real sessions" },
+    { href: "labs/shortest-path", texto: "Shortest paths on the real streets — where the walking minutes come from" },
+    { href: "labs/knapsack-session", texto: "The table that remembers — what to study once you get there" },
+  ]}
+>
+  <p>
+    A community telecentre lends its computers to people who want to learn. Every session leaves a few
+    facts behind: how far the person walked to get there, how long they stayed on the lab, whether they
+    watched the guided showcase first, the grade on the lab's checkpoint — and whether they came back
+    within a week.
+  </p>
+  <p>
+    Two questions matter to the monitor. <b>What grade will this person get?</b> is a number, so it is a
+    job for <b>linear regression</b>. <b>Will they come back?</b> is yes or no, so it is a job for
+    <b>logistic regression</b>. Both are fitted only on training data and judged on people they never
+    saw. The split is by person, not by row, because the same person comes several times.
+  </p>
+  <RetornoModos slot="palco" client:only="react" />
+  <Predicao
+    slot="predicao"
+    client:visible
+    pergunta="420 people, 1,247 sessions. Split the sessions at random, by row, 25% to the test. About how many people end up with sessions on both sides?"
+    opcoes={["About half of them", "A handful", "None"]}
+    correta={0}
+    revelacao="211 of the 420. Anyone with two or more sessions has a good chance of landing on both sides. The test then mixes new people with people the model trained on, and its score no longer says how the model does on someone new — which is the only thing the telecentre wants to know."
+  />
+</AlgoPagina>
+<SiteFooter />
+</Base>

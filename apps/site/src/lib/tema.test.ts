@@ -33,7 +33,10 @@ describe("todo handbook tem identidade, e ela é cor de verdade", () => {
   it("dois handbooks não têm o mesmo acento", () => {
     // O leitor tem de saber em qual handbook está sem ler o cabeçalho — e numa
     // aba só o acento é tudo o que ele vê.
-    const acentos = HANDBOOKS.map((h) => h.tema.claro.acento.toLowerCase());
+    // `scripts/handbook.test.mjs` cria e apaga `handbooks/zzz-handbook-de-teste`
+    // com o acento padrão do molde (o mesmo do OTel). Se os dois testes rodam ao
+    // mesmo tempo, ele aparece aqui: não é um handbook de verdade.
+    const acentos = HANDBOOKS.filter((h) => !h.id.startsWith("zzz-")).map((h) => h.tema.claro.acento.toLowerCase());
     expect(new Set(acentos).size).toBe(acentos.length);
   });
 });

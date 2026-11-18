@@ -1,0 +1,71 @@
+# O handbook de ciência de dados. Nasceu da Global Solution 2026.2 (FIAP ·
+# CitizenTech), como o de redes e o de bancos de dados: o cenário é o mesmo
+# telecentro, e os dados são as sessões de estudo do OpenLabs nele. O assunto é
+# como um modelo aprende de dados e como saber se ele aprendeu de verdade.
+#
+# O caminho dourado inteiro está em docs/handbooks.md.
+apiVersion: openlabs/handbook/v1
+
+id: data-science
+name: Data Science Visual Handbook
+subject: data-science
+tagline: Fit a line, fit a curve, and find out if the model learned anything at all.
+blurb: >-
+  Study sessions at a community telecentre: how far each person walks, what
+  they scored, whether they came back. Fit a linear and a logistic regression
+  in the browser, split the data so no one is graded twice, and move the
+  cut-off until the confusion matrix says what the telecentre needs to know.
+model: telecentre sessions · regression model
+stage: building
+
+maintainers:
+  - name: Luigi Cabrini
+    github: CabriniJr
+
+theme:
+  light:
+    accent: "#a16207"
+    flow: "#a16207"
+    dropped: "#b8442a"
+    ok: "#3f7a52"
+    mutation: "#c2410c"
+    processor: "#a16207"
+    conduit: "#3f7a52"
+    species: ["#a16207", "#0e7490", "#6d28d9", "#3f7a52"]
+  dark:
+    accent: "#e3b341"
+    flow: "#e3b341"
+    processor: "#e3b341"
+    species: ["#e3b341", "#22d3ee", "#c4a7f7", "#3fb950"]
+
+phases:
+  - number: 1
+    title: Data you can trust
+    line: Where the rows came from, what is missing, and splitting without leaking.
+  - number: 2
+    title: Predicting a number
+    line: Linear regression, its errors, and what a coefficient can and cannot say.
+  - number: 3
+    title: Predicting yes or no
+    line: Logistic regression, the cut-off, and choosing which mistake costs more.
+
+articles:
+  - id: a-split-by-row-leaks
+    title: A split by row can leak the answer
+    status: coming
+    phase: 1
+  - id: r-squared-is-not-accuracy
+    title: R² is a comparison with guessing the average
+    status: coming
+    phase: 2
+  - id: the-cut-off-is-a-policy
+    title: The cut-off is a policy, not a statistic
+    status: coming
+    phase: 3
+
+labs:
+  - id: who-comes-back
+    title: Who comes back to the telecentre? Two regressions, one split
+    status: available
+    phase: 2
+    href: labs/who-comes-back

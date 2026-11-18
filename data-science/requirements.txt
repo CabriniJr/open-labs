@@ -1,0 +1,8 @@
+numpy>=1.24
+pandas>=2.0
+scikit-learn>=1.2
+matplotlib>=3.6
+# só para remontar e executar o notebook a partir de montar_notebook.py
+nbformat>=5.9
+nbconvert>=7.0
+ipykernel>=6.0

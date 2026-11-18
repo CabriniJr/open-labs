@@ -55,7 +55,7 @@ def readme_com_integrantes(dados: dict | None) -> str:
     linhas = sorted(dados["integrantes"], key=lambda par: par[0].casefold())
     bloco = ["## Integrantes", ""]
     if dados.get("equipe"):
-        bloco += [f"Equipe **{dados['equipe']}**.", ""]
+        bloco += [f"**{dados['equipe']}**.", ""]
     bloco += ["| Nome | RM |", "|---|---|"] + [f"| {nome} | {rm} |" for nome, rm in linhas]
     novo = "<!-- INTEGRANTES:INICIO -->\n" + "\n".join(bloco) + "\n<!-- INTEGRANTES:FIM -->"
     return re.sub(r"<!-- INTEGRANTES:INICIO -->.*?<!-- INTEGRANTES:FIM -->", lambda _: novo, texto, flags=re.S)
