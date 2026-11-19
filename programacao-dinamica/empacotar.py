@@ -106,6 +106,8 @@ def verificar() -> None:
 
 
 if __name__ == "__main__":
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")  # console cp1252 do Windows
     if "--verificar" not in sys.argv:
         gerar()
     verificar()

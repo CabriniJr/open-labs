@@ -1,6 +1,6 @@
 # Quem volta ao telecentro? — Data Science
 
-Entrega da disciplina **Data Science & Statistical Computing** (Global Solution 2026.2 · CitizenTech · Engenharia de Software, 2º ano). Equipe 10, **OpenLabs no Telecentro**. Os nomes e RMs estão em `integrantes.txt`, dentro do ZIP.
+Entrega da disciplina **Data Science & Statistical Computing** (Global Solution 2026.2 · CitizenTech · Engenharia de Software, 2º ano). Equipe 10, **OpenLabs no Telecentro**: Anthony Sforzin, Bruno Koeke, Luigi Mendes Cabrini e Rogério Cruz Arroyo. Os RMs estão em `integrantes.txt`, dentro do ZIP.
 
 ## O que a análise responde
 
@@ -32,8 +32,11 @@ Entrega da disciplina **Data Science & Statistical Computing** (Global Solution 
 
 ```
 pip install -r requirements.txt
-jupyter notebook analise.ipynb        # ou abra no VS Code / Google Colab, com o CSV ao lado
+pip install notebook                  # só se ainda não tiver o Jupyter
+jupyter notebook analise.ipynb
 ```
+
+O notebook já vem **executado**: dá para ler as saídas e os gráficos sem rodar nada. Também abre no VS Code e no Google Colab; no Colab, envie `analise.ipynb` e `dados/sessoes_telecentro.csv` (o CSV pode ficar ao lado do notebook).
 
 Para refazer tudo a partir do repositório do OpenLabs, que tem o mapa e o planejador:
 
@@ -55,4 +58,4 @@ O lab **`/labs/who-comes-back/`**, do handbook *Data Science*, roda os mesmos do
 
 ## Uso de IA
 
-O código e o texto foram feitos com apoio do Claude Code. Os pedidos estão em `../programacao-dinamica/prompts.md`. A equipe revisou o material e precisa saber explicar cada linha.
+O código e o texto foram feitos com apoio do Claude Code. Os pedidos desta parte estão em `prompts.md`, junto com o que a equipe precisa saber explicar. A equipe revisou o material e precisa saber explicar cada linha.

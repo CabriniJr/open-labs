@@ -32,7 +32,7 @@ ENTREGA = AQUI / "entrega"
 ZIP = ENTREGA / "GS-Data-Science.zip"
 EQUIPES = (ENTREGA / "equipe.json", AQUI.parent / "database" / "entrega" / "equipe.json")
 RAIZ = "data-science-openlabs-telecentro"
-ARQUIVOS = ["analise.ipynb", "dados/sessoes_telecentro.csv", "dados/FONTE.md", "README.md", "requirements.txt", "gerar_dados.py", "montar_notebook.py"]
+ARQUIVOS = ["analise.ipynb", "dados/sessoes_telecentro.csv", "dados/FONTE.md", "README.md", "prompts.md", "requirements.txt", "gerar_dados.py", "montar_notebook.py"]
 
 
 def integrantes() -> str:
@@ -86,4 +86,8 @@ def principal() -> None:
 
 
 if __name__ == "__main__":
+    # O console do Windows (cp1252) não imprime ═ nem →; sem isto o script
+    # quebra quando a saída vai para um arquivo ou para a IDE.
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     principal()
