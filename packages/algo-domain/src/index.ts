@@ -71,3 +71,8 @@ export { CATALOGO, CENARIOS_DA_MOCHILA, chamadasComMemoria, chamadasSemMemoria, 
 export type { CenarioDaMochila, Gulosa, ItemDaMochila, Mochila } from "./mochila/mochila.js";
 export { filmeDaMochila } from "./mochila/filme.js";
 export type { DetalheDaMochila } from "./mochila/filme.js";
+// A fila: duas estruturas, os mesmos pedidos, e a política quando ela enche.
+export { CARGAS, chegadasDe, CODIGO as CODIGO_DA_FILA, emOrdem, ErroDaFila, ESTRUTURAS as ESTRUTURAS_DA_FILA, MAIS_VAGAS, POLITICAS, rodarFila, SERVICO, TICKS as TICKS_DA_FILA, VAGAS } from "./fila/fila.js";
+export type { Carga, Estrutura, FotoDaFila, OpcoesDaFila, PassoDaFila, Politica, RodadaDaFila, TipoDoPasso } from "./fila/fila.js";
+export { CHEGADAS_DO_FILME, filmeDaFila, VAGAS_DO_FILME } from "./fila/filme.js";
+export type { DetalheDaFila } from "./fila/filme.js";

@@ -31,4 +31,12 @@ export const ICONES_ALGO = {
   moeda: { paths: ["M12 3a9 9 0 1 0 0 18a9 9 0 1 0 0-18", "M12 7v10", "M15 9.5c-.5-1-1.6-1.5-3-1.5-1.7 0-3 .8-3 2s1.3 1.7 3 2 3 .8 3 2-1.3 2-3 2c-1.4 0-2.5-.5-3-1.5"] },
   /** A tabela que lembra. */
   tabela: { paths: ["M3 5h18v14H3z", "M3 10h18", "M3 15h18", "M9 5v14", "M15 5v14"] },
+  /** Os pedidos chegando: a seta que entra. */
+  chegada: { paths: ["M3 12h12", "M11 8l4 4-4 4", "M19 5v14"] },
+  /** A fila: vagas em fila, com a saída na frente. */
+  fila: { paths: ["M2 8h4v8H2z", "M8 8h4v8H8z", "M14 8h4v8h-4z", "M19.5 12H22", "M20.5 10.5 22 12l-1.5 1.5"] },
+  /** Quem atende: a pessoa atrás do balcão. */
+  atendente: { paths: ["M12 4a3 3 0 1 0 0 6a3 3 0 1 0 0-6", "M6 15c0-2.8 2.7-4.5 6-4.5s6 1.7 6 4.5", "M3 15h18v5H3z"] },
+  /** O que a fila perdeu: o descarte. */
+  descarte: { paths: ["M5 7h14", "M9.5 7V4.5h5V7", "M7 7l1 13h8l1-13", "M10.5 11v5.5", "M13.5 11v5.5"] },
 } as const satisfies Record<string, Glyph>;

@@ -280,3 +280,13 @@
 /* O texto só para leitor de tela é absolute: sem um ancestral posicionado, ele escapa do
    bloco que rola e soma na largura da página. */
 .algo-tabela { position: relative; }
+
+/* A fila (`labs/fifo`): as vagas de cada estrutura num tick, a cabeça marcada. */
+.fila-vagas { display: grid; grid-template-columns: repeat(auto-fill, minmax(2.1rem, 1fr)); gap: 4px; margin: 0; padding: 0; list-style: none; }
+.fila-vagas li { position: relative; display: grid; place-items: center; min-height: 2.1rem; border: 1px solid var(--rule); border-radius: 4px; font-family: var(--font-mono); font-size: 0.78rem; font-variant-numeric: tabular-nums; color: var(--ink-muted); }
+.fila-vagas li[data-cheia] { border-color: var(--algo-c); background: color-mix(in oklab, var(--algo-c) 16%, var(--paper)); color: var(--ink); }
+.fila-vagas li[data-cabeca] { box-shadow: inset 0 -3px 0 var(--ink); }
+.fila-vagas li[data-cauda] { border-style: dashed; border-color: var(--ink-faint); }
+.fila-tempo { display: grid; gap: 4px; font-size: var(--size-step--1); color: var(--ink-muted); }
+.fila-tempo input { width: 100%; accent-color: var(--accent); }
+.fila-codigo { margin: 0; padding: 8px 10px; overflow-x: auto; border-radius: 6px; background: color-mix(in oklab, var(--ink) 5%, var(--paper)); font-size: 0.74rem; line-height: 1.5; }

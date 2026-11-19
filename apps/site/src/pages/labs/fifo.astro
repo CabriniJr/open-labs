@@ -1,0 +1,56 @@
+---
+import AlgoPagina from "../../components/AlgoPagina.astro";
+import SiteFooter from "../../components/SiteFooter.astro";
+import SiteNav from "../../components/SiteNav.astro";
+import Base from "../../layouts/Base.astro";
+import { FifoModos } from "../../components/FifoLab.tsx";
+import { Predicao } from "../../components/Predicao.tsx";
+---
+
+<Base domain="algorithms" title="A queue, and what fills it — OpenLabs" description="The same requests go into two queues: a ring buffer that only moves its head, and an array that shifts everyone when the head leaves. Both serve in the same order; one pays far more. And when the queue is full, a policy decides who is lost.">
+<SiteNav current="labs" />
+<AlgoPagina
+  titulo="A queue, and what fills it"
+  href="labs/fifo"
+  nota={["First in, first out — the order is the easy part.", "The price is in how the head moves.", "The policy only shows when the queue is full."]}
+  quebre={[
+    { b: "Pick Steady load.", texto: "Nothing is lost and both structures look the same: the queue rarely holds more than one or two requests, so the array has almost nobody to shift." },
+    { b: "Pick Overload with 16 slots.", texto: "The queue sits at the ceiling and 30 of 77 requests are lost. Now switch the server to 1 request per tick: zero lost. Slots absorb a burst; only a faster server absorbs a load." },
+    { b: "Set Slots to 32 under Overload.", texto: "Fewer requests are lost (14 instead of 30), but the longest wait climbs from 31 to 63 ticks — and the array's bill passes 1 000 operations. A bigger queue trades loss for waiting." },
+    { b: "Switch When full to Drop the oldest.", texto: "The same number is lost, but now they are requests that already waited. Fresh work wins; in the array, every drop is one more shift of everyone." },
+  ]}
+  erros={[
+    { crenca: "A queue is just a list where you remove from the front.", verdade: "Removing from the front of an array moves every element behind it: O(n) per request. A ring buffer keeps a head index and wraps around, so both ends cost O(1). Same order, different price." },
+    { crenca: "A bigger queue fixes overload.", verdade: "It only delays the moment it fills. If requests arrive faster than they are served, any finite queue fills; a bigger one makes everyone wait longer before the losses start." },
+    { crenca: "When a queue is full, the new item is the one lost.", verdade: "That is one policy (tail drop). Dropping the oldest, blocking the producer, or sampling are others — and choosing between them is a decision about whose work matters, not a detail of the structure." },
+  ]}
+  fronteira="One server, a fixed number of slots (up to 64), and time in whole ticks. Arrivals are seeded, so the same seed gives the same run. The two policies are drop-newest and drop-oldest; blocking the producer (backpressure) is not simulated. Every request weighs the same: real queues often fill by bytes, not by count."
+  ligacoes={[
+    { href: "labs/rpn", texto: "A stack machine, running — the other end: last in, first out" },
+    { href: "labs/how-work-grows", texto: "Six ways to grow — O(1) against O(n), measured" },
+    { href: "labs/backpressure-and-drops", texto: "Backpressure and drops — the same choice inside an OpenTelemetry Collector" },
+  ]}
+>
+  <p>
+    A queue serves requests in the order they arrived: <b>first in, first out</b>. Getting the
+    order right is easy. This lab is about the two things that are not: what it costs to take
+    the head off, and what happens when there is no room left.
+  </p>
+  <p>
+    The same requests go into two queues. A <b>ring buffer</b> keeps two numbers — where the head
+    is and how many wait — and wraps around the end. A <b>shifting array</b> keeps the head in
+    slot 0, so every time someone is served, everyone behind moves up. Both serve the same
+    requests in the same order. Count the operations.
+  </p>
+  <FifoModos slot="palco" client:only="react" />
+  <Predicao
+    slot="predicao"
+    client:visible
+    pergunta="Requests arrive at about 1.2 per tick and the server handles 1 every 2 ticks. You double the queue from 16 to 32 slots. What happens?"
+    opcoes={["Fewer losses, but everyone waits about twice as long", "No more losses", "Nothing changes"]}
+    correta={0}
+    revelacao="With 32 slots the queue loses 14 of 77 instead of 30, and the longest wait goes from 31 to 63 ticks. The arrival rate is still above the service rate, so the queue still fills — just later, and fuller. Try it in the simulation with Overload."
+  />
+</AlgoPagina>
+<SiteFooter />
+</Base>
