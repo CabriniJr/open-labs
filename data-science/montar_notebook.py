@@ -243,7 +243,7 @@ razao = np.exp(coef_log).round(2)
 pd.DataFrame({"coeficiente (log-odds)": coef_log.round(3), "razão de chances": razao})"""),
     md("""**Interpretação.**
 - O modelo supera o chute da classe mais comum em todas as métricas. A escolha do corte é uma decisão de política, não de estatística. Subir o corte avisa mais gente: com 0,55, três em cada quatro sessões recebem aviso, o que deixa de ser uma ação dirigida. Com **0,50**, o telecentro alcança mais de 80% de quem não ia voltar, e dois em cada três avisos acertam.
-- **H2 se sustenta.** `minutos_caminhada` tem o efeito negativo mais forte. Cada desvio-padrão a mais de caminhada (cerca de 8 minutos) multiplica as chances de voltar por cerca de 0,6. Nota alta puxa o retorno para cima, e o período da noite e ter internet em casa puxam para baixo.
+- **H2 se sustenta.** `minutos_caminhada` tem o efeito negativo mais forte. Cada desvio-padrão a mais de caminhada (cerca de 8 minutos) multiplica as chances de voltar por cerca de 0,6. Nota alta puxa o retorno para cima, e o período da noite e ter internet em casa puxam para baixo. Internet em casa sobe a nota (a pessoa estuda também em casa), mas baixa o retorno: quem tem internet precisa menos do telecentro. Isso não é defeito do modelo. É a confirmação de que o telecentro serve sobretudo a quem não tem acesso em casa, o público que a CitizenTech quer alcançar (ODS 10).
 - **Cuidado com o que parece forte.** `handbook_kubernetes` tem um coeficiente quase tão grande quanto o da caminhada, mas vem de poucas sessões, e o gerador não tem nenhuma regra ligada ao handbook. É ruído. Com amostras pequenas por categoria, um coeficiente grande não é uma descoberta.
 """),
     md("""## 5. Do modelo para a decisão
