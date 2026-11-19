@@ -22,7 +22,7 @@ CELULAS = [
     md("""# Quem volta ao telecentro? — OpenLabs no Telecentro
 
 **Global Solution 2026.2 · CitizenTech · Data Science & Statistical Computing**
-Equipe 10 · integrantes e RMs em `integrantes.txt`.
+**Equipe 10:** Anthony Sforzin, Bruno Koeke, Luigi Mendes Cabrini e Rogério Cruz Arroyo. Os RMs estão em `integrantes.txt`.
 
 O **OpenLabs no Telecentro** leva labs interativos de tecnologia para os computadores públicos dos telecentros.
 O planejador de Programação Dinâmica da mesma equipe já diz *aonde ir* e *o que estudar na sessão*.
@@ -84,7 +84,10 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 plt.rcParams.update({"figure.figsize": (7, 4), "axes.grid": True, "grid.alpha": 0.3, "axes.spines.top": False, "axes.spines.right": False})
 SEMENTE = 42
 
-dados = pd.read_csv("dados/sessoes_telecentro.csv")
+# Funciona com o CSV na pasta dados/ (como no ZIP) ou ao lado do notebook (como no Colab).
+from pathlib import Path
+CSV = next(p for p in [Path("dados/sessoes_telecentro.csv"), Path("sessoes_telecentro.csv")] if p.exists())
+dados = pd.read_csv(CSV)
 print(dados.shape)
 dados.head()"""),
     py("""dados.info()"""),
@@ -287,6 +290,7 @@ referencia = {
     "linear": {"variaveis": X_lin, "coeficientes": coeficientes(linear), **{k: float(v) for k, v in metricas_regressao(teste["nota"], prev_nota).items()}},
     "logistica": {"variaveis": X_log, "coeficientes": coeficientes(logistica), **{k: float(v) for k, v in metricas_classificacao(y, (prob >= 0.5).astype(int)).items()}},
 }
+Path("dados").mkdir(exist_ok=True)
 with open("dados/referencia_openlabs.json", "w", encoding="utf-8") as f:
     json.dump(referencia, f, ensure_ascii=False, indent=1)
 print(f"{len(referencia['pessoas_no_teste'])} pessoas no teste; R² {referencia['linear']['R²']:.3f}; F1 {referencia['logistica']['F1']:.3f}")"""),
