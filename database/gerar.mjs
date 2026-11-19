@@ -19,6 +19,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { constraintsDe as constraints, semPrefixo, TABELAS } from "../packages/database-domain/src/telecentro/esquema.ts";
 import { DADOS } from "../packages/database-domain/src/telecentro/dados.ts";
 import { CONSULTAS } from "../packages/database-domain/src/telecentro/consultas.ts";
+import { diagramaSvg } from "./diagrama.mjs";
 
 const AQUI = dirname(fileURLToPath(import.meta.url));
 
@@ -183,8 +184,9 @@ function modelo() {
     "# Modelo do banco do OpenLabs no Telecentro",
     "",
     "Gerado por `database/gerar.mjs` a partir de `packages/database-domain`. É um diagrama de",
-    "**conferência**: o diagrama entregue na disciplina é o do Oracle Data Modeler (veja",
-    "`README.md`, seção 2). Os dois têm de mostrar as mesmas tabelas e ligações.",
+    "**conferência**. O diagrama do PDF de entrega é a exportação do Oracle Data Modeler, quando ela",
+    "existe em `entrega/`; sem ela, `database/diagrama.mjs` o desenha deste mesmo esquema (veja",
+    "`README.md`, seção 2). Todos mostram as mesmas tabelas e ligações.",
     "",
     "```mermaid",
     "erDiagram",
@@ -217,10 +219,17 @@ const INTEGRANTES = [...CAPA.integrantes].sort((a, b) => a[0].localeCompare(b[0]
 const DIAGRAMAS = [
   ["diagrama-relacional", "Modelo relacional — tabelas, atributos, chaves primárias e estrangeiras, relacionamentos e cardinalidades"],
   ["diagrama-logico", "Modelo lógico — entidades e relacionamentos"],
-].flatMap(([base, leg]) => {
+].map(([base, leg]) => {
   const arq = [".svg", ".png"].map((ext) => base + ext).find((a) => existsSync(join(AQUI, "entrega", a)));
-  return arq === undefined ? [] : [[arq, leg]];
+  if (arq !== undefined) return [arq, leg, false];
+  // Sem a exportação do Data Modeler, o diagrama é desenhado do próprio esquema
+  // (o mesmo do 01-ddl.sql), na mesma notação, e a legenda diz isso.
+  const gerado = `${base}-gerado.svg`;
+  mkdirSync(join(AQUI, "entrega"), { recursive: true });
+  writeFileSync(join(AQUI, "entrega", gerado), diagramaSvg(TABELAS, base.endsWith("logico") ? "logico" : "relacional"));
+  return [gerado, leg, true];
 });
+const DIAGRAMA_GERADO = DIAGRAMAS.some(([, , gerado]) => gerado);
 
 const esc = (s) => String(s).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
 const marca = (s) => `<mark>${esc(s)}</mark>`;
@@ -230,7 +239,7 @@ const SECOES = [
   ["s1", "1", "Objetivo e escopo do projeto"],
   ["s2", "2", "Principais funcionalidades da solução"],
   ["s3", "3", "Como o banco de dados do OpenLabs funciona"],
-  ["s4", "4", "Modelo de dados no Oracle Data Modeler"],
+  ["s4", "4", DIAGRAMA_GERADO ? "Modelo de dados" : "Modelo de dados no Oracle Data Modeler"],
   ["s41", "4.1", "Modelo relacional"],
   ["s42", "4.2", "Modelo lógico"],
   ["s5", "5", "Relacionamentos e cardinalidades"],
@@ -282,7 +291,7 @@ ${extras.length ? `<p class="extra">Regras da tabela: ${extras.map((c) => `<code
   const diagrama = (base) => DIAGRAMAS.find(([arq]) => arq.startsWith(base));
   const figura = (base, legenda) => {
     const d = diagrama(base);
-    return d === undefined ? `<div class="print">${marca(`[Imagem do ${legenda} exportada do Oracle Data Modeler]`)}</div>` : `<figure class="diagrama"><img src="${d[0]}" alt="${esc(d[1])}"><figcaption>${esc(d[1])} · Oracle SQL Developer Data Modeler</figcaption></figure>`;
+    return d === undefined ? `<div class="print">${marca(`[Imagem do ${legenda} exportada do Oracle Data Modeler]`)}</div>` : `<figure class="diagrama"><img src="${d[0]}" alt="${esc(d[1])}"><figcaption>${esc(d[1])} · ${d[2] ? "desenhado do esquema do 01-ddl.sql, na notação do Oracle Data Modeler" : "Oracle SQL Developer Data Modeler"}</figcaption></figure>`;
   };
   const sumario = SECOES.map(([id, n, t]) => `<li class="${n.includes(".") ? "sub" : ""}"><a href="#${id}"><span class="n">${n}</span><span class="t">${esc(t)}</span><span class="p">${paginas[id] ?? ""}</span></a></li>`).join("");
   const funcoes = [
@@ -421,7 +430,7 @@ ${extras.length ? `<p class="extra">Regras da tabela: ${extras.map((c) => `<code
     <p class="equipe">${esc(EQUIPE)}</p>
     <p class="rotulo">Integrantes · ordem alfabética</p>
     <table class="integrantes">${INTEGRANTES.map(([nome, rm]) => `<tr><td>${esc(nome)}</td><td>RM ${rm}</td></tr>`).join("")}</table>
-    <p class="capa-rodape">Solução: <b>${esc(SOLUCAO)}</b> · Oracle Database 19c · Oracle SQL Developer Data Modeler · novembro de 2026</p>
+    <p class="capa-rodape">Solução: <b>${esc(SOLUCAO)}</b> · Oracle Database 19c${DIAGRAMA_GERADO ? "" : " · Oracle SQL Developer Data Modeler"} · novembro de 2026</p>
   </div>
 </section>
 
@@ -522,7 +531,7 @@ mkdirSync(join(AQUI, "entrega"), { recursive: true });
 for (const [arq, txt] of Object.entries(SCRIPTS)) writeFileSync(join(AQUI, arq), txt);
 const html = join(AQUI, "entrega", "documento.html");
 writeFileSync(html, documento());
-if (DIAGRAMAS.length === 0) console.warn("! falta o diagrama: exporte do Data Modeler para database/entrega/diagrama-relacional.svg (ou .png) e rode de novo com --pdf");
+if (DIAGRAMA_GERADO) console.warn("! diagramas desenhados do esquema; para usar a exportação do Data Modeler, salve database/entrega/diagrama-relacional.svg (e diagrama-logico.svg) e rode de novo com --pdf");
 console.log(`✓ ${Object.keys(SCRIPTS).join(", ")} e entrega/documento.html gerados`);
 
 if (process.argv.includes("--pdf")) {
