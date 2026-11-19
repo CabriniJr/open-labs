@@ -235,6 +235,18 @@ pnpm dev</code></pre>
     padding-block: var(--space-4);
   }
 
+  /* O bloco de comandos rola dentro dele, nunca a página: o git clone não cabe em 360px. */
+  #mission .prose {
+    min-width: 0;
+  }
+  #mission pre {
+    max-width: 100%;
+    overflow-x: auto;
+    padding: var(--space-2);
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+  }
+
   h2 {
     font-size: var(--size-step-2);
     margin-block: 0 var(--space-2);
