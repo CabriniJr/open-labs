@@ -55,4 +55,4 @@ O lab **`/labs/who-comes-back/`**, do handbook *Data Science*, roda os mesmos do
 
 ## Uso de IA
 
-O código e o texto foram feitos com apoio do Claude Code. Os pedidos estão em `../programacao-dinamica/prompts.md`. A equipe revisou o material e precisa saber explicar cada linha.
+O código e o texto foram feitos com apoio do Claude Code. Os pedidos desta parte estão em `prompts.md`, junto com o que a equipe precisa saber explicar. A equipe revisou o material e precisa saber explicar cada linha.

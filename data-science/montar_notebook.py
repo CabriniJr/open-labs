@@ -8,6 +8,7 @@ mantém texto e código revisáveis no Git como Python comum.
 
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 
 import nbformat as nbf
@@ -46,6 +47,8 @@ cada pessoa que não volta é uma trilha de estudo interrompida.
 
 - **distância a pé** até o telecentro mais próximo: calculada nas ruas reais do centro de São Paulo (© OpenStreetMap contributors, ODbL), pelo Dijkstra multi-fonte do planejador de Programação Dinâmica;
 - **labs e minutos estimados**: o catálogo real do OpenLabs.
+
+O telecentro da ficha da CitizenTech fica no Jardim Ângela. A análise usa os quatro pontos de acesso simulados do centro (República, Liberdade, Bixiga e Luz), porque é lá que está o recorte de ruas reais que o planejador usa. As perguntas e os modelos são os mesmos para qualquer bairro: com as ruas do Jardim Ângela, só a coluna da caminhada mudaria.
 
 | coluna | significado |
 |---|---|
@@ -319,4 +322,6 @@ def principal() -> None:
 
 
 if __name__ == "__main__":
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")  # console cp1252 do Windows
     principal()

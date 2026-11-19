@@ -205,6 +205,8 @@ const CAPA = existsSync(join(AQUI, "entrega", "equipe.json"))
   ? JSON.parse(readFileSync(join(AQUI, "entrega", "equipe.json"), "utf8"))
   : { equipe: "[Nome da equipe]", solucao: "OpenLabs no Telecentro", integrantes: [["[Nome completo]", "[RM]"]] };
 const EQUIPE = CAPA.equipe;
+// "Equipe 10" já diz "Equipe"; um número sozinho ganha o prefixo.
+const ROTULO_DA_EQUIPE = /^equipe /iu.test(EQUIPE) ? EQUIPE : `Equipe ${EQUIPE}`;
 const SOLUCAO = CAPA.solucao;
 const INTEGRANTES = [...CAPA.integrantes].sort((a, b) => a[0].localeCompare(b[0], "pt-BR"));
 
@@ -298,13 +300,13 @@ ${extras.length ? `<p class="extra">Regras da tabela: ${extras.map((c) => `<code
   ];
 
   return `<!doctype html>
-<html lang="pt-BR"><head><meta charset="utf-8"><title>Database Design — ${esc(SOLUCAO)} — Equipe ${esc(EQUIPE)}</title>
+<html lang="pt-BR"><head><meta charset="utf-8"><title>Database Design — ${esc(SOLUCAO)} — ${esc(ROTULO_DA_EQUIPE)}</title>
 <style>
   :root { --tinta: #0e7490; --funda: #0b2e3a; --clara: #e7f3f6; --linha: #d0d7de; --texto: #1b1f24; --suave: #57606a; }
   @page {
     size: A4; margin: 20mm 16mm 18mm;
     @top-left { content: "Database Design · ${esc(SOLUCAO)}"; font: 8pt "Segoe UI", sans-serif; color: #8c959f; }
-    @top-right { content: "Equipe ${esc(EQUIPE)}"; font: 8pt "Segoe UI", sans-serif; color: #8c959f; }
+    @top-right { content: "${esc(ROTULO_DA_EQUIPE)}"; font: 8pt "Segoe UI", sans-serif; color: #8c959f; }
     @bottom-right { content: counter(page) " / " counter(pages); font: 8pt "Segoe UI", sans-serif; color: #8c959f; }
   }
   @page capa { margin: 0; @top-left { content: none; } @top-right { content: none; } @bottom-right { content: none; } }

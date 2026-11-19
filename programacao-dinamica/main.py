@@ -196,4 +196,8 @@ def principal(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
+    # O console do Windows (cp1252) não imprime ═ nem →; sem isto o script
+    # quebra quando a saída vai para um arquivo ou para a IDE.
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     sys.exit(principal())
