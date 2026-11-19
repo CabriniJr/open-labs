@@ -213,6 +213,10 @@ lado a lado, e cinco palcos do `depth-ui` no mesmo relógio não cabem na tela.
 - **Limite dito na página:** só labs já liberados contam; terminar um no meio da
   sessão não libera o próximo (seria mochila com precedência).
 
+## O handbook em Python (entrega de Dynamic Programming da GS)
+
+`programacao-dinamica/handbook/` é este handbook em código Python: uma aula por lab (fase 3 `crescimento`, fase 6 `caminho`, fase 7 `troco`, fase 8 `mochila`), com os mesmos dados, cenários e números. `programacao-dinamica/dados/referencia_openlabs.json` é exportado do código dos labs (`packages/algo-domain/src/referencia-pd.ts`, por `node programacao-dinamica/exportar_referencia.mjs`), e os testes em Python conferem contra ele. `referencia-pd.test.ts` falha se um destes labs mudar sem a referência: **quem mudar o troco, a mochila, o mapa ou a medida da exponencial roda o exportador no mesmo PR.**
+
 ## Correlações
 
 - fila ↔ rpn: as duas pontas da mesma pergunta — a fila tira o mais antigo, a

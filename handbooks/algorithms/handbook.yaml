@@ -16,7 +16,8 @@ blurb: >-
   A stack is a box; a sort is a load changing places; a map is a graph. Five
   sorting algorithms race on one clock, six complexity classes are counted as n
   doubles, and BFS, greedy, Dijkstra and A* cross the same city. Every model here
-  runs, and the answer comes out of it — never out of a script.
+  runs, and the answer comes out of it — never out of a script. The same algorithms also
+  ship as free Python code, with the labs' data and numbers.
 model: algo.model
 stage: building
 

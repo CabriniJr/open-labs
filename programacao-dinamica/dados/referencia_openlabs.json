@@ -1,0 +1,792 @@
+{
+ "fonte": "Gerado de packages/algo-domain (o código dos labs do handbook de algoritmos do OpenLabs) por exportar_referencia.mjs. Não edite à mão.",
+ "crescimento": {
+  "semente": 1,
+  "vetor": [
+   64,
+   2,
+   54,
+   100,
+   98,
+   30,
+   62,
+   74,
+   44,
+   100,
+   46,
+   50,
+   14,
+   42,
+   26,
+   16,
+   50,
+   8,
+   40,
+   78
+  ],
+  "operacoes": [
+   2,
+   4,
+   8,
+   16,
+   32,
+   64,
+   128,
+   256,
+   512,
+   1024,
+   2048,
+   4096,
+   8192,
+   16384,
+   32768,
+   65536,
+   131072,
+   262144,
+   524288,
+   1048576
+  ]
+ },
+ "troco": [
+  {
+   "id": "brl",
+   "moedas": [
+    1,
+    5,
+    10,
+    25,
+    50,
+    100
+   ],
+   "valor": 68,
+   "guloso": {
+    "moedas": [
+     50,
+     10,
+     5,
+     1,
+     1,
+     1
+    ],
+    "passos": 6,
+    "sobra": 0
+   },
+   "otimo": {
+    "moedas": [
+     50,
+     10,
+     5,
+     1,
+     1,
+     1
+    ],
+    "passos": 408
+   },
+   "menor_contraexemplo": null
+  },
+  {
+   "id": "pre-decimal",
+   "moedas": [
+    1,
+    3,
+    6,
+    12,
+    24,
+    30
+   ],
+   "valor": 48,
+   "guloso": {
+    "moedas": [
+     30,
+     12,
+     6
+    ],
+    "passos": 6,
+    "sobra": 0
+   },
+   "otimo": {
+    "moedas": [
+     24,
+     24
+    ],
+    "passos": 288
+   },
+   "menor_contraexemplo": 48
+  },
+  {
+   "id": "toy",
+   "moedas": [
+    1,
+    3,
+    4
+   ],
+   "valor": 6,
+   "guloso": {
+    "moedas": [
+     4,
+     1,
+     1
+    ],
+    "passos": 3,
+    "sobra": 0
+   },
+   "otimo": {
+    "moedas": [
+     3,
+     3
+    ],
+    "passos": 18
+   },
+   "menor_contraexemplo": 6
+  },
+  {
+   "id": "no-one",
+   "moedas": [
+    5,
+    7
+   ],
+   "valor": 10,
+   "guloso": {
+    "moedas": null,
+    "passos": 2,
+    "sobra": 3
+   },
+   "otimo": {
+    "moedas": [
+     5,
+     5
+    ],
+    "passos": 20
+   },
+   "menor_contraexemplo": 10
+  }
+ ],
+ "mochila": [
+  {
+   "id": "rafa",
+   "sessao": 90,
+   "itens": [
+    "telecentro-network",
+    "rpn",
+    "sorting-race",
+    "shortest-path",
+    "greedy-change",
+    "join-by-hand",
+    "three-pillars"
+   ],
+   "tabela": [
+    [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     5,
+     5,
+     5,
+     5,
+     5,
+     5,
+     5,
+     5,
+     5,
+     5,
+     5,
+     5,
+     5
+    ],
+    [
+     0,
+     0,
+     0,
+     0,
+     3,
+     3,
+     5,
+     5,
+     5,
+     5,
+     8,
+     8,
+     8,
+     8,
+     8,
+     8,
+     8,
+     8,
+     8
+    ],
+    [
+     0,
+     0,
+     0,
+     0,
+     3,
+     3,
+     5,
+     5,
+     5,
+     5,
+     8,
+     8,
+     9,
+     9,
+     9,
+     9,
+     12,
+     12,
+     12
+    ],
+    [
+     0,
+     0,
+     0,
+     0,
+     3,
+     3,
+     5,
+     5,
+     5,
+     5,
+     8,
+     8,
+     10,
+     10,
+     10,
+     10,
+     13,
+     13,
+     14
+    ],
+    [
+     0,
+     0,
+     0,
+     0,
+     3,
+     3,
+     5,
+     5,
+     6,
+     6,
+     8,
+     8,
+     10,
+     10,
+     11,
+     11,
+     13,
+     13,
+     14
+    ],
+    [
+     0,
+     0,
+     0,
+     0,
+     3,
+     3,
+     5,
+     5,
+     6,
+     6,
+     8,
+     8,
+     10,
+     10,
+     11,
+     11,
+     13,
+     13,
+     14
+    ],
+    [
+     0,
+     0,
+     0,
+     0,
+     3,
+     3,
+     5,
+     5,
+     6,
+     6,
+     8,
+     8,
+     10,
+     10,
+     11,
+     11,
+     13,
+     13,
+     14
+    ]
+   ],
+   "pontos": 14,
+   "minutos": 90,
+   "escolhidos": [
+    "telecentro-network",
+    "sorting-race",
+    "shortest-path"
+   ],
+   "celulas": 133,
+   "gulosa": {
+    "pontos": 13,
+    "minutos": 80,
+    "escolhidos": [
+     "shortest-path",
+     "telecentro-network",
+     "greedy-change"
+    ]
+   },
+   "chamadas_sem_memoria": 169,
+   "chamadas_com_memoria": 94,
+   "forca_bruta": 14,
+   "por_que_ultima_celula": {
+    "deixa": 14,
+    "leva": 13,
+    "valor": 14
+   }
+  },
+  {
+   "id": "trap",
+   "sessao": 50,
+   "itens": [
+    "what-is-a-graph",
+    "how-work-grows",
+    "three-pillars"
+   ],
+   "tabela": [
+    [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    [
+     0,
+     0,
+     0,
+     2,
+     2,
+     2,
+     2,
+     2,
+     2,
+     2,
+     2
+    ],
+    [
+     0,
+     0,
+     0,
+     2,
+     2,
+     4,
+     4,
+     4,
+     6,
+     6,
+     6
+    ],
+    [
+     0,
+     0,
+     0,
+     2,
+     2,
+     4,
+     4,
+     4,
+     6,
+     6,
+     7
+    ]
+   ],
+   "pontos": 7,
+   "minutos": 50,
+   "escolhidos": [
+    "how-work-grows",
+    "three-pillars"
+   ],
+   "celulas": 33,
+   "gulosa": {
+    "pontos": 6,
+    "minutos": 40,
+    "escolhidos": [
+     "how-work-grows",
+     "what-is-a-graph"
+    ]
+   },
+   "chamadas_sem_memoria": 14,
+   "chamadas_com_memoria": 12,
+   "forca_bruta": 7,
+   "por_que_ultima_celula": {
+    "deixa": 6,
+    "leva": 7,
+    "valor": 7
+   }
+  },
+  {
+   "id": "cida",
+   "sessao": 60,
+   "itens": [
+    "telecentro-database",
+    "rpn",
+    "how-work-grows",
+    "what-is-a-graph",
+    "three-pillars",
+    "pod-lifecycle"
+   ],
+   "tabela": [
+    [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     5,
+     5,
+     5,
+     5,
+     5,
+     5,
+     5
+    ],
+    [
+     0,
+     0,
+     0,
+     0,
+     3,
+     3,
+     5,
+     5,
+     5,
+     5,
+     8,
+     8,
+     8
+    ],
+    [
+     0,
+     0,
+     0,
+     0,
+     3,
+     4,
+     5,
+     5,
+     5,
+     7,
+     8,
+     9,
+     9
+    ],
+    [
+     0,
+     0,
+     0,
+     2,
+     3,
+     4,
+     5,
+     5,
+     6,
+     7,
+     8,
+     9,
+     9
+    ],
+    [
+     0,
+     0,
+     0,
+     2,
+     3,
+     4,
+     5,
+     5,
+     6,
+     7,
+     8,
+     9,
+     9
+    ],
+    [
+     0,
+     0,
+     0,
+     2,
+     3,
+     4,
+     5,
+     5,
+     6,
+     7,
+     8,
+     9,
+     9
+    ]
+   ],
+   "pontos": 9,
+   "minutos": 55,
+   "escolhidos": [
+    "telecentro-database",
+    "how-work-grows"
+   ],
+   "celulas": 78,
+   "gulosa": {
+    "pontos": 9,
+    "minutos": 55,
+    "escolhidos": [
+     "telecentro-database",
+     "how-work-grows"
+    ]
+   },
+   "chamadas_sem_memoria": 76,
+   "chamadas_com_memoria": 57,
+   "forca_bruta": 9,
+   "por_que_ultima_celula": {
+    "deixa": 9,
+    "leva": 9,
+    "valor": 9
+   }
+  }
+ ],
+ "caminho": [
+  {
+   "id": "short",
+   "paradas": [
+    "copan",
+    "praca-da-republica"
+   ],
+   "nos": [
+    1101,
+    1508
+   ],
+   "tempos_ds": [
+    [
+     0,
+     360
+    ],
+    [
+     674,
+     0
+    ]
+   ],
+   "melhor_ordem": [
+    1101,
+    1508
+   ],
+   "tempo_total_ds": 360
+  },
+  {
+   "id": "across",
+   "paradas": [
+    "masp",
+    "mercadao"
+   ],
+   "nos": [
+    393,
+    285
+   ],
+   "tempos_ds": [
+    [
+     0,
+     3892
+    ],
+    [
+     3676,
+     0
+    ]
+   ],
+   "melhor_ordem": [
+    393,
+    285
+   ],
+   "tempo_total_ds": 3892
+  },
+  {
+   "id": "aimed",
+   "paradas": [
+    "hospital-sirio-libanes",
+    "estacao-da-luz"
+   ],
+   "nos": [
+    693,
+    1533
+   ],
+   "tempos_ds": [
+    [
+     0,
+     2805
+    ],
+    [
+     4723,
+     0
+    ]
+   ],
+   "melhor_ordem": [
+    693,
+    1533
+   ],
+   "tempo_total_ds": 2805
+  },
+  {
+   "id": "maze",
+   "paradas": [
+    "bixiga",
+    "mosteiro-de-sao-bento"
+   ],
+   "nos": [
+    1035,
+    1494
+   ],
+   "tempos_ds": [
+    [
+     0,
+     4222
+    ],
+    [
+     2838,
+     0
+    ]
+   ],
+   "melhor_ordem": [
+    1035,
+    1494
+   ],
+   "tempo_total_ds": 4222
+  },
+  {
+   "id": "tour",
+   "paradas": [
+    "masp",
+    "theatro-municipal",
+    "liberdade"
+   ],
+   "nos": [
+    393,
+    162,
+    1069
+   ],
+   "tempos_ds": [
+    [
+     0,
+     3119,
+     2661
+    ],
+    [
+     3500,
+     0,
+     1931
+    ],
+    [
+     3117,
+     2442,
+     0
+    ]
+   ],
+   "melhor_ordem": [
+    393,
+    162,
+    1069
+   ],
+   "tempo_total_ds": 5050
+  },
+  {
+   "id": "errands",
+   "paradas": [
+    "hospital-sirio-libanes",
+    "copan",
+    "mercadao",
+    "catedral-da-se"
+   ],
+   "nos": [
+    693,
+    1101,
+    285,
+    132
+   ],
+   "tempos_ds": [
+    [
+     0,
+     1976,
+     3649,
+     2709
+    ],
+    [
+     2348,
+     0,
+     3077,
+     1728
+    ],
+    [
+     3253,
+     2061,
+     0,
+     1912
+    ],
+    [
+     3202,
+     2315,
+     1783,
+     0
+    ]
+   ],
+   "melhor_ordem": [
+    693,
+    1101,
+    132,
+    285
+   ],
+   "tempo_total_ds": 5487
+  }
+ ]
+}
