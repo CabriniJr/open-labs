@@ -8066,5 +8066,7 @@
   "O(n) per request": "O(n) per request",
   "per request.": "per request.",
   "Queue length over time": "Queue length over time",
-  "Same requests, two queues": "Same requests, two queues"
+  "Same requests, two queues": "Same requests, two queues",
+  "Gerado de packages/algo-domain (o código dos labs do handbook de algoritmos do OpenLabs) por exportar_referencia.mjs. Não edite à mão.": "Generated from packages/algo-domain (the code of the OpenLabs algorithms handbook labs) by exportar_referencia.mjs. Do not edit by hand.",
+  "git clone https://github.com/CabriniJr/open-labs cd open-labs pnpm install pnpm dev": "git clone https://github.com/CabriniJr/open-labs cd open-labs pnpm install pnpm dev"
 }

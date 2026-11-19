@@ -82,6 +82,43 @@ const GESTOS = [
       <HeroSim client:visible />
     </section>
 
+    <section class="editorial" id="mission">
+      <div class="prose">
+        <h2>Why OpenLabs exists</h2>
+        <p>
+          Learning technology by doing usually takes a good computer, a fast
+          connection and a paid course. OpenLabs bets the other way: every
+          handbook is free and open source, runs in any browser — including the
+          public computer of a community telecentre — and keeps working without
+          internet once it is on the machine.
+        </p>
+        <p>
+          Each subject becomes labs you can watch and break: a showcase that
+          walks you through it and a simulation that answers back. The code
+          behind every number is in the repository, and the algorithms handbook
+          also comes as Python you can read and run next to its labs, with the
+          same data and the same results.
+        </p>
+        <h3>Run it on your own machine</h3>
+        <pre class="mono"><code>git clone https://github.com/CabriniJr/open-labs
+cd open-labs
+pnpm install
+pnpm dev</code></pre>
+        <p>
+          That serves everything at <code>http://localhost:4321</code>. Without
+          Node, Python alone serves a built copy: the algorithms handbook's
+          Python package ships one, and <code>python main.py --servir</code>
+          opens it at <code>http://localhost:8000</code>.
+        </p>
+      </div>
+      <aside class="sidenote">
+        <p>
+          Free to use, free to copy, free to teach with. A telecentre can put the
+          whole site on its own server and serve it on the local Wi-Fi.
+        </p>
+      </aside>
+    </section>
+
     <section class="editorial">
       <div class="prose">
         <h2>What a lab is</h2>
@@ -196,6 +233,18 @@ const GESTOS = [
 
   section.editorial {
     padding-block: var(--space-4);
+  }
+
+  /* O bloco de comandos rola dentro dele, nunca a página: o git clone não cabe em 360px. */
+  #mission .prose {
+    min-width: 0;
+  }
+  #mission pre {
+    max-width: 100%;
+    overflow-x: auto;
+    padding: var(--space-2);
+    border: 1px solid var(--rule);
+    border-radius: 4px;
   }
 
   h2 {

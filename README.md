@@ -15,7 +15,7 @@
 | **Cidadão beneficiado** | Quem não tem computador nem internet em casa e quer aprender tecnologia: estudantes de escola pública, jovens e adultos da comunidade. |
 | **Problema, em uma frase** | O ensino de tecnologia gratuito e prático não chega a quem mais precisa dele. |
 | **Como funciona** | Um telecentro comunitário oferece Wi-Fi gratuito e computadores. O OpenLabs roda no servidor local, com laboratórios interativos que funcionam mesmo sem internet. |
-| **O que cada parte faz** | A rede separa equipe, Wi-Fi público e servidores e protege o servidor do OpenLabs. O banco guarda telecentros, alunos, labs e avaliações. A API publica esses dados. Os algoritmos decidem aonde ir, o que estudar e quem usa o computador, e a análise de dados prevê nota e retorno. |
+| **O que cada parte faz** | A rede separa equipe, Wi-Fi público e servidores e protege o servidor do OpenLabs. O banco guarda telecentros, alunos, labs e avaliações. A API publica esses dados. O handbook de algoritmos também vem em Python, com os mesmos dados e números dos labs, e a análise de dados prevê nota e retorno. |
 | **Link do repositório** | https://github.com/CabriniJr/open-labs · API: https://github.com/Bkfighte/openlabs-telecentro-api · site: https://cabrinijr.github.io/open-labs/ |
 | **Indicador de impacto** | Alunos ativos por telecentro e avaliações concluídas por mês; % da cidade a até 15 min a pé de um telecentro; retorno em 7 dias. |
 | **ODS conectados** | ODS 4 (educação de qualidade), ODS 9 (inovação e infraestrutura), ODS 10 (redução das desigualdades), ODS 11 (cidades e comunidades sustentáveis). |
@@ -26,7 +26,7 @@
 |---|---|---|---|
 | Database Design | [`database/`](database/README.md) | `node database/gerar.mjs --pdf` + os três `.sql` | [`/labs/telecentro-database/`](https://cabrinijr.github.io/open-labs/labs/telecentro-database/) |
 | Network Architect Solutions | [`labs/telecentro-network/`](labs/telecentro-network/README.md) | `node labs/telecentro-network/entrega/gerar-pdf.mjs` + `telecentro-equipe-10.pkt` | [`/labs/telecentro-network/`](https://cabrinijr.github.io/open-labs/labs/telecentro-network/) |
-| Dynamic Programming | [`programacao-dinamica/`](programacao-dinamica/README.md) | `python programacao-dinamica/empacotar.py` → ZIP | [`/labs/knapsack-session/`](https://cabrinijr.github.io/open-labs/labs/knapsack-session/) |
+| Dynamic Programming | [`programacao-dinamica/`](programacao-dinamica/README.md): o handbook de algoritmos em Python | `python programacao-dinamica/empacotar.py` → ZIP (com o site, para `python main.py --servir`) | [`/handbooks/algorithms/`](https://cabrinijr.github.io/open-labs/handbooks/algorithms/) |
 | Data Science & Statistical Computing | [`data-science/`](data-science/README.md) | `python data-science/empacotar.py` → ZIP (notebook, CSV, TXT) + `node data-science/gerar_pdf_openlabs.mjs` | [`/labs/who-comes-back/`](https://cabrinijr.github.io/open-labs/labs/who-comes-back/) |
 | Domain Driven Design – Java | [`api/`](api/README.md) | `./mvnw test` · deploy: [Render](https://openlabs-telecentro-api.onrender.com/swagger-ui.html) · repo congelado: [Bkfighte/openlabs-telecentro-api](https://github.com/Bkfighte/openlabs-telecentro-api) | [Swagger UI](https://openlabs-telecentro-api.onrender.com/swagger-ui.html) |
 

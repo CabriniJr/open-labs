@@ -1,14 +1,8 @@
-"""Planejador do OpenLabs no Telecentro.
+"""O mapa de caminhada do centro de São Paulo, usado pela análise de Data Science.
 
-Três decisões que o telecentro toma todo dia, cada uma com uma técnica de
-Programação Dinâmica:
-
-- ``mapa``    — Grafos: qual telecentro fica mais perto a pé (Dijkstra multi-fonte
-                nas ruas reais do centro de São Paulo).
-- ``trilha``  — Grafos + Memoização: o que falta para liberar um lab (DAG de
-                pré-requisitos, ordem topológica e caminho crítico).
-- ``agenda``  — Memoização e Tabulação: quem usa o computador de atendimento
-                (intervalos ponderados, com a recursão ingênua contada ao lado).
-- ``sessao``  — Tabulação: quais labs cabem nos minutos da sessão (mochila 0/1
-                com a tabela inteira e a reconstrução).
+A entrega de Programação Dinâmica é o pacote ``handbook/`` (o handbook de
+algoritmos do OpenLabs em Python). Este pacote fica só porque o gerador da base de
+Data Science (``data-science/gerar_dados.py``) calcula a distância a pé de cada
+pessoa até o telecentro com o Dijkstra multi-fonte daqui (``mapa.py``), sobre os
+telecentros simulados de ``dados/telecentros.json``. Ele não vai no ZIP de PD.
 """

@@ -10550,5 +10550,15 @@
   "x = slots[0]": "x = slots[0]",
   "x = slots[head]": "x = slots[head]",
   "38 running now.": "38 rodando agora.",
-  "8 of 8 labs running": "8 de 8 labs rodando"
+  "8 of 8 labs running": "8 de 8 labs rodando",
+  ". Without Node, Python alone serves a built copy: the algorithms handbook's Python package ships one, and": ". Sem Node, só o Python serve uma cópia já construída: o pacote em Python do handbook de algoritmos traz uma, e",
+  "Each subject becomes labs you can watch and break: a showcase that walks you through it and a simulation that answers back. The code behind every number is in the repository, and the algorithms handbook also comes as Python you can read and run next to its labs, with the same data and the same results.": "Cada tema vira labs que você assiste e quebra: um showcase que conduz a explicação e uma simulação que responde. O código por trás de cada número está no repositório, e o handbook de algoritmos também vem em Python, para ler e rodar ao lado dos labs, com os mesmos dados e os mesmos resultados.",
+  "Free to use, free to copy, free to teach with. A telecentre can put the whole site on its own server and serve it on the local Wi-Fi.": "Livre para usar, livre para copiar, livre para ensinar. Um telecentro pode colocar o site inteiro no próprio servidor e servi-lo no Wi-Fi local.",
+  "Learning technology by doing usually takes a good computer, a fast connection and a paid course. OpenLabs bets the other way: every handbook is free and open source, runs in any browser — including the public computer of a community telecentre — and keeps working without internet once it is on the machine.": "Aprender tecnologia na prática costuma exigir um bom computador, uma conexão rápida e um curso pago. O OpenLabs aposta no contrário: todo handbook é gratuito e de código aberto, roda em qualquer navegador — inclusive no computador público de um telecentro comunitário — e continua funcionando sem internet depois de estar na máquina.",
+  "opens it at": "o abre em",
+  "python main.py --servir": "python main.py --servir",
+  "Run it on your own machine": "Rode no seu próprio computador",
+  "That serves everything at": "Isso serve tudo em",
+  "Why OpenLabs exists": "Por que o OpenLabs existe",
+  "A stack is a box; a sort is a load changing places; a map is a graph. Five sorting algorithms race on one clock, six complexity classes are counted as n doubles, and BFS, greedy, Dijkstra and A* cross the same city. Every model here runs, and the answer comes out of it — never out of a script. The same algorithms also ship as free Python code, with the labs' data and numbers.": "Uma pilha é uma caixa; ordenar é uma carga trocando de lugar; um mapa é um grafo. Cinco algoritmos de ordenação correm no mesmo relógio, seis classes de complexidade são contadas enquanto n dobra, e BFS, guloso, Dijkstra e A* atravessam a mesma cidade. Todo modelo aqui roda, e a resposta sai dele — nunca de um roteiro. Os mesmos algoritmos também vêm como código Python gratuito, com os dados e os números dos labs."
 }
