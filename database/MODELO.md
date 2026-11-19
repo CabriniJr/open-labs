@@ -1,8 +1,9 @@
 # Modelo do banco do OpenLabs no Telecentro
 
 Gerado por `database/gerar.mjs` a partir de `packages/database-domain`. É um diagrama de
-**conferência**: o diagrama entregue na disciplina é o do Oracle Data Modeler (veja
-`README.md`, seção 2). Os dois têm de mostrar as mesmas tabelas e ligações.
+**conferência**. O diagrama do PDF de entrega é a exportação do Oracle Data Modeler, quando ela
+existe em `entrega/`; sem ela, `database/diagrama.mjs` o desenha deste mesmo esquema (veja
+`README.md`, seção 2). Todos mostram as mesmas tabelas e ligações.
 
 ```mermaid
 erDiagram
