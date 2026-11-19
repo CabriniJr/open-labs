@@ -10548,5 +10548,7 @@
   "When full": "Quando cheia",
   "When the queue is full": "Quando a fila enche",
   "x = slots[0]": "x = slots[0]",
-  "x = slots[head]": "x = slots[head]"
+  "x = slots[head]": "x = slots[head]",
+  "38 running now.": "38 rodando agora.",
+  "8 of 8 labs running": "8 de 8 labs rodando"
 }
