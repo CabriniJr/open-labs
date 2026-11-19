@@ -1,0 +1,529 @@
+@startuml diagrama-classes
+' Diagrama de classes da API OpenLabs no Telecentro, gerado a partir do código em src/main/java.
+' Para gerar o PNG: java -jar plantuml.jar docs/diagrama-classes.puml
+!pragma layout smetana
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam defaultFontSize 12
+hide empty members
+title OpenLabs no Telecentro — API (pacote br.com.openlabs.telecentro)
+
+package "controller" {
+  class InicioController {
+    + inicio() : InicioResponse
+  }
+  class AlunoController {
+    - alunoBo : AlunoBo
+    + listar(idTelecentro : Long) : List<AlunoResponse>
+    + buscar(id : Long) : AlunoResponse
+    + cadastrar(dados : AlunoRequest) : ResponseEntity<AlunoResponse>
+    + atualizar(id : Long, dados : AlunoRequest) : AlunoResponse
+    + desativar(id : Long) : AlunoResponse
+    + excluir(id : Long) : void
+  }
+  class TelecentroController {
+    - telecentroBo : TelecentroBo
+    - indicadorBo : IndicadorBo
+    + listar() : List<TelecentroResponse>
+    + buscar(id : Long) : TelecentroResponse
+    + cadastrar(dados : TelecentroRequest) : ResponseEntity<TelecentroResponse>
+    + atualizar(id : Long, dados : TelecentroRequest) : TelecentroResponse
+    + excluir(id : Long) : void
+    + indicadores(id : Long) : IndicadorResponse
+  }
+  class LabController {
+    - catalogoBo : CatalogoBo
+    + listar() : List<LabResponse>
+    + buscar(id : Long) : LabResponse
+  }
+  class AvaliacaoController {
+    - catalogoBo : CatalogoBo
+    + listar(idLab : Long) : List<AvaliacaoResponse>
+    + buscar(id : Long) : AvaliacaoResponse
+  }
+  class ProgressoController {
+    - progressoBo : ProgressoBo
+    + listarPorAluno(idAluno : Long) : List<ProgressoResponse>
+    + iniciar(dados : ProgressoRequest) : ProgressoResponse
+    + concluir(id : Long) : ProgressoResponse
+    + excluir(id : Long) : void
+  }
+  class TentativaController {
+    - tentativaBo : TentativaBo
+    + listarPorAluno(idAluno : Long) : List<TentativaResponse>
+    + registrar(dados : TentativaRequest) : TentativaResponse
+    + excluir(id : Long) : void
+  }
+}
+
+package "bo" {
+  class AlunoBo <<Service>> {
+    - alunoDao : AlunoDao
+    + listar(idTelecentro : Long) : List<Aluno>
+    + buscar(id : Long) : Aluno
+    + cadastrar(dados : AlunoRequest) : Aluno
+    + atualizar(id : Long, dados : AlunoRequest) : Aluno
+    + desativar(id : Long) : Aluno
+    + excluir(id : Long) : void
+  }
+  class TelecentroBo <<Service>> {
+    - telecentroDao : TelecentroDao
+    + listar() : List<Telecentro>
+    + buscar(id : Long) : Telecentro
+    + cadastrar(dados : TelecentroRequest) : Telecentro
+    + atualizar(id : Long, dados : TelecentroRequest) : Telecentro
+    + excluir(id : Long) : void
+  }
+  class CatalogoBo <<Service>> {
+    - labDao : LabDao
+    - avaliacaoDao : AvaliacaoDao
+    + listarLabs() : List<Lab>
+    + buscarLab(id : Long) : Lab
+    + listarAvaliacoes(idLab : Long) : List<Avaliacao>
+    + buscarAvaliacao(id : Long) : Avaliacao
+  }
+  class ProgressoBo <<Service>> {
+    - progressoDao : ProgressoDao
+    - alunoBo : AlunoBo
+    - catalogoBo : CatalogoBo
+    + listarPorAluno(idAluno : Long) : List<Progresso>
+    + buscar(id : Long) : Progresso
+    + iniciar(dados : ProgressoRequest) : Progresso
+    + concluir(id : Long) : Progresso
+    + excluir(id : Long) : void
+  }
+  class TentativaBo <<Service>> {
+    - tentativaDao : TentativaDao
+    - alunoBo : AlunoBo
+    - catalogoBo : CatalogoBo
+    + listarPorAluno(idAluno : Long) : List<TentativaResponse>
+    + registrar(dados : TentativaRequest) : TentativaResponse
+    + excluir(id : Long) : void
+  }
+  class IndicadorBo <<Service>> {
+    - telecentroBo : TelecentroBo
+    - alunoDao : AlunoDao
+    - progressoDao : ProgressoDao
+    - tentativaDao : TentativaDao
+    + calcular(idTelecentro : Long) : IndicadorResponse
+    - media(tentativas : List<Tentativa>) : BigDecimal
+  }
+}
+
+package "dao" {
+  interface "LeituraDao<T extends EntidadeBase>" as LeituraDao {
+    + buscarPorId(id : Long) : Optional<T>
+    + listar() : List<T>
+  }
+  interface "CrudDao<T extends EntidadeBase>" as CrudDao {
+    + inserir(entidade : T) : T
+    + atualizar(entidade : T) : void
+    + excluir(id : Long) : void
+  }
+  class AlunoDao <<Repository>> {
+    - connectionFactory : ConnectionFactory
+    + buscarPorId(id : Long) : Optional<Aluno>
+    + listar() : List<Aluno>
+    + listarPorTelecentro(idTelecentro : Long) : List<Aluno>
+    + inserir(aluno : Aluno) : Aluno
+    + atualizar(aluno : Aluno) : void
+    + excluir(id : Long) : void
+    - preencherParametros(ps : PreparedStatement, aluno : Aluno) : void
+    - mapearTodos(rs : ResultSet) : List<Aluno>
+    - mapear(rs : ResultSet) : Aluno
+  }
+  class TelecentroDao <<Repository>> {
+    - connectionFactory : ConnectionFactory
+    + buscarPorId(id : Long) : Optional<Telecentro>
+    + listar() : List<Telecentro>
+    + inserir(telecentro : Telecentro) : Telecentro
+    + atualizar(telecentro : Telecentro) : void
+    + excluir(id : Long) : void
+    - preencherParametros(ps : PreparedStatement, telecentro : Telecentro) : void
+    - mapear(rs : ResultSet) : Telecentro
+  }
+  class LabDao <<Repository>> {
+    - connectionFactory : ConnectionFactory
+    + buscarPorId(id : Long) : Optional<Lab>
+    + listar() : List<Lab>
+    - mapear(rs : ResultSet) : Lab
+  }
+  class AvaliacaoDao <<Repository>> {
+    - connectionFactory : ConnectionFactory
+    + buscarPorId(id : Long) : Optional<Avaliacao>
+    + listar() : List<Avaliacao>
+    + listarPorLab(idLab : Long) : List<Avaliacao>
+    - mapearTodas(rs : ResultSet) : List<Avaliacao>
+    - mapear(rs : ResultSet) : Avaliacao
+  }
+  class ProgressoDao <<Repository>> {
+    - connectionFactory : ConnectionFactory
+    + buscarPorId(id : Long) : Optional<Progresso>
+    + listar() : List<Progresso>
+    + listarPorAluno(idAluno : Long) : List<Progresso>
+    + listarPorTelecentro(idTelecentro : Long) : List<Progresso>
+    + inserir(progresso : Progresso) : Progresso
+    + atualizar(progresso : Progresso) : void
+    + excluir(id : Long) : void
+    - mapearTodos(rs : ResultSet) : List<Progresso>
+    - mapear(rs : ResultSet) : Progresso
+  }
+  class TentativaDao <<Repository>> {
+    - connectionFactory : ConnectionFactory
+    + buscarPorId(id : Long) : Optional<Tentativa>
+    + listar() : List<Tentativa>
+    + listarPorAluno(idAluno : Long) : List<Tentativa>
+    + listarPorTelecentro(idTelecentro : Long) : List<Tentativa>
+    + inserir(tentativa : Tentativa) : Tentativa
+    + excluir(id : Long) : void
+    - mapearTodas(rs : ResultSet) : List<Tentativa>
+    - mapear(rs : ResultSet) : Tentativa
+  }
+}
+
+package "connection" {
+  class ConnectionFactory <<Component>> {
+    - {static} URL_PADRAO : String
+    - url : String
+    - usuario : String
+    - senha : String
+    + ConnectionFactory()
+    + getConnection() : Connection
+  }
+}
+
+!startsub DOMINIO
+package "model" {
+  abstract class EntidadeBase {
+    - id : Long {readOnly}
+    # EntidadeBase(id : Long)
+    + getId() : Long
+    + equals(outro : Object) : boolean
+    + hashCode() : int
+  }
+  class Telecentro {
+    - nome : String
+    - bairro : String
+    - cidade : String
+    - uf : String
+    - numeroComputadores : int
+    - faixaRede : String
+    - dataInauguracao : LocalDate
+    + Telecentro(id : Long, nome : String, bairro : String, cidade : String, uf : String, numeroComputadores : int, faixaRede : String, dataInauguracao : LocalDate)
+    + atualizarDados(nome : String, bairro : String, cidade : String, uf : String, numeroComputadores : int, faixaRede : String, dataInauguracao : LocalDate) : void
+    - {static} validar(nome : String, bairro : String, cidade : String, uf : String, numeroComputadores : int, faixaRede : String, dataInauguracao : LocalDate) : void
+    + getNome() : String
+    + getBairro() : String
+    + getCidade() : String
+    + getUf() : String
+    + getNumeroComputadores() : int
+    + getFaixaRede() : String
+    + getDataInauguracao() : LocalDate
+  }
+  class Aluno {
+    - idTelecentro : Long
+    - nome : String
+    - dataNascimento : LocalDate
+    - email : String
+    - dataCadastro : LocalDate {readOnly}
+    - ativo : boolean
+    + Aluno(id : Long, idTelecentro : Long, nome : String, dataNascimento : LocalDate, email : String, dataCadastro : LocalDate, ativo : boolean)
+    + {static} cadastrar(idTelecentro : Long, nome : String, dataNascimento : LocalDate, email : String) : Aluno
+    + atualizarCadastro(idTelecentro : Long, nome : String, dataNascimento : LocalDate, email : String) : void
+    + desativar() : void
+    + reativar() : void
+    - {static} validarNome(nome : String) : String
+    - {static} validarNascimento(dataNascimento : LocalDate) : LocalDate
+    - {static} normalizarEmail(email : String) : String
+    + getIdTelecentro() : Long
+    + getNome() : String
+    + getDataNascimento() : LocalDate
+    + getEmail() : Optional<String>
+    + getDataCadastro() : LocalDate
+    + isAtivo() : boolean
+  }
+  class Lab {
+    - idFase : Long {readOnly}
+    - slug : String {readOnly}
+    - nome : String {readOnly}
+    - tipoInteracao : TipoInteracao {readOnly}
+    - minutosEstimados : int {readOnly}
+    - disponivel : boolean {readOnly}
+    + Lab(id : Long, idFase : Long, slug : String, nome : String, tipoInteracao : TipoInteracao, minutosEstimados : int, disponivel : boolean)
+    + getIdFase() : Long
+    + getSlug() : String
+    + getNome() : String
+    + getTipoInteracao() : TipoInteracao
+    + getMinutosEstimados() : int
+    + isDisponivel() : boolean
+  }
+  enum TipoInteracao {
+    FLUXO
+    ESTADO
+    FILME
+    DIRETO
+    + {static} doBanco(texto : String) : TipoInteracao
+  }
+  class Avaliacao {
+    - idLab : Long {readOnly}
+    - nome : String {readOnly}
+    - numeroQuestoes : int {readOnly}
+    - percentualAprovacao : int {readOnly}
+    + Avaliacao(id : Long, idLab : Long, nome : String, numeroQuestoes : int, percentualAprovacao : int)
+    + calcularNota(acertos : int) : BigDecimal
+    + aprova(nota : BigDecimal) : boolean
+    + getIdLab() : Long
+    + getNome() : String
+    + getNumeroQuestoes() : int
+    + getPercentualAprovacao() : int
+  }
+  class Progresso {
+    - idAluno : Long {readOnly}
+    - idLab : Long {readOnly}
+    - dataInicio : LocalDate {readOnly}
+    - dataConclusao : LocalDate
+    + Progresso(id : Long, idAluno : Long, idLab : Long, dataInicio : LocalDate, dataConclusao : LocalDate)
+    + {static} iniciar(aluno : Aluno, lab : Lab, dataInicio : LocalDate) : Progresso
+    + concluir(data : LocalDate) : void
+    + isConcluido() : boolean
+    + getIdAluno() : Long
+    + getIdLab() : Long
+    + getDataInicio() : LocalDate
+    + getDataConclusao() : Optional<LocalDate>
+  }
+  class Tentativa {
+    - idAluno : Long {readOnly}
+    - idAvaliacao : Long {readOnly}
+    - dataEnvio : LocalDate {readOnly}
+    - acertos : int {readOnly}
+    - nota : BigDecimal {readOnly}
+    + Tentativa(id : Long, idAluno : Long, idAvaliacao : Long, dataEnvio : LocalDate, acertos : int, nota : BigDecimal)
+    + {static} registrar(aluno : Aluno, avaliacao : Avaliacao, acertos : int, dataEnvio : LocalDate) : Tentativa
+    + getIdAluno() : Long
+    + getIdAvaliacao() : Long
+    + getDataEnvio() : LocalDate
+    + getAcertos() : int
+    + getNota() : BigDecimal
+  }
+}
+
+!endsub
+
+package "dto (records)" {
+  class InicioResponse <<record>> {
+    servico : String
+    status : String
+    swagger : String
+  }
+  class AlunoRequest <<record>> {
+    idTelecentro : Long
+    nome : String
+    dataNascimento : LocalDate
+    email : String
+  }
+  class AlunoResponse <<record>> {
+    id : Long
+    idTelecentro : Long
+    nome : String
+    dataNascimento : LocalDate
+    email : String
+    dataCadastro : LocalDate
+    ativo : boolean
+    + {static} de(aluno : Aluno) : AlunoResponse
+  }
+  class TelecentroRequest <<record>> {
+    nome : String
+    bairro : String
+    cidade : String
+    uf : String
+    numeroComputadores : Integer
+    faixaRede : String
+    dataInauguracao : LocalDate
+  }
+  class TelecentroResponse <<record>> {
+    id : Long
+    nome : String
+    bairro : String
+    cidade : String
+    uf : String
+    numeroComputadores : int
+    faixaRede : String
+    dataInauguracao : LocalDate
+    + {static} de(telecentro : Telecentro) : TelecentroResponse
+  }
+  class LabResponse <<record>> {
+    id : Long
+    idFase : Long
+    slug : String
+    nome : String
+    tipoInteracao : TipoInteracao
+    minutosEstimados : int
+    disponivel : boolean
+    + {static} de(lab : Lab) : LabResponse
+  }
+  class AvaliacaoResponse <<record>> {
+    id : Long
+    idLab : Long
+    nome : String
+    numeroQuestoes : int
+    percentualAprovacao : int
+    + {static} de(avaliacao : Avaliacao) : AvaliacaoResponse
+  }
+  class ProgressoRequest <<record>> {
+    idAluno : Long
+    idLab : Long
+  }
+  class ProgressoResponse <<record>> {
+    id : Long
+    idAluno : Long
+    idLab : Long
+    dataInicio : LocalDate
+    dataConclusao : LocalDate
+    concluido : boolean
+    + {static} de(progresso : Progresso) : ProgressoResponse
+  }
+  class TentativaRequest <<record>> {
+    idAluno : Long
+    idAvaliacao : Long
+    acertos : Integer
+  }
+  class TentativaResponse <<record>> {
+    id : Long
+    idAluno : Long
+    idAvaliacao : Long
+    dataEnvio : LocalDate
+    acertos : int
+    nota : BigDecimal
+    aprovado : boolean
+    + {static} de(tentativa : Tentativa, aprovado : boolean) : TentativaResponse
+  }
+  class IndicadorResponse <<record>> {
+    idTelecentro : Long
+    telecentro : String
+    alunosAtivos : long
+    avaliacoesPorMes : Map<String, Long>
+    labsConcluidos : long
+    mediaNotas : BigDecimal
+  }
+}
+
+package "exception" {
+  class RecursoNaoEncontradoException {
+    + RecursoNaoEncontradoException(mensagem : String)
+  }
+  class RegraDeNegocioException {
+    + RegraDeNegocioException(mensagem : String)
+  }
+  class PersistenciaException {
+    - codigoOracle : int {readOnly}
+    + PersistenciaException(mensagem : String, causa : SQLException)
+    + getCodigoOracle() : int
+  }
+  class ErroResposta <<record>> {
+    status : int
+    erro : String
+    mensagem : String
+    caminho : String
+    momento : LocalDateTime
+  }
+  class TratadorDeExcecoes <<RestControllerAdvice>> {
+    + tratarNaoEncontrado(e : RecursoNaoEncontradoException, requisicao : HttpServletRequest) : ResponseEntity<ErroResposta>
+    + tratarRegraDeNegocio(e : RegraDeNegocioException, requisicao : HttpServletRequest) : ResponseEntity<ErroResposta>
+    + tratarValidacao(e : MethodArgumentNotValidException, requisicao : HttpServletRequest) : ResponseEntity<ErroResposta>
+    + tratarRequisicaoMalFormada(e : Exception, requisicao : HttpServletRequest) : ResponseEntity<ErroResposta>
+    + tratarPersistencia(e : PersistenciaException, requisicao : HttpServletRequest) : ResponseEntity<ErroResposta>
+    + tratarInesperado(e : Exception, requisicao : HttpServletRequest) : ResponseEntity<ErroResposta>
+    - erroInterno(e : Exception, requisicao : HttpServletRequest) : ResponseEntity<ErroResposta>
+    - responder(status : HttpStatus, mensagem : String, requisicao : HttpServletRequest) : ResponseEntity<ErroResposta>
+  }
+  class RuntimeException
+}
+
+' ---------- Relações ----------
+' controller -> bo
+AlunoController --> AlunoBo
+TelecentroController --> TelecentroBo
+TelecentroController --> IndicadorBo
+LabController --> CatalogoBo
+AvaliacaoController --> CatalogoBo
+ProgressoController --> ProgressoBo
+TentativaController --> TentativaBo
+
+' bo -> bo / dao
+AlunoBo --> AlunoDao
+TelecentroBo --> TelecentroDao
+CatalogoBo --> LabDao
+CatalogoBo --> AvaliacaoDao
+ProgressoBo --> ProgressoDao
+ProgressoBo --> AlunoBo
+ProgressoBo --> CatalogoBo
+TentativaBo --> TentativaDao
+TentativaBo --> AlunoBo
+TentativaBo --> CatalogoBo
+IndicadorBo --> TelecentroBo
+IndicadorBo --> AlunoDao
+IndicadorBo --> ProgressoDao
+IndicadorBo --> TentativaDao
+
+' dao: interfaces e conexão
+CrudDao -up-|> LeituraDao
+AlunoDao ..|> CrudDao
+TelecentroDao ..|> CrudDao
+ProgressoDao ..|> CrudDao
+LabDao ..|> LeituraDao
+AvaliacaoDao ..|> LeituraDao
+TentativaDao ..|> LeituraDao
+AlunoDao --> ConnectionFactory
+TelecentroDao --> ConnectionFactory
+LabDao --> ConnectionFactory
+AvaliacaoDao --> ConnectionFactory
+ProgressoDao --> ConnectionFactory
+TentativaDao --> ConnectionFactory
+
+!startsub RELACOES_DOMINIO
+' model: herança e associações (por id, como nas tabelas)
+Telecentro -up-|> EntidadeBase
+Aluno -up-|> EntidadeBase
+Lab -up-|> EntidadeBase
+Avaliacao -up-|> EntidadeBase
+Progresso -up-|> EntidadeBase
+Tentativa -up-|> EntidadeBase
+Aluno "0..*" --> "1" Telecentro : idTelecentro
+Lab --> TipoInteracao
+Avaliacao "0..*" --> "1" Lab : idLab
+Progresso "0..*" --> "1" Aluno : idAluno
+Progresso "0..*" --> "1" Lab : idLab
+Tentativa "0..*" --> "1" Aluno : idAluno
+Tentativa "0..*" --> "1" Avaliacao : idAvaliacao
+!endsub
+
+' exceções
+RecursoNaoEncontradoException -up-|> RuntimeException
+RegraDeNegocioException -up-|> RuntimeException
+PersistenciaException -up-|> RuntimeException
+TratadorDeExcecoes ..> ErroResposta : devolve
+
+note bottom of TratadorDeExcecoes
+  404 RecursoNaoEncontradoException
+  422 RegraDeNegocioException
+  400 Bean Validation / JSON mal formado
+  PersistenciaException pelo código Oracle:
+  1 → 409 · 2290, 1400, 1438, 12899 → 400
+  2291 → 404 · 2292 → 409 · outros → 500
+end note
+@enduml
+
+@startuml diagrama-classes-dominio
+' Recorte do diagrama acima: só o domínio (pacote model), para caber numa página do PDF.
+!pragma layout smetana
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam defaultFontSize 12
+hide empty members
+title OpenLabs no Telecentro — Domínio (pacote br.com.openlabs.telecentro.model)
+!includesub diagrama-classes.puml!DOMINIO
+!includesub diagrama-classes.puml!RELACOES_DOMINIO
+note "Regras que quebram lançam RegraDeNegocioException (HTTP 422)." as N1
+@enduml
