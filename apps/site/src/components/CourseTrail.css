@@ -1,0 +1,46 @@
+.learning-content { min-width: 0; }
+.course-sidebar { min-width: 0; border-bottom: 1px solid var(--rule); background: var(--paper-raised); }
+.course-trail { position: sticky; top: 0; z-index: 20; color: var(--ink); background: var(--paper-raised); }
+.course-trail > summary { display: flex; align-items: center; gap: .75rem; padding: 1rem; min-height: 3.5rem; cursor: pointer; list-style: none; font-weight: 600; }
+.course-trail > summary::-webkit-details-marker { display: none; }
+.course-trail__collapse { margin-left: auto; color: var(--ink-muted); }
+.course-trail__panel { padding: 0 1rem 1.25rem; max-height: calc(100dvh - 4rem); overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; }
+.course-trail__home { display: block; font-weight: 600; border: 0; padding: .75rem 0; }
+.course-trail__progress { padding: .75rem; border: 1px solid var(--rule); border-radius: var(--radius-2); }
+.course-trail__progress p { display: flex; justify-content: space-between; gap: .5rem; margin: 0; font-size: .8rem; }
+.course-trail__progress progress { display: block; width: 100%; height: .5rem; margin: .65rem 0; accent-color: var(--accent); }
+.course-trail__note { font-size: .75rem; color: var(--ink-muted); line-height: 1.5; }
+.course-trail__continue, .course-trail__complete { display: block; width: 100%; padding: .75rem; border: 1px solid var(--accent); border-radius: var(--radius-2); font: inherit; font-size: .85rem; text-align: center; cursor: pointer; }
+.course-trail__continue { background: var(--accent); color: var(--paper-raised); }
+.course-trail__complete { margin-top: .5rem; color: var(--accent); background: var(--paper-raised); }
+.course-trail [hidden] { display: none; }
+.course-trail__phase { border-bottom: 1px solid var(--rule); }
+.course-trail__phase > summary { display: flex; align-items: baseline; gap: .5rem; padding: 1rem 0; cursor: pointer; font-size: .85rem; font-weight: 600; }
+.course-trail__phase > summary::before { content: "›"; color: var(--ink-muted); }
+.course-trail__phase[open] > summary::before { content: "⌄"; }
+.course-trail__phase > summary .mono { color: var(--accent); }
+.course-trail__phase > summary small { margin-left: auto; color: var(--ink-muted); font-weight: 400; }
+.course-trail ol { list-style: none; padding: 0; margin: 0 0 .75rem; }
+.course-trail li { display: flex; align-items: center; gap: .25rem; border-radius: var(--radius-2); margin-bottom: .25rem; }
+.course-trail li:has([aria-current="page"]) { background: var(--paper); box-shadow: inset 3px 0 var(--accent); }
+.course-trail li a, .course-trail__unavailable { display: flex; flex-direction: column; gap: .2rem; padding: .65rem .5rem .65rem .75rem; font-size: .85rem; line-height: 1.4; border: 0; flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.course-trail li a { color: var(--ink); }
+.course-trail small { font-size: .7rem; color: var(--ink-muted); }
+.course-trail__unavailable { color: var(--ink-muted); }
+.course-trail__check { flex-shrink: 0; min-width: 2.75rem; min-height: 2.75rem; border: 0; background: transparent; color: var(--ink-muted); font-size: 1.2rem; cursor: pointer; }
+.course-trail__check[aria-pressed="true"] { color: var(--accent); }
+.course-trail a:hover { text-decoration: underline; }
+.course-trail__all { display: block; margin-top: 1.25rem; font-size: .85rem; border: 0; }
+@media (min-width: 80rem) {
+  .learning-layout { display: grid; grid-template-columns: 19rem minmax(0, 1fr); }
+  .learning-layout:has(.course-trail:not([open])) { grid-template-columns: 4rem minmax(0, 1fr); }
+  .course-sidebar { border-right: 1px solid var(--rule); border-bottom: 0; }
+  .course-trail:not([open]) .course-trail__summary, .course-trail:not([open]) .course-trail__collapse { display: none; }
+  .learning-layout .editorial { grid-template-columns: minmax(0, 1fr); }
+  .learning-layout .article__body { grid-template-columns: minmax(0, 1fr); }
+  .learning-layout .article__toc { position: static; }
+}
+@media (max-width: 79.999rem) {
+  .course-sidebar { position: sticky; top: 0; z-index: 30; }
+  .course-trail__panel { max-height: min(70dvh, 40rem); }
+}

@@ -117,7 +117,7 @@ if (orfaos.length > 0) {
           handbook.phases.map((phase) => (
             <li class="hb-phase">
               <span class="hb-phase__number mono">{String(phase.number).padStart(2, "0")}</span>
-              <span class="hb-phase__title">{phase.title}</span>
+              <a class="hb-phase__title" href={`#phase-${phase.number}`}>{phase.title}</a>
               <span class="hb-phase__line">{phase.line}</span>
             </li>
           ))
@@ -134,7 +134,7 @@ if (orfaos.length > 0) {
       <div class="hb-grid">
         {
           grupos.map((grupo) => (
-            <section class="hb-group">
+            <section class="hb-group" id={`phase-${grupo.phase}`}>
               <h3>
                 <span class="mono">{String(grupo.phase).padStart(2, "0")}</span> {grupo.title}
               </h3>
@@ -290,7 +290,7 @@ if (orfaos.length > 0) {
 
   .hb-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr));
     gap: var(--space-2);
   }
 
